@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFC107" />
+  <title>MPS — Billing</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="/shared/styles.css" />
+
+  <style>
+    body { background: var(--ns-black); min-height: 100vh; }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    .billing-nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: 16px var(--space-lg);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .billing-nav__back {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+      transition: color var(--transition-fast);
+    }
+    .billing-nav__back:hover { color: var(--ns-yellow); }
+    .billing-nav__title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Content ────────────────────────────────────────── */
+    .billing-content {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: var(--space-xl) var(--space-lg);
+    }
+
+    /* ── Current Plan Card ──────────────────────────────── */
+    .plan-card {
+      background: var(--card-bg);
+      border: 1px solid var(--ns-yellow);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+    .plan-card__label {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 6px;
+    }
+    .plan-card__name {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      color: var(--ns-yellow);
+      letter-spacing: 0.06em;
+    }
+    .plan-card__detail {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+    .plan-card__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-md);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .plan-card__row-label { font-size: 0.8rem; color: var(--text-dim); }
+    .plan-card__row-val   { font-size: 0.875rem; color: var(--text-primary); font-weight: 600; }
+
+    /* ── Section Heading ────────────────────────────────── */
+    .billing-section-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-md);
+    }
+
+    /* ── Plan Options ────────────────────────────────────── */
+    .plan-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: var(--space-xl);
+    }
+    .plan-option {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .plan-option:hover       { border-color: rgba(255,255,255,0.2); }
+    .plan-option.selected    { border-color: var(--ns-yellow); background: rgba(255,193,7,0.06); }
+    .plan-option.current     { border-color: var(--ns-yellow); opacity: 0.6; cursor: default; }
+    .plan-option__name       { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+    .plan-option__desc       { font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; }
+    .plan-option__price      { font-family: var(--font-display); font-size: 1.2rem; color: var(--ns-yellow); }
+    .plan-option__badge      {
+      font-size: 0.55rem; background: var(--ns-yellow); color: var(--ns-black);
+      padding: 2px 5px; border-radius: 3px; font-weight: 800;
+      letter-spacing: 0.06em; text-transform: uppercase; margin-left: 6px;
+    }
+
+    /* Annual toggle */
+    .billing-interval-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: var(--space-lg);
+    }
+    .interval-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: var(--radius-md);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-dim);
+      transition: all var(--transition-base);
+    }
+    .interval-btn.active {
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      border-color: var(--ns-yellow);
+    }
+
+    /* ── Action Buttons ─────────────────────────────────── */
+    .billing-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: var(--space-xl);
+    }
+    .billing-btn-primary {
+      width: 100%; padding: 14px;
+      background: var(--ns-yellow); color: var(--ns-black);
+      border: none; border-radius: var(--radius-md);
+      font-size: 0.9rem; font-weight: 800; letter-spacing: 0.06em;
+      text-transform: uppercase; cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .billing-btn-primary:hover { background: #ffd54f; box-shadow: var(--shadow-yellow); }
+    .billing-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .billing-btn-ghost {
+      width: 100%; padding: 12px;
+      background: transparent; color: var(--text-dim);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+      font-size: 0.85rem; cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .billing-btn-ghost:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
+
+    .billing-btn-danger {
+      width: 100%; padding: 12px;
+      background: transparent; color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.25); border-radius: var(--radius-md);
+      font-size: 0.85rem; cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .billing-btn-danger:hover { background: rgba(239,68,68,0.08); }
+
+    /* ── Invoice Table ──────────────────────────────────── */
+    .invoice-table { width: 100%; border-collapse: collapse; }
+    .invoice-table th {
+      font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-faint); padding: 8px 0; text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .invoice-table td {
+      font-size: 0.8rem; color: var(--text-dim); padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .invoice-table td:last-child { text-align: right; }
+    .invoice-status {
+      display: inline-block; padding: 2px 8px; border-radius: 3px;
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    }
+    .invoice-status--paid    { background: rgba(22,163,74,0.15); color: var(--expenses-green); }
+    .invoice-status--pending { background: rgba(255,193,7,0.15);  color: var(--ns-yellow); }
+    .invoice-download { color: var(--ns-yellow); text-decoration: none; font-size: 0.75rem; }
+    .invoice-download:hover { text-decoration: underline; }
+
+    /* ── Test Mode Banner ───────────────────────────────── */
+    #test-mode-banner {
+      background: rgba(220, 38, 38, 0.12);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      margin-bottom: var(--space-lg);
+      font-size: 0.8rem;
+      color: #f87171;
+      display: none;
+    }
+
+    /* ── Error ──────────────────────────────────────────── */
+    #billing-error {
+      background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220,38,38,0.3);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      font-size: 0.8rem; color: #f87171; display: none; margin-bottom: var(--space-md);
+    }
+
+    /* ── Loading ────────────────────────────────────────── */
+    #billing-loading {
+      position: fixed; inset: 0;
+      background: rgba(10,10,10,0.85); z-index: var(--z-overlay);
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+    }
+    .billing-spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--border-subtle);
+      border-top-color: var(--ns-yellow);
+      border-radius: 50%; animation: bill-spin 0.8s linear infinite;
+    }
+    @keyframes bill-spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Nav ───────────────────────────────────────────────── -->
+  <nav class="billing-nav">
+    <button class="billing-nav__back" onclick="window.location.href='/hub.html'">←</button>
+    <div class="billing-nav__title">BILLING & PLAN</div>
+  </nav>
+
+  <!-- ── Content ───────────────────────────────────────────── -->
+  <div class="billing-content">
+
+    <!-- Test mode warning -->
+    <div id="test-mode-banner">⚠️ TEST MODE — Use card 4242 4242 4242 4242</div>
+
+    <!-- Error -->
+    <div id="billing-error"></div>
+
+    <!-- Current Plan Card -->
+    <div class="plan-card" id="current-plan-card">
+      <div class="plan-card__label">Current Plan</div>
+      <div class="plan-card__name" id="current-plan-name">Loading...</div>
+      <div class="plan-card__detail" id="current-plan-price"></div>
+
+      <div class="plan-card__row">
+        <span class="plan-card__row-label">Next billing date</span>
+        <span class="plan-card__row-val" id="next-billing-date">—</span>
+      </div>
+      <div class="plan-card__row">
+        <span class="plan-card__row-label">Payment method</span>
+        <span class="plan-card__row-val" id="payment-method">—</span>
+      </div>
+    </div>
+
+    <!-- Change Plan -->
+    <div class="billing-section-title">Change Plan</div>
+
+    <div class="billing-interval-toggle">
+      <button class="interval-btn active" id="btn-monthly" onclick="setInterval('monthly')">Monthly</button>
+      <button class="interval-btn"        id="btn-annual"  onclick="setInterval('annual')">Annual (Save up to 18%)</button>
+    </div>
+
+    <div class="plan-options" id="plan-options">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Actions -->
+    <div class="billing-actions">
+      <button class="billing-btn-primary" id="change-plan-btn" onclick="changePlan()">
+        Update Plan
+      </button>
+      <button class="billing-btn-ghost" onclick="openCustomerPortal()">
+        Manage in Billing Portal
+      </button>
+      <button class="billing-btn-danger" onclick="openCustomerPortal()">
+        Cancel Subscription
+      </button>
+    </div>
+
+    <!-- Invoice History -->
+    <div class="billing-section-title">Invoice History</div>
+    <table class="invoice-table" id="invoice-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="invoice-body">
+        <tr><td colspan="4" style="color:var(--text-faint);font-size:0.8rem;">Loading invoices...</td></tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <!-- ── Loading Overlay ──────────────────────────────────── -->
+  <div id="billing-loading">
+    <div class="billing-spinner"></div>
+    <div style="font-size:0.8rem;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;">Processing...</div>
+  </div>
+
+  <!-- ── Scripts ──────────────────────────────────────────── -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/stripe-config.js"></script>
+  <script src="/billing.js"></script>
+
+  <script>
+    /* ── Billing Page Logic ──────────────────────────────── */
+    let selectedInterval = 'monthly';
+    let selectedPlan     = null;
+
+    // Show test mode banner
+    if (STRIPE_CONFIG.isTestMode) {
+      document.getElementById('test-mode-banner').style.display = 'block';
+    }
+
+    // Wait for auth to load
+    MPS_Auth.onAuthReady((user, userDoc) => {
+      if (!user) {
+        window.location.href = '/auth.html';
+        return;
+      }
+      window.__MPS_USER = userDoc;
+      renderCurrentPlan(userDoc);
+      renderPlanOptions(userDoc);
+      loadInvoices(userDoc);
+    });
+
+    function renderCurrentPlan(userDoc) {
+      if (!userDoc) return;
+      const plan = STRIPE_CONFIG.plans[userDoc.tier] || STRIPE_CONFIG.plans.single;
+      document.getElementById('current-plan-name').textContent  = plan.label;
+      document.getElementById('current-plan-price').textContent = `$${plan.monthly}/mo`;
+      // next billing date and payment method come from Stripe via backend
+      // Placeholder until /api/billing-info is wired
+      document.getElementById('next-billing-date').textContent = '—';
+      document.getElementById('payment-method').textContent    = '—';
+    }
+
+    function setInterval(interval) {
+      selectedInterval = interval;
+      document.getElementById('btn-monthly').classList.toggle('active', interval === 'monthly');
+      document.getElementById('btn-annual').classList.toggle('active',  interval === 'annual');
+      renderPlanOptions(window.__MPS_USER);
+    }
+
+    function renderPlanOptions(userDoc) {
+      const container = document.getElementById('plan-options');
+      container.innerHTML = '';
+      const currentTier = userDoc ? userDoc.tier : 'single';
+
+      Object.entries(STRIPE_CONFIG.plans).forEach(([key, plan]) => {
+        const isCurrent = key === currentTier;
+        const price     = selectedInterval === 'annual' ? plan.annual : plan.monthly;
+        const priceStr  = selectedInterval === 'annual' ? `$${plan.annual}/yr` : `$${plan.monthly}/mo`;
+
+        const el = document.createElement('div');
+        el.className = `plan-option${isCurrent ? ' current' : ''}${selectedPlan === key ? ' selected' : ''}`;
+        el.innerHTML = `
+          <div>
+            <div class="plan-option__name">
+              ${plan.label}
+              ${plan.featured ? '<span class="plan-option__badge">Best Value</span>' : ''}
+              ${isCurrent     ? '<span class="plan-option__badge" style="background:#1a1a1a;color:var(--text-dim);border:1px solid var(--border-subtle)">Current</span>' : ''}
+            </div>
+            <div class="plan-option__desc">${plan.description}</div>
+          </div>
+          <div class="plan-option__price">${priceStr}</div>
+        `;
+
+        if (!isCurrent) {
+          el.addEventListener('click', () => {
+            selectedPlan = key;
+            renderPlanOptions(userDoc);
+          });
+        }
+
+        container.appendChild(el);
+      });
+
+      document.getElementById('change-plan-btn').disabled = !selectedPlan || selectedPlan === currentTier;
+    }
+
+    function changePlan() {
+      if (!selectedPlan) return;
+      startStripeCheckout(selectedPlan, selectedInterval);
+    }
+
+    async function loadInvoices(userDoc) {
+      // TODO: fetch from /api/invoices once backend is wired
+      // Placeholder rows
+      const tbody = document.getElementById('invoice-body');
+      tbody.innerHTML = `
+        <tr>
+          <td>—</td>
+          <td>—</td>
+          <td><span class="invoice-status invoice-status--pending">Pending setup</span></td>
+          <td>—</td>
+        </tr>
+      `;
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFC107" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <title>MPS — North Star Hub</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="/shared/styles.css" />
+
+  <style>
+    /* ─────────────────────────────────────────────────────────
+       NORTH STAR HUB — STYLES
+    ───────────────────────────────────────────────────────── */
+
+    body {
+      background: var(--ns-black);
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    .hub-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px var(--space-lg);
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .hub-logo-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hub-logo {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      color: var(--ns-white);
+      line-height: 1;
+      letter-spacing: 0.04em;
+    }
+
+    .hub-logo-underline {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: var(--ns-yellow);
+      margin-top: 3px;
+    }
+
+    .hub-wordmark {
+      font-size: 0.55rem;
+      letter-spacing: 0.35em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .hub-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .hub-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 2px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--ns-yellow);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .hub-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* User dropdown */
+    .user-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: #1a1a1a;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      min-width: 160px;
+      box-shadow: var(--shadow-elevated);
+      z-index: var(--z-dropdown);
+      display: none;
+    }
+
+    .user-dropdown.open { display: block; }
+
+    .user-dropdown__name {
+      padding: 12px 16px 8px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .user-dropdown__item {
+      display: block;
+      width: 100%;
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      text-align: left;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .user-dropdown__item:hover {
+      background: var(--card-bg);
+    }
+
+    .user-dropdown__item--danger {
+      color: #ef4444;
+    }
+
+    /* ── Welcome Bar ───────────────────────────────────────── */
+    .hub-welcome {
+      padding: 24px var(--space-lg) 0;
+    }
+
+    .hub-welcome__greeting {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      color: var(--ns-yellow);
+      letter-spacing: 0.06em;
+    }
+
+    .hub-welcome__plan {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .hub-welcome__plan span {
+      color: var(--ns-yellow);
+    }
+
+    /* ── App Grid ──────────────────────────────────────────── */
+    .app-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+      padding: var(--space-lg);
+    }
+
+    /* Last tile (5th) spans full width if it's the only one in its row */
+    .app-tile:nth-child(5):nth-last-child(1) {
+      grid-column: 1 / -1;
+    }
+
+    /* ── App Tile ──────────────────────────────────────────── */
+    .app-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--ns-yellow);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg) var(--space-md);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 140px;
+      text-decoration: none;
+    }
+
+    .app-tile:hover:not(.locked) {
+      background: var(--card-bg-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .app-tile.locked {
+      opacity: 0.55;
+      border-left-color: var(--text-faint);
+      cursor: pointer;
+    }
+
+    .app-tile.locked:hover {
+      opacity: 0.7;
+    }
+
+    .app-tile__icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .app-tile__name {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+    }
+
+    .app-tile__tag {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .app-tile__action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .app-tile__open {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ns-yellow);
+    }
+
+    .app-tile__unlock {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .lock-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.8rem;
+      opacity: 0.5;
+    }
+
+    /* App-specific accent colors when unlocked */
+    .app-tile[data-app="workout"]:not(.locked) { border-left-color: var(--workout-blue); }
+    .app-tile[data-app="habits"]:not(.locked)  { border-left-color: var(--habits-red); }
+    .app-tile[data-app="sleep"]:not(.locked)   { border-left-color: var(--sleep-gold); }
+    .app-tile[data-app="expenses"]:not(.locked){ border-left-color: var(--expenses-green); }
+    .app-tile[data-app="journal"]:not(.locked) { border-left-color: var(--sleep-purple); }
+
+    /* ── Upgrade Sheet ─────────────────────────────────────── */
+    .upgrade-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: var(--z-overlay);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-base);
+    }
+
+    .upgrade-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .upgrade-sheet {
+      background: #111;
+      border-top: 2px solid var(--ns-yellow);
+      border-radius: 16px 16px 0 0;
+      padding: var(--space-xl) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom));
+      width: 100%;
+      max-width: 480px;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .upgrade-overlay.open .upgrade-sheet {
+      transform: translateY(0);
+    }
+
+    .upgrade-sheet__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-lg);
+    }
+
+    .upgrade-sheet__title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--ns-white);
+      letter-spacing: 0.06em;
+    }
+
+    .upgrade-sheet__close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .upgrade-sheet__current {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: var(--space-lg);
+    }
+
+    .upgrade-sheet__current-label {
+      font-size: 0.7rem;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .upgrade-sheet__current-plan {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .upgrade-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: var(--space-lg);
+    }
+
+    .upgrade-option {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+
+    .upgrade-option:hover {
+      border-color: var(--ns-yellow);
+      background: rgba(255, 193, 7, 0.05);
+    }
+
+    .upgrade-option--featured {
+      border-color: var(--ns-yellow);
+      background: rgba(255, 193, 7, 0.06);
+    }
+
+    .upgrade-option__label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .upgrade-option__price {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--ns-yellow);
+      letter-spacing: 0.04em;
+    }
+
+    .upgrade-option__badge {
+      font-size: 0.6rem;
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-left: 6px;
+    }
+
+    .upgrade-sheet__cta {
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      border: none;
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+
+    .upgrade-sheet__cta:hover {
+      background: #ffd54f;
+      box-shadow: var(--shadow-yellow);
+    }
+
+    /* ── Footer ────────────────────────────────────────────── */
+    .hub-footer {
+      padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+      text-align: center;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: var(--space-md);
+    }
+
+    .hub-footer__copy {
+      font-size: 0.72rem;
+      color: var(--text-faint);
+    }
+
+    .hub-footer__links {
+      display: flex;
+      gap: var(--space-md);
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .hub-footer__links a {
+      font-size: 0.72rem;
+      color: var(--text-faint);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .hub-footer__links a:hover {
+      color: var(--text-dim);
+    }
+
+    /* ── Dev Panel ─────────────────────────────────────────── */
+    #dev-panel-btn {
+      position: fixed;
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      left: 16px;
+      background: #1a1a1a;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      cursor: pointer;
+      z-index: var(--z-devpanel);
+      display: none; /* shown only for developer role */
+    }
+
+    #dev-panel-btn:hover {
+      border-color: var(--ns-yellow);
+      color: var(--ns-yellow);
+    }
+
+    .dev-panel {
+      position: fixed;
+      bottom: calc(60px + env(safe-area-inset-bottom));
+      left: 16px;
+      background: #1a1a1a;
+      border: 1px solid var(--ns-yellow);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      z-index: var(--z-devpanel);
+      min-width: 220px;
+      box-shadow: var(--shadow-elevated);
+      display: none;
+    }
+
+    .dev-panel.open { display: block; }
+
+    .dev-panel__title {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ns-yellow);
+      margin-bottom: var(--space-md);
+      font-weight: 700;
+    }
+
+    .dev-tier-btn {
+      display: block;
+      width: 100%;
+      padding: 7px 12px;
+      margin-bottom: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all var(--transition-fast);
+    }
+
+    .dev-tier-btn:hover,
+    .dev-tier-btn.active {
+      border-color: var(--ns-yellow);
+      color: var(--ns-yellow);
+      background: rgba(255, 193, 7, 0.06);
+    }
+
+    .dev-panel__note {
+      font-size: 0.65rem;
+      color: var(--text-faint);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header class="hub-header">
+    <div class="hub-logo-block">
+      <div class="hub-logo">MPS<span class="hub-logo-underline"></span></div>
+      <div class="hub-wordmark">Modular Performance</div>
+    </div>
+
+    <div class="hub-user" id="user-menu-trigger">
+      <div class="hub-avatar" id="user-avatar">JH</div>
+
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="user-dropdown__name" id="user-dropdown-name">Jeff Huber</div>
+        <button class="user-dropdown__item" onclick="goToBilling()">Billing &amp; Plan</button>
+        <button class="user-dropdown__item user-dropdown__item--danger" onclick="signOutUser()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Welcome Bar ─────────────────────────────────────────── -->
+  <div class="hub-welcome">
+    <div class="hub-welcome__greeting" id="welcome-greeting">WELCOME BACK, JEFF</div>
+    <div class="hub-welcome__plan">
+      Current plan: <span id="plan-label">All-Access</span>
+    </div>
+  </div>
+
+  <!-- ── App Grid ────────────────────────────────────────────── -->
+  <div class="app-grid" id="app-grid">
+
+    <!-- Workout -->
+    <div class="app-tile" data-app="workout" id="tile-workout" onclick="openApp('workout')">
+      <div class="app-tile__icon">💪</div>
+      <div class="app-tile__name">MPS WORKOUT</div>
+      <div class="app-tile__tag">Lifting, conditioning &amp; skill tracking</div>
+      <div class="app-tile__action">
+        <span class="app-tile__open">Open →</span>
+      </div>
+    </div>
+
+    <!-- Habits -->
+    <div class="app-tile" data-app="habits" id="tile-habits" onclick="openApp('habits')">
+      <div class="app-tile__icon">🔴</div>
+      <div class="app-tile__name">MPS HABITS</div>
+      <div class="app-tile__tag">Build the systems that build you</div>
+      <div class="app-tile__action">
+        <span class="app-tile__open">Open →</span>
+      </div>
+    </div>
+
+    <!-- Sleep -->
+    <div class="app-tile" data-app="sleep" id="tile-sleep" onclick="openApp('sleep')">
+      <div class="app-tile__icon">🌙</div>
+      <div class="app-tile__name">MPS SLEEP</div>
+      <div class="app-tile__tag">Track recovery. Perform better.</div>
+      <div class="app-tile__action">
+        <span class="app-tile__open">Open →</span>
+      </div>
+    </div>
+
+    <!-- Expenses -->
+    <div class="app-tile" data-app="expenses" id="tile-expenses" onclick="openApp('expenses')">
+      <div class="app-tile__icon">💚</div>
+      <div class="app-tile__name">MPS EXPENSES</div>
+      <div class="app-tile__tag">Your money, systemized.</div>
+      <div class="app-tile__action">
+        <span class="app-tile__open">Open →</span>
+      </div>
+    </div>
+
+    <!-- Journal -->
+    <div class="app-tile" data-app="journal" id="tile-journal" onclick="openApp('journal')">
+      <div class="app-tile__icon">📖</div>
+      <div class="app-tile__name">MPS JOURNAL</div>
+      <div class="app-tile__tag">Faith, reflection, and growth.</div>
+      <div class="app-tile__action">
+        <span class="app-tile__open">Open →</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer class="hub-footer">
+    <div class="hub-footer__copy">Modular Performance © 2026</div>
+    <div class="hub-footer__links">
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/terms.html">Terms</a>
+      <a href="mailto:support@modularperformance.com">Support</a>
+    </div>
+  </footer>
+
+  <!-- ── Upgrade Sheet ───────────────────────────────────────── -->
+  <div class="upgrade-overlay" id="upgrade-overlay" onclick="closeUpgradeSheet(event)">
+    <div class="upgrade-sheet" id="upgrade-sheet">
+      <div class="upgrade-sheet__header">
+        <div class="upgrade-sheet__title" id="upgrade-title">UNLOCK APP</div>
+        <button class="upgrade-sheet__close" onclick="closeUpgradeSheet()">✕</button>
+      </div>
+
+      <div class="upgrade-sheet__current">
+        <div class="upgrade-sheet__current-label">Current Plan</div>
+        <div class="upgrade-sheet__current-plan" id="current-plan-display">MPS Single — $5.99/mo</div>
+      </div>
+
+      <div class="upgrade-options" id="upgrade-options">
+        <!-- Populated by JS based on which app was tapped -->
+      </div>
+
+      <button class="upgrade-sheet__cta" id="upgrade-cta" onclick="startCheckout()">
+        Upgrade Now
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Dev Panel ───────────────────────────────────────────── -->
+  <button id="dev-panel-btn" onclick="toggleDevPanel()">⚙️ DEV</button>
+
+  <div class="dev-panel" id="dev-panel">
+    <div class="dev-panel__title">⚙️ Dev Preview Mode</div>
+    <button class="dev-tier-btn" data-tier="none"       onclick="previewTier('none')">Free (all locked)</button>
+    <button class="dev-tier-btn" data-tier="single"     onclick="previewTier('single')">Single (1 app)</button>
+    <button class="dev-tier-btn" data-tier="duo"        onclick="previewTier('duo')">Duo (2 apps)</button>
+    <button class="dev-tier-btn" data-tier="trio"       onclick="previewTier('trio')">Trio (3 apps)</button>
+    <button class="dev-tier-btn active" data-tier="all" onclick="previewTier('all')">All-Access (all unlocked)</button>
+    <div class="dev-panel__note">Preview only — real user data is never touched.</div>
+  </div>
+
+  <!-- ── Toast ───────────────────────────────────────────────── -->
+  <div class="toast" id="hub-toast"></div>
+
+  <!-- ── Scripts ─────────────────────────────────────────────── -->
+  <script>
+    /* ════════════════════════════════════════════════════════
+       NORTH STAR HUB — CORE LOGIC
+       ════════════════════════════════════════════════════════ */
+
+    // ── App Config ────────────────────────────────────────────
+    const APPS = [
+      { id: 'workout',  name: 'MPS WORKOUT',  path: '/apps/workout/',  price: 5.99,  priceId: 'price_workout_monthly' },
+      { id: 'habits',   name: 'MPS HABITS',   path: '/apps/habits/',   price: 5.99,  priceId: 'price_habits_monthly' },
+      { id: 'sleep',    name: 'MPS SLEEP',    path: '/apps/sleep/',    price: 5.99,  priceId: 'price_sleep_monthly' },
+      { id: 'expenses', name: 'MPS EXPENSES', path: '/apps/expenses/', price: 5.99,  priceId: 'price_expenses_monthly' },
+      { id: 'journal',  name: 'MPS JOURNAL',  path: '/apps/journal/',  price: 5.99,  priceId: 'price_journal_monthly' }
+    ];
+
+    const TIER_APPS = {
+      none:   [],
+      single: ['workout'],
+      duo:    ['workout', 'habits'],
+      trio:   ['workout', 'habits', 'sleep'],
+      all:    ['workout', 'habits', 'sleep', 'expenses', 'journal']
+    };
+
+    // ── User State (populated by Firebase auth in Session 4) ──
+    let currentUser = {
+      name:           'Jeff',
+      email:          'jeffreyhuber86@gmail.com',
+      photoURL:       null,
+      tier:           'all',
+      apps:           ['workout', 'habits', 'sleep', 'expenses', 'journal'],
+      role:           'developer',
+      billing_bypass: true
+    };
+
+    let devPreviewTier = null;   // null = use real tier
+    let selectedUpgradeApp = null;
+
+    /* ── Init ──────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderUser();
+      renderTiles();
+      if (currentUser.role === 'developer') {
+        document.getElementById('dev-panel-btn').style.display = 'block';
+      }
+    });
+
+    /* ── Render User ───────────────────────────────────────── */
+    function renderUser() {
+      const name = currentUser.name || 'User';
+      document.getElementById('welcome-greeting').textContent = `WELCOME BACK, ${name.split(' ')[0].toUpperCase()}`;
+      document.getElementById('user-dropdown-name').textContent = name;
+
+      const tierLabel = {
+        none: 'Free', single: 'Single — $5.99/mo', duo: 'Duo — $9.99/mo',
+        trio: 'Trio — $14.99/mo', all: 'All-Access — $21.99/mo'
+      };
+      document.getElementById('plan-label').textContent = tierLabel[currentUser.tier] || currentUser.tier;
+
+      // Set avatar
+      const avatar = document.getElementById('user-avatar');
+      if (currentUser.photoURL) {
+        avatar.innerHTML = `<img src="${currentUser.photoURL}" alt="${name}" />`;
+      } else {
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        avatar.textContent = initials;
+      }
+    }
+
+    /* ── Render Tiles ──────────────────────────────────────── */
+    function renderTiles() {
+      const tier    = devPreviewTier || currentUser.tier;
+      const unlockedApps = currentUser.billing_bypass
+        ? APPS.map(a => a.id)
+        : (TIER_APPS[tier] || []);
+
+      APPS.forEach(app => {
+        const tile = document.getElementById(`tile-${app.id}`);
+        if (!tile) return;
+
+        const isUnlocked = unlockedApps.includes(app.id);
+        const actionEl   = tile.querySelector('.app-tile__action');
+
+        if (isUnlocked) {
+          tile.classList.remove('locked');
+          // Remove lock icon if present
+          const lockEl = tile.querySelector('.lock-icon');
+          if (lockEl) lockEl.remove();
+          actionEl.innerHTML = `<span class="app-tile__open">Open →</span>`;
+        } else {
+          tile.classList.add('locked');
+          // Add lock icon if not already there
+          if (!tile.querySelector('.lock-icon')) {
+            const lock = document.createElement('span');
+            lock.className = 'lock-icon';
+            lock.textContent = '🔒';
+            tile.prepend(lock);
+          }
+          actionEl.innerHTML = `<span class="app-tile__unlock">Unlock →</span>`;
+        }
+      });
+    }
+
+    /* ── Open App ──────────────────────────────────────────── */
+    function openApp(appId) {
+      const tier = devPreviewTier || currentUser.tier;
+      const unlockedApps = currentUser.billing_bypass
+        ? APPS.map(a => a.id)
+        : (TIER_APPS[tier] || []);
+
+      if (unlockedApps.includes(appId)) {
+        const app = APPS.find(a => a.id === appId);
+        if (app) window.location.href = app.path;
+      } else {
+        openUpgradeSheet(appId);
+      }
+    }
+
+    /* ── Upgrade Sheet ─────────────────────────────────────── */
+    function openUpgradeSheet(appId) {
+      selectedUpgradeApp = appId;
+      const app = APPS.find(a => a.id === appId);
+      const tier = currentUser.tier;
+
+      document.getElementById('upgrade-title').textContent = `UNLOCK ${app ? app.name : 'APP'}`;
+
+      const tierLabel = {
+        none: 'Free — $0/mo', single: 'Single — $5.99/mo', duo: 'Duo — $9.99/mo',
+        trio: 'Trio — $14.99/mo', all: 'All-Access — $21.99/mo'
+      };
+      document.getElementById('current-plan-display').textContent = tierLabel[tier] || 'Free';
+
+      // Build upgrade options
+      const options = document.getElementById('upgrade-options');
+      options.innerHTML = `
+        <div class="upgrade-option" onclick="selectUpgradePlan('duo')">
+          <div>
+            <div class="upgrade-option__label">Add this app</div>
+            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">Upgrade to Duo</div>
+          </div>
+          <div class="upgrade-option__price">+$4/mo</div>
+        </div>
+        <div class="upgrade-option upgrade-option--featured" onclick="selectUpgradePlan('all')">
+          <div>
+            <div class="upgrade-option__label">
+              Go All-Access
+              <span class="upgrade-option__badge">Best Value</span>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">All 5 apps, now + future</div>
+          </div>
+          <div class="upgrade-option__price">$21.99/mo</div>
+        </div>
+      `;
+
+      document.getElementById('upgrade-overlay').classList.add('open');
+    }
+
+    let selectedPlan = 'all';
+    function selectUpgradePlan(plan) {
+      selectedPlan = plan;
+      document.querySelectorAll('.upgrade-option').forEach(el => el.style.borderColor = '');
+      event.currentTarget.style.borderColor = 'var(--ns-yellow)';
+    }
+
+    function closeUpgradeSheet(event) {
+      if (event && event.target !== document.getElementById('upgrade-overlay') &&
+          !event.target.classList.contains('upgrade-sheet__close')) {
+        return;
+      }
+      document.getElementById('upgrade-overlay').classList.remove('open');
+    }
+
+    function startCheckout() {
+      // TODO (Session 5): wire to Stripe Checkout
+      showToast('Stripe checkout coming in Session 5 🔧');
+      document.getElementById('upgrade-overlay').classList.remove('open');
+    }
+
+    /* ── User Menu ─────────────────────────────────────────── */
+    document.getElementById('user-menu-trigger').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('user-dropdown').classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => {
+      document.getElementById('user-dropdown').classList.remove('open');
+    });
+
+    function goToBilling() {
+      window.location.href = '/billing.html';
+    }
+
+    function signOutUser() {
+      // TODO (Session 4): firebase.auth().signOut()
+      showToast('Sign-out wired in Session 4');
+    }
+
+    /* ── Dev Panel ─────────────────────────────────────────── */
+    function toggleDevPanel() {
+      document.getElementById('dev-panel').classList.toggle('open');
+    }
+
+    function previewTier(tier) {
+      devPreviewTier = tier === 'all' ? null : tier;
+
+      // Update active button
+      document.querySelectorAll('.dev-tier-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tier === tier);
+      });
+
+      renderTiles();
+      showToast(`DEV: Previewing ${tier === 'all' ? 'All-Access' : tier} tier`);
+    }
+
+    /* ── Toast ─────────────────────────────────────────────── */
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('hub-toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  </script>
+
+</body>
+</html>

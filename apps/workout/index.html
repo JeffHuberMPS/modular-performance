@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MPS Workout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="/shared/styles.css" />
+  <link rel="stylesheet" href="/apps/workout/workout.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+  <script src="/shared/auth-guard.js"></script>
+</head>
+<body>
+  <!-- Top nav -->
+  <nav class="app-nav">
+    <a href="/hub.html" class="nav-back">&#8592; HUB</a>
+    <span class="nav-title">MPS WORKOUT</span>
+    <span class="nav-spacer"></span>
+  </nav>
+
+  <!-- Coming Soon -->
+  <div class="coming-soon">
+    <div class="cs-logo">MPS</div>
+    <div class="cs-app">WORKOUT TRACKER</div>
+    <p class="cs-copy">Full tracker deploying soon. Your data and 6-week program will be here.</p>
+    <a href="/hub.html" class="btn btn-ghost" style="margin-top:32px">Back to Hub</a>
+  </div>
+
+  <script>
+    // Auth guard — ensures user is signed in and has workout app
+    document.addEventListener('DOMContentLoaded', function() {
+      MPS_GUARD.protect('workout');
+    });
+  </script>
+</body>
+</html>

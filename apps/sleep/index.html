@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MPS Sleep & Recovery</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="/shared/styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+  <script src="/shared/auth-guard.js"></script>
+</head>
+<body>
+  <nav style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.9);position:sticky;top:0;z-index:100">
+    <a href="/hub.html" style="color:#c9a86b;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;text-transform:uppercase">&#8592; HUB</a>
+    <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c9a86b;letter-spacing:0.08em;flex:1;text-align:center">MPS SLEEP & RECOVERY</span>
+    <span style="width:60px"></span>
+  </nav>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 57px);text-align:center;padding:40px 20px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:72px;color:#c9a86b;line-height:1;letter-spacing:0.04em">MPS</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text-dim);letter-spacing:0.12em;margin:4px 0 24px">SLEEP & RECOVERY</div>
+    <p style="color:var(--text-dim);max-width:320px;line-height:1.6">Coming soon. This app is in your plan — full build deploying shortly.</p>
+    <a href="/hub.html" class="btn btn-ghost" style="margin-top:32px">Back to Hub</a>
+  </div>
+  <script>document.addEventListener('DOMContentLoaded', function() { MPS_GUARD.protect('sleep'); });</script>
+</body>
+</html>

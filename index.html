@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFC107" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MPS" />
+  <meta name="description" content="Every system. One platform. Built for the ones who don't quit." />
+  <title>Modular Performance</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
+  <style>
+    html, body { margin:0; padding:0; background:#0a0a0a; }
+  </style>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+</head>
+<body>
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').catch(console.warn);
+    }
+
+    // Auth check: signed-in → hub, signed-out → landing
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        window.location.replace('/hub.html');
+      } else {
+        window.location.replace('/landing.html');
+      }
+    });
+  </script>
+</body>
+</html>
