@@ -11,7 +11,7 @@
    Setup:
    1. Deploy to Vercel
    2. In Stripe Dashboard → Developers → Webhooks:
-      Add endpoint: https://modularperformance.com/api/webhook
+      Add endpoint: https://modular-performance.com/api/webhook
       Events: select all four above
    3. Copy the signing secret → add to Vercel env vars as STRIPE_WEBHOOK_SECRET
    ============================================================ */

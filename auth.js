@@ -105,28 +105,4 @@ window.MPS_AUTH = (function() {
   async function sendPhoneSMS(phoneNumber, containerId) {
     initRecaptcha(containerId);
     confirmationResult = await firebase.auth().signInWithPhoneNumber(
-      phoneNumber,
-      window.recaptchaVerifier
-    );
-    return confirmationResult;
-  }
-
-  async function verifyPhoneCode(code) {
-    if (!confirmationResult) throw new Error('No confirmation result — send SMS first');
-    const result = await confirmationResult.confirm(code);
-    await handlePostSignIn(result.user);
-  }
-
-  // ── Sign out ───────────────────────────────────────────────
-  async function signOut() {
-    await firebase.auth().signOut();
-    window.location.replace('/landing.html');
-  }
-
-  // ── Auth state listener ────────────────────────────────────
-  function onAuthReady(callback) {
-    return firebase.auth().onAuthStateChanged(callback);
-  }
-
-  return { signInWithGoogle, signInWithApple, sendPhoneSMS, verifyPhoneCode, signOut, onAuthReady };
-})();
+     
