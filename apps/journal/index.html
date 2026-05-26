@@ -4,26 +4,634 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>MPS Journal</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="/shared/styles.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js"></script>
   <script src="/shared/auth-guard.js"></script>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #080808; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    #root { min-height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a2018; border-radius: 2px; }
+    textarea { resize: none; }
+    #loading-screen {
+      position: fixed; inset: 0; background: #080808;
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .loading-pulse {
+      font-family: 'Bebas Neue', sans-serif; font-size: 52px;
+      color: #4a6fa5; letter-spacing: 0.12em;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  </style>
 </head>
 <body>
-  <nav style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.9);position:sticky;top:0;z-index:100">
-    <a href="/hub.html" style="color:#c9a86b;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;text-transform:uppercase">&#8592; HUB</a>
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c9a86b;letter-spacing:0.08em;flex:1;text-align:center">MPS JOURNAL</span>
-    <span style="width:60px"></span>
-  </nav>
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 57px);text-align:center;padding:40px 20px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:72px;color:#c9a86b;line-height:1;letter-spacing:0.04em">MPS</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text-dim);letter-spacing:0.12em;margin:4px 0 24px">JOURNAL</div>
-    <p style="color:var(--text-dim);max-width:320px;line-height:1.6">Coming soon. This app is in your plan — full build deploying shortly.</p>
-    <a href="/hub.html" class="btn btn-ghost" style="margin-top:32px">Back to Hub</a>
+  <div id="loading-screen">
+    <div class="loading-pulse">MPS</div>
   </div>
-  <script>document.addEventListener('DOMContentLoaded', function() { MPS_GUARD.protect('journal'); });</script>
+  <div id="root"></div>
+
+  <script>
+    window.addEventListener('load', function () {
+      MPS_GUARD.protect('journal');
+
+      firebase.auth().onAuthStateChanged(function (user) {
+        if (!user) return;
+
+        var db = firebase.firestore();
+        var uid = user.uid;
+        var COLL = 'users/' + uid + '/app_storage';
+        window.currentUser = user;
+
+        window.storage = {
+          get: function (key) {
+            return db.doc(COLL + '/jnl__' + key).get().then(function (snap) {
+              return snap.exists && snap.data().value !== undefined ? snap.data().value : null;
+            });
+          },
+          set: function (key, value) {
+            return db.doc(COLL + '/jnl__' + key).set({ value: value }).then(function () { return true; }).catch(function () { return false; });
+          },
+          delete: function (key) {
+            return db.doc(COLL + '/jnl__' + key).delete().catch(function () {});
+          },
+          list: function () {
+            return db.collection(COLL).get().then(function (snap) {
+              return snap.docs.map(function (d) { return d.id; })
+                .filter(function (k) { return k.startsWith('jnl__'); })
+                .map(function (k) { return k.slice(5); });
+            });
+          }
+        };
+
+        document.getElementById('loading-screen').style.display = 'none';
+        tryMount();
+      });
+    });
+
+    function tryMount() {
+      if (window.storage) {
+        var container = document.getElementById('root');
+        var root = ReactDOM.createRoot(container);
+        root.render(React.createElement(window.JournalApp));
+      } else {
+        setTimeout(tryMount, 100);
+      }
+    }
+  </script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    // ── THEME ─────────────────────────────────────────────────────
+    const NAVY   = '#4a6fa5';
+    const NAVYL  = '#6b8fc5';
+    const GOLD   = '#c9a86b';
+    const CREAM  = '#e8d5b0';
+    const BG     = '#080808';
+    const C1     = '#0e0c0a';
+    const C2     = '#141210';
+    const BR     = 'rgba(74,111,165,0.14)';
+    const BRG    = 'rgba(201,168,107,0.18)';
+    const BRB    = 'rgba(74,111,165,0.30)';
+
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const monthKey = d => d.slice(0, 7);
+    const monthLbl = k => { const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; };
+
+    const MOODS = [
+      { id:'locked',   label:'Locked In',  emoji:'🔥', color:'#ef4444' },
+      { id:'grinding', label:'Grinding',   emoji:'😤', color:'#f97316' },
+      { id:'neutral',  label:'Neutral',    emoji:'😐', color:'#6b7280' },
+      { id:'offday',   label:'Off Day',    emoji:'😔', color:'#4b5563' },
+      { id:'grateful', label:'Grateful',   emoji:'🙏', color:GOLD },
+    ];
+    const getMood = id => MOODS.find(m=>m.id===id) || MOODS[2];
+
+    const PROMPTS = [
+      "What are you grateful for today?",
+      "What's one win from today — no matter how small?",
+      "What challenged you? How did you respond?",
+      "What's one thing you'll do better tomorrow?",
+      "What did you do today that future Jeff would be proud of?",
+      "Who or what are you fighting for?",
+      "What scripture or quote is sitting with you right now?",
+      "What are you building toward?",
+      "Did you show up fully today?",
+      "What needs your attention that you've been avoiding?",
+    ];
+
+    // ── STORAGE ───────────────────────────────────────────────────
+    const KEY = 'journal_v1';
+    const load = () => window.storage.get(KEY).then(d => (d && typeof d === 'object' && !Array.isArray(d)) ? d : {});
+    const save = data => window.storage.set(KEY, data);
+
+    // ── SHARED ────────────────────────────────────────────────────
+    const Label = ({ children, style }) => (
+      <div style={{ color:'#4b5563', fontSize:9, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:6, ...style }}>
+        {children}
+      </div>
+    );
+
+    const Card = ({ children, style }) => (
+      <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, ...style }}>
+        {children}
+      </div>
+    );
+
+    // ── NAV ────────────────────────────────────────────────────────
+    function Nav() {
+      return (
+        <nav style={{
+          display:'flex', alignItems:'center', padding:'13px 18px',
+          borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.95)',
+          position:'sticky', top:0, zIndex:100, backdropFilter:'blur(14px)'
+        }}>
+          <a href="/hub.html" style={{ color:NAVY, fontSize:10, fontWeight:700, letterSpacing:'0.12em', textDecoration:'none', textTransform:'uppercase' }}>← Hub</a>
+          <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:17, color:NAVYL, letterSpacing:'0.1em', flex:1, textAlign:'center' }}>
+            MPS JOURNAL
+          </span>
+          <span style={{ width:48 }} />
+        </nav>
+      );
+    }
+
+    function Tabs({ tab, setTab }) {
+      return (
+        <div style={{ display:'flex', borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.9)', position:'sticky', top:47, zIndex:90 }}>
+          {['WRITE','HISTORY','INSIGHTS'].map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex:1, padding:'11px 4px', background:'none', border:'none',
+              borderBottom: tab===t ? `2px solid ${NAVY}` : '2px solid transparent',
+              color: tab===t ? NAVYL : '#374151',
+              fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:'0.08em', cursor:'pointer'
+            }}>{t}</button>
+          ))}
+        </div>
+      );
+    }
+
+    // ── WRITE VIEW ─────────────────────────────────────────────────
+    function WriteView({ entries, onSave }) {
+      const today = todayStr();
+      const existing = entries[today] || {};
+
+      const [mood,       setMood]       = useState(existing.mood || '');
+      const [entry,      setEntry]      = useState(existing.entry || '');
+      const [scripture,  setScripture]  = useState(existing.scripture || '');
+      const [wins,       setWins]       = useState(existing.wins || '');
+      const [gratitude,  setGratitude]  = useState(existing.gratitude || '');
+      const [saving,     setSaving]     = useState(false);
+      const [saved,      setSaved]      = useState(false);
+      const [prompt,     setPrompt]     = useState(() => PROMPTS[new Date().getDay() % PROMPTS.length]);
+
+      const hasContent = mood || entry.trim() || scripture.trim() || wins.trim() || gratitude.trim();
+
+      const handleSave = async () => {
+        if (!hasContent) return;
+        setSaving(true);
+        const updated = {
+          ...entries,
+          [today]: {
+            date: today,
+            mood,
+            entry: entry.trim(),
+            scripture: scripture.trim(),
+            wins: wins.trim(),
+            gratitude: gratitude.trim(),
+            updatedAt: new Date().toISOString(),
+            createdAt: existing.createdAt || new Date().toISOString(),
+          }
+        };
+        await onSave(updated);
+        setSaving(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      };
+
+      const [d, mo, yr] = (() => {
+        const dt = new Date();
+        return [DAYS[dt.getDay()], MONTHS[dt.getMonth()], dt.getFullYear()];
+      })();
+      const dayNum = new Date().getDate();
+
+      const textarea = {
+        width:'100%', background:C2, border:`1px solid ${BR}`, borderRadius:10,
+        padding:'12px 14px', color:'#e5e7eb', fontSize:13, outline:'none',
+        fontFamily:"'Inter',sans-serif", lineHeight:1.7, minHeight:100,
+        caretColor: NAVYL
+      };
+
+      return (
+        <div style={{ padding:'18px 15px', maxWidth:520, margin:'0 auto' }}>
+
+          {/* Date header */}
+          <div style={{ marginBottom:18, display:'flex', alignItems:'baseline', gap:10 }}>
+            <div>
+              <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:42, color:'#fff', lineHeight:1 }}>{d.toUpperCase()}</div>
+              <div style={{ color:'#374151', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600 }}>{mo} {dayNum}, {yr}</div>
+            </div>
+            {existing.updatedAt && (
+              <div style={{ marginLeft:'auto', color:'#1f2d1f', fontSize:9, letterSpacing:'0.08em', textAlign:'right' }}>
+                Saved<br/>{new Date(existing.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+              </div>
+            )}
+          </div>
+
+          {/* Mood selector */}
+          <div style={{ marginBottom:16 }}>
+            <Label>Mood</Label>
+            <div style={{ display:'flex', gap:8 }}>
+              {MOODS.map(m => (
+                <button key={m.id} onClick={() => setMood(mood===m.id?'':m.id)} style={{
+                  flex:1, padding:'10px 4px', background: mood===m.id ? 'rgba(74,111,165,0.12)' : C2,
+                  border:`1px solid ${mood===m.id ? NAVY : BR}`, borderRadius:10,
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', transition:'all 0.15s'
+                }}>
+                  <span style={{ fontSize:18 }}>{m.emoji}</span>
+                  <span style={{ fontSize:8, color: mood===m.id ? NAVYL : '#374151', fontWeight:600, letterSpacing:'0.04em', textAlign:'center', lineHeight:1.2 }}>
+                    {m.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Prompt card */}
+          <div style={{
+            background:`linear-gradient(135deg,${C1},#0d0c10)`,
+            border:`1px solid ${BRB}`, borderRadius:12, padding:'14px 16px', marginBottom:16,
+            position:'relative'
+          }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+              <Label style={{ marginBottom:0 }}>Today's Prompt</Label>
+              <button onClick={() => setPrompt(PROMPTS[Math.floor(Math.random()*PROMPTS.length)])} style={{
+                background:'none', border:'none', color:'#374151', fontSize:10, cursor:'pointer', letterSpacing:'0.06em', fontWeight:600, textTransform:'uppercase'
+              }}>↻</button>
+            </div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontStyle:'italic', color:CREAM, fontSize:13, lineHeight:1.6, opacity:0.75 }}>
+              "{prompt}"
+            </div>
+          </div>
+
+          {/* Main entry */}
+          <div style={{ marginBottom:14 }}>
+            <Label>Journal Entry</Label>
+            <textarea
+              value={entry}
+              onChange={e => setEntry(e.target.value)}
+              placeholder="Write freely. No one's watching..."
+              rows={6}
+              style={textarea}
+            />
+          </div>
+
+          {/* Wins */}
+          <div style={{ marginBottom:14 }}>
+            <Label>Today's Win(s)</Label>
+            <textarea
+              value={wins}
+              onChange={e => setWins(e.target.value)}
+              placeholder="One win — big or small..."
+              rows={2}
+              style={{ ...textarea, minHeight:60 }}
+            />
+          </div>
+
+          {/* Gratitude */}
+          <div style={{ marginBottom:14 }}>
+            <Label>Gratitude</Label>
+            <textarea
+              value={gratitude}
+              onChange={e => setGratitude(e.target.value)}
+              placeholder="What are you thankful for?"
+              rows={2}
+              style={{ ...textarea, minHeight:60 }}
+            />
+          </div>
+
+          {/* Scripture */}
+          <div style={{ marginBottom:22 }}>
+            <Label>Scripture / Verse</Label>
+            <div style={{
+              background:C2, border:`1px solid ${BRG}`, borderRadius:10, padding:'12px 14px',
+              display:'flex', alignItems:'flex-start', gap:10
+            }}>
+              <span style={{ fontSize:16, marginTop:1 }}>📖</span>
+              <input
+                type="text"
+                value={scripture}
+                onChange={e => setScripture(e.target.value)}
+                placeholder='e.g. "I can do all things" — Phil 4:13'
+                style={{ flex:1, background:'none', border:'none', outline:'none', color:CREAM, fontSize:13, fontFamily:"'Inter',sans-serif" }}
+              />
+            </div>
+          </div>
+
+          {/* Save */}
+          <button onClick={handleSave} disabled={!hasContent||saving} style={{
+            width:'100%', padding:'14px',
+            background: saved ? 'rgba(74,111,165,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,#2a4a80,${NAVY})` : C1,
+            border: saved ? `1px solid ${NAVY}` : 'none',
+            borderRadius:10, color: saved ? NAVYL : '#fff',
+            fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em',
+            cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
+          }}>
+            {saved ? '✓ SAVED' : saving ? 'SAVING...' : 'SAVE ENTRY'}
+          </button>
+        </div>
+      );
+    }
+
+    // ── HISTORY VIEW ───────────────────────────────────────────────
+    function HistoryView({ entries }) {
+      const now = new Date();
+      const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const [selMonth, setSelMonth] = useState(curM);
+      const [expanded, setExpanded] = useState(null);
+
+      const allDates   = Object.keys(entries).sort((a,b) => b.localeCompare(a));
+      const allMonths  = [...new Set(allDates.map(d => monthKey(d)))].sort((a,b) => b.localeCompare(a));
+      const monthDates = allDates.filter(d => monthKey(d) === selMonth);
+
+      return (
+        <div style={{ padding:'18px 15px', maxWidth:520, margin:'0 auto' }}>
+          {/* Month pills */}
+          <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:4, marginBottom:16 }}>
+            {allMonths.length === 0 && <div style={{ color:'#374151', fontSize:12 }}>No entries yet</div>}
+            {allMonths.map(m => (
+              <button key={m} onClick={() => setSelMonth(m)} style={{
+                flexShrink:0, padding:'5px 11px',
+                background: selMonth===m ? 'rgba(74,111,165,0.14)' : C1,
+                border:`1px solid ${selMonth===m ? NAVY : BR}`,
+                borderRadius:6, color: selMonth===m ? NAVYL : '#374151',
+                fontSize:10, fontWeight:700, letterSpacing:'0.06em', cursor:'pointer'
+              }}>{monthLbl(m)}</button>
+            ))}
+          </div>
+
+          {monthDates.length === 0
+            ? <div style={{ color:'#374151', fontSize:13, textAlign:'center', padding:'32px 0' }}>No entries this month</div>
+            : monthDates.map(dateStr => {
+                const e = entries[dateStr];
+                const mood = getMood(e.mood);
+                const [yr,mo,dd] = dateStr.split('-');
+                const dt = new Date(+yr,+mo-1,+dd);
+                const lbl = DAYS[dt.getDay()]+', '+MONTHS[dt.getMonth()]+' '+dd;
+                const isOpen = expanded === dateStr;
+
+                return (
+                  <div key={dateStr} style={{ marginBottom:10 }}>
+                    <button onClick={() => setExpanded(isOpen ? null : dateStr)} style={{
+                      width:'100%', background: isOpen ? 'rgba(74,111,165,0.08)' : C1,
+                      border:`1px solid ${isOpen ? BRB : BR}`, borderRadius: isOpen ? '12px 12px 0 0' : 12,
+                      padding:'13px 15px', cursor:'pointer', textAlign:'left',
+                      display:'flex', alignItems:'center', gap:12, transition:'all 0.2s'
+                    }}>
+                      <div style={{
+                        width:38, height:38, borderRadius:8, background:'rgba(74,111,165,0.07)',
+                        border:`1px solid ${BR}`, display:'flex', flexDirection:'column',
+                        alignItems:'center', justifyContent:'center', flexShrink:0
+                      }}>
+                        <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:18, color:NAVYL, lineHeight:1 }}>{dd}</div>
+                        <div style={{ fontSize:8, color:'#374151', fontWeight:600, letterSpacing:'0.06em' }}>{MONTHS[+mo-1].toUpperCase()}</div>
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ color:'#d1d5db', fontSize:13, fontWeight:500 }}>{lbl}</div>
+                        <div style={{ color:'#4b5563', fontSize:11, marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          {e.entry ? e.entry.slice(0, 60) + (e.entry.length > 60 ? '…' : '') : 'No entry text'}
+                        </div>
+                      </div>
+                      {e.mood && <span style={{ fontSize:18 }}>{mood.emoji}</span>}
+                      <span style={{ color:'#374151', fontSize:12 }}>{isOpen?'▲':'▼'}</span>
+                    </button>
+
+                    {isOpen && (
+                      <div style={{
+                        background:'rgba(8,8,8,0.8)', border:`1px solid ${BRB}`,
+                        borderTop:'none', borderRadius:'0 0 12px 12px', padding:'16px 15px'
+                      }}>
+                        {e.mood && (
+                          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
+                            <span style={{ fontSize:16 }}>{mood.emoji}</span>
+                            <span style={{ color:NAVYL, fontSize:11, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase' }}>{mood.label}</span>
+                          </div>
+                        )}
+                        {e.entry && (
+                          <div style={{ marginBottom:12 }}>
+                            <Label>Entry</Label>
+                            <div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.7, whiteSpace:'pre-wrap' }}>{e.entry}</div>
+                          </div>
+                        )}
+                        {e.wins && (
+                          <div style={{ marginBottom:12 }}>
+                            <Label>Win</Label>
+                            <div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6 }}>{e.wins}</div>
+                          </div>
+                        )}
+                        {e.gratitude && (
+                          <div style={{ marginBottom:12 }}>
+                            <Label>Gratitude</Label>
+                            <div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6 }}>{e.gratitude}</div>
+                          </div>
+                        )}
+                        {e.scripture && (
+                          <div style={{
+                            background:`rgba(201,168,107,0.06)`, border:`1px solid ${BRG}`,
+                            borderRadius:8, padding:'10px 12px',
+                            fontFamily:"'Playfair Display',serif", fontStyle:'italic', color:CREAM, fontSize:12, lineHeight:1.6
+                          }}>
+                            📖 {e.scripture}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+          }
+        </div>
+      );
+    }
+
+    // ── INSIGHTS VIEW ──────────────────────────────────────────────
+    function InsightsView({ entries }) {
+      const allDates = Object.keys(entries).sort((a,b) => a.localeCompare(b));
+      const total    = allDates.length;
+
+      // Streak calc
+      const today    = todayStr();
+      let streak     = 0;
+      let d          = new Date();
+      while (true) {
+        const key = d.toISOString().slice(0, 10);
+        if (entries[key]) { streak++; d.setDate(d.getDate()-1); }
+        else break;
+      }
+
+      // Longest streak
+      let longest = 0, cur = 0;
+      allDates.forEach((dt, i) => {
+        if (i === 0) { cur = 1; return; }
+        const prev = new Date(allDates[i-1]);
+        const curr = new Date(dt);
+        const diff = (curr - prev) / 86400000;
+        if (diff === 1) { cur++; longest = Math.max(longest, cur); }
+        else { cur = 1; }
+      });
+      longest = Math.max(longest, cur, streak);
+
+      // Mood breakdown
+      const moodCount = {};
+      allDates.forEach(d => { const m=entries[d].mood; if(m) moodCount[m]=(moodCount[m]||0)+1; });
+      const topMood = Object.entries(moodCount).sort((a,b)=>b[1]-a[1])[0];
+
+      // This month
+      const now  = new Date();
+      const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const thisMonthCount = allDates.filter(d=>d.startsWith(curM)).length;
+      const daysInMonth    = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+      const daysSoFar      = now.getDate();
+
+      // Last 30 days heatmap
+      const last30 = Array.from({length:30},(_,i)=>{
+        const dt = new Date(); dt.setDate(dt.getDate()-29+i);
+        const key = dt.toISOString().slice(0,10);
+        return { key, has: !!entries[key], day: dt.getDate() };
+      });
+
+      return (
+        <div style={{ padding:'18px 15px', maxWidth:520, margin:'0 auto' }}>
+
+          {/* Streak hero */}
+          <div style={{
+            background:`linear-gradient(135deg,${C1},#0d0c10)`,
+            border:`1px solid ${BRB}`, borderRadius:14, padding:'22px 20px',
+            marginBottom:14, textAlign:'center', position:'relative', overflow:'hidden'
+          }}>
+            <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'rgba(74,111,165,0.05)' }} />
+            <div style={{ color:'#374151', fontSize:9, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:8 }}>Current Streak</div>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:72, color:'#fff', lineHeight:1 }}>{streak}</div>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:16, color:NAVYL, letterSpacing:'0.1em', marginTop:2 }}>
+              {streak === 1 ? 'DAY' : 'DAYS'}
+            </div>
+            {streak > 0 && (
+              <div style={{ marginTop:10, color:GOLD, fontSize:11, fontStyle:'italic', fontFamily:"'Playfair Display',serif" }}>
+                {streak >= 30 ? '"Consistency is the currency of mastery."' : streak >= 7 ? '"One week in. Keep going."' : '"Every day counts."'}
+              </div>
+            )}
+          </div>
+
+          {/* Stat grid */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:14 }}>
+            {[
+              { lbl:'Total Entries',    val:total },
+              { lbl:'Longest Streak',   val:longest + (longest===1?' Day':' Days') },
+              { lbl:'This Month',       val:`${thisMonthCount} / ${daysSoFar}` },
+              { lbl:'Top Mood',         val:topMood ? getMood(topMood[0]).emoji + ' ' + getMood(topMood[0]).label : '—' },
+            ].map(s => (
+              <div key={s.lbl} style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:'12px 13px' }}>
+                <Label style={{ marginBottom:4 }}>{s.lbl}</Label>
+                <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:22, color:NAVYL }}>{s.val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 30-day heatmap */}
+          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'15px', marginBottom:14 }}>
+            <Label>Last 30 Days</Label>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:10 }}>
+              {last30.map(({ key, has, day }) => (
+                <div key={key} title={key} style={{
+                  width:28, height:28, borderRadius:5,
+                  background: has ? `linear-gradient(135deg,#2a4a80,${NAVY})` : '#0e0e0e',
+                  border:`1px solid ${has ? NAVY : '#1a1a1a'}`,
+                  display:'flex', alignItems:'center', justifyContent:'center'
+                }}>
+                  <span style={{ fontSize:9, color: has ? '#fff' : '#2a2a2a', fontWeight:600 }}>{day}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Mood breakdown */}
+          {Object.keys(moodCount).length > 0 && (
+            <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'15px' }}>
+              <Label>Mood Distribution</Label>
+              <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:9 }}>
+                {MOODS.filter(m=>moodCount[m.id]).map(m => {
+                  const count = moodCount[m.id] || 0;
+                  const pct   = total ? (count / total * 100) : 0;
+                  return (
+                    <div key={m.id}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                          <span style={{ fontSize:14 }}>{m.emoji}</span>
+                          <span style={{ color:'#d1d5db', fontSize:12, fontWeight:500 }}>{m.label}</span>
+                        </div>
+                        <span style={{ color:'#6b7280', fontSize:11 }}>{count}x · {pct.toFixed(0)}%</span>
+                      </div>
+                      <div style={{ height:3, background:'#161618', borderRadius:2 }}>
+                        <div style={{ height:'100%', width:pct+'%', background:`linear-gradient(90deg,#2a4a80,${NAVY})`, borderRadius:2, transition:'width 0.4s ease' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── ROOT ───────────────────────────────────────────────────────
+    function JournalApp() {
+      const [tab,     setTab]     = useState('WRITE');
+      const [entries, setEntries] = useState({});
+      const [ready,   setReady]   = useState(false);
+
+      useEffect(() => { load().then(d => { setEntries(d); setReady(true); }); }, []);
+
+      const saveEntries = useCallback(async (updated) => {
+        setEntries(updated);
+        await save(updated);
+      }, []);
+
+      if (!ready) return (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
+          <div style={{ color:NAVY, fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em' }}>LOADING...</div>
+        </div>
+      );
+
+      return (
+        <div style={{ background:BG, minHeight:'100vh' }}>
+          <Nav />
+          <Tabs tab={tab} setTab={setTab} />
+          {tab==='WRITE'    && <WriteView    entries={entries} onSave={saveEntries} />}
+          {tab==='HISTORY'  && <HistoryView  entries={entries} />}
+          {tab==='INSIGHTS' && <InsightsView entries={entries} />}
+        </div>
+      );
+    }
+
+    window.JournalApp = JournalApp;
+  </script>
 </body>
 </html>

@@ -4,26 +4,642 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>MPS Expenses</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="/shared/styles.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js"></script>
   <script src="/shared/auth-guard.js"></script>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #070d07; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    #root { min-height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1a3018; border-radius: 2px; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    #loading-screen {
+      position: fixed; inset: 0; background: #070d07;
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .loading-pulse {
+      font-family: 'Bebas Neue', sans-serif; font-size: 52px;
+      color: #16a34a; letter-spacing: 0.12em;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    select option { background: #0e1a0e; }
+  </style>
 </head>
 <body>
-  <nav style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.9);position:sticky;top:0;z-index:100">
-    <a href="/hub.html" style="color:#16a34a;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;text-transform:uppercase">&#8592; HUB</a>
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#16a34a;letter-spacing:0.08em;flex:1;text-align:center">MPS EXPENSES</span>
-    <span style="width:60px"></span>
-  </nav>
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 57px);text-align:center;padding:40px 20px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:72px;color:#16a34a;line-height:1;letter-spacing:0.04em">MPS</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text-dim);letter-spacing:0.12em;margin:4px 0 24px">EXPENSES</div>
-    <p style="color:var(--text-dim);max-width:320px;line-height:1.6">Coming soon. This app is in your plan — full build deploying shortly.</p>
-    <a href="/hub.html" class="btn btn-ghost" style="margin-top:32px">Back to Hub</a>
+  <div id="loading-screen">
+    <div class="loading-pulse">MPS</div>
   </div>
-  <script>document.addEventListener('DOMContentLoaded', function() { MPS_GUARD.protect('expenses'); });</script>
+  <div id="root"></div>
+
+  <script>
+    window.addEventListener('load', function () {
+      MPS_GUARD.protect('expenses');
+
+      firebase.auth().onAuthStateChanged(function (user) {
+        if (!user) return;
+
+        var db = firebase.firestore();
+        var uid = user.uid;
+        var COLL = 'users/' + uid + '/app_storage';
+
+        window.currentUser = user;
+
+        window.storage = {
+          get: function (key) {
+            return db.doc(COLL + '/exp__' + key).get().then(function (snap) {
+              return snap.exists && snap.data().value !== undefined ? snap.data().value : null;
+            });
+          },
+          set: function (key, value) {
+            return db.doc(COLL + '/exp__' + key).set({ value: value }).then(function () { return true; }).catch(function () { return false; });
+          },
+          delete: function (key) {
+            return db.doc(COLL + '/exp__' + key).delete().catch(function () {});
+          },
+          list: function () {
+            return db.collection(COLL).get().then(function (snap) {
+              return snap.docs.map(function (d) { return d.id; })
+                .filter(function (k) { return k.startsWith('exp__'); })
+                .map(function (k) { return k.slice(5); });
+            });
+          }
+        };
+
+        document.getElementById('loading-screen').style.display = 'none';
+        tryMount();
+      });
+    });
+
+    function tryMount() {
+      if (window.storage) {
+        var container = document.getElementById('root');
+        var root = ReactDOM.createRoot(container);
+        root.render(React.createElement(window.ExpensesApp));
+      } else {
+        setTimeout(tryMount, 100);
+      }
+    }
+  </script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    // ── THEME ─────────────────────────────────────────────────────
+    const G    = '#16a34a';
+    const GL   = '#22c55e';
+    const GD   = '#166534';
+    const BG   = '#070d07';
+    const C1   = '#0d150d';
+    const C2   = '#111b11';
+    const BR   = 'rgba(22,163,74,0.14)';
+    const BRB  = 'rgba(22,163,74,0.32)';
+
+    // ── CATEGORIES ────────────────────────────────────────────────
+    const CATS = [
+      { id: 'food',          label: 'Food & Dining',    emoji: '🍽️'  },
+      { id: 'transport',     label: 'Transportation',   emoji: '🚗'  },
+      { id: 'fitness',       label: 'Fitness',          emoji: '💪'  },
+      { id: 'shopping',      label: 'Shopping',         emoji: '🛍️'  },
+      { id: 'entertainment', label: 'Entertainment',    emoji: '🎮'  },
+      { id: 'housing',       label: 'Housing',          emoji: '🏠'  },
+      { id: 'utilities',     label: 'Utilities',        emoji: '⚡'  },
+      { id: 'business',      label: 'Business',         emoji: '💼'  },
+      { id: 'subscriptions', label: 'Subscriptions',    emoji: '🔄'  },
+      { id: 'other',         label: 'Other',            emoji: '📦'  },
+    ];
+    const getCat = id => CATS.find(c => c.id === id) || CATS[CATS.length - 1];
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const monthKey  = d => d.slice(0, 7);
+    const monthLbl  = k => { const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; };
+    const $  = n => '$' + (+n).toFixed(2);
+    const $k = n => n >= 1000 ? '$' + (n/1000).toFixed(1) + 'k' : $(n);
+    const uid = () => Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+
+    // ── STORAGE ───────────────────────────────────────────────────
+    const KEY = 'expenses_v1';
+    const load = () => window.storage.get(KEY).then(d => Array.isArray(d) ? d : []);
+    const save = list => window.storage.set(KEY, list);
+
+    // ── SHARED COMPONENTS ─────────────────────────────────────────
+    const Label = ({ children, style }) => (
+      <div style={{ color:'#4b5563', fontSize:9, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:6, ...style }}>
+        {children}
+      </div>
+    );
+
+    const Card = ({ children, style }) => (
+      <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, ...style }}>
+        {children}
+      </div>
+    );
+
+    function TxRow({ exp, onDelete }) {
+      const cat = getCat(exp.category);
+      return (
+        <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom:`1px solid ${BR}` }}>
+          <div style={{
+            width:36, height:36, borderRadius:8, flexShrink:0,
+            background:'rgba(22,163,74,0.07)', border:`1px solid ${BR}`,
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:15
+          }}>{cat.emoji}</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ color:'#e5e7eb', fontSize:13, fontWeight:500, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+              {exp.description || cat.label}
+            </div>
+            <div style={{ color:'#374151', fontSize:10, marginTop:1 }}>{cat.label} · {exp.date}</div>
+          </div>
+          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:600, color:'#fff', flexShrink:0 }}>
+            {$(exp.amount)}
+          </span>
+          {onDelete && (
+            <button onClick={() => onDelete(exp.id)} style={{
+              background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)',
+              borderRadius:4, color:'#ef4444', fontSize:10, padding:'3px 7px', cursor:'pointer', flexShrink:0
+            }}>✕</button>
+          )}
+        </div>
+      );
+    }
+
+    // ── NAV ────────────────────────────────────────────────────────
+    function Nav() {
+      return (
+        <nav style={{
+          display:'flex', alignItems:'center', padding:'13px 18px',
+          borderBottom:`1px solid ${BR}`, background:'rgba(7,13,7,0.95)',
+          position:'sticky', top:0, zIndex:100, backdropFilter:'blur(14px)'
+        }}>
+          <a href="/hub.html" style={{ color:G, fontSize:10, fontWeight:700, letterSpacing:'0.12em', textDecoration:'none', textTransform:'uppercase' }}>← Hub</a>
+          <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:17, color:GL, letterSpacing:'0.1em', flex:1, textAlign:'center' }}>
+            MPS EXPENSES
+          </span>
+          <span style={{ width:48 }} />
+        </nav>
+      );
+    }
+
+    function Tabs({ tab, setTab }) {
+      return (
+        <div style={{ display:'flex', borderBottom:`1px solid ${BR}`, background:'rgba(7,13,7,0.9)', position:'sticky', top:47, zIndex:90 }}>
+          {['DASHBOARD','ADD','HISTORY','STATS'].map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex:1, padding:'11px 4px', background:'none', border:'none',
+              borderBottom: tab===t ? `2px solid ${G}` : '2px solid transparent',
+              color: tab===t ? GL : '#374151',
+              fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:'0.08em', cursor:'pointer'
+            }}>{t}</button>
+          ))}
+        </div>
+      );
+    }
+
+    // ── DASHBOARD ──────────────────────────────────────────────────
+    function Dashboard({ expenses, setTab }) {
+      const now = new Date();
+      const cur = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const prev = (() => { const d=new Date(now.getFullYear(),now.getMonth()-1,1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
+
+      const thisM = expenses.filter(e => e.date.startsWith(cur));
+      const prevM = expenses.filter(e => e.date.startsWith(prev));
+      const total = thisM.reduce((s,e)=>s+e.amount, 0);
+      const prevT = prevM.reduce((s,e)=>s+e.amount, 0);
+      const diff  = total - prevT;
+
+      const catMap = {};
+      thisM.forEach(e => { catMap[e.category] = (catMap[e.category]||0) + e.amount; });
+      const catList = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+      const maxC = catList[0]?.[1] || 1;
+
+      const recent = [...expenses].sort((a,b) => new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date)).slice(0,5);
+
+      return (
+        <div style={{ padding:'18px 15px', maxWidth:520, margin:'0 auto' }}>
+
+          {/* Hero */}
+          <div style={{
+            background:`linear-gradient(135deg,${C1} 0%,#091409 100%)`,
+            border:`1px solid ${BRB}`, borderRadius:14, padding:'22px 20px',
+            marginBottom:14, position:'relative', overflow:'hidden'
+          }}>
+            <div style={{ position:'absolute', top:-30, right:-30, width:130, height:130, borderRadius:'50%', background:'rgba(22,163,74,0.05)' }} />
+            <Label>{ monthLbl(cur) } Spending</Label>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:58, color:'#fff', lineHeight:1, letterSpacing:'-0.01em' }}>
+              {$k(total)}
+            </div>
+            <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{
+                fontSize:10, fontWeight:700, letterSpacing:'0.06em',
+                color: diff>0 ? '#ef4444' : diff<0 ? GL : '#6b7280',
+                background: diff>0 ? 'rgba(239,68,68,0.1)' : diff<0 ? 'rgba(22,163,74,0.1)' : 'rgba(107,114,128,0.1)',
+                padding:'3px 9px', borderRadius:4
+              }}>
+                {diff>0 ? '▲' : diff<0 ? '▼' : '—'} {diff!==0 ? $(Math.abs(diff)) : 'No change'} vs last month
+              </span>
+              <span style={{ color:'#374151', fontSize:10 }}>{thisM.length} tx</span>
+            </div>
+          </div>
+
+          {/* Quick stats */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:9, marginBottom:14 }}>
+            {[
+              { lbl:'Today',     val:$k(expenses.filter(e=>e.date===todayStr()).reduce((s,e)=>s+e.amount,0)) },
+              { lbl:'Avg/Day',   val:$k(total/now.getDate()) },
+              { lbl:'Last Mo',   val:$k(prevT) },
+            ].map(s => (
+              <Card key={s.lbl} style={{ padding:'11px 10px', textAlign:'center' }}>
+                <Label style={{ marginBottom:4, textAlign:'center' }}>{s.lbl}</Label>
+                <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:21, color:GL }}>{s.val}</div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Category bars */}
+          {catList.length > 0 && (
+            <Card style={{ padding:'15px', marginBottom:14 }}>
+              <Label>This Month by Category</Label>
+              <div style={{ display:'flex', flexDirection:'column', gap:10, marginTop:10 }}>
+                {catList.slice(0,5).map(([id,tot]) => {
+                  const cat = getCat(id);
+                  return (
+                    <div key={id}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <span style={{ fontSize:12 }}>{cat.emoji}</span>
+                          <span style={{ color:'#d1d5db', fontSize:12, fontWeight:500 }}>{cat.label}</span>
+                        </div>
+                        <span style={{ color:'#fff', fontSize:12, fontFamily:"'JetBrains Mono',monospace" }}>{$(tot)}</span>
+                      </div>
+                      <div style={{ height:3, background:'#162216', borderRadius:2 }}>
+                        <div style={{ height:'100%', width:(tot/maxC*100)+'%', background:`linear-gradient(90deg,${GD},${G})`, borderRadius:2, transition:'width 0.4s ease' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {/* Recent */}
+          <Card style={{ padding:'15px', marginBottom:14 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+              <Label style={{ marginBottom:0 }}>Recent</Label>
+              <button onClick={() => setTab('HISTORY')} style={{ background:'none', border:'none', color:G, fontSize:10, fontWeight:700, letterSpacing:'0.1em', cursor:'pointer', textTransform:'uppercase' }}>All →</button>
+            </div>
+            {recent.length === 0
+              ? <div style={{ color:'#374151', fontSize:12, textAlign:'center', padding:'10px 0' }}>No expenses yet</div>
+              : recent.map(e => <TxRow key={e.id} exp={e} />)
+            }
+          </Card>
+
+          <button onClick={() => setTab('ADD')} style={{
+            width:'100%', padding:'13px',
+            background:`linear-gradient(135deg,${GD},${G})`,
+            border:'none', borderRadius:10, color:'#fff',
+            fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em', cursor:'pointer'
+          }}>+ ADD EXPENSE</button>
+        </div>
+      );
+    }
+
+    // ── ADD ────────────────────────────────────────────────────────
+    function AddView({ onAdd }) {
+      const [amount, setAmount]           = useState('');
+      const [category, setCategory]       = useState('food');
+      const [description, setDescription] = useState('');
+      const [date, setDate]               = useState(todayStr());
+      const [saving, setSaving]           = useState(false);
+      const [ok, setOk]                   = useState(false);
+
+      const submit = async () => {
+        const amt = parseFloat(amount);
+        if (!amt || amt <= 0) return;
+        setSaving(true);
+        await onAdd({ id:uid(), amount:amt, category, description:description.trim(), date, createdAt:new Date().toISOString() });
+        setSaving(false);
+        setOk(true);
+        setAmount(''); setDescription(''); setDate(todayStr());
+        setTimeout(() => setOk(false), 2000);
+      };
+
+      const inp = { width:'100%', background:C2, border:`1px solid ${BR}`, borderRadius:8, padding:'12px 14px', color:'#fff', fontSize:14, outline:'none', fontFamily:"'Inter',sans-serif" };
+
+      return (
+        <div style={{ padding:'18px 15px', maxWidth:520, margin:'0 auto' }}>
+          <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:28, color:GL, letterSpacing:'0.06em', marginBottom:4 }}>ADD EXPENSE</div>
+          <div style={{ color:'#374151', fontSize:11, marginBottom:18 }}>Log a transaction</div>
+
+          {/* Amount hero */}
+          <div style={{
+            background:`linear-gradient(135deg,${C1},#091409)`,
+            border:`1px solid ${BRB}`, borderRadius:14, padding:'20px',
+            marginBottom:16, textAlign:'center'
+          }}>
+            <Label style={{ textAlign:'center' }}>Amount</Label>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:2 }}>
+              <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:44, color:'#374151' }}>$</span>
+              <input
+                type="number" value={amount} onChange={e=>setAmount(e.target.value)}
+                placeholder="0.00" step="0.01" min="0"
+                style={{
+                  background:'none', border:'none', outline:'none',
+                  fontFamily:"'Bebas Neue',sans-serif", fontSize:54,
+                  color: amount ? GL : '#1f2d1f', width:180, textAlign:'center'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Category grid */}
+          <div style={{ marginBottom:16 }}>
+            <Label>Category</Label>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8 }}>
+              {CATS.map(cat => (
+                <button key={cat.id} onClick={() => setCategory(cat.id)} style={{
+                  background: category===cat.id ? 'rgba(22,163,74,0.14)' : C2,
+                  border:`1px solid ${category===cat.id ? G : BR}`,
+                  borderRadius:8, padding:'8px 3px', cursor:'pointer',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'all 0.15s'
+                }}>
+                  <span style={{ fontSize:17 }}>{cat.emoji}</span>
+                  <span style={{ fontSize:8, color:category===cat.id ? GL : '#374151', fontWeight:600, letterSpacing:'0.04em', textAlign:'center', lineHeight:1.2 }}>
+                    {cat.label.split(' ')[0]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom:14 }}>
+            <Label>Description</Label>
+            <input type="text" value={description} onChange={e=>setDescription(e.target.value)} placeholder="What was this for?" style={inp} />
+          </div>
+
+          {/* Date */}
+          <div style={{ marginBottom:22 }}>
+            <Label>Date</Label>
+            <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{ ...inp, colorScheme:'dark' }} />
+          </div>
+
+          <button onClick={submit} disabled={!amount||saving} style={{
+            width:'100%', padding:'14px',
+            background: ok ? 'rgba(22,163,74,0.12)' : (amount&&!saving) ? `linear-gradient(135deg,${GD},${G})` : C1,
+            border: ok ? `1px solid ${G}` : 'none',
+            borderRadius:10, color: ok ? GL : '#fff',
+            fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em',
+            cursor: amount&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
+          }}>
+            {ok ? '✓ SAVED' : saving ? 'SAVING...' : 'LOG EXPENSE'}
+          </button>
+        </div>
+      );
+    }
+
+    // ── HISTORY ────────────────────────────────────────────────────
+    function HistoryView({ expenses, onDelete }) {
+      const now = new Date();
+      const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const [selMonth, setSelMonth] = useState(curM);
+      const [selCat,   setSelCat]   = useState('all');
+
+      const allMonths = [...new Set(expenses.map(e=>monthKey(e.date)))].sort((a,b)=>b.localeCompare(a));
+
+      const filtered = expenses
+        .filter(e => monthKey(e.date)===selMonth)
+        .filter(e => selCat==='all' || e.category===selCat)
+        .sort((a,b) => new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date));
+
+      const total = filtered.reduce((s,e)=>s+e.amount,0);
+
+      const byDay = {};
+      filtered.forEach(e => { (byDay[e.date]=byDay[e.date]||[]).push(e); });
+      const days = Object.keys(byDay).sort((a,b)=>b.localeCompare(a));
+
+      return (
+        <div style={{ padding:'18px 15px', maxWidth:520, margin:'0 auto' }}>
+          {/* Month pills */}
+          <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:4, marginBottom:12 }}>
+            {allMonths.length === 0 && <div style={{ color:'#374151', fontSize:12 }}>No data yet</div>}
+            {allMonths.map(m => (
+              <button key={m} onClick={() => setSelMonth(m)} style={{
+                flexShrink:0, padding:'5px 11px',
+                background: selMonth===m ? 'rgba(22,163,74,0.14)' : C1,
+                border:`1px solid ${selMonth===m ? G : BR}`,
+                borderRadius:6, color: selMonth===m ? GL : '#374151',
+                fontSize:10, fontWeight:700, letterSpacing:'0.06em', cursor:'pointer'
+              }}>{monthLbl(m)}</button>
+            ))}
+          </div>
+
+          {/* Category filter */}
+          <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4, marginBottom:14 }}>
+            {['all',...CATS.map(c=>c.id)].map(id => {
+              const cat = id==='all' ? {emoji:'ALL',label:'All'} : getCat(id);
+              const active = selCat===id;
+              return (
+                <button key={id} onClick={() => setSelCat(id)} style={{
+                  flexShrink:0, padding:'4px 10px',
+                  background: active ? 'rgba(22,163,74,0.12)' : 'transparent',
+                  border:`1px solid ${active ? G : BR}`, borderRadius:20,
+                  color: active ? GL : '#374151',
+                  fontSize: id==='all' ? 10 : 12, fontWeight:600, letterSpacing:'0.04em', cursor:'pointer'
+                }}>{id==='all' ? 'ALL' : cat.emoji}</button>
+              );
+            })}
+          </div>
+
+          {/* Month total */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'9px 13px', background:C1, border:`1px solid ${BR}`, borderRadius:8, marginBottom:14 }}>
+            <span style={{ color:'#4b5563', fontSize:10, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase' }}>{monthLbl(selMonth)}</span>
+            <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:22, color:GL }}>{$(total)}</span>
+          </div>
+
+          {days.length === 0
+            ? <div style={{ color:'#374151', fontSize:13, textAlign:'center', padding:'32px 0' }}>No transactions</div>
+            : days.map(day => {
+                const dayT = byDay[day].reduce((s,e)=>s+e.amount,0);
+                const [yr,mo,dd] = day.split('-');
+                const lbl = new Date(+yr,+mo-1,+dd).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+                return (
+                  <div key={day} style={{ marginBottom:16 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4, paddingBottom:6, borderBottom:`1px solid ${BR}` }}>
+                      <span style={{ color:'#9ca3af', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase' }}>{lbl}</span>
+                      <span style={{ color:'#4b5563', fontSize:11, fontFamily:"'JetBrains Mono',monospace" }}>{$(dayT)}</span>
+                    </div>
+                    {byDay[day].map(e => <TxRow key={e.id} exp={e} onDelete={onDelete} />)}
+                  </div>
+                );
+              })
+          }
+        </div>
+      );
+    }
+
+    // ── STATS ──────────────────────────────────────────────────────
+    function StatsView({ expenses }) {
+      const now = new Date();
+      const cur = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+      const last6 = Array.from({length:6},(_,i) => {
+        const d = new Date(now.getFullYear(), now.getMonth()-5+i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const total = expenses.filter(e=>e.date.startsWith(key)).reduce((s,e)=>s+e.amount,0);
+        return { key, lbl:MONTHS[d.getMonth()], total };
+      });
+      const maxBar = Math.max(...last6.map(m=>m.total), 1);
+
+      const allT   = expenses.reduce((s,e)=>s+e.amount, 0);
+      const allMo  = [...new Set(expenses.map(e=>monthKey(e.date)))];
+      const avgMo  = allMo.length ? allT/allMo.length : 0;
+
+      const catMap = {};
+      expenses.forEach(e => { catMap[e.category]=(catMap[e.category]||0)+e.amount; });
+      const catList = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+      const maxC = catList[0]?.[1] || 1;
+
+      const biggest = expenses.reduce((m,e)=>e.amount>(m?.amount||0)?e:m, null);
+
+      return (
+        <div style={{ padding:'18px 15px', maxWidth:520, margin:'0 auto' }}>
+
+          {/* 6-month bar */}
+          <Card style={{ padding:'15px', marginBottom:14 }}>
+            <Label>6-Month Trend</Label>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:110, marginTop:10 }}>
+              {last6.map(m => {
+                const h = Math.max((m.total/maxBar)*90, 2);
+                const isCur = m.key===cur;
+                return (
+                  <div key={m.key} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:5 }}>
+                    <div style={{ fontSize:8, color:isCur?GL:'#374151', fontFamily:"'JetBrains Mono',monospace" }}>
+                      {m.total>0?'$'+Math.round(m.total):''}
+                    </div>
+                    <div style={{
+                      width:'100%', height:h,
+                      background: isCur ? `linear-gradient(180deg,${GL},${G})` : `linear-gradient(180deg,#162616,#0d1a0d)`,
+                      borderRadius:'3px 3px 0 0',
+                      border:`1px solid ${isCur?G:BR}`,
+                      transition:'height 0.4s ease'
+                    }} />
+                    <div style={{ fontSize:9, color:isCur?GL:'#374151', fontWeight:isCur?700:400 }}>{m.lbl}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Key metrics */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:14 }}>
+            {[
+              { lbl:'Total Tracked',   val:$k(allT) },
+              { lbl:'Avg / Month',     val:$k(avgMo) },
+              { lbl:'Transactions',    val:expenses.length },
+              { lbl:'Categories Used', val:catList.length },
+            ].map(s => (
+              <Card key={s.lbl} style={{ padding:'13px' }}>
+                <Label style={{ marginBottom:4 }}>{s.lbl}</Label>
+                <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:26, color:GL }}>{s.val}</div>
+              </Card>
+            ))}
+          </div>
+
+          {/* All-time categories */}
+          {catList.length > 0 && (
+            <Card style={{ padding:'15px', marginBottom:14 }}>
+              <Label>All-Time by Category</Label>
+              <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:10 }}>
+                {catList.map(([id,tot]) => {
+                  const cat = getCat(id);
+                  const pct = (tot/maxC*100);
+                  const share = allT>0 ? ((tot/allT)*100).toFixed(0) : 0;
+                  return (
+                    <div key={id}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <span style={{ fontSize:12 }}>{cat.emoji}</span>
+                          <span style={{ color:'#d1d5db', fontSize:12, fontWeight:500 }}>{cat.label}</span>
+                          <span style={{ color:'#374151', fontSize:10 }}>{share}%</span>
+                        </div>
+                        <span style={{ color:'#fff', fontSize:12, fontFamily:"'JetBrains Mono',monospace" }}>{$(tot)}</span>
+                      </div>
+                      <div style={{ height:3, background:'#162216', borderRadius:2 }}>
+                        <div style={{ height:'100%', width:pct+'%', background:`linear-gradient(90deg,${GD},${G})`, borderRadius:2 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {/* Biggest expense */}
+          {biggest && (
+            <Card style={{ padding:'15px' }}>
+              <Label>Biggest Single Expense</Label>
+              <TxRow exp={biggest} />
+            </Card>
+          )}
+        </div>
+      );
+    }
+
+    // ── ROOT ───────────────────────────────────────────────────────
+    function ExpensesApp() {
+      const [tab,      setTab]      = useState('DASHBOARD');
+      const [expenses, setExpenses] = useState([]);
+      const [ready,    setReady]    = useState(false);
+
+      useEffect(() => { load().then(d => { setExpenses(d); setReady(true); }); }, []);
+
+      const addExpense = useCallback(async (exp) => {
+        const u = [exp, ...expenses];
+        setExpenses(u);
+        await save(u);
+      }, [expenses]);
+
+      const delExpense = useCallback(async (id) => {
+        const u = expenses.filter(e=>e.id!==id);
+        setExpenses(u);
+        await save(u);
+      }, [expenses]);
+
+      if (!ready) return (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
+          <div style={{ color:G, fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em' }}>LOADING...</div>
+        </div>
+      );
+
+      return (
+        <div style={{ background:BG, minHeight:'100vh' }}>
+          <Nav />
+          <Tabs tab={tab} setTab={setTab} />
+          {tab==='DASHBOARD' && <Dashboard  expenses={expenses} setTab={setTab} />}
+          {tab==='ADD'       && <AddView    onAdd={addExpense} />}
+          {tab==='HISTORY'   && <HistoryView expenses={expenses} onDelete={delExpense} />}
+          {tab==='STATS'     && <StatsView  expenses={expenses} />}
+        </div>
+      );
+    }
+
+    window.ExpensesApp = ExpensesApp;
+  </script>
 </body>
 </html>

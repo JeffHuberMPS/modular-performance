@@ -4,26 +4,788 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>MPS Habits</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="/shared/styles.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700;800&family=Saira+Condensed:ital,wght@1,900&display=swap" />
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js"></script>
   <script src="/shared/auth-guard.js"></script>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #050505; min-height: 100vh; }
+    #root { min-height: 100vh; }
+    /* Auth loading screen */
+    #auth-loading {
+      min-height: 100vh; background: #050505;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+      color: #8b0000; font-size: 13px; letter-spacing: 4px;
+    }
+  </style>
 </head>
 <body>
-  <nav style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.9);position:sticky;top:0;z-index:100">
-    <a href="/hub.html" style="color:#dc2626;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;text-transform:uppercase">&#8592; HUB</a>
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#dc2626;letter-spacing:0.08em;flex:1;text-align:center">MPS HABITS</span>
-    <span style="width:60px"></span>
-  </nav>
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 57px);text-align:center;padding:40px 20px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:72px;color:#dc2626;line-height:1;letter-spacing:0.04em">MPS</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text-dim);letter-spacing:0.12em;margin:4px 0 24px">HABITS</div>
-    <p style="color:var(--text-dim);max-width:320px;line-height:1.6">Coming soon. This app is in your plan — full build deploying shortly.</p>
-    <a href="/hub.html" class="btn btn-ghost" style="margin-top:32px">Back to Hub</a>
-  </div>
-  <script>document.addEventListener('DOMContentLoaded', function() { MPS_GUARD.protect('habits'); });</script>
+
+<div id="auth-loading">LOADING...</div>
+<div id="root" style="display:none"></div>
+
+<!-- Firebase window.storage bridge — maps window.storage → Firestore -->
+<script>
+(function() {
+  'use strict';
+
+  // Auth guard
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof MPS_GUARD !== 'undefined') MPS_GUARD.protect('habits');
+  });
+
+  // Wait for Firebase auth, then set up window.storage and mount React
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) return; // auth-guard.js handles redirect
+
+    var uid = user.uid;
+    var db = firebase.firestore();
+    var COLL = 'users/' + uid + '/app_storage';
+
+    // window.storage — API expected by the React components
+    window.storage = {
+      get: function(key) {
+        return db.doc(COLL + '/' + key).get().then(function(snap) {
+          return snap.exists ? snap.data() : null;
+        });
+      },
+      set: function(key, value) {
+        return db.doc(COLL + '/' + key).set({ value: value }).then(function() {
+          return true;
+        }).catch(function() { return false; });
+      },
+      delete: function(key) {
+        return db.doc(COLL + '/' + key).delete().catch(function(){});
+      },
+      list: function() {
+        return db.collection(COLL).get().then(function(snap) {
+          return snap.docs.map(function(d) { return d.id; });
+        });
+      }
+    };
+
+    // Show app
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('root').style.display = 'block';
+
+    // Mount React — tiny delay to ensure Babel+DOM ready
+    setTimeout(mountApp, 50);
+  });
+
+  function mountApp() {
+    if (typeof window.__HABITS_MOUNTED !== 'undefined') return;
+    window.__HABITS_MOUNTED = true;
+    var script = document.getElementById('habits-app');
+    if (script) {
+      // Babel will have already processed it, React root should be rendered
+    }
+  }
+})();
+</script>
+
+<!-- Main React App (Babel JSX) -->
+<script type="text/babel" id="habits-app">
+const { useState, useEffect, useRef } = React;
+
+function HabitTracker() {
+  const [view, setView] = useState('dashboard');
+  const [activeBlock, setActiveBlock] = useState('MRN');
+  const [chartView, setChartView] = useState('daily');
+  const [editingHabit, setEditingHabit] = useState(null);
+  const [editingBlock, setEditingBlock] = useState(null);
+  const [saveFlash, setSaveFlash] = useState(false);
+  const [barDetail, setBarDetail] = useState(null);
+  const [logTab, setLogTab] = useState('habits');
+  const [insightView, setInsightView] = useState('monthly');
+  const [habits, setHabits] = useState({});
+  const habitsRef = useRef({});
+  const [gymDone, setGymDone] = useState({});
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCal, setShowCal] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const DEFAULT_BLOCKS = {
+    MRN: {
+      name: 'Morning', icon: '🌅', target: 63,
+      habits: [
+        { id: 'h_wake', label: 'Wake up — 4:00 AM', emoji: '🔥' },
+        { id: 'h_gymtr', label: 'Gym / training', emoji: '🏋️' },
+        { id: 'h_breath', label: 'Breathwork', emoji: '🌬️' },
+        { id: 'h_read', label: 'Reading', emoji: '📖' },
+        { id: 'h_cold', label: 'Cold shower', emoji: '❄️' },
+      ],
+    },
+    WRK: {
+      name: 'Work', icon: '💼', target: 63,
+      habits: [
+        { id: 'h_mind', label: 'Mind Inputs', emoji: '🧠' },
+        { id: 'h_course', label: 'Coursera (60 Min)', emoji: '🎓' },
+        { id: 'h_outr', label: 'MPS Outreach', emoji: '📡' },
+        { id: 'h_chess', label: 'Chess Games', emoji: '♟️' },
+        { id: 'h_auto', label: 'Automation', emoji: '⚙️' },
+      ],
+    },
+    NGT: {
+      name: 'Night', icon: '🌙', target: 54,
+      habits: [
+        { id: 'h_journ', label: 'Journaling', emoji: '✍️' },
+        { id: 'h_pray', label: 'Prayer + Meditation', emoji: '🙏' },
+        { id: 'h_bible', label: 'Bible (Reading)', emoji: '📖' },
+        { id: 'h_guit', label: 'Play Guitar', emoji: '🎸' },
+        { id: 'h_sleep', label: 'Sleep — 10:00 PM', emoji: '🛌' },
+      ],
+    },
+  };
+
+  const [blocks, setBlocks] = useState(DEFAULT_BLOCKS);
+
+  useEffect(() => {
+    (async () => {
+      let habitsLoaded = false;
+      try {
+        const h = await window.storage.get('habits_v4').catch(() => null);
+        const g = await window.storage.get('gym_v4').catch(() => null);
+        const b = await window.storage.get('blocks_v4').catch(() => null);
+        if (h && h.value) {
+          const parsed = JSON.parse(h.value);
+          setHabits(parsed);
+          habitsRef.current = parsed;
+          habitsLoaded = true;
+        }
+        if (g && g.value) setGymDone(JSON.parse(g.value));
+        if (b && b.value) setBlocks(JSON.parse(b.value));
+      } catch (e) { console.error('storage load failed:', e); }
+      if (!habitsLoaded) {
+        try {
+          const lh = localStorage.getItem('habits_v4');
+          if (lh) {
+            const parsed = JSON.parse(lh);
+            setHabits(parsed);
+            habitsRef.current = parsed;
+          }
+        } catch (e) {}
+      }
+      setLoaded(true);
+    })();
+  }, []);
+
+  const saveHabits = async (next) => {
+    setHabits(next);
+    habitsRef.current = next;
+    const s = JSON.stringify(next);
+    try { localStorage.setItem('habits_v4', s); } catch(e) {}
+    try { await window.storage.set('habits_v4', s); } catch(e) { console.error('save failed', e); }
+  };
+
+  const saveGym = async (next) => {
+    setGymDone(next);
+    try { await window.storage.set('gym_v4', JSON.stringify(next)); } catch(e) {}
+  };
+
+  const saveBlocks = async (next) => {
+    setBlocks(next);
+    try { await window.storage.set('blocks_v4', JSON.stringify(next)); } catch(e) {}
+  };
+
+  const fmtKey = (d) => {
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${d.getFullYear()}-${m}-${day}`;
+  };
+
+  const selKey = fmtKey(selectedDate);
+  const today = new Date();
+  const todayKey = fmtKey(today);
+  const isToday = selKey === todayKey;
+  const formatDate = (d) => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
+
+  const ALL_HABITS = Object.entries(blocks).flatMap(([key, b]) => b.habits.map(h => ({ ...h, block: key })));
+  const TOTAL_HABITS = ALL_HABITS.length;
+
+  const toggleHabit = (habitId) => {
+    const next = { ...habits };
+    next[selKey] = { ...(next[selKey] || {}) };
+    if (next[selKey][habitId]) { delete next[selKey][habitId]; } else { next[selKey][habitId] = true; }
+    if (Object.keys(next[selKey]).length === 0) delete next[selKey];
+    saveHabits(next);
+  };
+
+  const toggleGym = () => { const next = { ...gymDone }; next[selKey] = !next[selKey]; if (!next[selKey]) delete next[selKey]; saveGym(next); };
+  const renameBlock = (k, v) => { const n = { ...blocks }; n[k] = { ...n[k], name: v }; saveBlocks(n); };
+  const updateBlockIcon = (k, v) => { const n = { ...blocks }; n[k] = { ...n[k], icon: v }; saveBlocks(n); };
+  const updateBlockTarget = (k, v) => { const n = { ...blocks }; n[k] = { ...n[k], target: parseInt(v) || 0 }; saveBlocks(n); };
+  const renameHabit = (bk, hid, v) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, label: v } : h) }; saveBlocks(n); };
+  const updateHabitEmoji = (bk, hid, v) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, emoji: v } : h) }; saveBlocks(n); };
+  const addHabit = (bk) => { const n = { ...blocks }; const id = `h_${Date.now()}`; n[bk] = { ...n[bk], habits: [...n[bk].habits, { id, label: 'New habit', emoji: '✨' }] }; saveBlocks(n); };
+  const deleteHabit = (bk, hid) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.filter(h => h.id !== hid) }; saveBlocks(n); };
+  const resetToDefault = () => { if (window.confirm('Reset all habits and block names to defaults? Your check-in data stays.')) saveBlocks(DEFAULT_BLOCKS); };
+
+  const getDayCompletion = (dk, bk) => {
+    const dd = habits[dk] || {};
+    const bh = blocks[bk].habits;
+    return { done: bh.filter(h => dd[h.id]).length, total: bh.length };
+  };
+  const getDayCompletionAll = (dk) => { const dd = habits[dk] || {}; return ALL_HABITS.filter(h => dd[h.id]).length; };
+
+  const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth()+1, 0);
+  const daysInMonth = monthEnd.getDate();
+  const isCurMo = today.getMonth() === selectedDate.getMonth() && today.getFullYear() === selectedDate.getFullYear();
+  const todayDayOfMonth = isCurMo ? today.getDate() : daysInMonth;
+  const daysLeft = Math.max(0, daysInMonth - todayDayOfMonth);
+  const monthName = selectedDate.toLocaleString('en-US', { month: 'long' });
+  const year = selectedDate.getFullYear();
+
+  const monthDateKeys = [];
+  for (let i = 1; i <= daysInMonth; i++) monthDateKeys.push(fmtKey(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i)));
+  const passedDateKeys = monthDateKeys.slice(0, todayDayOfMonth);
+  const daysLogged = monthDateKeys.filter(k => getDayCompletionAll(k) > 0).length;
+  const monthTotalPossible = daysInMonth * TOTAL_HABITS;
+  const monthTotalComplete = monthDateKeys.reduce((s,k) => s + getDayCompletionAll(k), 0);
+  const monthRemaining = monthTotalPossible - monthTotalComplete;
+  const monthPct = monthTotalPossible > 0 ? Math.round((monthTotalComplete/monthTotalPossible)*10000)/100 : 0;
+
+  const blockStats = Object.keys(blocks).map(key => {
+    const block = blocks[key];
+    const totalPossible = daysInMonth * block.habits.length;
+    const totalDone = monthDateKeys.reduce((s,k) => s + getDayCompletion(k,key).done, 0);
+    const pct = totalPossible > 0 ? Math.round((totalDone/totalPossible)*10000)/100 : 0;
+    return { key, ...block, totalDone, totalPossible, pct };
+  });
+
+  const last7DateKeys = (() => {
+    const arr = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate()-i); arr.push(fmtKey(d));
+    }
+    return arr;
+  })();
+
+  const gymMonthDone = monthDateKeys.filter(k => gymDone[k]).length;
+  const gymPct = passedDateKeys.length > 0 ? Math.round((passedDateKeys.filter(k => gymDone[k]).length/passedDateKeys.length)*10000)/100 : 0;
+
+  const habitMetrics = ALL_HABITS.map(h => {
+    const completed = passedDateKeys.filter(k => habits[k]?.[h.id]).length;
+    const strength = passedDateKeys.length > 0 ? Math.round((completed/passedDateKeys.length)*10000)/100 : 0;
+    let streak = 0;
+    for (let i = passedDateKeys.length-1; i >= 0; i--) {
+      if (habits[passedDateKeys[i]]?.[h.id]) streak++; else break;
+    }
+    return { ...h, completed, strength, streak };
+  });
+
+  const weeklyHabitMetrics = ALL_HABITS.map(h => {
+    const completed = last7DateKeys.filter(k => habits[k]?.[h.id]).length;
+    const strength = last7DateKeys.length > 0 ? Math.round((completed/last7DateKeys.length)*10000)/100 : 0;
+    let streak = 0;
+    for (let i = last7DateKeys.length-1; i >= 0; i--) {
+      if (habits[last7DateKeys[i]]?.[h.id]) streak++; else break;
+    }
+    return { ...h, completed, strength, streak };
+  });
+
+  // ─── Theme ───
+  const PRIMARY = '#8b0000';
+  const PRIMARY_LIGHT = '#d62020';
+  const PRIMARY_GLOW = 'rgba(139,0,0,0.5)';
+  const ACCENT = '#b8b8b8';
+  const BG = '#050505';
+  const CARD = '#121212';
+  const CARD_RAISED = '#181818';
+  const BORDER = '#1f1f1f';
+  const MUTED = '#6b6b6b';
+  const TEXT = '#e8e8e8';
+  const CARD_SHADOW_3D = '0 4px 12px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.04)';
+  const CARD_SHADOW_3D_HOVER = '0 6px 18px rgba(139,0,0,0.25), 0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06)';
+  const bodyFont = "'Bricolage Grotesque', system-ui, sans-serif";
+
+  const dow = selectedDate.getDay();
+
+  if (!loaded) {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, color: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: bodyFont }}>
+        <div style={{ letterSpacing: '4px', fontSize: '14px' }}>LOADING...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, fontFamily: bodyFont, padding: '16px 8px', paddingBottom: '80px' }}>
+      {/* HERO */}
+      <div style={{
+        background: '#000000',
+        backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(230,57,70,0.20) 0%, rgba(230,57,70,0.06) 45%, transparent 75%)',
+        border: '3px solid transparent',
+        borderRadius: '22px',
+        padding: '38px 20px 28px',
+        textAlign: 'center',
+        marginBottom: '28px',
+        position: 'relative',
+        overflow: 'hidden',
+        backgroundClip: 'padding-box',
+        boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(192,192,192,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+      }}>
+        <a href="/hub.html" style={{ position: 'absolute', top: '16px', left: '16px', color: '#8b0000', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textDecoration: 'none', textTransform: 'uppercase' }}>← Hub</a>
+        <div style={{
+          fontFamily: "'Saira Condensed', 'Bricolage Grotesque', system-ui, sans-serif",
+          fontSize: '96px', fontWeight: 900, fontStyle: 'italic',
+          letterSpacing: '4px', lineHeight: 1,
+          background: 'linear-gradient(180deg, #ffffff 0%, #ffb3ba 18%, #ff6b78 38%, #e63946 65%, #8a1825 95%, #4a0a13 100%)',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
+        }}>MPS</div>
+        <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(230,57,70,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(230,57,70,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
+        <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px' }}>MODULAR PERFORMANCE SYSTEMS</div>
+        <div style={{ fontSize: '20px', letterSpacing: '6px', color: '#e63946', fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px' }}>
+          <span>HABIT</span><span>TRACKER</span>
+        </div>
+      </div>
+
+      {/* Date header */}
+      {(view === 'insights' || view === 'habits') && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 4px' }}>
+          <div>
+            <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px' }}>{monthName.toUpperCase()} {year}</div>
+            <div style={{ fontSize: '14px', color: TEXT, marginTop: '2px' }}>{isToday ? 'TODAY' : 'VIEWING'} · {formatDate(selectedDate)}</div>
+          </div>
+          {view === 'insights' ? (
+            <div style={{ display: 'flex', gap: '4px', padding: '3px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '8px', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
+              {['weekly','monthly'].map(v => (
+                <button key={v} onClick={() => setInsightView(v)} style={{ padding: '6px 10px', background: insightView === v ? PRIMARY : 'transparent', color: insightView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '10px', letterSpacing: '1.5px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
+              ))}
+            </div>
+          ) : (
+            <button onClick={() => setShowCal(!showCal)} style={{ padding: '8px 14px', background: 'transparent', color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer' }}>📅 PICK DATE</button>
+          )}
+        </div>
+      )}
+
+      {/* Calendar */}
+      {showCal && (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '14px', marginBottom: '20px', boxShadow: CARD_SHADOW_3D }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <button onClick={() => { const d = new Date(selectedDate); d.setMonth(d.getMonth()-1); setSelectedDate(d); }} style={{ background: 'transparent', color: PRIMARY_LIGHT, border: 'none', fontSize: '20px', cursor: 'pointer' }}>‹</button>
+            <div style={{ color: PRIMARY_LIGHT, letterSpacing: '3px', fontSize: '13px', fontWeight: 600 }}>{monthName.toUpperCase()} {year}</div>
+            <button onClick={() => { const d = new Date(selectedDate); d.setMonth(d.getMonth()+1); setSelectedDate(d); }} style={{ background: 'transparent', color: PRIMARY_LIGHT, border: 'none', fontSize: '20px', cursor: 'pointer' }}>›</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px' }}>
+            {['S','M','T','W','T','F','S'].map((d,i) => <div key={i} style={{ textAlign: 'center', fontSize: '10px', color: MUTED, padding: '4px' }}>{d}</div>)}
+            {Array.from({ length: monthStart.getDay() }).map((_,i) => <div key={`e${i}`} />)}
+            {Array.from({ length: daysInMonth }).map((_,i) => {
+              const day = i+1;
+              const d = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
+              const k = fmtKey(d);
+              const isSel = k === selKey;
+              const isTd = k === todayKey;
+              const done = getDayCompletionAll(k);
+              const pct = TOTAL_HABITS > 0 ? done/TOTAL_HABITS : 0;
+              return (
+                <button key={day} onClick={() => { setSelectedDate(d); setShowCal(false); }} style={{ padding: '8px 0', textAlign: 'center', fontSize: '13px', background: isSel ? PRIMARY : isTd ? 'rgba(184,184,184,0.15)' : 'transparent', color: isSel ? '#fff' : TEXT, border: `1px solid ${pct > 0.66 ? PRIMARY : pct > 0.33 ? ACCENT : BORDER}`, borderRadius: '6px', cursor: 'pointer', fontFamily: bodyFont, fontWeight: isSel ? 700 : 400 }}>{day}</button>
+              );
+            })}
+          </div>
+          <button onClick={() => { setSelectedDate(new Date()); setShowCal(false); }} style={{ marginTop: '12px', width: '100%', padding: '10px', background: 'transparent', color: PRIMARY_LIGHT, border: `1px solid ${PRIMARY}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', cursor: 'pointer' }}>JUMP TO TODAY</button>
+        </div>
+      )}
+
+      {/* Nav tabs */}
+      {view === 'dashboard' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '6px', marginBottom: '24px' }}>
+          <button onClick={() => setView('log')} style={tabStyle(false, PRIMARY, bodyFont, '#fff')}>+ LOG</button>
+          <button onClick={() => setView('insights')} style={tabStyle(false, ACCENT, bodyFont, '#000')}>HABITS</button>
+        </div>
+      ) : view === 'log' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '21px' }}>
+          <button onClick={() => setView('dashboard')} style={blockTabStyle(false, PRIMARY, BORDER, bodyFont, TEXT)}>← DASHBOARD</button>
+          <button onClick={() => setShowCal(!showCal)} style={blockTabStyle(false, PRIMARY, BORDER, bodyFont, TEXT)}>📅 PICK DATE</button>
+        </div>
+      ) : (
+        <button onClick={() => setView('dashboard')} style={{ padding: '10px 16px', background: 'transparent', color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer', marginBottom: '20px', display: 'inline-block' }}>← DASHBOARD</button>
+      )}
+
+      {/* ═══ DASHBOARD ═══ */}
+      {view === 'dashboard' && (
+        <>
+          <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D }}>
+            <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '14px' }}>{isToday ? 'TODAY' : 'SELECTED'} · {formatDate(selectedDate)}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px' }}>
+              {blockStats.map(b => {
+                const { done, total } = getDayCompletion(selKey, b.key);
+                const isComplete = done === total && total > 0;
+                return (
+                  <div key={b.key} style={{ textAlign: 'center', padding: '10px 4px', background: '#0a0a0a', borderRadius: '10px', border: `1px solid ${isComplete ? PRIMARY : BORDER}`, boxShadow: isComplete ? `0 0 12px ${PRIMARY_GLOW}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
+                    <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '1px' }}>{b.key}</div>
+                    <div style={{ fontSize: '18px', color: isComplete ? PRIMARY_LIGHT : TEXT, fontWeight: 700, marginTop: '4px' }}>{done}/{total}</div>
+                  </div>
+                );
+              })}
+              {(() => {
+                const dayData = habits[selKey] || {};
+                const totalDone = Object.values(dayData).filter(Boolean).length;
+                const isPerfect = totalDone === TOTAL_HABITS;
+                return (
+                  <div style={{ textAlign: 'center', padding: '10px 4px', background: '#0a0a0a', borderRadius: '10px', border: `1px solid ${isPerfect ? PRIMARY : BORDER}`, boxShadow: isPerfect ? `0 0 12px ${PRIMARY_GLOW}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
+                    <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '1px', fontWeight: 700 }}>TOTAL</div>
+                    <div style={{ fontSize: '18px', fontWeight: 800, marginTop: '4px', color: isPerfect ? PRIMARY_LIGHT : totalDone > 0 ? TEXT : MUTED }}>{totalDone}/{TOTAL_HABITS}</div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <StatCard label="MONTH" value={`${monthPct}%`} sub={`${monthTotalComplete}/${monthTotalPossible}`} accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+            <StatCard label="REMAINING" value={monthRemaining} sub={`${daysLeft} days left`} accent={ACCENT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <StatCard label="AVERAGE" value={`${daysLogged > 0 ? Math.round(monthTotalComplete/daysLogged) : 0} / ${TOTAL_HABITS}`} sub="per day this month" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+            <StatCard label="DAYS LEFT" value={daysLeft} sub={`of ${daysInMonth}`} accent={ACCENT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+          </div>
+
+          {/* Block progress */}
+          <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D }}>
+            <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '14px' }}>BY BLOCK · {monthName.toUpperCase()}</div>
+            {blockStats.map(b => (
+              <div key={b.key} style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginBottom: '8px' }}>
+                  <span style={{ color: TEXT, letterSpacing: '1px' }}>{b.icon} {b.key}</span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ padding: '4px 10px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '6px', textAlign: 'center', minWidth: '60px' }}>
+                      <div style={{ fontSize: '8px', color: MUTED, letterSpacing: '1px', lineHeight: 1 }}>AVG</div>
+                      <div style={{ fontSize: '12px', color: PRIMARY_LIGHT, fontWeight: 700, lineHeight: 1.2 }}>{Math.round(daysLogged > 0 ? b.totalDone/daysLogged : 0)} / {b.habits.length}</div>
+                    </div>
+                    <span style={{ color: PRIMARY_LIGHT, fontWeight: 600, minWidth: '38px', textAlign: 'right' }}>{b.pct}%</span>
+                  </div>
+                </div>
+                <div style={{ height: '8px', background: '#0a0a0a', borderRadius: '4px', overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}>
+                  <div style={{ width: `${b.pct}%`, height: '100%', background: `linear-gradient(90deg, ${PRIMARY}, ${PRIMARY_LIGHT})`, boxShadow: `0 0 8px ${PRIMARY_GLOW}`, transition: 'width 0.4s' }} />
+                </div>
+                <div style={{ fontSize: '10px', color: MUTED, marginTop: '6px', letterSpacing: '1px' }}>{b.totalDone}/{b.totalPossible} · TARGET {b.target}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart toggle */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '4px', boxShadow: CARD_SHADOW_3D }}>
+            {['daily','weekly'].map(v => (
+              <button key={v} onClick={() => setChartView(v)} style={{ flex: 1, padding: '10px', background: chartView === v ? PRIMARY : 'transparent', color: chartView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
+            ))}
+          </div>
+
+          {[...Object.keys(blocks), 'DAY'].map(blockKey => (
+            <BarChart3D key={blockKey} blockKey={blockKey} block={blockKey === 'DAY' ? { icon: '📊', name: 'Total', habits: ALL_HABITS } : blocks[blockKey]} chartView={chartView} habits={habits} selectedDate={selectedDate} onBarTap={setBarDetail} theme={{ PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont }} fmtKey={fmtKey} />
+          ))}
+        </>
+      )}
+
+      {/* Bar detail modal */}
+      {barDetail && (
+        <div onClick={() => setBarDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD_RAISED, border: '2px solid rgba(192,192,192,0.4)', borderRadius: '16px', padding: '22px', maxWidth: '420px', width: '100%', boxShadow: `0 0 30px ${PRIMARY_GLOW}, 0 20px 60px rgba(0,0,0,0.9)`, maxHeight: '80vh', overflowY: 'auto' }}>
+            {(() => {
+              const detailBlock = barDetail.blockKey === 'DAY' ? { icon: '📊', habits: ALL_HABITS } : blocks[barDetail.blockKey];
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '13px', color: PRIMARY_LIGHT, letterSpacing: '2px', fontWeight: 700 }}>{detailBlock?.icon} {barDetail.blockKey}</div>
+                    <button onClick={() => setBarDetail(null)} style={{ background: 'transparent', color: MUTED, border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '16px' }}>{barDetail.label}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {detailBlock?.habits.map(h => {
+                      const dayData = habits[barDetail.dateKey || barDetail.dayKeys?.[0]] || {};
+                      const isDone = !!dayData[h.id];
+                      return (
+                        <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: isDone ? 'rgba(139,0,0,0.15)' : '#0a0a0a', border: `1px solid ${isDone ? PRIMARY : BORDER}`, borderRadius: '8px' }}>
+                          <div style={{ fontSize: '20px' }}>{h.emoji}</div>
+                          <div style={{ flex: 1, fontSize: '14px', color: isDone ? TEXT : MUTED, fontWeight: 500 }}>{h.label}</div>
+                          <div style={{ width: '26px', height: '26px', borderRadius: '6px', border: `2px solid ${isDone ? PRIMARY_LIGHT : BORDER}`, background: isDone ? PRIMARY : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '14px' }}>{isDone ? '✓' : ''}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ LOG ═══ */}
+      {view === 'log' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
+            {['habits','history'].map(tab => (
+              <button key={tab} onClick={() => setLogTab(tab)} style={blockTabStyle(logTab === tab, PRIMARY, BORDER, bodyFont, TEXT)}>
+                {tab === 'habits' ? '✓ HABITS' : '📜 HISTORY'}
+              </button>
+            ))}
+          </div>
+
+          {logTab === 'habits' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '6px', marginBottom: '10px' }}>
+              {Object.keys(blocks).map(k => (
+                <button key={k} onClick={() => setActiveBlock(k)} style={blockTabStyle(activeBlock === k, PRIMARY, BORDER, bodyFont, TEXT)}>{blocks[k].icon} {k}</button>
+              ))}
+            </div>
+          )}
+
+          {logTab === 'history' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {monthDateKeys.filter(k => getDayCompletionAll(k) > 0).reverse().map(k => {
+                const d = new Date(k + 'T00:00:00');
+                const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+                const totalDone = getDayCompletionAll(k);
+                const isPerfect = totalDone === TOTAL_HABITS;
+                return (
+                  <div key={k} onClick={() => { setSelectedDate(d); setActiveBlock('MRN'); setLogTab('habits'); }} style={{ padding: '16px', background: CARD_RAISED, border: `2px solid ${isPerfect ? PRIMARY : 'rgba(192,192,192,0.25)'}`, borderRadius: '14px', boxShadow: CARD_SHADOW_3D, cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: TEXT, fontWeight: 700, letterSpacing: '1.5px' }}>{dayLabel}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: isPerfect ? PRIMARY_LIGHT : TEXT }}>{totalDone}<span style={{ color: MUTED, fontSize: '11px' }}>/{TOTAL_HABITS}</span></div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '6px' }}>
+                      {['MRN','WRK','NGT'].map(bk => {
+                        const { done, total } = getDayCompletion(k, bk);
+                        const bc = done === total && total > 0;
+                        return (
+                          <div key={bk} style={{ padding: '7px 4px', background: '#0a0a0a', border: `1px solid ${bc ? PRIMARY : BORDER}`, borderRadius: '8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '14px' }}>{blocks[bk]?.icon}</div>
+                            <div style={{ fontSize: '8px', color: MUTED, letterSpacing: '1px', marginTop: '2px' }}>{bk}</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '2px', color: bc ? PRIMARY_LIGHT : done > 0 ? TEXT : MUTED }}>{done}/{total}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {logTab === 'habits' && blocks[activeBlock] && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {blocks[activeBlock].habits.map(h => {
+                const checked = !!habits[selKey]?.[h.id];
+                return (
+                  <div key={h.id} onClick={() => toggleHabit(h.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 15px', background: checked ? `linear-gradient(135deg, rgba(139,0,0,0.15) 0%, ${CARD_RAISED} 100%)` : CARD_RAISED, border: `1px solid ${checked ? PRIMARY : BORDER}`, borderRadius: '12px', cursor: 'pointer', boxShadow: checked ? CARD_SHADOW_3D_HOVER : CARD_SHADOW_3D, transition: 'all 0.15s ease' }}>
+                    <div style={{ fontSize: '18px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', borderRadius: '7px', border: `1px solid ${BORDER}` }}>{h.emoji}</div>
+                    <div style={{ flex: 1, fontSize: '16px', color: TEXT, fontWeight: 500 }}>{h.label}</div>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '7px', border: `2px solid ${checked ? PRIMARY_LIGHT : BORDER}`, background: checked ? PRIMARY : 'transparent', boxShadow: checked ? `0 0 12px ${PRIMARY_GLOW}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '16px', transition: 'all 0.15s ease' }}>{checked ? '✓' : ''}</div>
+                  </div>
+                );
+              })}
+              <button onClick={async () => {
+                setSaveFlash(true);
+                try { await window.storage.set('habits_v4', JSON.stringify(habitsRef.current)); } catch(e) {}
+                setTimeout(() => setSaveFlash(false), 1400);
+              }} style={{ width: '100%', marginTop: '20px', padding: '16px', background: saveFlash ? `linear-gradient(135deg, ${PRIMARY_LIGHT} 0%, ${PRIMARY} 100%)` : 'transparent', color: saveFlash ? '#fff' : PRIMARY_LIGHT, border: `2px solid ${PRIMARY}`, borderRadius: '12px', fontFamily: bodyFont, fontSize: '13px', letterSpacing: '3px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                {saveFlash ? '✓ SAVED — LOCKED IN' : 'SAVE ENTRY'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ INSIGHTS ═══ */}
+      {view === 'insights' && (
+        <>
+          <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '14px' }}>STRENGTH · STREAKS · EDIT</div>
+          {Object.entries(blocks).map(([blockKey, block]) => {
+            const isEditingThisBlock = editingBlock === blockKey;
+            return (
+              <div key={blockKey} style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', marginBottom: '10px', background: CARD_RAISED, borderRadius: '10px', border: `1px solid ${BORDER}`, boxShadow: CARD_SHADOW_3D }}>
+                  {isEditingThisBlock ? (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flex: 1 }}>
+                      <input type="text" value={block.icon} onChange={e => updateBlockIcon(blockKey, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '40px', 'center', '16px')} />
+                      <input type="text" value={block.name} onChange={e => renameBlock(blockKey, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '1', 'left', '14px')} autoFocus />
+                      <input type="number" value={block.target} onChange={e => updateBlockTarget(blockKey, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '54px', 'center', '12px')} />
+                      <button onClick={() => setEditingBlock(null)} style={{ padding: '6px 10px', background: PRIMARY, color: '#fff', border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', cursor: 'pointer', fontWeight: 700 }}>✓</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: '13px', letterSpacing: '2px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{block.icon} {blockKey}</div>
+                      <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>AVG</div>
+                          <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{blockStats.find(b => b.key === blockKey)?.pct || 0}%</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>TARGET</div>
+                          <div style={{ fontSize: '14px', color: ACCENT, fontWeight: 700 }}>{block.target}</div>
+                        </div>
+                        <button onClick={() => setEditingBlock(blockKey)} style={{ padding: '4px 6px', background: 'transparent', color: MUTED, border: 'none', cursor: 'pointer', fontSize: '13px' }}>✎</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {block.habits.map(h => {
+                    const m = (insightView === 'weekly' ? weeklyHabitMetrics : habitMetrics).find(x => x.id === h.id);
+                    const isEditingThis = editingHabit === h.id;
+                    return (
+                      <div key={h.id} style={{ padding: '12px 14px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '10px', boxShadow: CARD_SHADOW_3D }}>
+                        {isEditingThis ? (
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input type="text" value={h.emoji} onChange={e => updateHabitEmoji(blockKey, h.id, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '46px', 'center', '18px')} />
+                            <input type="text" value={h.label} onChange={e => renameHabit(blockKey, h.id, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '1', 'left', '14px')} autoFocus />
+                            <button onClick={() => setEditingHabit(null)} style={{ padding: '8px 10px', background: PRIMARY, color: '#fff', border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}>✓</button>
+                            <button onClick={() => { if (window.confirm(`Delete "${h.label}"?`)) { deleteHabit(blockKey, h.id); setEditingHabit(null); } }} style={{ padding: '8px 10px', background: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', cursor: 'pointer' }}>🗑</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ fontSize: '14px', color: TEXT, fontWeight: 500 }}>{h.emoji} {h.label}</div>
+                            <div style={{ textAlign: 'right', minWidth: '54px' }}>
+                              <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>STRENGTH</div>
+                              <div style={{ fontSize: '15px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{habitMetrics.find(x => x.id === h.id)?.strength || 0}%</div>
+                            </div>
+                            <div style={{ textAlign: 'right', minWidth: '40px' }}>
+                              <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>STREAK</div>
+                              <div style={{ fontSize: '15px', color: ACCENT, fontWeight: 700 }}>{m?.streak || 0}</div>
+                            </div>
+                            <button onClick={() => setEditingHabit(h.id)} style={{ padding: '4px 6px', background: 'transparent', color: MUTED, border: 'none', cursor: 'pointer', fontSize: '13px' }}>✎</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => addHabit(blockKey)} style={{ padding: '10px', background: 'transparent', color: PRIMARY_LIGHT, border: `1px dashed ${PRIMARY}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer' }}>+ ADD HABIT TO {blockKey}</button>
+                </div>
+              </div>
+            );
+          })}
+          <button onClick={resetToDefault} style={{ width: '100%', padding: '14px', marginTop: '8px', background: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', cursor: 'pointer' }}>RESET TO DEFAULTS</button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Style helpers ───
+function tabStyle(active, color, font, activeText = '#fff') {
+  return { padding: '12px 4px', background: active ? color : 'transparent', color: active ? activeText : color, border: `1px solid ${color}`, borderRadius: '8px', fontFamily: font, fontSize: '11px', letterSpacing: '1.5px', fontWeight: 600, cursor: 'pointer' };
+}
+function blockTabStyle(active, primary, border, font, text) {
+  return { padding: '6px 4px', background: active ? primary : 'transparent', color: active ? '#fff' : text, border: `1px solid ${active ? primary : border}`, borderRadius: '8px', fontFamily: font, fontSize: '11px', letterSpacing: '2px', fontWeight: 700, cursor: 'pointer' };
+}
+function inputStyle(border, text, font, width, align, size) {
+  return { flex: width === '1' ? 1 : undefined, width: width === '1' ? undefined : width, padding: '10px 12px', background: '#0a0a0a', color: text, border: `1px solid ${border}`, borderRadius: '8px', fontFamily: font, fontSize: size, textAlign: align, outline: 'none' };
+}
+
+function StatCard({ label, value, sub, accent, card, border, muted, shadow }) {
+  return (
+    <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '18px', position: 'relative', overflow: 'hidden', boxShadow: shadow }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: accent, opacity: 0.8 }} />
+      <div style={{ fontSize: '10px', color: muted, letterSpacing: '2px', marginBottom: '8px' }}>{label}</div>
+      <div style={{ fontSize: '30px', color: accent, fontWeight: 700, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: '11px', color: muted, marginTop: '6px', letterSpacing: '1px' }}>{sub}</div>
+    </div>
+  );
+}
+
+function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap, theme, fmtKey }) {
+  const { PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont } = theme;
+  const [selectedBar, setSelectedBar] = React.useState(null);
+
+  const habitCount = block.habits.length;
+  const maxY = chartView === 'daily' ? habitCount : habitCount * 7;
+  const bars = [];
+
+  if (chartView === 'daily') {
+    const endDate = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(endDate); d.setDate(endDate.getDate()-i);
+      const key = fmtKey(d);
+      const dayData = habits[key] || {};
+      const done = block.habits.filter(h => dayData[h.id]).length;
+      bars.push({ label: `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`, value: done, dateKeys: [key], fullLabel: d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) });
+    }
+  } else {
+    const yr = selectedDate.getFullYear(), mo = selectedDate.getMonth();
+    const dim = new Date(yr, mo+1, 0).getDate();
+    for (let w = 0; w < 4; w++) {
+      const start = w*7+1, end = Math.min(start+6, dim);
+      let total = 0; const wks = [];
+      for (let day = start; day <= end; day++) {
+        const d = new Date(yr, mo, day); const k = fmtKey(d);
+        const dayData = habits[k] || {};
+        total += block.habits.filter(h => dayData[h.id]).length;
+        wks.push(k);
+      }
+      bars.push({ label: `W${w+1}`, value: total, dateKeys: wks, fullLabel: `Week ${w+1} · ${selectedDate.toLocaleString('en-US', { month: 'long' })} ${start}–${end}` });
+    }
+  }
+
+  const chartHeight = blockKey === 'DAY' ? 176 : 140;
+  const DEPTH = 6;
+
+  return (
+    <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '16px 14px 14px', marginBottom: '14px', boxShadow: CARD_SHADOW_3D, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <div style={{ fontSize: '14px', color: TEXT, fontWeight: 700, letterSpacing: '1px' }}>{block.icon} {blockKey}</div>
+        <div style={{ padding: '6px 12px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '8px', textAlign: 'center', minWidth: '72px' }}>
+          <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1.5px' }}>AVERAGE</div>
+          <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700, lineHeight: 1.1 }}>
+            {(() => { const nz = bars.filter(b => b.value > 0); const s = nz.reduce((x,b) => x+b.value, 0); const avg = nz.length > 0 ? s/nz.length : 0; return `${Math.round(avg)} / ${maxY}`; })()}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', height: `${chartHeight+30}px`, paddingLeft: '24px', position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '6px', height: `${chartHeight}px`, borderBottom: `1px solid ${BORDER}`, position: 'relative' }}>
+          {bars.map((bar, i) => {
+            const pct = maxY > 0 ? (bar.value/maxY)*100 : 0;
+            const bh = (pct/100)*chartHeight;
+            const hasVal = bar.value > 0;
+            return (
+              <div key={i} onClick={() => { if (onBarTap) onBarTap({ blockKey, isWeek: chartView === 'weekly', dateKey: chartView === 'daily' ? bar.dateKeys[0] : null, dayKeys: chartView === 'weekly' ? bar.dateKeys : null, label: bar.fullLabel, summary: `${bar.value}/${maxY}` }); }} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', cursor: 'pointer', position: 'relative' }}>
+                {hasVal && <div style={{ position: 'absolute', bottom: `${bh+6}px`, fontSize: '10px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{bar.value}</div>}
+                {hasVal ? (
+                  <div style={{ position: 'relative', width: '100%', maxWidth: '36px', height: `${bh}px` }}>
+                    <div style={{ position: 'absolute', top: 0, left: '100%', width: `${DEPTH}px`, height: '100%', background: 'linear-gradient(180deg,#6b1018 0%,#3a0610 100%)', transform: 'skewY(-45deg)', transformOrigin: 'left top' }} />
+                    <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', height: `${DEPTH}px`, background: 'linear-gradient(180deg,#ff9aa3 0%,#ff7a87 100%)', transform: 'skewX(-45deg)', transformOrigin: 'bottom left' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: `linear-gradient(180deg,${PRIMARY_LIGHT} 0%,${PRIMARY} 65%,#5a0e16 100%)`, borderRadius: '2px 0 0 2px', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 0 10px ${PRIMARY_GLOW}` }} />
+                  </div>
+                ) : (
+                  <div style={{ width: '100%', maxWidth: '36px', height: '3px', background: `linear-gradient(180deg,${PRIMARY} 0%,#3a0610 100%)`, borderRadius: '2px', opacity: 0.35 }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', paddingLeft: '24px', marginTop: '8px' }}>
+        {bars.map((bar, i) => <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '9px', color: selectedBar === i ? PRIMARY_LIGHT : MUTED, letterSpacing: '1px', cursor: 'pointer' }} onClick={() => setSelectedBar(i === selectedBar ? null : i)}>{bar.label}</div>)}
+      </div>
+    </div>
+  );
+}
+
+// Mount
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+
+// Wait for window.storage to be set before mounting
+function tryMount() {
+  if (window.storage) {
+    root.render(<HabitTracker />);
+  } else {
+    setTimeout(tryMount, 100);
+  }
+}
+tryMount();
+</script>
+
 </body>
 </html>
