@@ -231,32 +231,142 @@
     .suite-scroll::-webkit-scrollbar-track { background: transparent; }
     .suite-scroll::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
 
+    /* Premium branded app tiles */
     .suite-tile {
       flex-shrink: 0;
       width: 200px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: var(--space-lg) var(--space-md);
-      transition: transform var(--transition-base);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+      text-decoration: none;
     }
-    .suite-tile:hover { transform: translateY(-4px); }
+    .suite-tile:hover { transform: translateY(-5px); }
 
-    .suite-tile[data-app="workout"] { border-top: 2px solid var(--workout-blue); }
-    .suite-tile[data-app="habits"]  { border-top: 2px solid var(--habits-red); }
-    .suite-tile[data-app="sleep"]   { border-top: 2px solid var(--sleep-purple); }
-    .suite-tile[data-app="expenses"]{ border-top: 2px solid var(--expenses-green); }
-    .suite-tile[data-app="journal"] { border-top: 2px solid var(--journal-navy); }
-
-    .suite-tile__icon { font-size: 2rem; margin-bottom: 10px; }
-    .suite-tile__name {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      color: var(--text-primary);
-      letter-spacing: 0.06em;
-      margin-bottom: 6px;
+    .tile-header {
+      padding: 28px 16px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
     }
-    .suite-tile__desc { font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; }
+    .tile-header::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+      transition: left 0.6s ease;
+    }
+    .suite-tile:hover .tile-header::after { left: 160%; }
+
+    .tile-mps {
+      font-family: 'Saira Condensed', 'Bebas Neue', 'Arial Black', Impact, sans-serif;
+      font-weight: 900;
+      font-style: italic;
+      font-size: 52px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 4px;
+    }
+    .tile-divider {
+      width: 40px;
+      height: 1px;
+      margin: 8px auto 9px;
+    }
+    .tile-system {
+      font-size: 8px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .tile-name {
+      font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
+      font-size: 15px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    /* Workout — dark navy / icy blue */
+    .suite-tile[data-app="workout"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(74,179,244,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #0c1428 0%, #060a18 100%);
+      border: 1px solid rgba(74,179,244,0.50);
+      box-shadow: 0 0 28px rgba(74,179,244,0.14), inset 0 0 0 1px rgba(74,179,244,0.10);
+    }
+    .suite-tile[data-app="workout"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#c8e6ff 40%,#4ab3f4 75%,#2878c8 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(74,179,244,0.45));
+    }
+    .suite-tile[data-app="workout"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(74,179,244,0.7),transparent); }
+    .suite-tile[data-app="workout"] .tile-system  { color: rgba(74,179,244,0.70); }
+    .suite-tile[data-app="workout"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Habits — black / crimson red */
+    .suite-tile[data-app="habits"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(220,38,38,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #1a0808 0%, #0a0000 100%);
+      border: 1px solid rgba(220,38,38,0.50);
+      box-shadow: 0 0 28px rgba(220,38,38,0.14), inset 0 0 0 1px rgba(220,38,38,0.10);
+    }
+    .suite-tile[data-app="habits"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#ffb3b3 40%,#dc2626 75%,#991b1b 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(220,38,38,0.50));
+    }
+    .suite-tile[data-app="habits"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(220,38,38,0.7),transparent); }
+    .suite-tile[data-app="habits"] .tile-system  { color: rgba(220,38,38,0.70); }
+    .suite-tile[data-app="habits"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Sleep — deep purple / warm gold */
+    .suite-tile[data-app="sleep"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(155,107,201,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #140d24 0%, #080410 100%);
+      border: 1px solid rgba(201,168,107,0.45);
+      box-shadow: 0 0 28px rgba(155,107,201,0.14), inset 0 0 0 1px rgba(201,168,107,0.10);
+    }
+    .suite-tile[data-app="sleep"] .tile-mps {
+      background: linear-gradient(180deg,#fff8e8 0%,#f0d898 35%,#c9a86b 70%,#9b6bc9 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(201,168,107,0.45));
+    }
+    .suite-tile[data-app="sleep"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(201,168,107,0.7),transparent); }
+    .suite-tile[data-app="sleep"] .tile-system  { color: rgba(201,168,107,0.70); }
+    .suite-tile[data-app="sleep"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Expenses — deep forest / mint green */
+    .suite-tile[data-app="expenses"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(22,163,74,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #081408 0%, #020a02 100%);
+      border: 1px solid rgba(22,163,74,0.50);
+      box-shadow: 0 0 28px rgba(22,163,74,0.14), inset 0 0 0 1px rgba(22,163,74,0.10);
+    }
+    .suite-tile[data-app="expenses"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#a8f0c0 40%,#16a34a 75%,#0d6b30 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(22,163,74,0.50));
+    }
+    .suite-tile[data-app="expenses"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(22,163,74,0.7),transparent); }
+    .suite-tile[data-app="expenses"] .tile-system  { color: rgba(22,163,74,0.70); }
+    .suite-tile[data-app="expenses"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Journal — warm black / parchment cream */
+    .suite-tile[data-app="journal"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(196,168,130,0.10) 0%, transparent 70%),
+                  linear-gradient(180deg, #130f0a 0%, #080603 100%);
+      border: 1px solid rgba(196,168,130,0.40);
+      box-shadow: 0 0 28px rgba(196,168,130,0.10), inset 0 0 0 1px rgba(196,168,130,0.08);
+    }
+    .suite-tile[data-app="journal"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#ede0cc 40%,#c4a882 75%,#8c6e42 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(196,168,130,0.40));
+    }
+    .suite-tile[data-app="journal"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(196,168,130,0.6),transparent); }
+    .suite-tile[data-app="journal"] .tile-system  { color: rgba(196,168,130,0.65); }
+    .suite-tile[data-app="journal"] .tile-name    { color: rgba(255,255,255,0.90); }
 
     /* ── PRICING SECTION ─────────────────────────────────────── */
     .pricing-toggle {
@@ -507,29 +617,44 @@
 
     <div class="suite-scroll">
       <div class="suite-tile" data-app="workout">
-        <div class="suite-tile__icon">💪</div>
-        <div class="suite-tile__name">WORKOUT</div>
-        <div class="suite-tile__desc">Log every lift, skill session, and conditioning round. Track PRs. See progress.</div>
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Workout Tracker</div>
+        </div>
       </div>
       <div class="suite-tile" data-app="habits">
-        <div class="suite-tile__icon">🔴</div>
-        <div class="suite-tile__name">HABITS</div>
-        <div class="suite-tile__desc">Build the daily systems that compound into the person you're becoming.</div>
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Habit Tracker</div>
+        </div>
       </div>
       <div class="suite-tile" data-app="sleep">
-        <div class="suite-tile__icon">🌙</div>
-        <div class="suite-tile__name">SLEEP</div>
-        <div class="suite-tile__desc">Track recovery scores, energy, and soreness. Perform on demand.</div>
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Rest &amp; Recovery</div>
+        </div>
       </div>
       <div class="suite-tile" data-app="expenses">
-        <div class="suite-tile__icon">💚</div>
-        <div class="suite-tile__name">EXPENSES</div>
-        <div class="suite-tile__desc">Your money, systemized. Know exactly where every dollar goes.</div>
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Expense Tracker</div>
+        </div>
       </div>
       <div class="suite-tile" data-app="journal">
-        <div class="suite-tile__icon">📖</div>
-        <div class="suite-tile__name">JOURNAL</div>
-        <div class="suite-tile__desc">Faith, reflection, and clarity. Grounded in purpose, driven by conviction.</div>
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Journal</div>
+        </div>
       </div>
     </div>
   </section>
