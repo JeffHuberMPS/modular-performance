@@ -41,16 +41,16 @@ const TIER_APPS = {
 /* ── Price ID → Tier mapping ─────────────────────────────────── */
 // Populate these after creating products in Stripe Dashboard
 const PRICE_TIER_MAP = {
-  // Monthly
-  'price_REPLACE_single_monthly': 'single',
-  'price_REPLACE_duo_monthly':    'duo',
-  'price_REPLACE_trio_monthly':   'trio',
-  'price_REPLACE_all_monthly':    'all',
-  // Annual
-  'price_REPLACE_single_annual':  'single',
-  'price_REPLACE_duo_annual':     'duo',
-  'price_REPLACE_trio_annual':    'trio',
-  'price_REPLACE_all_annual':     'all',
+  // Monthly (test)
+  'price_1TaiqfJr8jtgHpa2SJ8RntRZ': 'single',
+  'price_1TaiuXJr8jtgHpa2mWoHzNVE': 'duo',
+  'price_1TaiwWJr8jtgHpa2HFVCbAsh': 'trio',
+  'price_1TaiyeJr8jtgHpa2m5vQyVZE': 'allaccess',
+  // Annual (test)
+  'price_1TailiJr8jtgHpa2FIJYkQAY': 'single',
+  'price_1TaiutJr8jtgHpa2gXVZ88jW': 'duo',
+  'price_1TaiwmJr8jtgHpa2lvxDKbFN': 'trio',
+  'price_1TaiywJr8jtgHpa25aUsmXnP': 'allaccess',
 };
 
 function tierFromPriceId(priceId) {
@@ -91,12 +91,21 @@ module.exports = async (req, res) => {
           break;
         }
 
-        // Get the subscription to determine price/tier
-        let tier = 'single';
+        // Get the subscription to determine price/tier and trial status
+        let tier        = 'single';
+        let trialEnd    = null;
+        let trialActive = false;
+
         if (session.subscription) {
-          const sub = await stripe.subscriptions.retrieve(session.subscription);
+          const sub     = await stripe.subscriptions.retrieve(session.subscription);
           const priceId = sub.items.data[0]?.price?.id;
-          tier = tierFromPriceId(priceId);
+          tier          = tierFromPriceId(priceId);
+
+          // Store trial end date if subscription is in a trial period
+          if (sub.trial_end) {
+            trialEnd    = admin.firestore.Timestamp.fromMillis(sub.trial_end * 1000);
+            trialActive = sub.trial_end > Math.floor(Date.now() / 1000);
+          }
         }
 
         await db.collection('users').doc(uid).update({
@@ -104,10 +113,13 @@ module.exports = async (req, res) => {
           apps:               TIER_APPS[tier] || ['workout'],
           stripe_customer_id: session.customer,
           payment_failed:     false,
+          trial_end:          trialEnd,
+          trial_active:       trialActive,
+          trial_ending_soon:  false,
           updated_at:         admin.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log(`[Webhook] Upgraded user ${uid} to ${tier}`);
+        console.log(`[Webhook] Upgraded user ${uid} to ${tier}${trialActive ? ' (trial active)' : ''}`);
         break;
       }
 
@@ -136,23 +148,55 @@ module.exports = async (req, res) => {
         break;
       }
 
-      /* ── Subscription updated → adjust tier ─────────────── */
+      /* ── Subscription updated → adjust tier + clear trial ── */
       case 'customer.subscription.updated': {
         const sub      = event.data.object;
         const customer = sub.customer;
         const priceId  = sub.items.data[0]?.price?.id;
         const tier     = tierFromPriceId(priceId);
 
+        // Detect trial-to-paid conversion: status changed from 'trialing' to 'active'
+        const prevStatus = event.data.previous_attributes?.status;
+        const nowStatus  = sub.status;
+        const trialConverted = prevStatus === 'trialing' && nowStatus === 'active';
+
+        const snap = await db.collection('users')
+          .where('stripe_customer_id', '==', customer).limit(1).get();
+
+        if (!snap.empty) {
+          const updateData = {
+            tier:       tier,
+            apps:       TIER_APPS[tier] || ['workout'],
+            updated_at: admin.firestore.FieldValue.serverTimestamp()
+          };
+
+          // Clear trial flags when trial converts to paid
+          if (trialConverted) {
+            updateData.trial_active      = false;
+            updateData.trial_ending_soon = false;
+            console.log('[Webhook] Trial converted to paid for customer:', customer);
+          }
+
+          await snap.docs[0].ref.update(updateData);
+          console.log('[Webhook] Updated tier to', tier, 'for customer:', customer);
+        }
+        break;
+      }
+
+      /* ── Trial ending soon (fires 3 days before trial ends) ─ */
+      case 'customer.subscription.trial_will_end': {
+        const sub      = event.data.object;
+        const customer = sub.customer;
+
         const snap = await db.collection('users')
           .where('stripe_customer_id', '==', customer).limit(1).get();
 
         if (!snap.empty) {
           await snap.docs[0].ref.update({
-            tier:       tier,
-            apps:       TIER_APPS[tier] || ['workout'],
-            updated_at: admin.firestore.FieldValue.serverTimestamp()
+            trial_ending_soon: true,
+            updated_at:        admin.firestore.FieldValue.serverTimestamp()
           });
-          console.log('[Webhook] Updated tier to', tier, 'for customer:', customer);
+          console.log('[Webhook] Trial ending soon for customer:', customer);
         }
         break;
       }

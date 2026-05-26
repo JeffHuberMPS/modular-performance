@@ -13,17 +13,17 @@ window.STRIPE_CONFIG = (function() {
   };
 
   // ── Price IDs (from Stripe Dashboard → Products) ────────────
-  // TODO: Update these with real price IDs from Stripe Dashboard → Products
+  // ── Real Stripe price IDs (test mode) ───────────────────────
   const PRICE_IDS = {
     test: {
-      single_monthly:     'price_single_monthly_test',
-      duo_monthly:        'price_duo_monthly_test',
-      trio_monthly:       'price_trio_monthly_test',
-      allaccess_monthly:  'price_allaccess_monthly_test',
-      single_annual:      'price_single_annual_test',
-      duo_annual:         'price_duo_annual_test',
-      trio_annual:        'price_trio_annual_test',
-      allaccess_annual:   'price_allaccess_annual_test'
+      single_monthly:     'price_1TaiqfJr8jtgHpa2SJ8RntRZ',
+      duo_monthly:        'price_1TaiuXJr8jtgHpa2mWoHzNVE',
+      trio_monthly:       'price_1TaiwWJr8jtgHpa2HFVCbAsh',
+      allaccess_monthly:  'price_1TaiyeJr8jtgHpa2m5vQyVZE',
+      single_annual:      'price_1TailiJr8jtgHpa2FIJYkQAY',
+      duo_annual:         'price_1TaiutJr8jtgHpa2gXVZ88jW',
+      trio_annual:        'price_1TaiwmJr8jtgHpa2lvxDKbFN',
+      allaccess_annual:   'price_1TaiywJr8jtgHpa25aUsmXnP'
     },
     live: {
       single_monthly:     'price_single_monthly_live',

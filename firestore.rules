@@ -1,0 +1,100 @@
+rules_version = '2';
+
+// ============================================================
+//   MODULAR PERFORMANCE — FIRESTORE SECURITY RULES
+//
+//   Principle: users can ONLY read and write their own data.
+//   No cross-user access. No unauthenticated access.
+//   Developer accounts (role: 'developer') have no extra
+//   Firestore permissions — billing_bypass is evaluated
+//   client-side only.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────
+
+    // Is the request from a signed-in user?
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Is the requesting user the owner of this document?
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // Is the incoming data only updating allowed fields?
+    // Prevents users from escalating their own role or tier.
+    function noEscalation() {
+      let disallowed = ['role', 'billing_bypass', 'stripe_customer_id',
+                        'tier', 'apps', 'payment_failed', 'payment_grace_ends'];
+      return !request.resource.data.diff(resource.data).affectedKeys()
+               .hasAny(disallowed);
+    }
+
+    // ── User profiles ─────────────────────────────────────────
+    match /users/{uid} {
+      // Read: only the owner
+      allow read: if isOwner(uid);
+
+      // Create: only the owner, and only on first write (new user)
+      allow create: if isOwner(uid);
+
+      // Update: owner can update, but CANNOT change role, tier,
+      // billing_bypass, stripe_customer_id, or apps.
+      // Those fields are only written by our server-side webhook.
+      allow update: if isOwner(uid) && noEscalation();
+
+      // Delete: never (use support flow)
+      allow delete: if false;
+
+      // ── Workout sub-collections ────────────────────────────
+
+      match /workout_history/{dateStr} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /workout_prs/{exerciseName} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Habit sub-collection ───────────────────────────────
+
+      match /habit_logs/{dateStr} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Sleep sub-collection ───────────────────────────────
+
+      match /sleep_logs/{dateStr} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Expense sub-collection ─────────────────────────────
+
+      match /expense_logs/{dateStr} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Journal sub-collection ─────────────────────────────
+
+      match /journal_entries/{dateStr} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Settings sub-document ──────────────────────────────
+
+      match /settings/{settingDoc} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ── Catch-all: deny everything else ───────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+  }
+}
