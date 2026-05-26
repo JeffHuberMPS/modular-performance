@@ -505,12 +505,23 @@
       }
     }
 
-    // Google sign-in
+    // Detect if running as an installed PWA (popup blocked on iOS standalone)
+    function isStandalonePWA() {
+      return (window.navigator.standalone === true) ||
+             window.matchMedia('(display-mode: standalone)').matches;
+    }
+
+    // Google sign-in — popup on browser, redirect on installed PWA
     async function signInGoogle() {
       clearError();
       setLoading(true);
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
+        if (isStandalonePWA()) {
+          // Redirect flow — result handled by getRedirectResult on page load
+          await firebase.auth().signInWithRedirect(provider);
+          return; // page will reload
+        }
         const result = await firebase.auth().signInWithPopup(provider);
         await handlePostSignIn(result.user);
       } catch (err) {
@@ -519,7 +530,7 @@
       }
     }
 
-    // Apple sign-in
+    // Apple sign-in — popup on browser, redirect on installed PWA
     async function signInApple() {
       clearError();
       setLoading(true);
@@ -527,6 +538,10 @@
         const provider = new firebase.auth.OAuthProvider('apple.com');
         provider.addScope('email');
         provider.addScope('name');
+        if (isStandalonePWA()) {
+          await firebase.auth().signInWithRedirect(provider);
+          return;
+        }
         const result = await firebase.auth().signInWithPopup(provider);
         await handlePostSignIn(result.user);
       } catch (err) {
@@ -667,6 +682,31 @@
         bg.appendChild(el);
       }
     })();
+
+    /* ── Handle redirect sign-in result (signInWithRedirect flow) ── */
+    firebase.auth().getRedirectResult().then(async function(result) {
+      if (result && result.user) {
+        try {
+          const db  = firebase.firestore();
+          const uid = result.user.uid;
+          const ref = db.collection('users').doc(uid);
+          const snap = await ref.get();
+          const DEVELOPER_EMAILS = ['jeffreyhuber86@gmail.com'];
+          const isDev = DEVELOPER_EMAILS.includes((result.user.email || '').toLowerCase());
+          if (!snap.exists) {
+            await ref.set({
+              uid, email: result.user.email || '', name: result.user.displayName || 'Athlete',
+              photo: result.user.photoURL || '', role: isDev ? 'developer' : 'user',
+              tier: isDev ? 'all-access' : 'single',
+              apps: isDev ? ['workout','habits','sleep','expenses','journal'] : ['workout'],
+              billing_bypass: isDev, stripe_customer_id: null,
+              created: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } catch(e) { console.warn('post-redirect Firestore error:', e); }
+        window.location.href = '/hub.html';
+      }
+    }).catch(function(e) { console.warn('getRedirectResult error:', e); });
 
     /* ── On load: if already signed in, skip to hub ─────── */
     firebase.auth().onAuthStateChanged(user => {

@@ -1,0 +1,46 @@
+{
+  "name": "Modular Performance",
+  "short_name": "MPS",
+  "description": "Every system. One platform. Built for the ones who don't quit.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "en",
+  "categories": ["fitness", "health", "sports"],
+  "icons": [
+    { "src": "/assets/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png" },
+    { "src": "/assets/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png" },
+    { "src": "/assets/icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/assets/icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/assets/icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Workout Tracker",
+      "short_name": "Workout",
+      "description": "Log your training session",
+      "url": "/apps/workout/",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Habit Tracker",
+      "short_name": "Habits",
+      "description": "Track your daily habits",
+      "url": "/apps/habits/",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Expense Tracker",
+      "short_name": "Expenses",
+      "description": "Track your spending",
+      "url": "/apps/expenses/",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

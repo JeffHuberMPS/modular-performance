@@ -3,17 +3,198 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#FFC107" />
+  <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MPS" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="description" content="Every system. One platform. Built for the ones who don't quit." />
-  <title>Modular Performance</title>
+  <title>MPS — Modular Performance</title>
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/assets/icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
+
+  <!-- Splash fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Saira+Condensed:wght@700;900&family=Orbitron:wght@900&display=swap" rel="stylesheet" />
+
   <style>
-    html, body { margin:0; padding:0; background:#0a0a0a; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ── Splash Screen ──────────────────────────────── */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease;
+    }
+    #splash.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Brand card — mirrors .brand-block in the workout tracker */
+    .splash-card {
+      position: relative;
+      text-align: center;
+      padding: 36px 40px 32px;
+      width: min(88vw, 360px);
+      background:
+        radial-gradient(ellipse at center 30%, rgba(74, 179, 244, 0.12) 0%, transparent 70%),
+        linear-gradient(180deg, #0c1428 0%, #060a18 100%);
+      border: 1px solid rgba(74, 179, 244, 0.55);
+      border-radius: 18px;
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.98),
+        0 0 40px rgba(74, 179, 244, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        inset 0 0 0 1px rgba(74, 179, 244, 0.14),
+        inset 0 -3px 10px rgba(0, 0, 0, 0.7),
+        inset 0 0 50px rgba(74, 179, 244, 0.07);
+      overflow: hidden;
+      animation: cardPulse 2.8s ease-in-out infinite;
+    }
+    @keyframes cardPulse {
+      0%, 100% { box-shadow:
+        0 20px 60px rgba(0,0,0,0.98),
+        0 0 40px rgba(74,179,244,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.10),
+        inset 0 0 0 1px rgba(74,179,244,0.14),
+        inset 0 -3px 10px rgba(0,0,0,0.7),
+        inset 0 0 50px rgba(74,179,244,0.07); }
+      50% { box-shadow:
+        0 20px 60px rgba(0,0,0,0.98),
+        0 0 60px rgba(74,179,244,0.38),
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        inset 0 0 0 1px rgba(74,179,244,0.22),
+        inset 0 -3px 10px rgba(0,0,0,0.6),
+        inset 0 0 70px rgba(74,179,244,0.12); }
+    }
+
+    /* Outer double-border accent line */
+    .splash-card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 20px;
+      background: transparent;
+      border: 1px solid rgba(74, 179, 244, 0.18);
+      pointer-events: none;
+    }
+
+    /* Shimmer sweep */
+    .splash-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(74,179,244,0.08) 50%, transparent 100%);
+      animation: shimmer 3.5s ease-in-out infinite 0.8s;
+      pointer-events: none;
+    }
+    @keyframes shimmer {
+      0%   { left: -100%; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { left: 160%; opacity: 0; }
+    }
+
+    /* MPS logo text */
+    .splash-mps {
+      font-family: 'Saira Condensed', 'Orbitron', 'Bebas Neue', sans-serif;
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(72px, 22vw, 96px);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: transparent;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,0.95) 0%,
+        rgba(200,230,255,0.90) 40%,
+        rgba(74,179,244,0.85) 75%,
+        rgba(40,120,200,0.80) 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      text-shadow: none;
+      filter: drop-shadow(0 0 18px rgba(74,179,244,0.55)) drop-shadow(0 4px 12px rgba(0,0,0,0.9));
+      position: relative;
+      z-index: 1;
+      margin-bottom: 6px;
+    }
+
+    /* Divider */
+    .splash-divider {
+      width: 64px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(74,179,244,0.7), transparent);
+      margin: 10px auto 12px;
+    }
+
+    /* Subtitle text */
+    .splash-subtitle {
+      font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.32em;
+      color: rgba(74, 179, 244, 0.75);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .splash-appname {
+      font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
+      font-size: 18px;
+      letter-spacing: 0.22em;
+      color: rgba(255, 255, 255, 0.92);
+      text-transform: uppercase;
+    }
+
+    /* Loading indicator */
+    .splash-loader {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .splash-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(74, 179, 244, 0.4);
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+    .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotPulse {
+      0%, 80%, 100% { background: rgba(74,179,244,0.3); transform: scale(0.85); }
+      40%            { background: rgba(74,179,244,0.9); transform: scale(1.15); }
+    }
+
+    /* Version tag */
+    .splash-version {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: rgba(74, 179, 244, 0.3);
+      white-space: nowrap;
+    }
   </style>
 
   <!-- Firebase (compat) -->
@@ -22,19 +203,63 @@
   <script src="/firebase-config.js"></script>
 </head>
 <body>
+
+  <!-- ── Splash Screen ──────────────────────────────── -->
+  <div id="splash">
+    <div class="splash-card">
+      <div class="splash-mps">MPS</div>
+      <div class="splash-divider"></div>
+      <div class="splash-subtitle">Modular Performance Systems</div>
+      <div class="splash-appname">Workout Tracker</div>
+    </div>
+    <div class="splash-loader">
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+    </div>
+    <div class="splash-version">v2.5 &nbsp;·&nbsp; modular-performance.com</div>
+  </div>
+
   <script>
-    // Register service worker
+    // ── Service Worker ───────────────────────────────
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js').catch(console.warn);
     }
 
-    // Auth check: signed-in → hub, signed-out → landing
+    // ── Splash + Auth Logic ──────────────────────────
+    const SPLASH_MIN_MS = 2400;   // minimum splash duration
+    const splashEl      = document.getElementById('splash');
+    const startTime     = Date.now();
+
+    let authUser    = undefined;  // undefined = pending, null = signed out, object = signed in
+    let minTimeDone = false;
+
+    function tryProceed() {
+      if (authUser === undefined || !minTimeDone) return;
+
+      // Fade out splash
+      splashEl.classList.add('fade-out');
+
+      setTimeout(function() {
+        if (authUser) {
+          window.location.replace('/hub.html');
+        } else {
+          // Skip marketing landing — go straight to sign-in
+          window.location.replace('/auth.html');
+        }
+      }, 480);
+    }
+
+    // Minimum display timer
+    setTimeout(function() {
+      minTimeDone = true;
+      tryProceed();
+    }, SPLASH_MIN_MS);
+
+    // Firebase auth check
     firebase.auth().onAuthStateChanged(function(user) {
-      if (user) {
-        window.location.replace('/hub.html');
-      } else {
-        window.location.replace('/landing.html');
-      }
+      authUser = user || null;
+      tryProceed();
     });
   </script>
 </body>
