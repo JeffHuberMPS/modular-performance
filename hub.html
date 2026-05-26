@@ -274,6 +274,53 @@
     .app-tile[data-app="expenses"]:not(.locked){ border-left-color: var(--expenses-green); }
     .app-tile[data-app="journal"]:not(.locked) { border-left-color: var(--sleep-purple); }
 
+    /* ── Trial Banner ──────────────────────────────────────── */
+    .trial-banner {
+      margin: 12px 20px 0;
+      padding: 10px 16px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .trial-banner--active {
+      background: rgba(255,193,7,0.1);
+      border: 1px solid rgba(255,193,7,0.35);
+      color: #FFC107;
+    }
+    .trial-banner--ending {
+      background: rgba(220,38,38,0.12);
+      border: 1px solid rgba(220,38,38,0.4);
+      color: #f87171;
+    }
+    .trial-banner__icon { font-size: 16px; }
+    .trial-banner__cta {
+      margin-left: auto;
+      font-size: 12px;
+      color: #FFC107;
+      cursor: pointer;
+      text-decoration: underline;
+      white-space: nowrap;
+    }
+
+    /* Trial badge on tile */
+    .trial-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,193,7,0.15);
+      border: 1px solid rgba(255,193,7,0.4);
+      color: #FFC107;
+      font-size: 9px;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1.5px;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .app-tile { position: relative; } /* ensure badge positions correctly */
+
     /* ── Upgrade Sheet ─────────────────────────────────────── */
     .upgrade-overlay {
       position: fixed;
@@ -564,6 +611,9 @@
     </div>
   </div>
 
+  <!-- ── Trial Banner (rendered by JS if trial is active) ────── -->
+  <div id="trial-banner-container"></div>
+
   <!-- ── App Grid ────────────────────────────────────────────── -->
   <div class="app-grid" id="app-grid">
 
@@ -647,8 +697,11 @@
       </div>
 
       <button class="upgrade-sheet__cta" id="upgrade-cta" onclick="startCheckout()">
-        Upgrade Now
+        Start 7-Day Free Trial
       </button>
+      <div style="text-align:center;font-size:11px;color:var(--text-faint);margin-top:8px">
+        No charge for 7 days · Cancel anytime
+      </div>
     </div>
   </div>
 
@@ -736,12 +789,54 @@
       }
     }
 
+    /* ── Trial Helpers ─────────────────────────────────────── */
+    function getTrialDaysLeft() {
+      if (!currentUser.trial_end) return null;
+      const endMs   = currentUser.trial_end.toMillis
+        ? currentUser.trial_end.toMillis()
+        : currentUser.trial_end * 1000;
+      const diffMs  = endMs - Date.now();
+      if (diffMs <= 0) return 0;
+      return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    }
+
+    function renderTrialBanner() {
+      const container = document.getElementById('trial-banner-container');
+      if (!container) return;
+
+      const daysLeft = getTrialDaysLeft();
+
+      // No trial — hide banner
+      if (!currentUser.trial_active || daysLeft === null || daysLeft <= 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const isEnding = currentUser.trial_ending_soon || daysLeft <= 3;
+      const cls      = isEnding ? 'trial-banner--ending' : 'trial-banner--active';
+      const icon     = isEnding ? '⚠️' : '⚡';
+      const msg      = isEnding
+        ? `Your free trial ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} — add a card to keep access.`
+        : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left in your free trial. Enjoy!`;
+
+      container.innerHTML = `
+        <div class="trial-banner ${cls}">
+          <span class="trial-banner__icon">${icon}</span>
+          <span>${msg}</span>
+          ${isEnding ? `<span class="trial-banner__cta" onclick="openUpgradeSheet('workout')">Add card →</span>` : ''}
+        </div>
+      `;
+    }
+
     /* ── Render Tiles ──────────────────────────────────────── */
     function renderTiles() {
       const tier    = devPreviewTier || currentUser.tier;
       const unlockedApps = currentUser.billing_bypass
         ? APPS.map(a => a.id)
         : (TIER_APPS[tier] || []);
+
+      const daysLeft   = getTrialDaysLeft();
+      const inTrial    = currentUser.trial_active && daysLeft !== null && daysLeft > 0;
 
       APPS.forEach(app => {
         const tile = document.getElementById(`tile-${app.id}`);
@@ -750,12 +845,24 @@
         const isUnlocked = unlockedApps.includes(app.id);
         const actionEl   = tile.querySelector('.app-tile__action');
 
+        // Remove any existing trial badge before re-render
+        const existingBadge = tile.querySelector('.trial-badge');
+        if (existingBadge) existingBadge.remove();
+
         if (isUnlocked) {
           tile.classList.remove('locked');
           // Remove lock icon if present
           const lockEl = tile.querySelector('.lock-icon');
           if (lockEl) lockEl.remove();
           actionEl.innerHTML = `<span class="app-tile__open">Open →</span>`;
+
+          // Add TRIAL badge if user is in a trial period
+          if (inTrial && !currentUser.billing_bypass) {
+            const badge = document.createElement('span');
+            badge.className = 'trial-badge';
+            badge.textContent = daysLeft <= 3 ? `${daysLeft}D LEFT` : 'TRIAL';
+            tile.appendChild(badge);
+          }
         } else {
           tile.classList.add('locked');
           // Add lock icon if not already there
@@ -768,6 +875,9 @@
           actionEl.innerHTML = `<span class="app-tile__unlock">Unlock →</span>`;
         }
       });
+
+      // Re-render trial banner whenever tiles re-render
+      renderTrialBanner();
     }
 
     /* ── Open App ──────────────────────────────────────────── */
@@ -805,7 +915,7 @@
         <div class="upgrade-option" onclick="selectUpgradePlan('duo')">
           <div>
             <div class="upgrade-option__label">Add this app</div>
-            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">Upgrade to Duo</div>
+            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">Upgrade to Duo · 7 days free</div>
           </div>
           <div class="upgrade-option__price">+$4/mo</div>
         </div>
@@ -815,7 +925,7 @@
               Go All-Access
               <span class="upgrade-option__badge">Best Value</span>
             </div>
-            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">All 5 apps, now + future</div>
+            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">All 5 apps · 7 days free</div>
           </div>
           <div class="upgrade-option__price">$21.99/mo</div>
         </div>
@@ -840,9 +950,12 @@
     }
 
     function startCheckout() {
-      // TODO (Session 5): wire to Stripe Checkout
-      showToast('Stripe checkout coming in Session 5 🔧');
       document.getElementById('upgrade-overlay').classList.remove('open');
+      if (typeof MPS_Billing !== 'undefined') {
+        MPS_Billing.startStripeCheckout(selectedPlan, 'monthly');
+      } else {
+        showToast('Billing not available — try again.');
+      }
     }
 
     /* ── User Menu ─────────────────────────────────────────── */

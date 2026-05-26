@@ -32,11 +32,18 @@ module.exports = async (req, res) => {
       cancel_url:           cancelUrl  || `${process.env.APP_URL}/hub.html?upgrade=cancelled`,
       metadata: { uid },
       subscription_data: {
-        metadata: { uid }
-      }
+        metadata: { uid },
+        // 7-day free trial for all new subscriptions.
+        // Only applies to first-time subscribers — Stripe skips the trial
+        // if the customer already has or had a subscription.
+        trial_period_days: 7
+      },
+      // Collect payment method upfront even during trial
+      payment_method_collection: 'always'
     };
 
-    // Attach existing Stripe customer if we have one
+    // Attach existing Stripe customer if we have one.
+    // If the customer has already used a trial, Stripe will not grant another.
     if (stripeCustomerId) {
       sessionParams.customer = stripeCustomerId;
     } else if (email) {
