@@ -475,28 +475,53 @@
     }
 
     /* ── PRICING SECTION ─────────────────────────────────────── */
-    .pricing-toggle {
+
+    /* Ownership toggle */
+    .ownership-toggle {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: var(--space-xl);
-    }
-    .pricing-toggle-btn {
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
+      align-items: stretch;
+      max-width: 480px;
+      margin: 0 auto var(--space-xl);
       border: 1px solid var(--border-subtle);
-      background: transparent;
-      color: var(--text-dim);
-      transition: all var(--transition-base);
+      border-radius: var(--radius-md);
+      overflow: hidden;
     }
-    .pricing-toggle-btn.active {
+    .ownership-btn {
+      flex: 1;
+      padding: 14px 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-faint);
+      transition: all 0.2s ease;
+      line-height: 1.3;
+      text-align: center;
+    }
+    .ownership-btn small {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      margin-top: 2px;
+      opacity: 0.7;
+    }
+    .ownership-btn.active {
       background: var(--ns-yellow);
       color: var(--ns-black);
-      border-color: var(--ns-yellow);
+    }
+    .ownership-btn:not(.active):hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-dim);
+    }
+    .ownership-divider {
+      width: 1px;
+      background: var(--border-subtle);
+      flex-shrink: 0;
     }
     .pricing-save-badge {
       font-size: 0.65rem;
@@ -1228,69 +1253,129 @@
   ════════════════════════════════════════════════════════════ -->
   <section class="section" id="pricing">
     <div class="section-label">Pricing</div>
-    <h2 class="section-title">Start with one.<br/><span>Unlock the system.</span></h2>
+    <h2 class="section-title">How do you want to<br/><span>own MPS?</span></h2>
     <div class="section-divider"></div>
 
-    <div class="pricing-toggle">
-      <button class="pricing-toggle-btn active" id="toggle-monthly" onclick="setPricingInterval('monthly')">Monthly</button>
-      <button class="pricing-toggle-btn"        id="toggle-annual"  onclick="setPricingInterval('annual')">
-        Annual <span class="pricing-save-badge">Save up to $49</span>
+    <!-- Ownership toggle -->
+    <div class="ownership-toggle">
+      <button class="ownership-btn active" id="btn-onetime" onclick="setPricingMode('onetime')">
+        One-Time
+        <small>Pay once. Own forever.</small>
+      </button>
+      <div class="ownership-divider"></div>
+      <button class="ownership-btn" id="btn-monthly" onclick="setPricingMode('monthly')">
+        Monthly
+        <small>Test first. Cancel anytime.</small>
       </button>
     </div>
-    <div id="annual-callout" style="display:none; text-align:center; font-size:0.72rem; color:var(--expenses-green); margin-bottom:var(--space-md); letter-spacing:0.02em;">
-      All-Access billed $215/yr instead of $263.88 — you save $48.88
+
+    <!-- One-Time Panel -->
+    <div id="panel-onetime">
+      <div style="text-align:center; margin-bottom:var(--space-lg);">
+        <span style="font-size:0.75rem; color:var(--text-faint);">✓ No recurring charges &nbsp;·&nbsp; ✓ Lifetime access &nbsp;·&nbsp; ✓ Own your data</span>
+      </div>
+      <div class="upsell-ladder">
+        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">Single</div>
+            <div class="upsell-rung__tier-price">$19</div>
+            <div style="font-size:0.6rem;color:var(--text-faint);margin-top:1px;">one-time</div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">1 app of your choice</div>
+            <span class="upsell-rung__badge upsell-rung__badge--save">Start here</span>
+          </div>
+        </div>
+        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">Duo</div>
+            <div class="upsell-rung__tier-price">$34</div>
+            <div style="font-size:0.6rem;color:var(--text-faint);margin-top:1px;">one-time</div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">Any 2 apps</div>
+          </div>
+        </div>
+        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">Trio</div>
+            <div class="upsell-rung__tier-price">$52</div>
+            <div style="font-size:0.6rem;color:var(--text-faint);margin-top:1px;">one-time</div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">Any 3 apps</div>
+          </div>
+        </div>
+        <div class="upsell-rung featured" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">All&#8209;Access</div>
+            <div class="upsell-rung__tier-price">$97</div>
+            <div style="font-size:0.6rem;color:rgba(201,160,32,0.7);margin-top:1px;">one-time</div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">All 5 apps — current + every future release</div>
+            <span class="upsell-rung__badge upsell-rung__badge--featured">Best Value</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:var(--space-xl);">
+        <a href="/auth.html" class="hero-btn-primary">Get Lifetime Access</a>
+        <div style="margin-top:10px; font-size:0.72rem; color:var(--text-faint);">
+          Pay once. Use forever. No card on file after purchase.
+        </div>
+      </div>
     </div>
 
-    <!-- Upsell Ladder -->
-    <div class="upsell-ladder" id="upsell-ladder">
-      <div class="upsell-rung" data-tier="single">
-        <div class="upsell-rung__tier">
-          <div class="upsell-rung__tier-name">Single</div>
-          <div class="upsell-rung__tier-price" id="price-single">$5.99/mo</div>
-          <div class="upsell-rung__tier-note" id="note-single">$59/yr · saves $12.88 vs. monthly</div>
+    <!-- Monthly Panel -->
+    <div id="panel-monthly" style="display:none;">
+      <div style="text-align:center; margin-bottom:var(--space-lg);">
+        <span style="font-size:0.75rem; color:var(--text-faint);">✓ 14-day free trial &nbsp;·&nbsp; ✓ Upgrade or downgrade anytime &nbsp;·&nbsp; ✓ Cancel anytime</span>
+      </div>
+      <div class="upsell-ladder">
+        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">Single</div>
+            <div class="upsell-rung__tier-price">$5.99<span style="font-size:0.7rem;">/mo</span></div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">1 app of your choice</div>
+            <span class="upsell-rung__badge upsell-rung__badge--save">Start here</span>
+          </div>
         </div>
-        <div class="upsell-rung__body">
-          <div class="upsell-rung__apps">1 app of your choice</div>
-          <span class="upsell-rung__badge upsell-rung__badge--save">Start here</span>
+        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">Duo</div>
+            <div class="upsell-rung__tier-price">$9.99<span style="font-size:0.7rem;">/mo</span></div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">Any 2 apps</div>
+          </div>
+        </div>
+        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">Trio</div>
+            <div class="upsell-rung__tier-price">$14.99<span style="font-size:0.7rem;">/mo</span></div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">Any 3 apps</div>
+          </div>
+        </div>
+        <div class="upsell-rung featured" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+          <div class="upsell-rung__tier">
+            <div class="upsell-rung__tier-name">All&#8209;Access</div>
+            <div class="upsell-rung__tier-price">$21.99<span style="font-size:0.7rem;">/mo</span></div>
+          </div>
+          <div class="upsell-rung__body">
+            <div class="upsell-rung__apps">All 5 apps — current + every future release</div>
+            <span class="upsell-rung__badge upsell-rung__badge--featured">Best Value</span>
+          </div>
         </div>
       </div>
-      <div class="upsell-rung" data-tier="duo">
-        <div class="upsell-rung__tier">
-          <div class="upsell-rung__tier-name">Duo</div>
-          <div class="upsell-rung__tier-price" id="price-duo">$9.99/mo</div>
-          <div class="upsell-rung__tier-note" id="note-duo">$99/yr · saves $20.88 vs. monthly</div>
+      <div style="text-align:center; margin-top:var(--space-xl);">
+        <a href="/auth.html" class="hero-btn-primary">Start Free — 14 Days on Us</a>
+        <div style="margin-top:10px; font-size:0.72rem; color:var(--text-faint);">
+          Pick your plan after the trial. No card required to start.
         </div>
-        <div class="upsell-rung__body">
-          <div class="upsell-rung__apps">Any 2 apps</div>
-        </div>
-      </div>
-      <div class="upsell-rung" data-tier="trio">
-        <div class="upsell-rung__tier">
-          <div class="upsell-rung__tier-name">Trio</div>
-          <div class="upsell-rung__tier-price" id="price-trio">$14.99/mo</div>
-          <div class="upsell-rung__tier-note" id="note-trio">$149/yr · saves $30.88 vs. monthly</div>
-        </div>
-        <div class="upsell-rung__body">
-          <div class="upsell-rung__apps">Any 3 apps</div>
-        </div>
-      </div>
-      <div class="upsell-rung featured" data-tier="all-access">
-        <div class="upsell-rung__tier">
-          <div class="upsell-rung__tier-name">All&#8209;Access</div>
-          <div class="upsell-rung__tier-price" id="price-all">$21.99/mo</div>
-          <div class="upsell-rung__tier-note" id="note-all">$215/yr · saves $48.88 vs. monthly</div>
-        </div>
-        <div class="upsell-rung__body">
-          <div class="upsell-rung__apps">All 5 apps — current + every future release</div>
-          <span class="upsell-rung__badge upsell-rung__badge--featured">Best Value</span>
-        </div>
-      </div>
-    </div>
-
-    <div style="text-align:center; margin-top: var(--space-xl);">
-      <a href="/auth.html" class="hero-btn-primary">Start Free — 14 Days on Us</a>
-      <div style="margin-top:10px; font-size:0.72rem; color:var(--text-faint);">
-        Pick your plan after the trial. No card required to start.
       </div>
     </div>
   </section>
@@ -1351,32 +1436,16 @@
       }
     })();
 
-    const PRICES = {
-      monthly: { single: '$5.99/mo', duo: '$9.99/mo', trio: '$14.99/mo', all: '$21.99/mo' },
-      annual:  { single: '$4.92/mo', duo: '$8.25/mo', trio: '$12.42/mo', all: '$17.92/mo' }
-    };
-
-    function setPricingInterval(interval) {
-      const isAnnual = interval === 'annual';
-      document.getElementById('toggle-monthly').classList.toggle('active', !isAnnual);
-      document.getElementById('toggle-annual').classList.toggle('active', isAnnual);
-      const p = PRICES[interval];
-      document.getElementById('price-single').textContent = p.single;
-      document.getElementById('price-duo').textContent    = p.duo;
-      document.getElementById('price-trio').textContent   = p.trio;
-      document.getElementById('price-all').textContent    = p.all;
-      ['single','duo','trio','all'].forEach(id => {
-        const note = document.getElementById('note-' + id);
-        if (note) note.classList.toggle('visible', isAnnual);
-      });
-      const callout = document.getElementById('annual-callout');
-      if (callout) callout.style.display = isAnnual ? 'block' : 'none';
+    // Pricing mode toggle: 'onetime' or 'monthly'
+    function setPricingMode(mode) {
+      const isOnetime = mode === 'onetime';
+      document.getElementById('btn-onetime').classList.toggle('active', isOnetime);
+      document.getElementById('btn-monthly').classList.toggle('active', !isOnetime);
+      document.getElementById('panel-onetime').style.display = isOnetime ? 'block' : 'none';
+      document.getElementById('panel-monthly').style.display = isOnetime ? 'none' : 'block';
     }
-
-    document.querySelectorAll('.upsell-rung').forEach(rung => {
-      rung.style.cursor = 'pointer';
-      rung.addEventListener('click', () => { window.location.href = '/auth.html'; });
-    });
+    // Default: one-time panel shown
+    setPricingMode('onetime');
   </script>
 
 </body>
