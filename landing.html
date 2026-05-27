@@ -234,43 +234,47 @@
     /* Premium branded app tiles */
     .suite-tile {
       flex-shrink: 0;
-      width: 200px;
-      border-radius: 18px;
+      width: 168px;
+      height: 168px;
+      border-radius: 22px;
       overflow: hidden;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       cursor: pointer;
       text-decoration: none;
       position: relative;
     }
     .suite-tile:hover { transform: translateY(-6px); }
 
-    /* outer double-border accent line — matches splash card ::before */
     .suite-tile::before {
       content: '';
       position: absolute;
       inset: -2px;
-      border-radius: 20px;
+      border-radius: 24px;
       background: transparent;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.07);
       pointer-events: none;
-      z-index: 1;
+      z-index: 2;
     }
 
     .tile-header {
-      padding: 30px 18px 26px;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 12px 14px;
       text-align: center;
       position: relative;
       overflow: hidden;
-      border-radius: 18px;
+      border-radius: 22px;
     }
 
-    /* shimmer sweep — matches splash card ::after */
     .tile-header::after {
       content: '';
       position: absolute;
       top: 0; left: -100%; width: 60%; height: 100%;
       background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
-      animation: tileShimmer 4s ease-in-out infinite;
+      animation: tileShimmer 4.5s ease-in-out infinite;
       pointer-events: none;
     }
     @keyframes tileShimmer {
@@ -284,34 +288,40 @@
       font-family: 'Saira Condensed', 'Orbitron', 'Bebas Neue', sans-serif;
       font-weight: 900;
       font-style: italic;
-      font-size: 54px;
+      font-size: 56px;
       letter-spacing: 0.04em;
       line-height: 1;
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
       position: relative;
       z-index: 1;
+      flex-shrink: 0;
     }
     .tile-divider {
-      width: 44px;
+      width: 100%;
       height: 1px;
-      margin: 9px auto 10px;
+      margin: 6px 0 7px;
+      flex-shrink: 0;
     }
     .tile-system {
-      font-size: 8px;
-      letter-spacing: 0.30em;
+      font-size: 6.5px;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 100%;
       position: relative;
       z-index: 1;
+      flex-shrink: 0;
     }
     .tile-name {
       font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
-      font-size: 15px;
-      letter-spacing: 0.22em;
+      font-size: 14px;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
+      margin-top: auto;
       position: relative;
       z-index: 1;
     }
@@ -813,4 +823,23 @@
       const grid = document.getElementById('pricing-grid');
       grid.innerHTML = plans.map(plan => {
         const price = pricingInterval === 'annual' ? plan.annual : plan.monthly;
-        const interval = pricingInterval === 'annual' ? '/yr' :
+        const interval = pricingInterval === 'annual' ? '/yr' : '/mo';
+        return `
+          <div class="pricing-card${plan.featured ? ' featured' : ''}">
+            ${plan.featured ? '<div class="pricing-card__badge">Best Value</div>' : ''}
+            <div class="pricing-card__name">MPS ${plan.name}</div>
+            <div class="pricing-card__price"><sup>$</sup>${price}</div>
+            <div class="pricing-card__interval">${interval}</div>
+            ${pricingInterval === 'annual' ? `<div class="pricing-card__savings">Save $${plan.savings}/yr</div>` : ''}
+            <div class="pricing-card__desc">${plan.desc}</div>
+            <a href="/auth.html" class="pricing-card__cta">Get Started</a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderPricing();
+  </script>
+
+</body>
+</html>
