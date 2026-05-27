@@ -1305,7 +1305,7 @@
   <script>
     try {
       firebase.auth().onAuthStateChanged(user => {
-        if (user) window.location.replace('/hub.html');
+        if (user && !new URLSearchParams(window.location.search).has('preview')) window.location.replace('/hub.html');
       });
     } catch(e) {}
 
