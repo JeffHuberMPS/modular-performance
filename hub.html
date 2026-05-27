@@ -183,135 +183,178 @@
       grid-column: 1 / -1;
     }
 
-    /* ── App Tile — Premium Gradient Cards ────────────────── */
+    /* ── App Tile — Premium Badge Cards ───────────────────── */
     .app-tile {
-      border-radius: var(--radius-lg);
-      padding: var(--space-lg) var(--space-md);
+      border-radius: 14px;
+      padding: 0;
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      min-height: 160px;
       text-decoration: none;
       overflow: hidden;
+      min-height: 200px;
     }
 
     .app-tile:hover:not(.locked) {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
     }
 
     .app-tile.locked {
-      opacity: 0.45;
+      opacity: 0.4;
       cursor: pointer;
-      filter: grayscale(0.3);
+      filter: grayscale(0.4);
     }
 
     .app-tile.locked:hover {
-      opacity: 0.6;
+      opacity: 0.55;
     }
 
     /* ── Per-app gradient themes ───────────────────────────── */
     .app-tile[data-app="workout"] {
-      background: linear-gradient(145deg, #070c1c 0%, #0c1628 55%, #0f1e3a 100%);
-      border: 1px solid rgba(74, 179, 244, 0.22);
-      box-shadow: inset 0 0 40px rgba(74, 179, 244, 0.04);
+      background: linear-gradient(160deg, #0d2140 0%, #091528 40%, #070c1c 100%);
+      border: 1px solid rgba(74, 179, 244, 0.3);
+      box-shadow: 0 0 0 0 rgba(74,179,244,0);
     }
     .app-tile[data-app="workout"]:hover:not(.locked) {
-      box-shadow: 0 8px 32px rgba(74, 179, 244, 0.14), inset 0 0 40px rgba(74, 179, 244, 0.04);
-      border-color: rgba(74, 179, 244, 0.4);
+      box-shadow: 0 10px 40px rgba(74, 179, 244, 0.2);
+      border-color: rgba(74, 179, 244, 0.5);
     }
-    .app-tile[data-app="workout"] .app-tile__name { color: var(--workout-blue); }
+    .app-tile[data-app="workout"] .app-tile__mps {
+      background: linear-gradient(135deg, #7dd3fc 0%, #4ab3f4 50%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .app-tile[data-app="workout"] .app-tile__subtitle { color: rgba(74, 179, 244, 0.5); }
+    .app-tile[data-app="workout"] .app-tile__name { color: #fff; }
     .app-tile[data-app="workout"] .app-tile__open { color: var(--workout-blue); }
-    .app-tile[data-app="workout"] .app-tile__brand { color: rgba(74, 179, 244, 0.35); }
 
     .app-tile[data-app="habits"] {
-      background: linear-gradient(145deg, #120404 0%, #1c0606 55%, #260808 100%);
-      border: 1px solid rgba(220, 38, 38, 0.22);
-      box-shadow: inset 0 0 40px rgba(220, 38, 38, 0.04);
+      background: linear-gradient(160deg, #3a0808 0%, #220505 40%, #120303 100%);
+      border: 1px solid rgba(220, 38, 38, 0.3);
     }
     .app-tile[data-app="habits"]:hover:not(.locked) {
-      box-shadow: 0 8px 32px rgba(220, 38, 38, 0.14), inset 0 0 40px rgba(220, 38, 38, 0.04);
-      border-color: rgba(220, 38, 38, 0.4);
+      box-shadow: 0 10px 40px rgba(220, 38, 38, 0.2);
+      border-color: rgba(220, 38, 38, 0.5);
     }
-    .app-tile[data-app="habits"] .app-tile__name { color: var(--habits-red); }
+    .app-tile[data-app="habits"] .app-tile__mps {
+      background: linear-gradient(135deg, #fca5a5 0%, #ef4444 50%, #dc2626 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .app-tile[data-app="habits"] .app-tile__subtitle { color: rgba(220, 38, 38, 0.5); }
+    .app-tile[data-app="habits"] .app-tile__name { color: #fff; }
     .app-tile[data-app="habits"] .app-tile__open { color: var(--habits-red); }
-    .app-tile[data-app="habits"] .app-tile__brand { color: rgba(220, 38, 38, 0.35); }
 
     .app-tile[data-app="sleep"] {
-      background: linear-gradient(145deg, #0b0712 0%, #120d1c 55%, #1a1228 100%);
-      border: 1px solid rgba(155, 107, 201, 0.22);
-      box-shadow: inset 0 0 40px rgba(155, 107, 201, 0.04);
+      background: linear-gradient(160deg, #2a1245 0%, #160c2a 40%, #0b0718 100%);
+      border: 1px solid rgba(155, 107, 201, 0.3);
     }
     .app-tile[data-app="sleep"]:hover:not(.locked) {
-      box-shadow: 0 8px 32px rgba(155, 107, 201, 0.14), inset 0 0 40px rgba(155, 107, 201, 0.04);
-      border-color: rgba(155, 107, 201, 0.4);
+      box-shadow: 0 10px 40px rgba(155, 107, 201, 0.2);
+      border-color: rgba(155, 107, 201, 0.5);
     }
-    .app-tile[data-app="sleep"] .app-tile__name { color: var(--sleep-purple); }
+    .app-tile[data-app="sleep"] .app-tile__mps {
+      background: linear-gradient(135deg, #d8b4fe 0%, #a855f7 50%, #9b6bc9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .app-tile[data-app="sleep"] .app-tile__subtitle { color: rgba(155, 107, 201, 0.5); }
+    .app-tile[data-app="sleep"] .app-tile__name { color: #fff; }
     .app-tile[data-app="sleep"] .app-tile__open { color: var(--sleep-purple); }
-    .app-tile[data-app="sleep"] .app-tile__brand { color: rgba(155, 107, 201, 0.35); }
 
     .app-tile[data-app="expenses"] {
-      background: linear-gradient(145deg, #040e06 0%, #071408 55%, #091c0b 100%);
-      border: 1px solid rgba(22, 163, 74, 0.22);
-      box-shadow: inset 0 0 40px rgba(22, 163, 74, 0.04);
+      background: linear-gradient(160deg, #0a2e10 0%, #061a08 40%, #030e04 100%);
+      border: 1px solid rgba(22, 163, 74, 0.3);
     }
     .app-tile[data-app="expenses"]:hover:not(.locked) {
-      box-shadow: 0 8px 32px rgba(22, 163, 74, 0.14), inset 0 0 40px rgba(22, 163, 74, 0.04);
-      border-color: rgba(22, 163, 74, 0.4);
+      box-shadow: 0 10px 40px rgba(22, 163, 74, 0.2);
+      border-color: rgba(22, 163, 74, 0.5);
     }
-    .app-tile[data-app="expenses"] .app-tile__name { color: var(--expenses-green); }
+    .app-tile[data-app="expenses"] .app-tile__mps {
+      background: linear-gradient(135deg, #86efac 0%, #22c55e 50%, #16a34a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .app-tile[data-app="expenses"] .app-tile__subtitle { color: rgba(22, 163, 74, 0.5); }
+    .app-tile[data-app="expenses"] .app-tile__name { color: #fff; }
     .app-tile[data-app="expenses"] .app-tile__open { color: var(--expenses-green); }
-    .app-tile[data-app="expenses"] .app-tile__brand { color: rgba(22, 163, 74, 0.35); }
 
     .app-tile[data-app="journal"] {
-      background: linear-gradient(145deg, #0e0c08 0%, #151309 55%, #1c1a10 100%);
-      border: 1px solid rgba(201, 168, 107, 0.2);
-      box-shadow: inset 0 0 40px rgba(201, 168, 107, 0.03);
+      background: linear-gradient(160deg, #2a2010 0%, #1a1408 40%, #0e0c06 100%);
+      border: 1px solid rgba(201, 168, 107, 0.25);
     }
     .app-tile[data-app="journal"]:hover:not(.locked) {
-      box-shadow: 0 8px 32px rgba(201, 168, 107, 0.1), inset 0 0 40px rgba(201, 168, 107, 0.03);
-      border-color: rgba(201, 168, 107, 0.35);
+      box-shadow: 0 10px 40px rgba(201, 168, 107, 0.15);
+      border-color: rgba(201, 168, 107, 0.4);
     }
-    .app-tile[data-app="journal"] .app-tile__name { color: var(--sleep-gold); }
+    .app-tile[data-app="journal"] .app-tile__mps {
+      background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #c9a86b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .app-tile[data-app="journal"] .app-tile__subtitle { color: rgba(201, 168, 107, 0.45); }
+    .app-tile[data-app="journal"] .app-tile__name { color: #fff; }
     .app-tile[data-app="journal"] .app-tile__open { color: var(--sleep-gold); }
-    .app-tile[data-app="journal"] .app-tile__brand { color: rgba(201, 168, 107, 0.3); }
 
-    /* ── Tile inner elements ───────────────────────────────── */
-    .app-tile__brand {
+    /* ── Tile top badge area ───────────────────────────────── */
+    .app-tile__top {
+      padding: 20px 20px 14px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .app-tile__mps {
       font-family: var(--font-display);
-      font-size: 0.7rem;
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
+      font-size: 2.2rem;
+      letter-spacing: 0.08em;
       line-height: 1;
-      margin-bottom: 2px;
+      display: block;
+    }
+
+    .app-tile__subtitle {
+      font-size: 0.48rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* ── Tile bottom content area ──────────────────────────── */
+    .app-tile__body {
+      padding: 14px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
     }
 
     .app-tile__name {
       font-family: var(--font-display);
-      font-size: 1.4rem;
-      letter-spacing: 0.06em;
+      font-size: 1.25rem;
+      letter-spacing: 0.08em;
       line-height: 1;
     }
 
     .app-tile__tag {
-      font-size: 0.68rem;
-      color: rgba(255,255,255,0.45);
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.38);
       line-height: 1.4;
       flex: 1;
-      margin-top: 2px;
     }
 
     .app-tile__action {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       margin-top: 8px;
     }
 
     .app-tile__open {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -322,7 +365,7 @@
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.25);
     }
 
     .lock-icon {
@@ -330,20 +373,20 @@
       top: 12px;
       right: 12px;
       font-size: 0.75rem;
-      opacity: 0.4;
+      opacity: 0.35;
     }
 
     /* Coming soon badge for Journal */
     .coming-soon-badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      background: rgba(201, 168, 107, 0.15);
+      top: 10px;
+      right: 10px;
+      background: rgba(201, 168, 107, 0.12);
       border: 1px solid rgba(201, 168, 107, 0.3);
       color: var(--sleep-gold);
-      font-size: 0.55rem;
+      font-size: 0.5rem;
       font-family: var(--font-display);
-      letter-spacing: 0.12em;
+      letter-spacing: 0.15em;
       padding: 3px 7px;
       border-radius: 3px;
     }
@@ -693,52 +736,77 @@
 
     <!-- Workout -->
     <div class="app-tile" data-app="workout" id="tile-workout" onclick="openApp('workout')">
-      <div class="app-tile__brand">MPS</div>
-      <div class="app-tile__name">WORKOUT</div>
-      <div class="app-tile__tag">Lifting, conditioning &amp; skill tracking</div>
-      <div class="app-tile__action">
-        <span class="app-tile__open">Open →</span>
+      <div class="app-tile__top">
+        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__subtitle">Modular Performance Systems</div>
+      </div>
+      <div class="app-tile__body">
+        <div class="app-tile__name">WORKOUT TRACKER</div>
+        <div class="app-tile__tag">Log every lift, skill session, and conditioning round. Track your personal records.</div>
+        <div class="app-tile__action">
+          <span class="app-tile__open">Open →</span>
+        </div>
       </div>
     </div>
 
     <!-- Habits -->
     <div class="app-tile" data-app="habits" id="tile-habits" onclick="openApp('habits')">
-      <div class="app-tile__brand">MPS</div>
-      <div class="app-tile__name">HABITS</div>
-      <div class="app-tile__tag">Build the systems that build you</div>
-      <div class="app-tile__action">
-        <span class="app-tile__open">Open →</span>
+      <div class="app-tile__top">
+        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__subtitle">Modular Performance Systems</div>
+      </div>
+      <div class="app-tile__body">
+        <div class="app-tile__name">HABIT TRACKER</div>
+        <div class="app-tile__tag">Check off your daily habits. Miss one? Restart that day. 90 days locked in builds a different man.</div>
+        <div class="app-tile__action">
+          <span class="app-tile__open">Open →</span>
+        </div>
       </div>
     </div>
 
     <!-- Sleep -->
     <div class="app-tile" data-app="sleep" id="tile-sleep" onclick="openApp('sleep')">
-      <div class="app-tile__brand">MPS</div>
-      <div class="app-tile__name">SLEEP</div>
-      <div class="app-tile__tag">Track recovery. Perform better.</div>
-      <div class="app-tile__action">
-        <span class="app-tile__open">Open →</span>
+      <div class="app-tile__top">
+        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__subtitle">Modular Performance Systems</div>
+      </div>
+      <div class="app-tile__body">
+        <div class="app-tile__name">REST &amp; RECOVERY</div>
+        <div class="app-tile__tag">Track sleep quality, soreness, and energy. Know when to push harder — and when recovery is the training.</div>
+        <div class="app-tile__action">
+          <span class="app-tile__open">Open →</span>
+        </div>
       </div>
     </div>
 
     <!-- Expenses -->
     <div class="app-tile" data-app="expenses" id="tile-expenses" onclick="openApp('expenses')">
-      <div class="app-tile__brand">MPS</div>
-      <div class="app-tile__name">EXPENSES</div>
-      <div class="app-tile__tag">Your money, systemized.</div>
-      <div class="app-tile__action">
-        <span class="app-tile__open">Open →</span>
+      <div class="app-tile__top">
+        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__subtitle">Modular Performance Systems</div>
+      </div>
+      <div class="app-tile__body">
+        <div class="app-tile__name">EXPENSE TRACKER</div>
+        <div class="app-tile__tag">Every dollar logged. See exactly where money goes. Find the leaks. Build leverage.</div>
+        <div class="app-tile__action">
+          <span class="app-tile__open">Open →</span>
+        </div>
       </div>
     </div>
 
     <!-- Journal -->
     <div class="app-tile" data-app="journal" id="tile-journal" onclick="openApp('journal')">
-      <div class="app-tile__brand">MPS</div>
-      <div class="app-tile__name">JOURNAL</div>
-      <div class="app-tile__tag">Faith, reflection, and growth.</div>
       <span class="coming-soon-badge">COMING SOON</span>
-      <div class="app-tile__action">
-        <span class="app-tile__open">Open →</span>
+      <div class="app-tile__top">
+        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__subtitle">Modular Performance Systems</div>
+      </div>
+      <div class="app-tile__body">
+        <div class="app-tile__name">JOURNAL</div>
+        <div class="app-tile__tag">5-minute daily reflection. Faith, wins, lessons. Build conviction. Track who you're becoming.</div>
+        <div class="app-tile__action">
+          <span class="app-tile__open">Open →</span>
+        </div>
       </div>
     </div>
 
@@ -940,12 +1008,14 @@
           }
         } else {
           tile.classList.add('locked');
-          // Add lock icon if not already there
+          // Add lock icon if not already there (inside the top section)
           if (!tile.querySelector('.lock-icon')) {
             const lock = document.createElement('span');
             lock.className = 'lock-icon';
             lock.textContent = '🔒';
-            tile.prepend(lock);
+            const topEl = tile.querySelector('.app-tile__top');
+            if (topEl) topEl.appendChild(lock);
+            else tile.prepend(lock);
           }
           actionEl.innerHTML = `<span class="app-tile__unlock">Unlock →</span>`;
         }
