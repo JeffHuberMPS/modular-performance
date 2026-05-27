@@ -9,7 +9,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Saira+Condensed:wght@700;900&family=Orbitron:wght@900&family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="/shared/styles.css" />
 
   <style>
@@ -235,57 +235,85 @@
     .suite-tile {
       flex-shrink: 0;
       width: 200px;
-      border-radius: 16px;
+      border-radius: 18px;
       overflow: hidden;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      transition: transform 0.3s ease;
       cursor: pointer;
       text-decoration: none;
+      position: relative;
     }
-    .suite-tile:hover { transform: translateY(-5px); }
+    .suite-tile:hover { transform: translateY(-6px); }
+
+    /* outer double-border accent line — matches splash card ::before */
+    .suite-tile::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 20px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      pointer-events: none;
+      z-index: 1;
+    }
 
     .tile-header {
-      padding: 28px 16px 24px;
+      padding: 30px 18px 26px;
       text-align: center;
       position: relative;
       overflow: hidden;
+      border-radius: 18px;
     }
+
+    /* shimmer sweep — matches splash card ::after */
     .tile-header::after {
       content: '';
       position: absolute;
       top: 0; left: -100%; width: 60%; height: 100%;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
-      transition: left 0.6s ease;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      animation: tileShimmer 4s ease-in-out infinite;
+      pointer-events: none;
     }
-    .suite-tile:hover .tile-header::after { left: 160%; }
+    @keyframes tileShimmer {
+      0%   { left: -100%; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { left: 160%; opacity: 0; }
+    }
 
     .tile-mps {
-      font-family: 'Saira Condensed', 'Bebas Neue', 'Arial Black', Impact, sans-serif;
+      font-family: 'Saira Condensed', 'Orbitron', 'Bebas Neue', sans-serif;
       font-weight: 900;
       font-style: italic;
-      font-size: 52px;
+      font-size: 54px;
       letter-spacing: 0.04em;
       line-height: 1;
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      margin-bottom: 4px;
+      margin-bottom: 5px;
+      position: relative;
+      z-index: 1;
     }
     .tile-divider {
-      width: 40px;
+      width: 44px;
       height: 1px;
-      margin: 8px auto 9px;
+      margin: 9px auto 10px;
     }
     .tile-system {
       font-size: 8px;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.30em;
       text-transform: uppercase;
-      margin-bottom: 5px;
+      margin-bottom: 6px;
+      position: relative;
+      z-index: 1;
     }
     .tile-name {
       font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
       font-size: 15px;
       letter-spacing: 0.22em;
       text-transform: uppercase;
+      position: relative;
+      z-index: 1;
     }
 
     /* Workout — dark navy / icy blue */
@@ -785,23 +813,4 @@
       const grid = document.getElementById('pricing-grid');
       grid.innerHTML = plans.map(plan => {
         const price = pricingInterval === 'annual' ? plan.annual : plan.monthly;
-        const interval = pricingInterval === 'annual' ? '/yr' : '/mo';
-        return `
-          <div class="pricing-card${plan.featured ? ' featured' : ''}">
-            ${plan.featured ? '<div class="pricing-card__badge">Best Value</div>' : ''}
-            <div class="pricing-card__name">MPS ${plan.name}</div>
-            <div class="pricing-card__price"><sup>$</sup>${price}</div>
-            <div class="pricing-card__interval">${interval}</div>
-            ${pricingInterval === 'annual' ? `<div class="pricing-card__savings">Save $${plan.savings}/yr</div>` : ''}
-            <div class="pricing-card__desc">${plan.desc}</div>
-            <a href="/auth.html" class="pricing-card__cta">Get Started</a>
-          </div>
-        `;
-      }).join('');
-    }
-
-    renderPricing();
-  </script>
-
-</body>
-</html>
+        const interval = pricingInterval === 'annual' ? '/yr' :
