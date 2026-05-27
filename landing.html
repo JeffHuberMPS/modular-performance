@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#c9a86b" />
+  <meta name="theme-color" content="#C9A020" />
   <meta name="description" content="Every system. One platform. Built for the ones who don't quit. Track workouts, habits, sleep, expenses, and more." />
   <title>Modular Performance — Every System. One Platform.</title>
 
@@ -44,8 +44,9 @@
     .nav-logo span { color: var(--ns-yellow); }
     .nav-cta {
       padding: 9px 20px;
-      background: var(--ns-yellow);
-      color: var(--ns-black);
+      background: linear-gradient(105deg, #5C4000 0%, #C9A020 25%, #F5E060 50%, #C9A020 75%, #5C4000 100%);
+      background-size: 200% auto;
+      color: #000;
       border: none;
       border-radius: var(--radius-md);
       font-size: 0.8rem;
@@ -53,10 +54,11 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: all var(--transition-base);
+      transition: box-shadow 0.2s ease;
       text-decoration: none;
+      animation: goldShimmer 3s linear infinite;
     }
-    .nav-cta:hover { background: #e8c84a; box-shadow: 0 0 20px rgba(212,175,55,0.4); }
+    .nav-cta:hover { box-shadow: 0 0 20px rgba(212,175,55,0.5); }
 
     /* ── HERO ────────────────────────────────────────────────── */
     .hero {
@@ -87,6 +89,20 @@
       z-index: 0;
     }
 
+    /* ── METALLIC GOLD SHIMMER ───────────────────────────────── */
+    @keyframes goldShimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    /* Gradient text utility */
+    .gold-text {
+      background: linear-gradient(160deg, #7A5A00 0%, #C9A020 20%, #F5E060 42%, #D4AF37 58%, #8B6600 80%, #E8CE50 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
     /* Floating geometric shapes */
     .hero-bg {
       position: absolute;
@@ -112,7 +128,10 @@
       font-size: 0.7rem;
       letter-spacing: 0.35em;
       text-transform: uppercase;
-      color: var(--ns-yellow);
+      background: linear-gradient(90deg, #C9A020 0%, #F5E060 50%, #C9A020 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: var(--space-lg);
     }
 
@@ -124,7 +143,12 @@
       letter-spacing: 0.04em;
       margin-bottom: var(--space-lg);
     }
-    .hero-headline span { color: var(--ns-yellow); }
+    .hero-headline span {
+      background: linear-gradient(180deg, #FFE066 0%, #D4AF37 28%, #7A5A00 55%, #C9A020 75%, #F0D060 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
     .hero-tagline {
       font-size: clamp(1rem, 2.5vw, 1.25rem);
@@ -143,8 +167,9 @@
 
     .hero-btn-primary {
       padding: 15px 32px;
-      background: var(--ns-yellow);
-      color: var(--ns-black);
+      background: linear-gradient(105deg, #5C4000 0%, #C9A020 25%, #F5E060 50%, #C9A020 75%, #5C4000 100%);
+      background-size: 200% auto;
+      color: #000;
       border: none;
       border-radius: var(--radius-md);
       font-size: 0.95rem;
@@ -152,10 +177,11 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: all var(--transition-base);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
       text-decoration: none;
+      animation: goldShimmer 3s linear infinite;
     }
-    .hero-btn-primary:hover { background: #e8c84a; box-shadow: 0 0 28px rgba(212,175,55,0.45); transform: translateY(-2px); }
+    .hero-btn-primary:hover { box-shadow: 0 0 32px rgba(212,175,55,0.55); transform: translateY(-2px); }
 
     .hero-btn-ghost {
       padding: 15px 32px;
@@ -187,7 +213,10 @@
       font-size: 0.65rem;
       letter-spacing: 0.35em;
       text-transform: uppercase;
-      color: var(--ns-yellow);
+      background: linear-gradient(90deg, #C9A020 0%, #F5E060 50%, #C9A020 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: var(--space-md);
       text-align: center;
     }
@@ -200,7 +229,12 @@
       text-align: center;
       margin-bottom: var(--space-xl);
     }
-    .section-title span { color: var(--ns-yellow); }
+    .section-title span {
+      background: linear-gradient(160deg, #FFE066 0%, #D4AF37 30%, #8B6600 60%, #D4AF37 80%, #FFE066 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
     /* ── PROBLEM SECTION ─────────────────────────────────────── */
     .problem-grid {
@@ -212,7 +246,7 @@
     .problem-card {
       background: var(--card-bg);
       border: 1px solid var(--border-subtle);
-      border-top: 2px solid rgba(212,175,55,0.4);
+      border-top: 2px solid rgba(201,160,32,0.4);
       border-radius: var(--radius-lg);
       padding: var(--space-lg);
     }
@@ -220,7 +254,7 @@
       font-size: 0.6rem;
       letter-spacing: 0.3em;
       text-transform: uppercase;
-      color: rgba(212,175,55,0.75);
+      color: rgba(201,160,32,0.75);
       margin-bottom: 10px;
       font-weight: 700;
     }
