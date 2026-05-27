@@ -723,6 +723,78 @@
     .diff-col--them .diff-row__text { color: var(--text-faint); }
     .diff-col--us   .diff-row__text { color: var(--text-dim); }
 
+    /* ── Differentiation stack line ─────────────────────────── */
+    .diff-stack-line {
+      margin-top: var(--space-lg);
+      padding: var(--space-md) var(--space-xl);
+      text-align: center;
+      font-size: 0.88rem;
+      font-style: italic;
+      color: rgba(201,160,32,0.8);
+      letter-spacing: 0.03em;
+      border-top: 1px solid rgba(201,160,32,0.15);
+    }
+
+    /* ── Annual note sub-line inside upsell rungs ────────────── */
+    .upsell-rung__tier-note {
+      font-size: 0.62rem;
+      color: var(--expenses-green);
+      margin-top: 2px;
+      line-height: 1.3;
+      display: none;
+    }
+    .upsell-rung__tier-note.visible { display: block; }
+    .upsell-rung.featured .upsell-rung__tier-note { color: #4ade80; }
+
+    /* ── MMP Banner ──────────────────────────────────────────── */
+    .mmp-banner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg) var(--space-xl);
+    }
+    .mmp-banner__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+      padding: var(--space-md) var(--space-xl);
+      background: rgba(201,160,32,0.06);
+      border: 1px solid rgba(201,160,32,0.22);
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
+    }
+    .mmp-banner__text {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .mmp-banner__text strong {
+      color: var(--ns-yellow);
+      font-weight: 700;
+    }
+    .mmp-banner__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      background: rgba(201,160,32,0.12);
+      border: 1px solid rgba(201,160,32,0.45);
+      border-radius: var(--radius-sm);
+      color: var(--ns-yellow);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .mmp-banner__cta:hover {
+      background: rgba(201,160,32,0.2);
+      border-color: rgba(201,160,32,0.7);
+      text-decoration: none;
+    }
+
     /* ── FOUNDER SECTION ─────────────────────────────────────── */
     .founder-section {
       padding: var(--space-3xl) var(--space-lg);
@@ -948,6 +1020,18 @@
     Same stacking system behind the <a href="https://drive.google.com/file/d/15CaGkFnoXhStu7mPAvPdWFTBx9-wUEpk/view" target="_blank" rel="noopener" class="urgency-link">Modern Man Protocol 7-Day Discipline Reset</a>. Now applied to your entire life.
   </div>
 
+  <!-- ── MMP Banner ─────────────────────────────────────────── -->
+  <div class="mmp-banner">
+    <div class="mmp-banner__inner">
+      <div class="mmp-banner__text">
+        <strong>Free resource:</strong> The Modern Man Protocol is a 7-day discipline reset built on the same stacking system as MPS. Download it free and see the framework in action.
+      </div>
+      <a href="https://drive.google.com/file/d/15CaGkFnoXhStu7mPAvPdWFTBx9-wUEpk/view" target="_blank" rel="noopener" class="mmp-banner__cta">
+        Get Free PDF ↗
+      </a>
+    </div>
+  </div>
+
   <!-- ═══════════════════════════════════════════════════════════
        THE PROBLEM
   ════════════════════════════════════════════════════════════ -->
@@ -1083,13 +1167,16 @@
         </div>
         <div class="diff-row">
           <span class="diff-row__icon">✓</span>
-          <span class="diff-row__text">Tracks rounds, conditioning sessions, PRs, bodyweight multipliers — actual combat sport data</span>
+          <span class="diff-row__text">Tracks rounds, conditioning sessions, personal records, bodyweight multipliers — actual combat sport data</span>
         </div>
         <div class="diff-row">
           <span class="diff-row__icon">✓</span>
           <span class="diff-row__text">Dark, premium, minimal. Built to feel like the command center it is.</span>
         </div>
       </div>
+    </div>
+    <div class="diff-stack-line">
+      Discipline compounds when everything's tracked. One system. Five lenses. Unstoppable.
     </div>
   </div>
 
@@ -1145,6 +1232,7 @@
         <div class="upsell-rung__tier">
           <div class="upsell-rung__tier-name">Single</div>
           <div class="upsell-rung__tier-price" id="price-single">$5.99/mo</div>
+          <div class="upsell-rung__tier-note" id="note-single">$59/yr — save $12.88</div>
         </div>
         <div class="upsell-rung__body">
           <div class="upsell-rung__apps">1 app of your choice</div>
@@ -1155,6 +1243,7 @@
         <div class="upsell-rung__tier">
           <div class="upsell-rung__tier-name">Duo</div>
           <div class="upsell-rung__tier-price" id="price-duo">$9.99/mo</div>
+          <div class="upsell-rung__tier-note" id="note-duo">$99/yr — save $20.88</div>
         </div>
         <div class="upsell-rung__body">
           <div class="upsell-rung__apps">Any 2 apps</div>
@@ -1164,6 +1253,7 @@
         <div class="upsell-rung__tier">
           <div class="upsell-rung__tier-name">Trio</div>
           <div class="upsell-rung__tier-price" id="price-trio">$14.99/mo</div>
+          <div class="upsell-rung__tier-note" id="note-trio">$149/yr — save $30.88</div>
         </div>
         <div class="upsell-rung__body">
           <div class="upsell-rung__apps">Any 3 apps</div>
@@ -1173,6 +1263,7 @@
         <div class="upsell-rung__tier">
           <div class="upsell-rung__tier-name">All&#8209;Access</div>
           <div class="upsell-rung__tier-price" id="price-all">$21.99/mo</div>
+          <div class="upsell-rung__tier-note" id="note-all">$215/yr — save $48.88</div>
         </div>
         <div class="upsell-rung__body">
           <div class="upsell-rung__apps">All 5 apps — current + every future release</div>
@@ -1206,8 +1297,7 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       FOOTER
+
   ════════════════════════════════════════════════════════════ -->
   <footer class="landing-footer">
     <div class="footer-logo">M<span>P</span>S</div>
@@ -1220,66 +1310,55 @@
     <div class="footer-copy">© 2026 Modular Performance. All rights reserved.</div>
   </footer>
 
-  <!-- ── Firebase (for auth redirect check) ──────────────────── -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="/firebase-config.js"></script>
 
   <script>
-    /* ── Auth redirect: skip landing if already signed in ───── */
     try {
       firebase.auth().onAuthStateChanged(user => {
         if (user) window.location.replace('/hub.html');
       });
-    } catch(e) { /* firebase-config not present in dev */ }
+    } catch(e) {}
 
-    /* ── Hero background shapes ──────────────────────────────── */
     (function generateHeroBg() {
       const container = document.getElementById('hero-bg');
       if (!container) return;
       for (let i = 0; i < 18; i++) {
         const el = document.createElement('div');
         el.className = 'hero-shape';
-        const size  = 30 + Math.random() * 120;
-        const left  = Math.random() * 100;
+        const size = 30 + Math.random() * 120;
+        const left = Math.random() * 100;
         const delay = Math.random() * 30;
-        const dur   = 20 + Math.random() * 30;
-        const isCircle = Math.random() > 0.5;
-        el.style.cssText = `
-          width:${size}px; height:${size}px;
-          left:${left}%;
-          bottom:-${size}px;
-          border-radius:${isCircle ? '50%' : '4px'};
-          animation-duration:${dur}s;
-          animation-delay:${delay}s;
-          border-color: rgba(201,168,107,${0.04 + Math.random() * 0.08});
-        `;
+        const dur = 20 + Math.random() * 30;
+        el.style.cssText = `width:${size}px;height:${size}px;left:${left}%;bottom:-${size}px;border-radius:${Math.random()>.5?'50%':'4px'};animation-duration:${dur}s;animation-delay:${delay}s;border-color:rgba(201,168,107,${0.04+Math.random()*0.08});`;
         container.appendChild(el);
       }
     })();
 
-    /* ── Pricing toggle ─────────────────────────────────────── */
     const PRICES = {
       monthly: { single: '$5.99/mo', duo: '$9.99/mo', trio: '$14.99/mo', all: '$21.99/mo' },
-      annual:  { single: '$59/yr',   duo: '$99/yr',   trio: '$149/yr',  all: '$215/yr'   }
+      annual:  { single: '$4.92/mo', duo: '$8.25/mo', trio: '$12.42/mo', all: '$17.92/mo' }
     };
 
     function setPricingInterval(interval) {
-      document.getElementById('toggle-monthly').classList.toggle('active', interval === 'monthly');
-      document.getElementById('toggle-annual').classList.toggle('active', interval === 'annual');
+      const isAnnual = interval === 'annual';
+      document.getElementById('toggle-monthly').classList.toggle('active', !isAnnual);
+      document.getElementById('toggle-annual').classList.toggle('active', isAnnual);
       const p = PRICES[interval];
       document.getElementById('price-single').textContent = p.single;
       document.getElementById('price-duo').textContent    = p.duo;
       document.getElementById('price-trio').textContent   = p.trio;
       document.getElementById('price-all').textContent    = p.all;
+      ['single','duo','trio','all'].forEach(id => {
+        const note = document.getElementById('note-' + id);
+        if (note) note.classList.toggle('visible', isAnnual);
+      });
     }
 
-    /* ── Upsell ladder click to auth ────────────────────────── */
     document.querySelectorAll('.upsell-rung').forEach(rung => {
       rung.style.cursor = 'pointer';
-      rung.addEventListener('click', () => {
-        window.location.href = '/auth.html';
-      });
+      rung.addEventListener('click', () => { window.location.href = '/auth.html'; });
     });
   </script>
 
