@@ -183,198 +183,208 @@
       grid-column: 1 / -1;
     }
 
-    /* ── App Tile — Premium Badge Cards ───────────────────── */
+    /* ── App Tile — exact match to landing page suite cards ── */
     .app-tile {
-      border-radius: 14px;
-      padding: 0;
+      border-radius: 22px;
+      overflow: hidden;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       position: relative;
       display: flex;
       flex-direction: column;
       text-decoration: none;
-      overflow: hidden;
-      min-height: 200px;
     }
+    .app-tile:hover:not(.locked) { transform: translateY(-6px); }
+    .app-tile.locked { opacity: 0.4; filter: grayscale(0.6); }
+    .app-tile.locked:hover { opacity: 0.55; }
 
-    .app-tile:hover:not(.locked) {
-      transform: translateY(-4px);
-    }
-
-    .app-tile.locked {
-      opacity: 0.4;
-      cursor: pointer;
-      filter: grayscale(0.4);
-    }
-
-    .app-tile.locked:hover {
-      opacity: 0.55;
-    }
-
-    /* ── Per-app gradient themes ───────────────────────────── */
-    .app-tile[data-app="workout"] {
-      background: linear-gradient(160deg, #0d2140 0%, #091528 40%, #070c1c 100%);
-      border: 1px solid rgba(74, 179, 244, 0.3);
-      box-shadow: 0 0 0 0 rgba(74,179,244,0);
-    }
-    .app-tile[data-app="workout"]:hover:not(.locked) {
-      box-shadow: 0 10px 40px rgba(74, 179, 244, 0.2);
-      border-color: rgba(74, 179, 244, 0.5);
-    }
-    .app-tile[data-app="workout"] .app-tile__mps {
-      background: linear-gradient(135deg, #7dd3fc 0%, #4ab3f4 50%, #0ea5e9 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .app-tile[data-app="workout"] .app-tile__subtitle { color: rgba(74, 179, 244, 0.5); }
-    .app-tile[data-app="workout"] .app-tile__open { color: var(--workout-blue); }
-
-    .app-tile[data-app="habits"] {
-      background: linear-gradient(160deg, #3a0808 0%, #220505 40%, #120303 100%);
-      border: 1px solid rgba(220, 38, 38, 0.3);
-    }
-    .app-tile[data-app="habits"]:hover:not(.locked) {
-      box-shadow: 0 10px 40px rgba(220, 38, 38, 0.2);
-      border-color: rgba(220, 38, 38, 0.5);
-    }
-    .app-tile[data-app="habits"] .app-tile__mps {
-      background: linear-gradient(135deg, #fca5a5 0%, #ef4444 50%, #dc2626 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .app-tile[data-app="habits"] .app-tile__subtitle { color: rgba(220, 38, 38, 0.5); }
-    .app-tile[data-app="habits"] .app-tile__open { color: var(--habits-red); }
-
-    .app-tile[data-app="sleep"] {
-      background: linear-gradient(160deg, #2a1245 0%, #160c2a 40%, #0b0718 100%);
-      border: 1px solid rgba(155, 107, 201, 0.3);
-    }
-    .app-tile[data-app="sleep"]:hover:not(.locked) {
-      box-shadow: 0 10px 40px rgba(155, 107, 201, 0.2);
-      border-color: rgba(155, 107, 201, 0.5);
-    }
-    .app-tile[data-app="sleep"] .app-tile__mps {
-      background: linear-gradient(135deg, #d8b4fe 0%, #a855f7 50%, #9b6bc9 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .app-tile[data-app="sleep"] .app-tile__subtitle { color: rgba(155, 107, 201, 0.5); }
-    .app-tile[data-app="sleep"] .app-tile__open { color: var(--sleep-purple); }
-
-    .app-tile[data-app="expenses"] {
-      background: linear-gradient(160deg, #0a2e10 0%, #061a08 40%, #030e04 100%);
-      border: 1px solid rgba(22, 163, 74, 0.3);
-    }
-    .app-tile[data-app="expenses"]:hover:not(.locked) {
-      box-shadow: 0 10px 40px rgba(22, 163, 74, 0.2);
-      border-color: rgba(22, 163, 74, 0.5);
-    }
-    .app-tile[data-app="expenses"] .app-tile__mps {
-      background: linear-gradient(135deg, #86efac 0%, #22c55e 50%, #16a34a 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .app-tile[data-app="expenses"] .app-tile__subtitle { color: rgba(22, 163, 74, 0.5); }
-    .app-tile[data-app="expenses"] .app-tile__open { color: var(--expenses-green); }
-
-    .app-tile[data-app="journal"] {
-      background: linear-gradient(160deg, #2a2010 0%, #1a1408 40%, #0e0c06 100%);
-      border: 1px solid rgba(201, 168, 107, 0.25);
-    }
-    .app-tile[data-app="journal"]:hover:not(.locked) {
-      box-shadow: 0 10px 40px rgba(201, 168, 107, 0.15);
-      border-color: rgba(201, 168, 107, 0.4);
-    }
-    .app-tile[data-app="journal"] .app-tile__mps {
-      background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #c9a86b 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .app-tile[data-app="journal"] .app-tile__subtitle { color: rgba(201, 168, 107, 0.45); }
-    .app-tile[data-app="journal"] .app-tile__open { color: var(--sleep-gold); }
-
-    /* ── Tile top badge area ───────────────────────────────── */
+    /* ── Colored badge header ─────────────────────────────── */
     .app-tile__top {
-      padding: 22px 20px 20px;
-      text-align: center;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 18px 16px 18px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+    }
+    .app-tile__top::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      animation: tileShimmer 4.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes tileShimmer {
+      0%   { left: -100%; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { left: 160%; opacity: 0; }
     }
 
+    /* ── MPS italic gradient text ────────────────────────── */
     .app-tile__mps {
       font-family: var(--font-display);
-      font-size: 2.4rem;
-      letter-spacing: 0.08em;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 28px;
+      letter-spacing: 0.04em;
       line-height: 1;
-      display: block;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 3px;
+      position: relative;
+      z-index: 1;
     }
 
+    /* ── Thin colored divider line ───────────────────────── */
+    .app-tile__divider {
+      width: 80%;
+      height: 1px;
+      margin: 5px auto 5px;
+    }
+
+    /* ── "Modular Performance Systems" label ─────────────── */
     .app-tile__subtitle {
-      font-size: 0.46rem;
-      letter-spacing: 0.24em;
+      font-size: 6px;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      margin-top: 3px;
-      font-weight: 600;
+      white-space: nowrap;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 2px;
     }
 
+    /* ── App name ────────────────────────────────────────── */
     .app-tile__name {
       font-family: var(--font-display);
-      font-size: 1.15rem;
-      letter-spacing: 0.12em;
-      line-height: 1;
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       color: rgba(255,255,255,0.92);
-      margin-top: 10px;
+      position: relative;
+      z-index: 1;
     }
 
-    /* ── Tile bottom content area ──────────────────────────── */
+    /* ── Description pill (below header) ────────────────── */
     .app-tile__body {
-      padding: 14px 20px 16px;
+      padding: 12px 14px 14px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-top: none;
+      border-radius: 0 0 22px 22px;
       flex: 1;
     }
-
     .app-tile__tag {
-      font-size: 0.65rem;
-      color: rgba(255,255,255,0.38);
-      line-height: 1.4;
+      font-size: 10.5px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.55);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       flex: 1;
     }
-
-    .app-tile__action {
-      margin-top: 8px;
-    }
-
+    .app-tile__action { margin-top: 6px; }
     .app-tile__open {
-      font-size: 0.68rem;
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
-
     .app-tile__unlock {
-      font-size: 0.65rem;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: rgba(255,255,255,0.25);
     }
-
     .lock-icon {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 12px; right: 12px;
       font-size: 0.75rem;
       opacity: 0.35;
     }
+
+    /* ── Per-app themes (ported 1:1 from landing page) ───── */
+    .app-tile[data-app="workout"] .app-tile__top {
+      background: radial-gradient(ellipse at center 30%, rgba(74,179,244,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #0c1428 0%, #060a18 100%);
+      border: 1px solid rgba(74,179,244,0.50);
+      box-shadow: 0 0 28px rgba(74,179,244,0.14), inset 0 0 0 1px rgba(74,179,244,0.10);
+    }
+    .app-tile[data-app="workout"] .app-tile__mps {
+      background: linear-gradient(180deg,#fff 0%,#c8e6ff 40%,#4ab3f4 75%,#2878c8 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(74,179,244,0.45));
+    }
+    .app-tile[data-app="workout"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(74,179,244,0.7),transparent); }
+    .app-tile[data-app="workout"] .app-tile__subtitle { color: rgba(74,179,244,0.70); }
+    .app-tile[data-app="workout"] .app-tile__open { color: var(--workout-blue); }
+
+    .app-tile[data-app="habits"] .app-tile__top {
+      background: radial-gradient(ellipse at center 30%, rgba(220,38,38,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #1a0808 0%, #0a0000 100%);
+      border: 1px solid rgba(220,38,38,0.50);
+      box-shadow: 0 0 28px rgba(220,38,38,0.14), inset 0 0 0 1px rgba(220,38,38,0.10);
+    }
+    .app-tile[data-app="habits"] .app-tile__mps {
+      background: linear-gradient(180deg,#fff 0%,#ffb3b3 40%,#dc2626 75%,#991b1b 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(220,38,38,0.50));
+    }
+    .app-tile[data-app="habits"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(220,38,38,0.7),transparent); }
+    .app-tile[data-app="habits"] .app-tile__subtitle { color: rgba(220,38,38,0.70); }
+    .app-tile[data-app="habits"] .app-tile__open { color: var(--habits-red); }
+
+    .app-tile[data-app="sleep"] .app-tile__top {
+      background: radial-gradient(ellipse at center 30%, rgba(155,107,201,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #140d24 0%, #080410 100%);
+      border: 1px solid rgba(201,168,107,0.45);
+      box-shadow: 0 0 28px rgba(155,107,201,0.14), inset 0 0 0 1px rgba(201,168,107,0.10);
+    }
+    .app-tile[data-app="sleep"] .app-tile__mps {
+      background: linear-gradient(180deg,#fff8e8 0%,#f0d898 35%,#c9a86b 70%,#9b6bc9 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(201,168,107,0.45));
+    }
+    .app-tile[data-app="sleep"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(201,168,107,0.7),transparent); }
+    .app-tile[data-app="sleep"] .app-tile__subtitle { color: rgba(201,168,107,0.70); }
+    .app-tile[data-app="sleep"] .app-tile__open { color: var(--sleep-gold); }
+
+    .app-tile[data-app="expenses"] .app-tile__top {
+      background: radial-gradient(ellipse at center 30%, rgba(22,163,74,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #081408 0%, #020a02 100%);
+      border: 1px solid rgba(22,163,74,0.50);
+      box-shadow: 0 0 28px rgba(22,163,74,0.14), inset 0 0 0 1px rgba(22,163,74,0.10);
+    }
+    .app-tile[data-app="expenses"] .app-tile__mps {
+      background: linear-gradient(180deg,#fff 0%,#a8f0c0 40%,#16a34a 75%,#0d6b30 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(22,163,74,0.50));
+    }
+    .app-tile[data-app="expenses"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(22,163,74,0.7),transparent); }
+    .app-tile[data-app="expenses"] .app-tile__subtitle { color: rgba(22,163,74,0.70); }
+    .app-tile[data-app="expenses"] .app-tile__open { color: var(--expenses-green); }
+
+    .app-tile[data-app="journal"] .app-tile__top {
+      background: radial-gradient(ellipse at center 30%, rgba(196,168,130,0.10) 0%, transparent 70%),
+                  linear-gradient(180deg, #130f0a 0%, #080603 100%);
+      border: 1px solid rgba(196,168,130,0.40);
+      box-shadow: 0 0 28px rgba(196,168,130,0.10), inset 0 0 0 1px rgba(196,168,130,0.08);
+    }
+    .app-tile[data-app="journal"] .app-tile__mps {
+      background: linear-gradient(180deg,#fff 0%,#ede0cc 40%,#c4a882 75%,#8c6e42 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(196,168,130,0.40));
+    }
+    .app-tile[data-app="journal"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(196,168,130,0.6),transparent); }
+    .app-tile[data-app="journal"] .app-tile__subtitle { color: rgba(196,168,130,0.65); }
+    .app-tile[data-app="journal"] .app-tile__open { color: var(--sleep-gold); }
 
     /* Coming soon badge for Journal */
     .coming-soon-badge {
@@ -737,7 +747,8 @@
     <!-- Workout -->
     <div class="app-tile" data-app="workout" id="tile-workout" onclick="openApp('workout')">
       <div class="app-tile__top">
-        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__mps">MPS</div>
+        <div class="app-tile__divider"></div>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
         <div class="app-tile__name">WORKOUT TRACKER</div>
       </div>
@@ -752,7 +763,8 @@
     <!-- Habits -->
     <div class="app-tile" data-app="habits" id="tile-habits" onclick="openApp('habits')">
       <div class="app-tile__top">
-        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__mps">MPS</div>
+        <div class="app-tile__divider"></div>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
         <div class="app-tile__name">HABIT TRACKER</div>
       </div>
@@ -767,7 +779,8 @@
     <!-- Sleep -->
     <div class="app-tile" data-app="sleep" id="tile-sleep" onclick="openApp('sleep')">
       <div class="app-tile__top">
-        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__mps">MPS</div>
+        <div class="app-tile__divider"></div>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
         <div class="app-tile__name">REST &amp; RECOVERY</div>
       </div>
@@ -782,7 +795,8 @@
     <!-- Expenses -->
     <div class="app-tile" data-app="expenses" id="tile-expenses" onclick="openApp('expenses')">
       <div class="app-tile__top">
-        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__mps">MPS</div>
+        <div class="app-tile__divider"></div>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
         <div class="app-tile__name">EXPENSE TRACKER</div>
       </div>
@@ -798,7 +812,8 @@
     <div class="app-tile" data-app="journal" id="tile-journal" onclick="openApp('journal')">
       <span class="coming-soon-badge">COMING SOON</span>
       <div class="app-tile__top">
-        <span class="app-tile__mps">MPS</span>
+        <div class="app-tile__mps">MPS</div>
+        <div class="app-tile__divider"></div>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
         <div class="app-tile__name">JOURNAL</div>
       </div>
