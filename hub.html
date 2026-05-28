@@ -228,7 +228,6 @@
       background-clip: text;
     }
     .app-tile[data-app="workout"] .app-tile__subtitle { color: rgba(74, 179, 244, 0.5); }
-    .app-tile[data-app="workout"] .app-tile__name { color: #fff; }
     .app-tile[data-app="workout"] .app-tile__open { color: var(--workout-blue); }
 
     .app-tile[data-app="habits"] {
@@ -246,7 +245,6 @@
       background-clip: text;
     }
     .app-tile[data-app="habits"] .app-tile__subtitle { color: rgba(220, 38, 38, 0.5); }
-    .app-tile[data-app="habits"] .app-tile__name { color: #fff; }
     .app-tile[data-app="habits"] .app-tile__open { color: var(--habits-red); }
 
     .app-tile[data-app="sleep"] {
@@ -264,7 +262,6 @@
       background-clip: text;
     }
     .app-tile[data-app="sleep"] .app-tile__subtitle { color: rgba(155, 107, 201, 0.5); }
-    .app-tile[data-app="sleep"] .app-tile__name { color: #fff; }
     .app-tile[data-app="sleep"] .app-tile__open { color: var(--sleep-purple); }
 
     .app-tile[data-app="expenses"] {
@@ -282,7 +279,6 @@
       background-clip: text;
     }
     .app-tile[data-app="expenses"] .app-tile__subtitle { color: rgba(22, 163, 74, 0.5); }
-    .app-tile[data-app="expenses"] .app-tile__name { color: #fff; }
     .app-tile[data-app="expenses"] .app-tile__open { color: var(--expenses-green); }
 
     .app-tile[data-app="journal"] {
@@ -300,30 +296,41 @@
       background-clip: text;
     }
     .app-tile[data-app="journal"] .app-tile__subtitle { color: rgba(201, 168, 107, 0.45); }
-    .app-tile[data-app="journal"] .app-tile__name { color: #fff; }
     .app-tile[data-app="journal"] .app-tile__open { color: var(--sleep-gold); }
 
     /* ── Tile top badge area ───────────────────────────────── */
     .app-tile__top {
-      padding: 20px 20px 14px;
+      padding: 22px 20px 20px;
       text-align: center;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .app-tile__mps {
       font-family: var(--font-display);
-      font-size: 2.2rem;
+      font-size: 2.4rem;
       letter-spacing: 0.08em;
       line-height: 1;
       display: block;
     }
 
     .app-tile__subtitle {
-      font-size: 0.48rem;
-      letter-spacing: 0.22em;
+      font-size: 0.46rem;
+      letter-spacing: 0.24em;
       text-transform: uppercase;
-      margin-top: 4px;
+      margin-top: 3px;
       font-weight: 600;
+    }
+
+    .app-tile__name {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      letter-spacing: 0.12em;
+      line-height: 1;
+      color: rgba(255,255,255,0.92);
+      margin-top: 10px;
     }
 
     /* ── Tile bottom content area ──────────────────────────── */
@@ -333,13 +340,6 @@
       flex-direction: column;
       gap: 6px;
       flex: 1;
-    }
-
-    .app-tile__name {
-      font-family: var(--font-display);
-      font-size: 1.25rem;
-      letter-spacing: 0.08em;
-      line-height: 1;
     }
 
     .app-tile__tag {
@@ -739,9 +739,9 @@
       <div class="app-tile__top">
         <span class="app-tile__mps">MPS</span>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
+        <div class="app-tile__name">WORKOUT TRACKER</div>
       </div>
       <div class="app-tile__body">
-        <div class="app-tile__name">WORKOUT TRACKER</div>
         <div class="app-tile__tag">Log every lift, skill session, and conditioning round. Track your personal records.</div>
         <div class="app-tile__action">
           <span class="app-tile__open">Open →</span>
@@ -754,9 +754,9 @@
       <div class="app-tile__top">
         <span class="app-tile__mps">MPS</span>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
+        <div class="app-tile__name">HABIT TRACKER</div>
       </div>
       <div class="app-tile__body">
-        <div class="app-tile__name">HABIT TRACKER</div>
         <div class="app-tile__tag">Check off your daily habits. Miss one? Restart that day. 90 days locked in builds a different man.</div>
         <div class="app-tile__action">
           <span class="app-tile__open">Open →</span>
@@ -769,9 +769,9 @@
       <div class="app-tile__top">
         <span class="app-tile__mps">MPS</span>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
+        <div class="app-tile__name">REST &amp; RECOVERY</div>
       </div>
       <div class="app-tile__body">
-        <div class="app-tile__name">REST &amp; RECOVERY</div>
         <div class="app-tile__tag">Track sleep quality, soreness, and energy. Know when to push harder — and when recovery is the training.</div>
         <div class="app-tile__action">
           <span class="app-tile__open">Open →</span>
@@ -784,9 +784,9 @@
       <div class="app-tile__top">
         <span class="app-tile__mps">MPS</span>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
+        <div class="app-tile__name">EXPENSE TRACKER</div>
       </div>
       <div class="app-tile__body">
-        <div class="app-tile__name">EXPENSE TRACKER</div>
         <div class="app-tile__tag">Every dollar logged. See exactly where money goes. Find the leaks. Build leverage.</div>
         <div class="app-tile__action">
           <span class="app-tile__open">Open →</span>
@@ -800,9 +800,9 @@
       <div class="app-tile__top">
         <span class="app-tile__mps">MPS</span>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
+        <div class="app-tile__name">JOURNAL</div>
       </div>
       <div class="app-tile__body">
-        <div class="app-tile__name">JOURNAL</div>
         <div class="app-tile__tag">5-minute daily reflection. Faith, wins, lessons. Build conviction. Track who you're becoming.</div>
         <div class="app-tile__action">
           <span class="app-tile__open">Open →</span>
