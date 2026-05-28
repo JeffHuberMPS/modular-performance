@@ -923,6 +923,14 @@
       if (currentUser.role === 'developer') {
         document.getElementById('dev-panel-btn').style.display = 'block';
       }
+      // Handle ?upgrade=appname redirect from auth-guard
+      const upgradeParam = new URLSearchParams(window.location.search).get('upgrade');
+      if (upgradeParam) {
+        // Clean URL without reload
+        window.history.replaceState({}, '', '/hub.html');
+        // Show upgrade sheet for that app
+        openUpgradeSheet(upgradeParam);
+      }
     });
 
     /* ── Render User ───────────────────────────────────────── */

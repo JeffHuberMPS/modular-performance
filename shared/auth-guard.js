@@ -27,14 +27,21 @@ window.MPS_GUARD = (function() {
         return;
       }
 
+      // Hardcoded developer email bypass — always allow, no Firestore check needed
+      const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
+      if (DEV_EMAILS.includes(user.email)) {
+        _hideLoader();
+        return;
+      }
+
       try {
         const db  = firebase.firestore();
         const uid = user.uid;
         const snap = await db.collection('users').doc(uid).get();
         const data = snap.exists ? snap.data() : {};
 
-        // Developer bypass — all apps unlocked
-        if (data.billing_bypass === true) {
+        // Developer bypass flag in Firestore — all apps unlocked
+        if (data.billing_bypass === true || data.role === 'developer') {
           _hideLoader();
           return;
         }
