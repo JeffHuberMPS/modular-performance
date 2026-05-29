@@ -596,7 +596,12 @@ body {
       </div>
     </div>
     <div class="card" style="margin-top:14px;">
-      <div class="dash-section-title">Monthly Budget Total</div>
+      <div class="dash-section-title">Monthly Budget Settings</div>
+      <div class="form-row">
+        <label class="form-label">Paycheck Amount (per pay period)</label>
+        <input type="number" class="form-input" id="paycheck-amount" placeholder="3000" step="any">
+      </div>
+      <button class="btn primary" id="btn-save-paycheck" style="margin-bottom:14px;">Save Paycheck</button>
       <div class="form-row">
         <label class="form-label">Total Monthly Budget Cap</label>
         <input type="number" class="form-input" id="monthly-cap" placeholder="3000" step="any">
@@ -772,6 +777,7 @@ const STORE = {
   rules: STORAGE_PREFIX + 'rules',
   budget: STORAGE_PREFIX + 'budget',
   cap: STORAGE_PREFIX + 'cap',
+  paycheck: STORAGE_PREFIX + 'paycheck',
   selectedMonth: STORAGE_PREFIX + 'selectedMonth',
   sync: STORAGE_PREFIX + 'sync',
   syncMeta: STORAGE_PREFIX + 'syncMeta'
@@ -827,6 +833,7 @@ let state = {
   rules: load(STORE.rules, DEFAULT_RULES),
   budget: load(STORE.budget, DEFAULT_BUDGET),
   cap: load(STORE.cap, 3000),
+  paycheck: load(STORE.paycheck, 3000),
   selectedMonth: load(STORE.selectedMonth, new Date().getMonth()),
   selectedYear: new Date().getFullYear(),
   editingId: null,
@@ -1057,6 +1064,7 @@ function renderBudget() {
       else if(pen.dataset.role==='delete') confirmDeleteBill(i,state.budget[i].bill);
     });
   });
+  document.getElementById('paycheck-amount').value=state.paycheck||3000;
   document.getElementById('monthly-cap').value=state.cap;
   renderBudgetSummary();
 }
@@ -1077,7 +1085,7 @@ function confirmDeleteBill(i,name) {
 }
 function saveBudgetLocal() { try{save(STORE.budget,state.budget);}catch(e){} }
 function renderBudgetSummary() {
-  const totalExp=state.budget.reduce((s,b)=>s+(Number(b.m)||0),0);const paycheck=3000;const overUnder=paycheck-totalExp;
+  const totalExp=state.budget.reduce((s,b)=>s+(Number(b.m)||0),0);const paycheck=state.paycheck||0;const overUnder=paycheck-totalExp;
   document.getElementById('bs-paycheck').textContent=fmt$(paycheck);document.getElementById('bs-expenses').textContent='-'+fmt$(totalExp);
   document.getElementById('bs-overunder').textContent=(overUnder>=0?'+':'')+fmt$(overUnder);document.getElementById('bs-overunder').style.color=overUnder>=0?'var(--mps-investment)':'var(--mps-danger)';
 }
@@ -1148,6 +1156,7 @@ document.getElementById('btn-export').addEventListener('click',()=>{
 });
 document.getElementById('month-select').addEventListener('change',e=>{state.selectedMonth=parseInt(e.target.value,10);save(STORE.selectedMonth,state.selectedMonth);renderAll();});
 document.getElementById('btn-add-bill').addEventListener('click',()=>{state.budget.push({bill:'New Bill',m:0,w:0});saveBudgetLocal();renderBudget();setTimeout(()=>{const cards=document.querySelectorAll('.budget-card');const newCard=cards[cards.length-1];if(newCard){const i=state.budget.length-1;activateLabelEdit(newCard,i);}},50);});
+document.getElementById('btn-save-paycheck').addEventListener('click',()=>{state.paycheck=parseFloat(document.getElementById('paycheck-amount').value)||0;save(STORE.paycheck,state.paycheck);flash('Paycheck saved');renderAll();});
 document.getElementById('btn-save-cap').addEventListener('click',()=>{state.cap=parseFloat(document.getElementById('monthly-cap').value)||0;save(STORE.cap,state.cap);flash('Monthly cap saved');renderAll();});
 document.getElementById('rules-search').addEventListener('input',e=>{rulesFilter=e.target.value;renderRules();});
 document.getElementById('btn-add-rule').addEventListener('click',()=>{state.rules.unshift({k:'New Keyword',c:'Other'});save(STORE.rules,state.rules);renderRules();});
