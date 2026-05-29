@@ -1113,7 +1113,10 @@
   <!-- ── Nav ───────────────────────────────────────────────── -->
   <nav class="landing-nav">
     <a href="/" class="nav-logo">M<span>P</span>S</a>
-    <a href="/auth.html" class="nav-cta">Start Free Trial</a>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a href="/hub.html" class="nav-cta" id="nav-open-app" style="display:none;background:transparent;border:1px solid rgba(212,175,55,0.5);color:var(--gold);">Open App</a>
+      <a href="/auth.html" class="nav-cta" id="nav-trial-btn">Start Free Trial</a>
+    </div>
   </nav>
 
   <!-- ═══════════════════════════════════════════════════════════
@@ -1516,7 +1519,13 @@
   <script>
     try {
       firebase.auth().onAuthStateChanged(user => {
-        if (user && !new URLSearchParams(window.location.search).has('preview')) window.location.replace('/hub.html');
+        // Show "Open App" button for signed-in users, hide "Start Free Trial"
+        if (user) {
+          const openBtn = document.getElementById('nav-open-app');
+          const trialBtn = document.getElementById('nav-trial-btn');
+          if (openBtn) openBtn.style.display = 'inline-flex';
+          if (trialBtn) trialBtn.style.display = 'none';
+        }
       });
     } catch(e) {}
 

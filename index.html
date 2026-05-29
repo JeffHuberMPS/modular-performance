@@ -241,12 +241,8 @@
       splashEl.classList.add('fade-out');
 
       setTimeout(function() {
-        if (authUser) {
-          window.location.replace('/hub.html');
-        } else {
-          // Skip marketing landing — go straight to sign-in
-          window.location.replace('/auth.html');
-        }
+        // Always show the landing page — it handles signed-in vs guest state
+        window.location.replace('/landing.html');
       }, 480);
     }
 
