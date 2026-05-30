@@ -20,8 +20,7 @@
   <!-- React + ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Recharts via jsDelivr (more reliable than unpkg) -->
-  <script src="https://cdn.jsdelivr.net/npm/recharts@2.9.0/umd/Recharts.js"></script>
+  <!-- Recharts removed: charts are now pure SVG (no CDN needed) -->
   <!-- Lucide React -->
   <script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.js"></script>
   <!-- Babel JSX compiler -->
@@ -161,11 +160,7 @@
 
 /* ── CDN Globals ── */
 const { useState, useEffect, useMemo } = React;
-const _recharts = window.Recharts || {};
-const {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer, ReferenceLine, Legend
-} = _recharts;
+/* Recharts removed — using pure SVG charts below */
 
 /* Lucide React icons — with emoji fallbacks if CDN fails */
 const _lc = window.LucideReact || window.lucide || {};
@@ -698,67 +693,23 @@ function SleepTracker() {
             {/* Charts */}
             <section style={styles.chartsGrid}>
 
-              {/* Sleep Duration */}
+              {/* Sleep Duration — pure SVG, always renders */}
               <ChartCard title="Sleep Duration" sub="hours per night · last 30">
-                {ResponsiveContainer ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={last30} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%"   stopColor="#c9a3eb" stopOpacity={1} />
-                          <stop offset="50%"  stopColor="#9b6bc9" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#5a3088" stopOpacity={1} />
-                        </linearGradient>
-                        <filter id="barShadow" x="-50%" y="-50%" width="200%" height="200%">
-                          <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#000000" floodOpacity="0.75" />
-                        </filter>
-                      </defs>
-                      <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} height={42} />
-                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#dce4f0", fontSize: 13, fontFamily: "system-ui, -apple-system, sans-serif" }} axisLine={false} tickLine={false} width={36} />
-                      <Tooltip content={<CustomTooltip suffix="h" />} cursor={{ fill: "rgba(155,107,201,0.05)" }} />
-                      <ReferenceLine y={7} stroke="#9b6bc9" strokeDasharray="2 4" opacity={0.5} />
-                      <Bar dataKey="hours" fill="url(#barGradient)" shape={<Isometric3DBar />} filter="url(#barShadow)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : <div style={{ color: "#6a6258", fontSize: 11, padding: 20, fontFamily: "JetBrains Mono, monospace" }}>No chart data</div>}
+                <SvgChart.Bar data={last30} dataKey="hours" domain={[0,10]} ticks={[0,2,4,6,8,10]} refY={7}/>
               </ChartCard>
 
-              {/* Recovery Score */}
+              {/* Recovery Score — pure SVG, always renders */}
               <ChartCard title="Recovery Score" sub="% · last 30 nights">
-                {ResponsiveContainer ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={last30} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%"   stopColor="#c9a86b" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#7a5a20" stopOpacity={0.4} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: "#dce4f0", fontSize: 13, fontFamily: "system-ui, -apple-system, sans-serif" }} axisLine={false} tickLine={false} width={40} />
-                      <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ stroke: "rgba(201,168,107,0.2)" }} />
-                      <ReferenceLine y={70} stroke="#c9a86b" strokeDasharray="2 4" opacity={0.4} />
-                      <Line type="monotone" dataKey="recovery" stroke="#c9a86b" strokeWidth={2}
-                        dot={false} activeDot={{ r: 4, fill: "#c9a86b" }} connectNulls={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : <div style={{ color: "#6a6258", fontSize: 11, padding: 20, fontFamily: "JetBrains Mono, monospace" }}>RECHARTS NOT LOADED</div>}
+                <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:"#c9a86b"}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
               </ChartCard>
 
-              {/* Energy vs Soreness */}
+              {/* Energy vs Soreness — pure SVG, always renders */}
               <ChartCard title="Energy vs Soreness" sub="1–10 scale · last 30">
-                {ResponsiveContainer ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={last30} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                      <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 10]} ticks={[0, 3, 6, 10]} tick={{ fill: "#dce4f0", fontSize: 13, fontFamily: "system-ui, -apple-system, sans-serif" }} axisLine={false} tickLine={false} width={32} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(201,168,107,0.1)" }} />
-                      <Legend verticalAlign="bottom" height={28} formatter={(val) => <span style={{ color: "#9aa3b2", fontSize: 10, fontFamily: "JetBrains Mono, monospace", textTransform: "capitalize" }}>{val}</span>} />
-                      <Line type="monotone" dataKey="energy"   stroke="#c9a86b"  strokeWidth={2} dot={false} activeDot={{ r: 3 }} connectNulls={false} />
-                      <Line type="monotone" dataKey="soreness" stroke="#9b6bc9"  strokeWidth={2} dot={false} activeDot={{ r: 3 }} connectNulls={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : <div style={{ color: "#6a6258", fontSize: 11, padding: 20, fontFamily: "JetBrains Mono, monospace" }}>RECHARTS NOT LOADED</div>}
+                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:"#c9a86b"},{key:"soreness",stroke:"#9b6bc9"}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
+                <div style={{display:"flex",gap:16,marginTop:6,fontSize:10,fontFamily:"JetBrains Mono, monospace"}}>
+                  <span style={{color:"#9aa3b2"}}><span style={{color:"#c9a86b"}}>——</span> energy</span>
+                  <span style={{color:"#9aa3b2"}}><span style={{color:"#9b6bc9"}}>——</span> soreness</span>
+                </div>
               </ChartCard>
 
             </section>
@@ -923,6 +874,78 @@ const DateTick = ({ x, y, payload, weekdayMap }) => {
     </g>
   );
 };
+
+/* ── Pure SVG chart components — no external library, always renders ── */
+const SvgChart = (() => {
+  const PAD = { top: 8, right: 8, bottom: 36, left: 40 };
+  const W = 600, H = 200;
+  const pw = W - PAD.left - PAD.right;
+  const ph = H - PAD.top - PAD.bottom;
+  const ys = (v, min, max) => PAD.top + ph - ((v - min) / (max - min)) * ph;
+  const xs = (i, n) => PAD.left + (i + 0.5) * (pw / n);
+
+  const YAxisLines = ({ ticks, domain }) => {
+    const [min, max] = domain;
+    return <>{ticks.map(t => {
+      const y = ys(t, min, max);
+      return <g key={t}>
+        <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1}/>
+        <text x={PAD.left - 6} y={y + 4} textAnchor="end" fill="#dce4f0" fontSize={12} fontFamily="system-ui,sans-serif">{t}</text>
+      </g>;
+    })}</>;
+  };
+
+  const XLabels = ({ data }) => {
+    const step = Math.max(1, Math.ceil(data.length / 7));
+    return <>{data.map((d, i) => i % step === 0
+      ? <text key={i} x={xs(i, data.length)} y={H - 4} textAnchor="middle" fill="#5a6470" fontSize={10} fontFamily="system-ui,sans-serif">{d.label}</text>
+      : null
+    )}</>;
+  };
+
+  const Bar = ({ data, dataKey, domain, ticks, refY }) => {
+    const [min, max] = domain;
+    const bw = Math.max(3, pw / data.length * 0.6);
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:200,display:"block"}}>
+        <defs>
+          <linearGradient id="svgBarGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#c9a3eb"/><stop offset="100%" stopColor="#5a3088"/>
+          </linearGradient>
+        </defs>
+        <YAxisLines ticks={ticks} domain={domain}/>
+        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke="#9b6bc9" strokeDasharray="3 5" opacity={0.4}/>}
+        {data.map((d, i) => {
+          const v = d[dataKey]; if (v == null) return null;
+          const bh = ((v - min) / (max - min)) * ph;
+          return <rect key={i} x={xs(i,data.length)-bw/2} y={ys(v,min,max)} width={bw} height={bh} fill="url(#svgBarGrad)" rx={1}/>;
+        })}
+        <XLabels data={data}/>
+      </svg>
+    );
+  };
+
+  const Lines = ({ data, lines, domain, ticks, refY }) => {
+    const [min, max] = domain;
+    const n = data.length;
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:200,display:"block"}}>
+        <YAxisLines ticks={ticks} domain={domain}/>
+        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke="#c9a86b" strokeDasharray="3 5" opacity={0.35}/>}
+        {lines.map(({key, stroke}) => {
+          const pts = data.reduce((acc, d, i) => {
+            const v = d[key]; if (v == null) return acc;
+            return acc + (acc ? " " : "") + `${xs(i,n)},${ys(v,min,max)}`;
+          }, "");
+          return pts ? <polyline key={key} points={pts} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/> : null;
+        })}
+        <XLabels data={data}/>
+      </svg>
+    );
+  };
+
+  return { Bar, Lines };
+})();
 
 /* ChartCard */
 const ChartCard = ({ title, sub, children }) => (
