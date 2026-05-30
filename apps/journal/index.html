@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet" />
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -623,6 +623,38 @@
       return (
         <div style={{ background:BG, minHeight:'100vh' }}>
           <Nav />
+
+          {/* ── Big Hero Card — matches Habits style, navy/gold theme ── */}
+          <div style={{ padding:'16px 20px 0' }}>
+            <div style={{
+              background: '#000000',
+              backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(74,111,165,0.20) 0%, rgba(74,111,165,0.06) 45%, transparent 75%)',
+              border: '3px solid transparent',
+              borderRadius: '22px',
+              padding: '38px 20px 28px',
+              textAlign: 'center',
+              marginBottom: '16px',
+              position: 'relative',
+              overflow: 'hidden',
+              backgroundClip: 'padding-box',
+              boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(74,111,165,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+            }}>
+              <div style={{
+                fontFamily: "'Saira Condensed', 'Arial Black', sans-serif",
+                fontSize: '96px', fontWeight: 900, fontStyle: 'italic',
+                letterSpacing: '4px', lineHeight: 1,
+                background: 'linear-gradient(180deg, #ffffff 0%, #c8d8f0 18%, #6b8fc5 38%, #3a5a8a 65%, #1a3060 95%, #0a1830 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
+              }}>MPS</div>
+              <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(74,111,165,0.6) 25%, rgba(201,168,107,0.8) 50%, rgba(74,111,165,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
+              <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px', fontFamily:"'Bebas Neue',sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
+              <div style={{ fontSize: '20px', letterSpacing: '6px', color: GOLD, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px', fontFamily:"'Bebas Neue',sans-serif" }}>
+                <span>MPS</span><span>JOURNAL</span>
+              </div>
+            </div>
+          </div>
+
           <Tabs tab={tab} setTab={setTab} />
           {tab==='WRITE'    && <WriteView    entries={entries} onSave={saveEntries} />}
           {tab==='HISTORY'  && <HistoryView  entries={entries} />}

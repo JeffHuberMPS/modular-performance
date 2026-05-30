@@ -541,44 +541,61 @@ function SleepTracker() {
 
         {/* ── Header / Brand Block ── */}
         <header style={styles.header}>
-          <div style={{ width: "100%" }}>
 
-            {/* MPS Logo Card */}
-            <div style={styles.mpsLogoWrap}>
-              <div style={styles.mpsLogo}>MPS</div>
-              <div style={styles.mpsDivider} />
-              <div style={styles.mpsTagline}>MODULAR PERFORMANCE SYSTEMS</div>
-              <div style={styles.appName}>
-                REST <span style={{ color: "#9b6bc9", textShadow: "0 0 12px rgba(155,107,201,0.55)" }}>&amp;</span> RECOVERY
-              </div>
+          {/* Big Hero Card — matches Habits style, purple theme */}
+          <div style={{
+            background: '#000000',
+            backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(155,107,201,0.20) 0%, rgba(155,107,201,0.06) 45%, transparent 75%)',
+            border: '3px solid transparent',
+            borderRadius: '22px',
+            padding: '38px 20px 28px',
+            textAlign: 'center',
+            marginBottom: '16px',
+            position: 'relative',
+            overflow: 'hidden',
+            backgroundClip: 'padding-box',
+            boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(155,107,201,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+          }}>
+            <div style={{
+              fontFamily: "'Saira Condensed', 'Arial Black', sans-serif",
+              fontSize: '96px', fontWeight: 900, fontStyle: 'italic',
+              letterSpacing: '4px', lineHeight: 1,
+              background: 'linear-gradient(180deg, #ffffff 0%, #d4b3f0 18%, #9b6bc9 38%, #7a40a8 65%, #4a1a75 95%, #2a0a45 100%)',
+              WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
+            }}>MPS</div>
+            <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(155,107,201,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(155,107,201,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
+            <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px' }}>MODULAR PERFORMANCE SYSTEMS</div>
+            <div style={{ fontSize: '20px', letterSpacing: '6px', color: '#9b6bc9', fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px' }}>
+              <span>REST</span><span>&amp;</span><span>RECOVERY</span>
             </div>
+          </div>
 
-            {/* Subtitle */}
-            <div style={styles.subtitle}>
-              {entries.length} {entries.length === 1 ? "entry" : "entries"} · tracking since{" "}
-              {entries[0]?.date ? fmtDate(entries[0].date) : "today"}
-            </div>
+          {/* Subtitle */}
+          <div style={styles.subtitle}>
+            {entries.length} {entries.length === 1 ? "entry" : "entries"} · tracking since{" "}
+            {entries[0]?.date ? fmtDate(entries[0].date) : "today"}
+          </div>
 
-            {/* Action Buttons */}
-            <div style={styles.actionRow}>
-              {activeTab === "dashboard" ? (
-                <>
-                  <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
-                    <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
-                  </button>
-                  <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("insights")}>
-                    INSIGHTS
-                  </button>
-                  <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("log")}>
-                    LOG
-                  </button>
-                </>
-              ) : (
-                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("dashboard")}>
-                  ← DASHBOARD
+          {/* Action Buttons */}
+          <div style={styles.actionRow}>
+            {activeTab === "dashboard" ? (
+              <>
+                <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
+                  <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
                 </button>
-              )}
-            </div>
+                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("insights")}>
+                  INSIGHTS
+                </button>
+                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("log")}>
+                  LOG
+                </button>
+              </>
+            ) : (
+              <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("dashboard")}>
+                ← DASHBOARD
+              </button>
+            )}
           </div>
         </header>
 

@@ -12,7 +12,7 @@
 <script src="/firebase-config.js"></script>
 <script src="/shared/auth-guard.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet">
 <style>
 @keyframes mpsPageIn { from { opacity:0; } to { opacity:1; } }
 body { animation: mpsPageIn 0.28s ease-out both; }
@@ -84,58 +84,47 @@ body {
 .app { width: 100%; }
 /* ============ HEADER ============ */
 .mps-header {
-  border: 1.5px solid var(--mps-mint);
-  border-radius: 16px;
-  padding: 36px 28px 32px;
+  background: #000000;
+  background-image: radial-gradient(ellipse 60% 50% at 50% 45%, rgba(16,194,72,0.20) 0%, rgba(16,194,72,0.06) 45%, transparent 75%);
+  border: 3px solid transparent;
+  border-radius: 22px;
+  padding: 38px 20px 28px;
   margin-bottom: 20px;
   text-align: center;
-  background:
-    radial-gradient(ellipse 90% 70% at 50% 50%, rgba(16,194,72,0.08), transparent 75%),
-    linear-gradient(180deg, #0a1a10 0%, #050a07 100%);
   position: relative;
   overflow: hidden;
-  box-shadow:
-    0 0 28px rgba(16,194,72,0.35),
-    0 0 56px rgba(16,194,72,0.15),
-    inset 0 0 40px rgba(16,194,72,0.05);
+  background-clip: padding-box;
+  box-shadow: 0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(16,194,72,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95);
 }
-.mps-header::before {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  border: 1px solid rgba(16,194,72,0.35);
-  border-radius: 11px;
-  pointer-events: none;
-  box-shadow: 0 0 8px rgba(16,194,72,0.2);
-}
+.mps-header::before { display: none; }
 .mps-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 90px;
-  letter-spacing: 6px;
-  background: linear-gradient(180deg, #ffffff 0%, #c8ffd9 40%, var(--mps-mint) 100%);
+  font-family: 'Saira Condensed', 'Arial Black', sans-serif;
+  font-size: 96px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 4px;
+  background: linear-gradient(180deg, #ffffff 0%, #b3ffc8 18%, #10c248 38%, #0a8a32 65%, #044a1a 95%, #022a0e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 30px rgba(16, 194, 72, 0.5);
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.7));
   line-height: 1;
-  filter: drop-shadow(0 0 20px rgba(16,194,72,0.35));
-  position: relative;
 }
 .mps-divider {
   width: 70%;
   height: 1px;
-  margin: 18px auto 14px;
-  background: linear-gradient(90deg, transparent, var(--mps-mint) 35%, #ffffff 50%, var(--mps-mint) 65%, transparent);
+  margin: 16px auto 14px;
+  background: linear-gradient(90deg, transparent, rgba(16,194,72,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(16,194,72,0.6) 75%, transparent);
 }
 .mps-subtitle {
-  font-size: 12px;
-  letter-spacing: 5px;
-  color: #6a7570;
-  font-weight: 500;
-  margin-bottom: 16px;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: #c0c0c0;
+  font-weight: 400;
+  margin-bottom: 14px;
 }
 .mps-title {
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: 6px;
   color: var(--mps-mint);
   font-weight: 700;
