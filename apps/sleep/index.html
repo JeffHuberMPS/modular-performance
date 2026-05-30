@@ -702,7 +702,7 @@ function SleepTracker() {
               <ChartCard title="Sleep Duration" sub="hours per night · last 30">
                 {ResponsiveContainer ? (
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={last30}>
+                    <BarChart data={last30} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%"   stopColor="#c9a3eb" stopOpacity={1} />
@@ -714,7 +714,7 @@ function SleepTracker() {
                         </filter>
                       </defs>
                       <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} height={42} />
-                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#9aa3b2", fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
+                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#b0b8c8", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} width={32} />
                       <Tooltip content={<CustomTooltip suffix="h" />} cursor={{ fill: "rgba(155,107,201,0.05)" }} />
                       <ReferenceLine y={7} stroke="#9b6bc9" strokeDasharray="2 4" opacity={0.5} />
                       <Bar dataKey="hours" fill="url(#barGradient)" shape={<Isometric3DBar />} filter="url(#barShadow)" />
@@ -727,7 +727,7 @@ function SleepTracker() {
               <ChartCard title="Recovery Score" sub="% · last 30 nights">
                 {ResponsiveContainer ? (
                   <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={last30}>
+                    <LineChart data={last30} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%"   stopColor="#c9a86b" stopOpacity={1} />
@@ -735,7 +735,7 @@ function SleepTracker() {
                         </linearGradient>
                       </defs>
                       <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: "#9aa3b2", fontSize: 10 }} axisLine={false} tickLine={false} width={34} />
+                      <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: "#b0b8c8", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} width={36} />
                       <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ stroke: "rgba(201,168,107,0.2)" }} />
                       <ReferenceLine y={70} stroke="#c9a86b" strokeDasharray="2 4" opacity={0.4} />
                       <Line type="monotone" dataKey="recovery" stroke="#c9a86b" strokeWidth={2}
@@ -749,9 +749,9 @@ function SleepTracker() {
               <ChartCard title="Energy vs Soreness" sub="1–10 scale · last 30">
                 {ResponsiveContainer ? (
                   <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={last30}>
+                    <LineChart data={last30} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                       <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#9aa3b2", fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
+                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#b0b8c8", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} width={32} />
                       <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(201,168,107,0.1)" }} />
                       <Legend verticalAlign="bottom" height={28} formatter={(val) => <span style={{ color: "#9aa3b2", fontSize: 10, fontFamily: "JetBrains Mono, monospace", textTransform: "capitalize" }}>{val}</span>} />
                       <Line type="monotone" dataKey="energy"   stroke="#c9a86b"  strokeWidth={2} dot={false} activeDot={{ r: 3 }} connectNulls={false} />
@@ -1009,7 +1009,7 @@ const styles = {
   statsRow:    { display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 },
 
   /* Charts grid */
-  chartsGrid:  { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "0 12px" },
+  chartsGrid:  { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 12px" },
 
   /* Insights */
   insightsCard: { background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.15)",
