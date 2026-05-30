@@ -834,7 +834,8 @@ const Field = ({ label, children }) => (
 const TodayStat = ({ icon, label, value, accent }) => (
   <div style={{
     background: "rgba(20, 16, 28, 0.85)",
-    border: "1px solid rgba(155,107,201,0.18)",
+    border: "1px solid rgba(155,107,201,0.22)",
+    borderLeft: "3px solid rgba(155,107,201,0.6)",
     borderRadius: 10,
     padding: "14px 16px",
     display: "flex",
@@ -844,7 +845,7 @@ const TodayStat = ({ icon, label, value, accent }) => (
     <div style={{
       display: "flex", alignItems: "center", gap: 6,
       fontSize: 10, fontFamily: "JetBrains Mono, monospace",
-      letterSpacing: "0.14em", color: "#5a5264",
+      letterSpacing: "0.14em", color: "#7a6a8a",
       textTransform: "uppercase",
     }}>
       <span style={{ color: accent || "#c9a86b", display: "flex", alignItems: "center" }}>{icon}</span>
@@ -853,7 +854,7 @@ const TodayStat = ({ icon, label, value, accent }) => (
     <div style={{
       fontSize: 22, fontWeight: 700, lineHeight: 1,
       fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
-      color: "#ffffff",
+      color: value === "—" ? "#3d3047" : "#9b6bc9",
     }}>
       {value}
     </div>
