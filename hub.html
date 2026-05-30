@@ -386,6 +386,18 @@
     .app-tile[data-app="journal"] .app-tile__subtitle { color: rgba(196,168,130,0.65); }
     .app-tile[data-app="journal"] .app-tile__open { color: var(--sleep-gold); }
 
+    /* COMING SOON label inside journal tile header */
+    .journal-cs-label {
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 0.28em;
+      color: rgba(196, 168, 130, 0.90);
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+      margin: 2px 0 1px;
+    }
+
     /* Coming soon badge for Journal */
     .coming-soon-badge {
       position: absolute;
@@ -849,6 +861,7 @@
         <div class="app-tile__mps">MPS</div>
         <div class="app-tile__divider"></div>
         <div class="app-tile__subtitle">Modular Performance Systems</div>
+        <div class="journal-cs-label">COMING SOON</div>
         <div class="app-tile__name">JOURNAL</div>
       </div>
       <div class="app-tile__body">
