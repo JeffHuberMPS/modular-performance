@@ -403,10 +403,43 @@
 
     /* Journal tile — greyed out, non-interactive */
     .app-tile[data-app="journal"] {
-      opacity: 0.42;
-      filter: grayscale(0.7);
       pointer-events: none;
       cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Fade the inner content only so the overlay badge stays crisp */
+    .app-tile[data-app="journal"] .journal-inner {
+      opacity: 0.35;
+      filter: grayscale(0.85);
+    }
+
+    /* Full-tile COMING SOON overlay — lives outside the faded inner */
+    .journal-cs-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.28);
+      z-index: 10;
+    }
+
+    .journal-cs-overlay__text {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      letter-spacing: 0.28em;
+      color: rgba(201, 168, 107, 0.92);
+      text-shadow: 0 0 20px rgba(201,168,107,0.4);
+    }
+
+    .journal-cs-overlay__line {
+      width: 48px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201,168,107,0.6), transparent);
     }
 
     /* ── Trial Banner ──────────────────────────────────────── */
@@ -818,18 +851,26 @@
 
     <!-- Journal — Coming Soon -->
     <div class="app-tile" data-app="journal" id="tile-journal">
-      <span class="coming-soon-badge">COMING SOON</span>
-      <div class="app-tile__top">
-        <div class="app-tile__mps">MPS</div>
-        <div class="app-tile__divider"></div>
-        <div class="app-tile__subtitle">Modular Performance Systems</div>
-        <div class="app-tile__name">JOURNAL</div>
-      </div>
-      <div class="app-tile__body">
-        <div class="app-tile__tag">5-minute daily reflection. Faith, wins, lessons. Build conviction. Track who you're becoming.</div>
-        <div class="app-tile__action">
-          <span class="app-tile__open" style="color:rgba(201,168,107,0.5);font-size:0.7rem;letter-spacing:0.1em;">Coming Soon</span>
+      <!-- Greyed inner content -->
+      <div class="journal-inner">
+        <div class="app-tile__top">
+          <div class="app-tile__mps">MPS</div>
+          <div class="app-tile__divider"></div>
+          <div class="app-tile__subtitle">Modular Performance Systems</div>
+          <div class="app-tile__name">JOURNAL</div>
         </div>
+        <div class="app-tile__body">
+          <div class="app-tile__tag">5-minute daily reflection. Faith, wins, lessons. Build conviction. Track who you're becoming.</div>
+          <div class="app-tile__action">
+            <span class="app-tile__open">Open →</span>
+          </div>
+        </div>
+      </div>
+      <!-- Full-tile Coming Soon overlay at 100% opacity -->
+      <div class="journal-cs-overlay">
+        <div class="journal-cs-overlay__line"></div>
+        <div class="journal-cs-overlay__text">COMING SOON</div>
+        <div class="journal-cs-overlay__line"></div>
       </div>
     </div>
 
