@@ -41,43 +41,6 @@
   @keyframes mpsPageIn { from { opacity: 0; } to { opacity: 1; } }
   body { animation: mpsPageIn 0.28s ease-out both; }
   /* ── Gold Splash Screen ──────────────────────────────────── */
-  #mps-splash {
-    position: fixed; inset: 0; background: #000;
-    z-index: 100000; display: flex; align-items: center; justify-content: center;
-    opacity: 1; transition: opacity 0.6s ease;
-  }
-  #mps-splash.fade-out { opacity: 0; pointer-events: none; }
-  .splash-card {
-    text-align: center; padding: 40px 44px 32px; position: relative;
-    background:
-      radial-gradient(ellipse at center 30%, rgba(201, 160, 32, 0.12) 0%, transparent 70%),
-      linear-gradient(180deg, #080806 0%, #000000 100%);
-    border: 1.5px solid rgba(201, 160, 32, 0.88);
-    border-radius: 16px;
-    box-shadow: 0 0 60px rgba(201, 160, 32, 0.18), 0 14px 40px rgba(0,0,0,0.95),
-      inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(201,160,32,0.08);
-    min-width: 260px;
-  }
-  .splash-card::before {
-    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-    width: 90%; height: 70%;
-    background: radial-gradient(ellipse at center, rgba(201,160,32,0.20) 0%, transparent 65%);
-    pointer-events: none;
-  }
-  .splash-mps {
-    font-family: 'Bebas Neue', 'Arial Black', sans-serif;
-    font-size: 88px; letter-spacing: 10px; line-height: 1;
-    padding: 0 10px 10px; display: inline-block; position: relative; z-index: 1;
-    background: linear-gradient(160deg, #ffffff 0%, #fff8e0 25%, #C9A020 55%, #7A5A00 100%);
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 18px rgba(201,160,32,0.6)) drop-shadow(0 0 36px rgba(201,160,32,0.3)) drop-shadow(0 3px 6px rgba(0,0,0,0.9));
-  }
-  .splash-subtitle {
-    font-size: 9px; font-weight: 400; letter-spacing: 4px;
-    color: rgba(201, 160, 32, 0.82); margin-top: 4px;
-    text-shadow: 0 0 10px rgba(201,160,32,0.4); text-transform: uppercase;
-    position: relative; z-index: 1;
-  }
   /* ─────────────────────────────────────────────────────────── */
   #mps-nav-fade { position:fixed;inset:0;background:#000;opacity:0;z-index:99999;pointer-events:none;transition:opacity 0.18s ease; }
   #mps-nav-fade.active { opacity:1;pointer-events:all; }
@@ -197,7 +160,8 @@
       drop-shadow(0 3px 6px rgba(0, 0, 0, 0.9));
   }
   .brand-mps-display {
-    font-family: 'Bebas Neue', 'Arial Black', sans-serif;
+    font-family: 'Saira Condensed', 'Arial Black', sans-serif;
+    font-style: italic;
     font-weight: 900;
     font-size: 80px;
     letter-spacing: 8px;
@@ -830,20 +794,10 @@
 </head>
 <body>
 
-<!-- ── Gold MPS Splash Screen ──────────────────────────── -->
-<div id="mps-splash">
-  <div class="splash-card">
-    <div class="splash-mps">MPS</div>
-    <div class="splash-subtitle">Modular Performance Systems</div>
-  </div>
-</div>
-
 <!-- ── Nav fade overlay ────────────────────────────────── -->
 <div id="mps-nav-fade"></div>
 <script>
 function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');f.classList.add('active');setTimeout(function(){window.location.href=url;},200);}
-// ── Gold splash: auto-dismiss after 1.8s ─────────────────
-(function(){setTimeout(function(){var s=document.getElementById('mps-splash');if(s){s.classList.add('fade-out');setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},650);}},1800);})();
 </script>
 
 <!-- ── Hub Nav ────────────────────────────────────────── -->
