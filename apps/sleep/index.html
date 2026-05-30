@@ -848,7 +848,7 @@ const TodayStat = ({ icon, label, value, accent }) => (
       letterSpacing: "0.14em", color: "#7a6a8a",
       textTransform: "uppercase",
     }}>
-      <span style={{ color: accent || "#c9a86b", display: "flex", alignItems: "center" }}>{icon}</span>
+      <span style={{ color: "#9b6bc9", display: "flex", alignItems: "center" }}>{icon}</span>
       {label}
     </div>
     <div style={{
@@ -931,10 +931,10 @@ const ChartCard = ({ title, sub, children }) => (
     borderRadius: 12, padding: "16px", marginBottom: 12,
   }}>
     <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.14em",
-      textTransform: "uppercase", color: "#9b6bc9", marginBottom: 2 }}>
+      textTransform: "uppercase", color: "#c9a86b", marginBottom: 2 }}>
       {title}
     </div>
-    {sub && <div style={{ fontSize: 9, color: "#4a4255", fontFamily: "JetBrains Mono, monospace", marginBottom: 12 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 9, color: "#6a5e48", fontFamily: "JetBrains Mono, monospace", marginBottom: 12 }}>{sub}</div>}
     {children}
   </div>
 );
