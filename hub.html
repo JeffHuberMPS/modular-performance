@@ -22,6 +22,13 @@
        NORTH STAR HUB — STYLES
     ───────────────────────────────────────────────────────── */
 
+    /* Z-index scale — these MUST be defined here since shared/styles.css doesn't include them */
+    :root {
+      --z-dropdown: 100;
+      --z-overlay:  200;
+      --z-devpanel: 300;
+    }
+
     body {
       background: var(--ns-black);
       min-height: 100vh;
@@ -169,6 +176,18 @@
     .hub-welcome__plan span {
       color: var(--ns-yellow);
     }
+
+    /* ── Page transition overlay ──────────────────────────── */
+    #mps-nav-fade {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      z-index: 9999;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+    #mps-nav-fade.active { opacity: 1; pointer-events: all; }
 
     /* ── App Grid ──────────────────────────────────────────── */
     .app-grid {
@@ -925,6 +944,9 @@
     <div class="dev-panel__note">Preview only — real user data is never touched.</div>
   </div>
 
+  <!-- ── Nav transition overlay ─────────────────────────────── -->
+  <div id="mps-nav-fade"></div>
+
   <!-- ── Toast ───────────────────────────────────────────────── -->
   <div class="toast" id="hub-toast"></div>
 
@@ -1097,6 +1119,13 @@
       renderTrialBanner();
     }
 
+    /* ── Smooth navigation ─────────────────────────────────── */
+    function mpsNavigate(url) {
+      const fade = document.getElementById('mps-nav-fade');
+      fade.classList.add('active');
+      setTimeout(function() { window.location.href = url; }, 200);
+    }
+
     /* ── Open App ──────────────────────────────────────────── */
     function openApp(appId) {
       const tier = devPreviewTier || currentUser.tier;
@@ -1106,7 +1135,7 @@
 
       if (unlockedApps.includes(appId)) {
         const app = APPS.find(a => a.id === appId);
-        if (app) window.location.href = app.path;
+        if (app) mpsNavigate(app.path);
       } else {
         openUpgradeSheet(appId);
       }

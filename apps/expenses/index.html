@@ -14,6 +14,10 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+@keyframes mpsPageIn { from { opacity:0; } to { opacity:1; } }
+body { animation: mpsPageIn 0.28s ease-out both; }
+#mps-nav-fade { position:fixed;inset:0;background:#000;opacity:0;z-index:99999;pointer-events:none;transition:opacity 0.18s ease; }
+#mps-nav-fade.active { opacity:1;pointer-events:all; }
 :root {
   --mps-bg: #000000;
   --mps-card: #0a0f0d;
@@ -434,9 +438,13 @@ body {
 </head>
 <body>
 
+<!-- Nav fade overlay -->
+<div id="mps-nav-fade"></div>
+<script>function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');if(f)f.classList.add('active');setTimeout(function(){window.location.href=url;},200);}</script>
+
 <!-- MPS HUB NAV -->
 <div id="mps-hub-nav">
-  <a href="/hub.html">← Hub</a>
+  <a href="/hub.html" onclick="mpsNavigate('/hub.html');return false;">← Hub</a>
   <span>MPS EXPENSES</span>
 </div>
 

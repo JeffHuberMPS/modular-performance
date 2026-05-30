@@ -13,6 +13,15 @@
   <script src="/firebase-config.js"></script>
   <script src="/shared/auth-guard.js"></script>
 
+  <!-- Smooth navigation (global, accessible from JSX) -->
+  <script>
+    function mpsNavigate(url){
+      var f=document.getElementById('mps-nav-fade');
+      if(f){f.classList.add('active');}
+      setTimeout(function(){window.location.href=url;},200);
+    }
+  </script>
+
   <!-- React + Babel -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -22,6 +31,10 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: #050505; min-height: 100vh; }
     #root { min-height: 100vh; }
+    @keyframes mpsPageIn { from { opacity:0; } to { opacity:1; } }
+    body { animation: mpsPageIn 0.28s ease-out both; }
+    #mps-nav-fade { position:fixed;inset:0;background:#000;opacity:0;z-index:99999;pointer-events:none;transition:opacity 0.18s ease; }
+    #mps-nav-fade.active { opacity:1;pointer-events:all; }
     /* Auth loading screen */
     #auth-loading {
       min-height: 100vh; background: #050505;
@@ -32,7 +45,7 @@
   </style>
 </head>
 <body>
-
+<div id="mps-nav-fade"></div>
 <div id="auth-loading">LOADING...</div>
 <div id="root" style="display:none"></div>
 
@@ -337,7 +350,7 @@ function HabitTracker() {
         backgroundClip: 'padding-box',
         boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(192,192,192,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
       }}>
-        <a href="/hub.html" style={{ position: 'absolute', top: '16px', left: '16px', color: '#8b0000', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textDecoration: 'none', textTransform: 'uppercase' }}>← Hub</a>
+        <a href="/hub.html" onClick={(e)=>{e.preventDefault();mpsNavigate('/hub.html');}} style={{ position: 'absolute', top: '16px', left: '16px', color: '#8b0000', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textDecoration: 'none', textTransform: 'uppercase' }}>← Hub</a>
         <div style={{
           fontFamily: "'Saira Condensed', 'Bricolage Grotesque', system-ui, sans-serif",
           fontSize: '96px', fontWeight: 900, fontStyle: 'italic',
