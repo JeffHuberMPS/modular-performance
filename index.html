@@ -14,10 +14,9 @@
   <link rel="apple-touch-icon" href="/assets/icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
 
-  <!-- Splash fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Saira+Condensed:wght@700;900&family=Orbitron:wght@900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,7 +28,7 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    /* ── Splash Screen ──────────────────────────────── */
+    /* ── Splash ─────────────────────────────────────── */
     #splash {
       position: fixed;
       inset: 0;
@@ -46,125 +45,64 @@
       pointer-events: none;
     }
 
-    /* Brand card — mirrors .brand-block in the workout tracker */
-    .splash-card {
-      position: relative;
+    /* ── Center block ───────────────────────────────── */
+    .splash-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
-      padding: 36px 40px 32px;
-      width: min(88vw, 360px);
-      background:
-        radial-gradient(ellipse at center 30%, rgba(74, 179, 244, 0.12) 0%, transparent 70%),
-        linear-gradient(180deg, #0c1428 0%, #060a18 100%);
-      border: 1px solid rgba(74, 179, 244, 0.55);
-      border-radius: 18px;
-      box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.98),
-        0 0 40px rgba(74, 179, 244, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.10),
-        inset 0 0 0 1px rgba(74, 179, 244, 0.14),
-        inset 0 -3px 10px rgba(0, 0, 0, 0.7),
-        inset 0 0 50px rgba(74, 179, 244, 0.07);
-      overflow: hidden;
-      animation: cardPulse 2.8s ease-in-out infinite;
-    }
-    @keyframes cardPulse {
-      0%, 100% { box-shadow:
-        0 20px 60px rgba(0,0,0,0.98),
-        0 0 40px rgba(74,179,244,0.22),
-        inset 0 1px 0 rgba(255,255,255,0.10),
-        inset 0 0 0 1px rgba(74,179,244,0.14),
-        inset 0 -3px 10px rgba(0,0,0,0.7),
-        inset 0 0 50px rgba(74,179,244,0.07); }
-      50% { box-shadow:
-        0 20px 60px rgba(0,0,0,0.98),
-        0 0 60px rgba(74,179,244,0.38),
-        inset 0 1px 0 rgba(255,255,255,0.12),
-        inset 0 0 0 1px rgba(74,179,244,0.22),
-        inset 0 -3px 10px rgba(0,0,0,0.6),
-        inset 0 0 70px rgba(74,179,244,0.12); }
+      user-select: none;
     }
 
-    /* Outer double-border accent line */
-    .splash-card::before {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      border-radius: 20px;
-      background: transparent;
-      border: 1px solid rgba(74, 179, 244, 0.18);
-      pointer-events: none;
-    }
-
-    /* Shimmer sweep */
-    .splash-card::after {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%; width: 60%; height: 100%;
-      background: linear-gradient(90deg, transparent 0%, rgba(74,179,244,0.08) 50%, transparent 100%);
-      animation: shimmer 3.5s ease-in-out infinite 0.8s;
-      pointer-events: none;
-    }
-    @keyframes shimmer {
-      0%   { left: -100%; opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { left: 160%; opacity: 0; }
-    }
-
-    /* MPS logo text */
+    /* MPS — big, white M+S, gold P */
     .splash-mps {
-      font-family: 'Saira Condensed', 'Orbitron', 'Bebas Neue', sans-serif;
-      font-weight: 900;
-      font-style: italic;
-      font-size: clamp(72px, 22vw, 96px);
-      letter-spacing: 0.04em;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(96px, 28vw, 160px);
       line-height: 1;
+      letter-spacing: 0.06em;
+    }
+    .splash-mps .m { color: #ffffff; }
+    .splash-mps .p {
       color: transparent;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.95) 0%,
-        rgba(200,230,255,0.90) 40%,
-        rgba(74,179,244,0.85) 75%,
-        rgba(40,120,200,0.80) 100%
-      );
+      background: linear-gradient(160deg, #7A5A00 0%, #C9A020 20%, #F5E060 48%, #D4AF37 65%, #8B6600 100%);
       -webkit-background-clip: text;
       background-clip: text;
-      text-shadow: none;
-      filter: drop-shadow(0 0 18px rgba(74,179,244,0.55)) drop-shadow(0 4px 12px rgba(0,0,0,0.9));
-      position: relative;
-      z-index: 1;
-      margin-bottom: 6px;
+      filter: drop-shadow(0 0 14px rgba(201,160,32,0.5));
     }
+    .splash-mps .s { color: #ffffff; }
 
-    /* Divider */
+    /* Gold divider under MPS */
     .splash-divider {
-      width: 64px;
+      width: 56px;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(74,179,244,0.7), transparent);
+      background: linear-gradient(90deg, transparent, rgba(201,160,32,0.8), transparent);
       margin: 10px auto 12px;
     }
 
-    /* Subtitle text */
-    .splash-subtitle {
-      font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
-      font-size: 11px;
+    /* MODULAR PERFORMANCE SYSTEMS */
+    .splash-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(11px, 3.2vw, 15px);
       letter-spacing: 0.32em;
-      color: rgba(74, 179, 244, 0.75);
+      color: rgba(201, 160, 32, 0.82);
       text-transform: uppercase;
-      margin-bottom: 8px;
+      white-space: nowrap;
     }
 
-    .splash-appname {
-      font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
-      font-size: 18px;
-      letter-spacing: 0.22em;
-      color: rgba(255, 255, 255, 0.92);
-      text-transform: uppercase;
+    /* Tagline */
+    .splash-tagline {
+      margin-top: 20px;
+      font-size: clamp(12px, 3.5vw, 15px);
+      color: rgba(255, 255, 255, 0.38);
+      letter-spacing: 0.04em;
+      line-height: 1.55;
+      text-align: center;
     }
 
-    /* Loading indicator */
+    /* Loading dots */
     .splash-loader {
       position: absolute;
-      bottom: 80px;
+      bottom: 72px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -174,25 +112,25 @@
     .splash-dot {
       width: 6px; height: 6px;
       border-radius: 50%;
-      background: rgba(74, 179, 244, 0.4);
-      animation: dotPulse 1.2s ease-in-out infinite;
+      background: rgba(201, 160, 32, 0.35);
+      animation: dotPulse 1.3s ease-in-out infinite;
     }
-    .splash-dot:nth-child(2) { animation-delay: 0.2s; }
-    .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+    .splash-dot:nth-child(2) { animation-delay: 0.22s; }
+    .splash-dot:nth-child(3) { animation-delay: 0.44s; }
     @keyframes dotPulse {
-      0%, 80%, 100% { background: rgba(74,179,244,0.3); transform: scale(0.85); }
-      40%            { background: rgba(74,179,244,0.9); transform: scale(1.15); }
+      0%, 80%, 100% { background: rgba(201,160,32,0.25); transform: scale(0.8); }
+      40%            { background: rgba(201,160,32,0.9); transform: scale(1.2); }
     }
 
-    /* Version tag */
+    /* Version */
     .splash-version {
       position: absolute;
-      bottom: 32px;
+      bottom: 28px;
       left: 50%;
       transform: translateX(-50%);
       font-size: 10px;
-      letter-spacing: 0.14em;
-      color: rgba(74, 179, 244, 0.3);
+      letter-spacing: 0.12em;
+      color: rgba(201, 160, 32, 0.22);
       white-space: nowrap;
     }
   </style>
@@ -204,20 +142,33 @@
 </head>
 <body>
 
-  <!-- ── Splash Screen ──────────────────────────────── -->
   <div id="splash">
-    <div class="splash-card">
-      <div class="splash-mps">MPS</div>
+    <div class="splash-center">
+      <!-- MPS with gold P -->
+      <div class="splash-mps">
+        <span class="m">M</span><span class="p">P</span><span class="s">S</span>
+      </div>
+
+      <!-- Divider -->
       <div class="splash-divider"></div>
-      <div class="splash-subtitle">Modular Performance Systems</div>
-      <div class="splash-appname">Workout Tracker</div>
+
+      <!-- Brand name below MPS -->
+      <div class="splash-brand">Modular Performance Systems</div>
+
+      <!-- Tagline -->
+      <div class="splash-tagline">
+        Stop guessing. Start measuring.<br>Watch discipline compound.
+      </div>
     </div>
+
+    <!-- Loading indicator -->
     <div class="splash-loader">
       <div class="splash-dot"></div>
       <div class="splash-dot"></div>
       <div class="splash-dot"></div>
     </div>
-    <div class="splash-version">v2.5 &nbsp;·&nbsp; modular-performance.com</div>
+
+    <div class="splash-version">modular-performance.com</div>
   </div>
 
   <script>
@@ -227,32 +178,25 @@
     }
 
     // ── Splash + Auth Logic ──────────────────────────
-    const SPLASH_MIN_MS = 2400;   // minimum splash duration
+    const SPLASH_MIN_MS = 2400;
     const splashEl      = document.getElementById('splash');
-    const startTime     = Date.now();
 
-    let authUser    = undefined;  // undefined = pending, null = signed out, object = signed in
+    let authUser    = undefined;
     let minTimeDone = false;
 
     function tryProceed() {
       if (authUser === undefined || !minTimeDone) return;
-
-      // Fade out splash
       splashEl.classList.add('fade-out');
-
       setTimeout(function() {
-        // Always show the landing page — it handles signed-in vs guest state
         window.location.replace('/landing.html');
       }, 480);
     }
 
-    // Minimum display timer
     setTimeout(function() {
       minTimeDone = true;
       tryProceed();
     }, SPLASH_MIN_MS);
 
-    // Firebase auth check
     firebase.auth().onAuthStateChanged(function(user) {
       authUser = user || null;
       tryProceed();
