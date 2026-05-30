@@ -391,14 +391,22 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      background: rgba(201, 168, 107, 0.12);
-      border: 1px solid rgba(201, 168, 107, 0.3);
+      background: rgba(201, 168, 107, 0.18);
+      border: 1px solid rgba(201, 168, 107, 0.55);
       color: var(--sleep-gold);
-      font-size: 0.5rem;
+      font-size: 0.6rem;
       font-family: var(--font-display);
-      letter-spacing: 0.15em;
-      padding: 3px 7px;
+      letter-spacing: 0.18em;
+      padding: 4px 9px;
       border-radius: 3px;
+    }
+
+    /* Journal tile — greyed out, non-interactive */
+    .app-tile[data-app="journal"] {
+      opacity: 0.42;
+      filter: grayscale(0.7);
+      pointer-events: none;
+      cursor: default;
     }
 
     /* ── Trial Banner ──────────────────────────────────────── */
@@ -808,8 +816,8 @@
       </div>
     </div>
 
-    <!-- Journal -->
-    <div class="app-tile" data-app="journal" id="tile-journal" onclick="openApp('journal')">
+    <!-- Journal — Coming Soon -->
+    <div class="app-tile" data-app="journal" id="tile-journal">
       <span class="coming-soon-badge">COMING SOON</span>
       <div class="app-tile__top">
         <div class="app-tile__mps">MPS</div>
@@ -820,7 +828,7 @@
       <div class="app-tile__body">
         <div class="app-tile__tag">5-minute daily reflection. Faith, wins, lessons. Build conviction. Track who you're becoming.</div>
         <div class="app-tile__action">
-          <span class="app-tile__open">Open →</span>
+          <span class="app-tile__open" style="color:rgba(201,168,107,0.5);font-size:0.7rem;letter-spacing:0.1em;">Coming Soon</span>
         </div>
       </div>
     </div>
