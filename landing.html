@@ -1377,7 +1377,7 @@
         <span style="font-size:0.75rem; color:var(--text-faint);">✓ No recurring charges &nbsp;·&nbsp; ✓ Lifetime access &nbsp;·&nbsp; ✓ Own your data</span>
       </div>
       <div class="upsell-ladder">
-        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">Single</div>
             <div class="upsell-rung__tier-price">$19</div>
@@ -1388,7 +1388,7 @@
             <span class="upsell-rung__badge upsell-rung__badge--save">Start here</span>
           </div>
         </div>
-        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">Duo</div>
             <div class="upsell-rung__tier-price">$34</div>
@@ -1398,7 +1398,7 @@
             <div class="upsell-rung__apps">Any 2 apps</div>
           </div>
         </div>
-        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">Trio</div>
             <div class="upsell-rung__tier-price">$52</div>
@@ -1408,7 +1408,7 @@
             <div class="upsell-rung__apps">Any 3 apps</div>
           </div>
         </div>
-        <div class="upsell-rung featured" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung featured" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">All&#8209;Access</div>
             <div class="upsell-rung__tier-price">$97</div>
@@ -1421,7 +1421,7 @@
         </div>
       </div>
       <div style="text-align:center; margin-top:var(--space-xl);">
-        <a href="/auth.html" class="hero-btn-primary">Get Lifetime Access</a>
+        <a href="/auth.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Get Lifetime Access</a>
         <div style="margin-top:10px; font-size:0.72rem; color:var(--text-faint);">
           Pay once. Use forever. No card on file after purchase.
         </div>
@@ -1434,7 +1434,7 @@
         <span style="font-size:0.75rem; color:var(--text-faint);">✓ 14-day free trial &nbsp;·&nbsp; ✓ Upgrade or downgrade anytime &nbsp;·&nbsp; ✓ Cancel anytime</span>
       </div>
       <div class="upsell-ladder">
-        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">Single</div>
             <div class="upsell-rung__tier-price">$5.99<span style="font-size:0.7rem;">/mo</span></div>
@@ -1444,7 +1444,7 @@
             <span class="upsell-rung__badge upsell-rung__badge--save">Start here</span>
           </div>
         </div>
-        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">Duo</div>
             <div class="upsell-rung__tier-price">$9.99<span style="font-size:0.7rem;">/mo</span></div>
@@ -1453,7 +1453,7 @@
             <div class="upsell-rung__apps">Any 2 apps</div>
           </div>
         </div>
-        <div class="upsell-rung" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">Trio</div>
             <div class="upsell-rung__tier-price">$14.99<span style="font-size:0.7rem;">/mo</span></div>
@@ -1462,7 +1462,7 @@
             <div class="upsell-rung__apps">Any 3 apps</div>
           </div>
         </div>
-        <div class="upsell-rung featured" onclick="window.location.href='/auth.html'" style="cursor:pointer;">
+        <div class="upsell-rung featured" onclick="goToBuy()" style="cursor:pointer;">
           <div class="upsell-rung__tier">
             <div class="upsell-rung__tier-name">All&#8209;Access</div>
             <div class="upsell-rung__tier-price">$21.99<span style="font-size:0.7rem;">/mo</span></div>
@@ -1474,7 +1474,7 @@
         </div>
       </div>
       <div style="text-align:center; margin-top:var(--space-xl);">
-        <a href="/auth.html" class="hero-btn-primary">Start Free — 14 Days on Us</a>
+        <a href="/auth.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Start Free — 14 Days on Us</a>
         <div style="margin-top:10px; font-size:0.72rem; color:var(--text-faint);">
           Pick your plan after the trial. No card required to start.
         </div>
@@ -1489,7 +1489,7 @@
     <div class="section-label" style="margin-bottom:var(--space-md);">No more excuses. No more resets.</div>
     <h2 class="final-cta__headline">The man you're building<br/>starts <span>today.</span></h2>
     <div style="margin-bottom: var(--space-xl);">
-      <a href="/auth.html" class="hero-btn-primary">Lock In Your 90-Day Streak</a>
+      <a href="/auth.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Lock In Your 90-Day Streak</a>
     </div>
     <div class="final-cta__fine">14 days free. From $5.99/mo after. Cancel anytime.</div>
     <div style="margin-top:var(--space-md);">
@@ -1517,8 +1517,17 @@
   <script src="/firebase-config.js"></script>
 
   <script>
+    // Track auth state for smart buy redirects
+    let _mpsAuthUser = null;
+
+    // goToBuy(): signed-in users go straight to hub (Page 2); guests go to auth first
+    function goToBuy() {
+      window.location.href = _mpsAuthUser ? '/hub.html' : '/auth.html';
+    }
+
     try {
       firebase.auth().onAuthStateChanged(user => {
+        _mpsAuthUser = user || null;
         // Show "Open App" button for signed-in users, hide "Start Free Trial"
         if (user) {
           const openBtn = document.getElementById('nav-open-app');
