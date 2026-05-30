@@ -714,7 +714,7 @@ function SleepTracker() {
                         </filter>
                       </defs>
                       <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} height={42} />
-                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#b0b8c8", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} width={32} />
+                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#dce4f0", fontSize: 13, fontFamily: "system-ui, -apple-system, sans-serif" }} axisLine={false} tickLine={false} width={36} />
                       <Tooltip content={<CustomTooltip suffix="h" />} cursor={{ fill: "rgba(155,107,201,0.05)" }} />
                       <ReferenceLine y={7} stroke="#9b6bc9" strokeDasharray="2 4" opacity={0.5} />
                       <Bar dataKey="hours" fill="url(#barGradient)" shape={<Isometric3DBar />} filter="url(#barShadow)" />
@@ -735,7 +735,7 @@ function SleepTracker() {
                         </linearGradient>
                       </defs>
                       <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: "#b0b8c8", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} width={36} />
+                      <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: "#dce4f0", fontSize: 13, fontFamily: "system-ui, -apple-system, sans-serif" }} axisLine={false} tickLine={false} width={40} />
                       <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ stroke: "rgba(201,168,107,0.2)" }} />
                       <ReferenceLine y={70} stroke="#c9a86b" strokeDasharray="2 4" opacity={0.4} />
                       <Line type="monotone" dataKey="recovery" stroke="#c9a86b" strokeWidth={2}
@@ -751,7 +751,7 @@ function SleepTracker() {
                   <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={last30} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                       <XAxis dataKey="label" tick={<DateTick weekdayMap={weekdayMap} />} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: "#b0b8c8", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} width={32} />
+                      <YAxis domain={[0, 10]} ticks={[0, 3, 6, 10]} tick={{ fill: "#dce4f0", fontSize: 13, fontFamily: "system-ui, -apple-system, sans-serif" }} axisLine={false} tickLine={false} width={32} />
                       <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(201,168,107,0.1)" }} />
                       <Legend verticalAlign="bottom" height={28} formatter={(val) => <span style={{ color: "#9aa3b2", fontSize: 10, fontFamily: "JetBrains Mono, monospace", textTransform: "capitalize" }}>{val}</span>} />
                       <Line type="monotone" dataKey="energy"   stroke="#c9a86b"  strokeWidth={2} dot={false} activeDot={{ r: 3 }} connectNulls={false} />
