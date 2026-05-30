@@ -675,18 +675,15 @@ function SleepTracker() {
             {/* Today snapshot */}
             <section style={styles.todayCard}>
               <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
-              {today ? (
-                <div style={styles.todayGrid}>
-                  <TodayStat icon={<IconSun />}       label="Woke"     value={today.wakeTime ? fmt12(today.wakeTime) : "—"} accent="#9b6bc9" />
-                  <TodayStat icon={<IconMoon />}      label="Slept"    value={today.hours != null ? `${today.hours}h` : "—"} accent="#9b6bc9" />
-                  <TodayStat icon={<IconZap />}       label="Energy"   value={`${today.energy}/10`}  accent="#9b6bc9" />
-                  <TodayStat icon={<IconHeart />}     label="Soreness" value={`${today.soreness}/10`} accent="#9b6bc9" />
-                  <TodayStat icon={<IconActivity />}  label="Clarity"  value={`${today.clarity}/10`}  accent="#9b6bc9" />
-                  <TodayStat icon={<IconBattery />}   label="Recovery" value={today.recovery != null ? `${today.recovery}%` : "—"} accent="#9b6bc9" />
-                </div>
-              ) : (
-                <div style={styles.empty}>No entry yet. Log today.</div>
-              )}
+              <div style={styles.todayGrid}>
+                <TodayStat icon={<IconSun />}       label="Woke"     value={today?.wakeTime ? fmt12(today.wakeTime) : "—"} accent="#9b6bc9" />
+                <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? `${today.hours}h` : "—"} accent="#9b6bc9" />
+                <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent="#9b6bc9" />
+                <TodayStat icon={<IconHeart />}     label="Soreness" value={today ? `${today.soreness}/10` : "—"} accent="#9b6bc9" />
+                <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent="#9b6bc9" />
+                <TodayStat icon={<IconBattery />}   label="Recovery" value={today?.recovery != null ? `${today.recovery}%` : "—"} accent="#9b6bc9" />
+              </div>
+              {!today && <div style={{...styles.empty, marginTop: 8}}>No entry yet — tap + LOG ENTRY to start.</div>}
             </section>
 
             {/* 7-day stats */}
