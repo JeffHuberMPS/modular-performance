@@ -17,6 +17,12 @@
   <!-- Shared Styles -->
   <link rel="stylesheet" href="/shared/styles.css" />
 
+  <!-- Firebase (for real auth check) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+
   <style>
     /* ─────────────────────────────────────────────────────────
        NORTH STAR HUB — STYLES
@@ -1013,14 +1019,14 @@
       all:    ['workout', 'habits', 'sleep', 'expenses', 'journal']
     };
 
-    // ── User State (populated by Firebase auth in Session 4) ──
+    // ── User State ────────────────────────────────────────────
     let currentUser = {
       name:           'Jeff',
       email:          'jeffreyhuber86@gmail.com',
       photoURL:       null,
       tier:           'all',
       apps:           ['workout', 'habits', 'sleep', 'expenses', 'journal'],
-      role:           'developer',
+      role:           'user',          // overridden by Firebase auth below
       billing_bypass: true
     };
 
@@ -1031,17 +1037,38 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderUser();
       renderTiles();
-      if (currentUser.role === 'developer') {
-        document.getElementById('dev-panel-btn').style.display = 'block';
-      }
+      // DEV button hidden by default — Firebase auth listener enables it for Jeff only
+      document.getElementById('dev-panel-btn').style.display = 'none';
+
       // Handle ?upgrade=appname redirect from auth-guard
       const upgradeParam = new URLSearchParams(window.location.search).get('upgrade');
       if (upgradeParam) {
-        // Clean URL without reload
         window.history.replaceState({}, '', '/hub.html');
-        // Show upgrade sheet for that app
         openUpgradeSheet(upgradeParam);
       }
+    });
+
+    /* ── Firebase Auth — wire real user data + DEV button ── */
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) return;
+
+      // Update currentUser with real Firebase data
+      currentUser.name     = user.displayName || currentUser.name;
+      currentUser.email    = user.email        || currentUser.email;
+      currentUser.photoURL = user.photoURL     || null;
+
+      // DEV button — Jeff's account only
+      const DEV_EMAIL = 'jeffreyhuber86@gmail.com';
+      if (user.email === DEV_EMAIL) {
+        currentUser.role = 'developer';
+        document.getElementById('dev-panel-btn').style.display = 'block';
+      } else {
+        currentUser.role = 'user';
+        document.getElementById('dev-panel-btn').style.display = 'none';
+      }
+
+      // Refresh UI with real name/avatar
+      renderUser();
     });
 
     /* ── Render User ───────────────────────────────────────── */
@@ -1293,8 +1320,11 @@
     }
 
     function signOutUser() {
-      // TODO (Session 4): firebase.auth().signOut()
-      showToast('Sign-out wired in Session 4');
+      firebase.auth().signOut().then(function() {
+        window.location.href = '/auth.html';
+      }).catch(function() {
+        showToast('Sign-out failed. Try again.');
+      });
     }
 
     /* ── Dev Panel ─────────────────────────────────────────── */
