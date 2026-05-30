@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>MPS Sleep &amp; Recovery</title>
 
   <!-- Firebase -->
@@ -12,786 +12,631 @@
   <script src="/firebase-config.js"></script>
   <script src="/shared/auth-guard.js"></script>
 
-  <!-- React 18 -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-
-  <!-- Recharts (UMD) -->
-  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
-
-  <!-- Lucide React (UMD) -->
-  <script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.js" crossorigin></script>
-
-  <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
   <style>
+    :root {
+      --bg:        #0a0a0a;
+      --card:      rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.08);
+      --text:      #ffffff;
+      --dim:       #9aa3b2;
+      --faint:     #4a5568;
+      --gold:      #c9a86b;
+      --purple:    #9b6bc9;
+      --purple-lo: rgba(155,107,201,0.15);
+      --gold-lo:   rgba(201,168,107,0.12);
+      --green:     #4ade80;
+      --red:       #f87171;
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #0a0a0a; min-height: 100vh; }
-    #root { min-height: 100vh; }
-    #auth-loading {
-      min-height: 100vh; background: #0a0a0a;
-      display: flex; align-items: center; justify-content: center;
-      font-family: system-ui, sans-serif; color: #9b6bc9;
-      font-size: 13px; letter-spacing: 4px;
+    html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+    /* ── Hub Nav ─────────────────────────────────────────────── */
+    #hub-nav {
+      position: fixed; top: 0; left: 0; right: 0; height: 46px;
+      display: flex; align-items: center; padding: 0 16px;
+      background: rgba(10,10,10,0.96); border-bottom: 1px solid rgba(155,107,201,0.2);
+      backdrop-filter: blur(14px); z-index: 1000;
+    }
+    #hub-nav a { color: var(--purple); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-decoration: none; text-transform: uppercase; }
+    #hub-nav .nav-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: 'Bebas Neue', sans-serif; font-size: 16px;
+      color: rgba(155,107,201,0.75); letter-spacing: 0.12em;
     }
 
-    /* nav back to hub sits above React app */
-    .mps-nav {
-      display: flex; align-items: center; padding: 14px 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      background: rgba(10,10,10,0.96); backdrop-filter: blur(12px);
-      position: sticky; top: 0; z-index: 200;
+    /* ── Loading ─────────────────────────────────────────────── */
+    #auth-loading {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; letter-spacing: 4px; color: var(--purple);
     }
-    .mps-nav a { color: #9b6bc9; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; }
-    .mps-nav-title { font-size: 13px; font-weight: 700; color: #9b6bc9; letter-spacing: 0.1em; flex: 1; text-align: center; text-transform: uppercase; }
-    .mps-nav-right { width: 60px; }
+    #app { display: none; padding-top: 46px; }
+
+    /* ── Tabs ────────────────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 2px; padding: 12px 16px 0;
+      border-bottom: 1px solid var(--border); background: var(--bg);
+      position: sticky; top: 46px; z-index: 100;
+    }
+    .tab {
+      padding: 9px 14px; background: none; border: none; color: var(--dim);
+      font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+      cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+    }
+    .tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+
+    /* ── Section ─────────────────────────────────────────────── */
+    .section { padding: 16px; max-width: 640px; margin: 0 auto; }
+
+    /* ── Cards ───────────────────────────────────────────────── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; margin-bottom: 12px;
+    }
+    .card-title {
+      font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+      letter-spacing: 0.18em; color: var(--purple); margin-bottom: 12px;
+    }
+
+    /* ── Stats grid ──────────────────────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box {
+      background: var(--purple-lo); border: 1px solid rgba(155,107,201,0.2);
+      border-radius: 10px; padding: 12px; text-align: center;
+    }
+    .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--purple); line-height: 1; }
+    .stat-lbl { font-size: 10px; letter-spacing: 0.12em; color: var(--dim); text-transform: uppercase; margin-top: 4px; }
+
+    /* Recovery ring */
+    .recovery-ring {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 20px 0 12px;
+    }
+    .ring-val { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; line-height: 1; }
+    .ring-lbl { font-size: 10px; letter-spacing: 0.22em; color: var(--dim); text-transform: uppercase; margin-top: 4px; }
+    .ring-sub { font-size: 12px; color: var(--dim); margin-top: 8px; }
+
+    /* ── Mini bar chart ──────────────────────────────────────── */
+    .mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 60px; margin-top: 8px; }
+    .mini-bar { flex: 1; border-radius: 3px 3px 0 0; min-width: 8px; transition: opacity 0.2s; cursor: pointer; position: relative; }
+    .mini-bar:hover { opacity: 0.8; }
+    .chart-labels { display: flex; gap: 4px; margin-top: 4px; }
+    .chart-lbl { flex: 1; font-size: 9px; color: var(--faint); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── Form ────────────────────────────────────────────────── */
+    .form-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; display: block; }
+    .form-group { margin-bottom: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .form-input {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 14px; padding: 10px 12px;
+      font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--purple); }
+    .form-input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+
+    /* Slider */
+    .slider-row { margin-bottom: 14px; }
+    .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .slider-name { font-size: 12px; color: var(--dim); font-weight: 500; }
+    .slider-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--purple); min-width: 24px; text-align: right; }
+    input[type="range"] {
+      width: 100%; height: 4px; background: rgba(155,107,201,0.2);
+      border-radius: 2px; outline: none; -webkit-appearance: none; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      background: var(--purple); border-radius: 50%;
+      box-shadow: 0 0 8px rgba(155,107,201,0.5);
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 11px 20px; border-radius: 8px; font-size: 12px;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; border: none; transition: opacity 0.15s; font-family: 'Inter', sans-serif;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn.primary { background: var(--purple); color: #fff; width: 100%; }
+    .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--dim); }
+    .btn.danger { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
+
+    /* ── Toast ───────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: rgba(155,107,201,0.95); color: #fff; padding: 10px 20px;
+      border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0;
+      transition: all 0.3s; z-index: 9999; white-space: nowrap; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── History ─────────────────────────────────────────────── */
+    .history-entry {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-radius: 10px; margin-bottom: 8px;
+      background: var(--card); border: 1px solid var(--border); gap: 10px;
+    }
+    .he-date { font-size: 13px; font-weight: 600; color: var(--text); min-width: 80px; }
+    .he-dur { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--gold); }
+    .he-score { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; }
+    .he-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+    .badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; white-space: nowrap; }
+    .badge.energy { background: rgba(201,168,107,0.15); color: var(--gold); }
+    .badge.soreness { background: rgba(248,113,113,0.15); color: var(--red); }
+    .badge.clarity { background: rgba(155,107,201,0.15); color: var(--purple); }
+    .he-del { background: none; border: none; color: var(--faint); font-size: 16px; cursor: pointer; padding: 4px; line-height: 1; }
+    .he-del:hover { color: var(--red); }
+
+    .month-header {
+      font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.2em;
+      color: var(--purple); padding: 8px 0 4px; border-bottom: 1px solid var(--border);
+      margin-bottom: 8px; margin-top: 4px;
+    }
+
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--faint); font-size: 13px; }
+
+    /* ── FAB ─────────────────────────────────────────────────── */
+    #fab {
+      position: fixed; bottom: 24px; right: 20px;
+      width: 52px; height: 52px; background: var(--purple);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #fff; cursor: pointer; z-index: 500;
+      box-shadow: 0 4px 16px rgba(155,107,201,0.45); border: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(155,107,201,0.6); }
+
+    /* score colors */
+    .score-high { color: var(--green); }
+    .score-mid  { color: var(--gold); }
+    .score-low  { color: var(--red); }
   </style>
 </head>
 <body>
 
 <div id="auth-loading">LOADING...</div>
 
-<!-- Nav bar (outside React, always visible) -->
-<nav class="mps-nav" id="mps-nav" style="display:none">
-  <a href="/hub.html">&#8592; Hub</a>
-  <span class="mps-nav-title">MPS Sleep &amp; Recovery</span>
-  <div class="mps-nav-right"></div>
-</nav>
+<div id="app">
+  <!-- Hub Nav -->
+  <div id="hub-nav">
+    <a href="/hub.html">← Hub</a>
+    <span class="nav-title">MPS SLEEP</span>
+  </div>
 
-<div id="root"></div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="switchTab('log')">Log Sleep</button>
+    <button class="tab" onclick="switchTab('history')">History</button>
+  </div>
 
-<!-- Firebase → window.storage bridge -->
+  <!-- Dashboard -->
+  <div id="tab-dashboard" class="section">
+    <div class="card" id="recovery-card">
+      <div class="card-title">Recovery Score</div>
+      <div class="recovery-ring">
+        <div class="ring-val" id="score-display" style="color:#4a5568">—</div>
+        <div class="ring-lbl">Overall Recovery</div>
+        <div class="ring-sub" id="score-label">No entries yet</div>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:12px;">
+      <div class="stat-box">
+        <div class="stat-val" id="avg-sleep">—</div>
+        <div class="stat-lbl">Avg Sleep (hrs)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="total-entries">0</div>
+        <div class="stat-lbl">Sessions Logged</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="avg-energy" style="color:var(--gold);">—</div>
+        <div class="stat-lbl">Avg Energy</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="avg-clarity" style="color:var(--purple);">—</div>
+        <div class="stat-lbl">Avg Clarity</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recovery Trend (Last 10)</div>
+      <div class="mini-chart" id="trend-chart"></div>
+      <div class="chart-labels" id="trend-labels"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Last Entry</div>
+      <div id="last-entry-display" style="color:var(--dim);font-size:13px;">No entries yet.</div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div id="tab-log" class="section" style="display:none;">
+    <div class="card">
+      <div class="card-title">Log Sleep Session</div>
+
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="log-date"/>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label class="form-label">Bedtime</label>
+          <input type="time" class="form-input" id="log-bedtime" value="22:00"/>
+        </div>
+        <div>
+          <label class="form-label">Wake Time</label>
+          <input type="time" class="form-input" id="log-wake" value="06:00"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div id="duration-display" style="font-size:13px;color:var(--gold);text-align:center;padding:6px 0 4px;letter-spacing:0.05em;"></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-name">⚡ Energy</span>
+          <span class="slider-val" id="val-energy">7</span>
+        </div>
+        <input type="range" min="1" max="10" value="7" id="sl-energy" oninput="updateSlider('energy',this.value)"/>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-name">🦵 Soreness</span>
+          <span class="slider-val" id="val-soreness">3</span>
+        </div>
+        <input type="range" min="1" max="10" value="3" id="sl-soreness" oninput="updateSlider('soreness',this.value)"/>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-name">🧠 Mental Clarity</span>
+          <span class="slider-val" id="val-clarity">7</span>
+        </div>
+        <input type="range" min="1" max="10" value="7" id="sl-clarity" oninput="updateSlider('clarity',this.value)"/>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-name">🌊 Restlessness</span>
+          <span class="slider-val" id="val-restlessness">3</span>
+        </div>
+        <input type="range" min="1" max="10" value="3" id="sl-restlessness" oninput="updateSlider('restlessness',this.value)"/>
+      </div>
+
+      <button class="btn primary" onclick="saveEntry()" style="margin-top:8px;">Save Session</button>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div id="tab-history" class="section" style="display:none;">
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<button id="fab" onclick="switchTab('log')" title="Log Sleep">+</button>
+<div id="toast"></div>
+
 <script>
-(function() {
-  'use strict';
+// ── State ────────────────────────────────────────────────────
+let entries = [];
+let db = null;
+let uid = null;
+const STORE_PREFIX = 'mps_sleep_';
 
-  document.addEventListener('DOMContentLoaded', function() {
-    if (typeof MPS_GUARD !== 'undefined') MPS_GUARD.protect('sleep');
-  });
+// ── Auth + Init ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof MPS_GUARD !== 'undefined') MPS_GUARD.protect('sleep');
+});
 
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (!user) return;
+firebase.auth().onAuthStateChanged(function(user) {
+  if (!user) return;
+  uid = user.uid;
+  db  = firebase.firestore();
 
-    var uid = user.uid;
-    var db = firebase.firestore();
-    var COLL = 'users/' + uid + '/app_storage';
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
 
-    // window.storage — maps to Firestore (same API as sleep component uses)
-    window.storage = {
-      get: function(key) {
-        return db.doc(COLL + '/' + encodeKey(key)).get().then(function(snap) {
-          return snap.exists ? snap.data() : null;
-        });
-      },
-      set: function(key, value) {
-        return db.doc(COLL + '/' + encodeKey(key)).set({ value: value }).then(function() {
-          return true;
-        }).catch(function() { return false; });
-      },
-      delete: function(key) {
-        return db.doc(COLL + '/' + encodeKey(key)).delete().catch(function(){});
-      },
-      list: function() {
-        // Sleep tracker uses date strings as keys (e.g. "2026-05-26")
-        // stored under sleep_* prefix
-        return db.collection(COLL).get().then(function(snap) {
-          return snap.docs
-            .map(function(d) { return decodeKey(d.id); })
-            .filter(function(k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); });
-        });
+  // Set today's date in log form
+  const today = new Date();
+  document.getElementById('log-date').value = fmtDate(today);
+
+  loadEntries();
+  updateDurationDisplay();
+});
+
+// ── Storage ──────────────────────────────────────────────────
+function storePath(key) { return 'users/' + uid + '/sleep_logs/' + key; }
+
+async function loadEntries() {
+  entries = [];
+  try {
+    if (db) {
+      const snap = await db.collection('users/' + uid + '/sleep_logs').get();
+      snap.forEach(function(doc) {
+        const d = doc.data();
+        if (d && d.date) entries.push(d);
+      });
+    }
+  } catch(e) {
+    // Fallback to localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORE_PREFIX)) {
+        try { entries.push(JSON.parse(localStorage.getItem(k))); } catch(x){}
       }
-    };
-
-    // Encode/decode Firestore-safe keys (dates have dashes, which are OK, but prefix for namespace)
-    function encodeKey(k) { return 'sleep__' + k.replace(/\//g,'__'); }
-    function decodeKey(k) { return k.replace(/^sleep__/, '').replace(/__/g,'/'); }
-
-    // Show UI
-    document.getElementById('auth-loading').style.display = 'none';
-    document.getElementById('mps-nav').style.display = 'flex';
-
-    // Mount React
-    setTimeout(function() {
-      if (!window.__SLEEP_MOUNTED) {
-        window.__SLEEP_MOUNTED = true;
-        // Babel will auto-process the text/babel script
-      }
-    }, 100);
-  });
-})();
-</script>
-
-<!-- Sleep Tracker React Component -->
-<script type="text/babel">
-// Destructure from globals (UMD builds)
-const { useState, useEffect, useMemo } = React;
-
-const {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer, ReferenceLine
-} = Recharts;
-
-const {
-  Moon, Sun, Activity, Battery, Flame, Plus, Trash2,
-  TrendingUp, TrendingDown, Minus, Zap, HeartPulse, Pencil, ChevronDown
-} = lucide;
-
-// ============================================================
-// STORAGE — delegates to window.storage (Firebase bridge)
-// ============================================================
-const storage = {
-  async get(key) {
-    try {
-      if (window.storage) {
-        const v = await window.storage.get(key);
-        return v;
-      }
-      const v = localStorage.getItem('rr_sleep:' + key);
-      return v ? { value: v } : null;
-    } catch (e) { return null; }
-  },
-  async set(key, value) {
-    try {
-      if (window.storage) {
-        await window.storage.set(key, value);
-      }
-      localStorage.setItem('rr_sleep:' + key, value);
-      return true;
-    } catch (e) { return false; }
-  },
-  async delete(key) {
-    try {
-      if (window.storage) await window.storage.delete(key);
-      localStorage.removeItem('rr_sleep:' + key);
-    } catch (e) {}
-  },
-  async list() {
-    try {
-      if (window.storage) {
-        const keys = await window.storage.list();
-        return keys;
-      }
-      const keys = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('rr_sleep:')) keys.push(k.slice(9));
-      }
-      return keys;
-    } catch (e) { return []; }
-  },
-};
-
-export default function SleepTracker() {
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [saveError, setSaveError] = useState(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [expandedMonths, setExpandedMonths] = useState({});
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
-  const [form, setForm] = useState(() => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return { date: `${y}-${m}-${day}`, sleepTime: "", wakeTime: "04:00", energy: 7, soreness: 3, clarity: 7, restlessness: 3 };
-  });
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const keys = await storage.list();
-        const loaded = [];
-        for (const k of keys) {
-          const value = await storage.get(k);
-          if (value) {
-            try {
-              const raw = typeof value === 'string' ? value : value.value;
-              if (!raw) continue;
-              const parsed = JSON.parse(raw);
-              loaded.push({ ...parsed, energy: parsed.energy ?? 5, clarity: parsed.clarity ?? 5, soreness: parsed.soreness ?? 5, restlessness: parsed.restlessness ?? 3 });
-            } catch (e) {}
-          }
-        }
-        loaded.sort((a, b) => a.date.localeCompare(b.date));
-        setEntries(loaded);
-      } catch (e) { console.error(e); } finally { setLoading(false); }
-    })();
-  }, []);
-
-  const saveEntry = async () => {
-    const entry = { ...form };
-    const next = [...entries.filter(e => e.date !== form.date), entry].sort((a, b) => a.date.localeCompare(b.date));
-    setEntries(next);
-    setShowForm(false);
-    setSaveSuccess(true);
-    setSaveError(null);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-    setTimeout(() => setSaveSuccess(false), 1500);
-    const ok = await storage.set(form.date, JSON.stringify(entry));
-    if (!ok) setSaveError("Could not persist entry");
-  };
-
-  const deleteEntry = async (date) => {
-    setEntries(entries.filter(e => e.date !== date));
-    await storage.delete(date);
-  };
-
-  const editEntry = (entry) => {
-    setForm({ date: entry.date, sleepTime: entry.sleepTime || "", wakeTime: entry.wakeTime || "", energy: entry.energy ?? 5, soreness: entry.soreness ?? 5, clarity: entry.clarity ?? 5, restlessness: entry.restlessness ?? 3 });
-    setShowForm(true);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const todayStr = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-  };
-
-  const fmt12 = (t) => {
-    if (!t) return "";
-    const [h, m] = t.split(":").map(Number);
-    const period = h >= 12 ? "PM" : "AM";
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m).padStart(2, "0")} ${period}`;
-  };
-
-  const fmtDate = (d) => {
-    if (!d) return "";
-    const [y, m, day] = d.split("-");
-    return `${m}/${day}/${y}`;
-  };
-
-  const fmtWeekday = (d) => {
-    if (!d) return "";
-    const [y, m, day] = d.split("-").map(Number);
-    return ["SUN","MON","TUE","WED","THU","FRI","SAT"][new Date(y, m-1, day).getDay()];
-  };
-
-  const toDate = (dateStr) => { const [y, m, d] = dateStr.split("-").map(Number); return new Date(y, m-1, d); };
-  const startOfWeek = (dateStr) => { const d = toDate(dateStr); const day = d.getDay(); d.setDate(d.getDate()-day); return d; };
-  const dateToStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-
-  const fmtWeekRange = (weekStart) => {
-    const end = new Date(weekStart); end.setDate(end.getDate()+6);
-    const mn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const s = `${mn[weekStart.getMonth()]} ${weekStart.getDate()}`;
-    const e = weekStart.getMonth() === end.getMonth() ? `${end.getDate()}` : `${mn[end.getMonth()]} ${end.getDate()}`;
-    return `${s} – ${e}`;
-  };
-
-  const fmtMonth = (dateStr) => {
-    const mn = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    const [y, m] = dateStr.split("-").map(Number);
-    return `${mn[m-1]} ${y}`;
-  };
-
-  const calcHours = (sleep, wake) => {
-    if (!sleep || !wake) return 0;
-    const [sh, sm] = sleep.split(":").map(Number);
-    const [wh, wm] = wake.split(":").map(Number);
-    let mins = wh*60+wm-(sh*60+sm);
-    if (mins < 0) mins += 24*60;
-    return +(mins/60).toFixed(2);
-  };
-
-  const calcRecovery = (hours, energy, soreness, clarity, restlessness) => {
-    const sleepScore = Math.min(hours/7, 1)*25;
-    const energyScore = (energy/10)*20;
-    const clarityScore = (clarity/10)*20;
-    const soreScore = ((10-soreness)/10)*15;
-    const restScore = ((10-restlessness)/10)*20;
-    return Math.round(sleepScore+energyScore+clarityScore+soreScore+restScore);
-  };
-
-  const enriched = useMemo(() => entries.map(e => {
-    const hours = calcHours(e.sleepTime, e.wakeTime);
-    const hasSleep = !!e.sleepTime;
-    return { ...e, hours: hasSleep ? hours : null, recovery: hasSleep ? calcRecovery(hours, e.energy??5, e.soreness??5, e.clarity??5, e.restlessness??3) : null, label: e.date.slice(5), weekday: (() => { const [yy,mm,dd] = e.date.split("-").map(Number); return ["SUN","MON","TUE","WED","THU","FRI","SAT"][new Date(yy,mm-1,dd).getDay()]; })() };
-  }), [entries]);
-
-  const last30 = enriched.slice(-30);
-  const last7 = enriched.slice(-7);
-
-  const weekdayMap = useMemo(() => { const m = {}; enriched.forEach(e => { m[e.label] = e.weekday; }); return m; }, [enriched]);
-
-  const avg = (arr, key) => { const vals = arr.map(x => x[key]).filter(v => v !== undefined && v !== null && !isNaN(v)); return vals.length ? +(vals.reduce((s,x) => s+x, 0)/vals.length).toFixed(1) : 0; };
-
-  const stats = { hours: avg(last7,"hours"), energy: avg(last7,"energy"), clarity: avg(last7,"clarity"), soreness: avg(last7,"soreness"), recovery: avg(last7,"recovery") };
-
-  const avgMinutes = (arr, key) => {
-    const mins = arr.map(e => e[key]).filter(Boolean).map(t => { const [h, m] = t.split(":").map(Number); return key === "sleepTime" && h < 12 ? h*60+m+24*60 : h*60+m; });
-    if (!mins.length) return null;
-    const avgVal = mins.reduce((s,x) => s+x, 0)/mins.length;
-    const totalMins = Math.round(avgVal) % (24*60);
-    return `${String(Math.floor(totalMins/60)).padStart(2,"0")}:${String(totalMins%60).padStart(2,"0")}`;
-  };
-
-  const bestDay = (() => { if (!last7.length) return null; const v = last7.filter(e => e.recovery != null); return v.length ? v.reduce((b,e) => e.recovery > b.recovery ? e : b, v[0]) : null; })();
-  const worstDay = (() => { if (!last7.length) return null; const v = last7.filter(e => e.recovery != null); return v.length ? v.reduce((w,e) => e.recovery < w.recovery ? e : w, v[0]) : null; })();
-  const dayOfWeek = (dateStr) => { const [y,m,d] = dateStr.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US", { weekday: "long" }); };
-
-  const insights = { avgWake: avgMinutes(last7,"wakeTime"), avgSleep: avgMinutes(last7,"sleepTime"), bestDay, worstDay, entryCount: last7.length };
-
-  const trend = (key) => {
-    if (last7.length < 4) return "flat";
-    const half = Math.floor(last7.length/2);
-    const earlier = avg(last7.slice(0,half), key);
-    const recent = avg(last7.slice(half), key);
-    const diff = recent - earlier;
-    if (Math.abs(diff) < 0.3) return "flat";
-    return diff > 0 ? "up" : "down";
-  };
-
-  const today = enriched.find(e => e.date === todayStr());
-
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        <div style={{ fontFamily: "Georgia, serif", letterSpacing: "0.3em", color: "#8a7d6b" }}>LOADING</div>
-      </div>
-    );
+    }
   }
-
-  return (
-    <div style={styles.page}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@300;500;700&display=swap');
-        * { box-sizing: border-box; }
-        body { margin: 0; }
-        .card { transition: transform 0.2s ease, border-color 0.2s ease; }
-        .card:hover { border-color: #c9a86b; }
-        .btn-primary:hover { background: #c9a86b !important; color: #0a0a0a !important; }
-        .btn-purple:hover { background: #9b6bc9 !important; color: #0a0a0a !important; }
-        .btn-ghost:hover { color: #c9a86b !important; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #2a2a2a; }
-      `}</style>
-      <div style={styles.container}>
-        {saveSuccess && (
-          <div style={{ background: "rgba(155,107,201,0.15)", border: "1px solid #9b6bc9", color: "#c9a8e8", padding: "12px 16px", marginBottom: 16, fontFamily: "JetBrains Mono, monospace", fontSize: 12, letterSpacing: "0.1em", textAlign: "center" }}>
-            ✓ ENTRY SAVED · {entries.length} TOTAL
-          </div>
-        )}
-
-        <header style={styles.header}>
-          <div style={{ width: "100%" }}>
-            <div style={styles.mpsLogoWrap}>
-              <div style={styles.mpsLogo}>MPS</div>
-              <div style={styles.mpsDivider} />
-              <div style={styles.mpsTagline}>MODULAR PERFORMANCE SYSTEMS</div>
-              <div style={styles.appName}>REST <span style={{ color: "#9b6bc9", textShadow: "0 0 12px rgba(155,107,201,0.55)" }}>&amp;</span> RECOVERY</div>
-            </div>
-            <div style={styles.subtitle}>{entries.length} {entries.length===1?"entry":"entries"} · tracking since {entries[0]?.date ? fmtDate(entries[0].date) : "today"}</div>
-            <div style={styles.actionRow}>
-              {activeTab === "dashboard" ? (
-                <>
-                  <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
-                    <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
-                  </button>
-                  <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("insights")}>INSIGHTS</button>
-                  <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("log")}>LOG</button>
-                </>
-              ) : (
-                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("dashboard")}>← DASHBOARD</button>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {showForm && (
-          <div style={styles.formCard}>
-            <div style={styles.formGrid}>
-              <Field label="Date"><input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} style={styles.input} /></Field>
-              <Field label="Wake Time"><input type="time" value={form.wakeTime} onChange={e => setForm({...form, wakeTime: e.target.value})} style={styles.input} /></Field>
-              <Field label="Sleep Time"><input type="time" value={form.sleepTime} onChange={e => setForm({...form, sleepTime: e.target.value})} style={styles.input} /></Field>
-              <Field label={`Energy · ${form.energy}/10`}><input type="range" min="1" max="10" value={form.energy} onChange={e => setForm({...form, energy: +e.target.value})} style={styles.range} /></Field>
-              <Field label={`Soreness · ${form.soreness}/10`}><input type="range" min="1" max="10" value={form.soreness} onChange={e => setForm({...form, soreness: +e.target.value})} style={styles.range} /></Field>
-              <Field label={`Mental Clarity · ${form.clarity}/10`}><input type="range" min="1" max="10" value={form.clarity} onChange={e => setForm({...form, clarity: +e.target.value})} style={{...styles.range, accentColor: "#9b6bc9"}} /></Field>
-              <Field label={`Restlessness · ${form.restlessness}/10`}><input type="range" min="1" max="10" value={form.restlessness} onChange={e => setForm({...form, restlessness: +e.target.value})} style={{...styles.range, accentColor: "#9b6bc9"}} /></Field>
-            </div>
-            <div style={styles.formFoot}>
-              <div style={styles.preview}>
-                {form.sleepTime ? (
-                  <>Duration: <strong style={{ color: "#9b6bc9" }}>{calcHours(form.sleepTime, form.wakeTime)}h</strong>{" · "}Recovery: <strong style={{ color: "#c9a86b" }}>{calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness)}%</strong></>
-                ) : (
-                  <span style={{ color: "#8a7d6b", fontStyle: "italic" }}>Sleep time empty — add later to calculate recovery</span>
-                )}
-              </div>
-              <button className="btn-primary" style={styles.btnPrimary} onClick={saveEntry}>SAVE</button>
-            </div>
-            {saveError && <div style={{ marginTop: 12, padding: 8, background: "#2a1010", border: "1px solid #8b3a3a", color: "#e8a0a0", fontSize: 11 }}>{saveError}</div>}
-          </div>
-        )}
-
-        {activeTab === "dashboard" && (
-          <>
-            <section style={styles.todayCard}>
-              <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
-              {today ? (
-                <div style={styles.todayGrid}>
-                  <TodayStat icon={<Sun size={14} />} label="Woke" value={today.wakeTime ? fmt12(today.wakeTime) : "—"} accent="#9b6bc9" />
-                  <TodayStat icon={<Moon size={14} />} label="Slept" value={today.hours != null ? `${today.hours}h` : "—"} accent="#9b6bc9" />
-                  <TodayStat icon={<Zap size={14} />} label="Energy" value={`${today.energy}/10`} />
-                  <TodayStat icon={<HeartPulse size={14} />} label="Soreness" value={`${today.soreness}/10`} />
-                  <TodayStat icon={<Activity size={14} />} label="Clarity" value={`${today.clarity}/10`} accent="#9b6bc9" />
-                  <TodayStat icon={<Battery size={14} />} label="Recovery" value={today.recovery != null ? `${today.recovery}%` : "—"} />
-                </div>
-              ) : (
-                <div style={styles.empty}>No entry yet. Log today.</div>
-              )}
-            </section>
-
-            <section style={styles.statsRow}>
-              <StatBlock label="Avg Sleep" value={`${stats.hours}h`} sub="7-day" trend={trend("hours")} good="up" />
-              <StatBlock label="Avg Energy" value={`${stats.energy}/10`} sub="7-day" trend={trend("energy")} good="up" />
-              <StatBlock label="Avg Clarity" value={`${stats.clarity}/10`} sub="7-day" trend={trend("clarity")} good="up" />
-              <StatBlock label="Avg Soreness" value={`${stats.soreness}/10`} sub="7-day" trend={trend("soreness")} good="down" />
-              <StatBlock label="Avg Recovery" value={`${stats.recovery}%`} sub="7-day" trend={trend("recovery")} good="up" />
-            </section>
-
-            <section style={styles.chartsGrid}>
-              <ChartCard title="Sleep Duration" sub="hours per night · last 30">
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={last30}>
-                    <XAxis dataKey="label" tick={{ fill: "#6a6258", fontSize: 9 }} axisLine={false} tickLine={false} height={28} />
-                    <YAxis tick={{ fill: "#6a6258", fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip suffix="h" />} cursor={{ fill: "rgba(155,107,201,0.05)" }} />
-                    <ReferenceLine y={7} stroke="#9b6bc9" strokeDasharray="2 4" opacity={0.5} />
-                    <Bar dataKey="hours" fill="#9b6bc9" radius={[2,2,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-              <ChartCard title="Recovery Score" sub="% · last 30">
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={last30}>
-                    <XAxis dataKey="label" tick={{ fill: "#6a6258", fontSize: 9 }} axisLine={false} tickLine={false} height={28} />
-                    <YAxis domain={[0,100]} tick={{ fill: "#6a6258", fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip suffix="%" />} />
-                    <Line type="monotone" dataKey="recovery" stroke="#c9a86b" strokeWidth={2} dot={false} activeDot={{ r: 5, fill: "#f5d895", stroke: "#c9a86b", strokeWidth: 2 }} name="Recovery" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartCard>
-              <ChartCard title="Energy vs Soreness" sub="last 30">
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={last30}>
-                    <XAxis dataKey="label" tick={{ fill: "#6a6258", fontSize: 9 }} axisLine={false} tickLine={false} height={28} />
-                    <YAxis domain={[0,10]} tick={{ fill: "#6a6258", fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line type="monotone" dataKey="energy" stroke="#c9a86b" strokeWidth={2} dot={false} name="Energy" />
-                    <Line type="monotone" dataKey="soreness" stroke="#9b6bc9" strokeWidth={2} dot={false} name="Soreness" />
-                  </LineChart>
-                </ResponsiveContainer>
-                <div style={styles.legend}>
-                  <span style={{ color: "#c9a86b" }}>― Energy</span>
-                  <span style={{ color: "#9b6bc9" }}>― Soreness</span>
-                </div>
-              </ChartCard>
-            </section>
-          </>
-        )}
-
-        {activeTab === "insights" && (
-          <section style={styles.insightsCard}>
-            <div style={styles.eyebrow}>WEEKLY INSIGHTS</div>
-            <h2 style={styles.insightsTitle}>This Week</h2>
-            {insights.entryCount === 0 ? (
-              <div style={styles.empty}>No entries yet. Log a night to see insights.</div>
-            ) : (
-              <div style={styles.insightsGrid}>
-                <InsightRow label="Average wake time" value={insights.avgWake ? fmt12(insights.avgWake) : "—"} accent="#9b6bc9" />
-                <InsightRow label="Average bedtime" value={insights.avgSleep ? fmt12(insights.avgSleep) : "—"} accent="#9b6bc9" />
-                <InsightRow label="Average duration" value={stats.hours > 0 ? `${stats.hours} hours` : "—"} accent="#9b6bc9" />
-                <InsightRow label="Average energy" value={stats.energy > 0 ? `${stats.energy}/10` : "—"} accent="#c9a86b" />
-                <InsightRow label="Average clarity" value={stats.clarity > 0 ? `${stats.clarity}/10` : "—"} accent="#9b6bc9" />
-                <InsightRow label="Average soreness" value={stats.soreness > 0 ? `${stats.soreness}/10` : "—"} accent="#c9a86b" />
-                <InsightRow label="Best recovery day" value={insights.bestDay ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%` : "—"} accent="#c9a86b" />
-                <InsightRow label="Lowest recovery day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent="#c9a86b" />
-                <InsightRow label="Tracked nights" value={`${insights.entryCount} of 7`} />
-              </div>
-            )}
-          </section>
-        )}
-
-        {activeTab === "log" && (
-          <section style={styles.logSection}>
-            <div style={styles.logHeader}>
-              <div style={styles.eyebrow}>FULL LOG</div>
-              <div style={styles.logCount}>{entries.length} ENTRIES</div>
-            </div>
-            {(() => {
-              const todayKey = todayStr();
-              const currentWeekStart = dateToStr(startOfWeek(todayKey));
-              const sorted = [...enriched].sort((a,b) => b.date.localeCompare(a.date));
-              const monthMap = new Map();
-              for (const e of sorted) {
-                const mk = e.date.slice(0,7);
-                if (!monthMap.has(mk)) monthMap.set(mk, []);
-                monthMap.get(mk).push(e);
-              }
-              const currentYear = todayKey.slice(0,4);
-              const currentMonthKey = todayKey.slice(0,7);
-              const allMonths = [];
-              for (let m = 1; m <= 12; m++) {
-                const mk = `${currentYear}-${String(m).padStart(2,"0")}`;
-                allMonths.push([mk, monthMap.get(mk) || []]);
-              }
-              const activeMonth = selectedMonth || currentMonthKey;
-              const activeMonthEntries = monthMap.get(activeMonth) || [];
-              const weekMap = new Map();
-              for (const e of activeMonthEntries) {
-                const wk = dateToStr(startOfWeek(e.date));
-                if (!weekMap.has(wk)) weekMap.set(wk, []);
-                weekMap.get(wk).push(e);
-              }
-              return (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  <div style={{ position: "relative" }}>
-                    <button style={styles.monthHeaderButton} onClick={() => setMonthPickerOpen(!monthPickerOpen)}>
-                      <span style={styles.monthHeaderText}>{fmtMonth(activeMonth + "-01")}</span>
-                      <span style={styles.monthHeaderMeta}>
-                        <span style={styles.monthCount}>{activeMonthEntries.length === 0 ? "—" : `${activeMonthEntries.length} entries`}</span>
-                        <ChevronDown size={18} style={{ transform: monthPickerOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease", color: "#9b6bc9" }} />
-                      </span>
-                    </button>
-                    {monthPickerOpen && (
-                      <div style={styles.monthDropdown}>
-                        {allMonths.map(([mk, me]) => (
-                          <button key={mk} style={{ ...styles.monthDropdownItem, ...(mk === activeMonth ? styles.monthDropdownItemActive : {}), ...(me.length === 0 ? { opacity: 0.5 } : {}) }} onClick={() => { setSelectedMonth(mk); setMonthPickerOpen(false); }}>
-                            <span>{fmtMonth(mk + "-01")}</span>
-                            <span style={styles.monthCount}>{me.length === 0 ? "—" : me.length}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {activeMonthEntries.length === 0 ? (
-                    <div style={styles.emptyMonth}>No entries this month yet.</div>
-                  ) : (
-                    [...weekMap.entries()].map(([weekKey, weekEntries]) => {
-                      const isCurWeek = weekKey === currentWeekStart;
-                      return (
-                        <div key={weekKey} style={{ ...styles.weekGroup, ...(isCurWeek ? styles.weekGroupCurrent : {}) }}>
-                          <div style={styles.weekHeader}>
-                            <span style={isCurWeek ? styles.weekLabelCurrent : styles.weekLabel}>WEEK OF {fmtWeekRange(toDate(weekKey))}</span>
-                            {isCurWeek && <span style={styles.currentBadge}>CURRENT</span>}
-                          </div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                            {weekEntries.map(e => {
-                              const isToday = e.date === todayKey;
-                              return (
-                                <div key={e.date} style={{ ...styles.logEntry, ...(isToday ? styles.logEntryToday : {}) }}>
-                                  <div style={styles.logEntryHead}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                      <div style={isToday ? styles.logEntryDateToday : styles.logEntryDate}>
-                                        {fmtDate(e.date)}
-                                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#c9a86b", letterSpacing: "0.12em", marginLeft: 10, fontWeight: 600 }}>{fmtWeekday(e.date)}</span>
-                                      </div>
-                                      {isToday && <span style={styles.todayBadge}>TODAY</span>}
-                                    </div>
-                                    <div style={{ display: "flex", gap: 8 }}>
-                                      <button className="btn-ghost" style={styles.btnGhost} onClick={() => editEntry(e)}><Pencil size={14} /></button>
-                                      <button className="btn-ghost" style={styles.btnGhost} onClick={() => deleteEntry(e.date)}><Trash2 size={14} /></button>
-                                    </div>
-                                  </div>
-                                  <div style={styles.logEntryRow1}>
-                                    <LogStat label="WAKE" value={e.wakeTime ? fmt12(e.wakeTime) : "—"} />
-                                    <LogStat label="SLEEP" value={e.sleepTime ? fmt12(e.sleepTime) : "—"} />
-                                    <LogStat label="DURATION" value={e.hours != null ? `${e.hours}h` : "—"} accent="#9b6bc9" />
-                                  </div>
-                                  <div style={styles.logEntryRow2}>
-                                    <LogStat label="RECOVERY" value={e.recovery != null ? `${e.recovery}%` : "—"} accent="#c9a86b" />
-                                    <LogStat label="ENERGY" value={`${e.energy ?? "—"}/10`} />
-                                    <LogStat label="SORENESS" value={`${e.soreness ?? "—"}/10`} />
-                                    <LogStat label="CLARITY" value={`${e.clarity ?? "—"}/10`} accent="#9b6bc9" />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              );
-            })()}
-          </section>
-        )}
-
-        <footer style={styles.footer}>
-          <div>SLEEP × RECOVERY · OPERATOR'S LOG</div>
-          <div>v1.0</div>
-        </footer>
-      </div>
-    </div>
-  );
+  entries.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  renderAll();
 }
 
-function Field({ label, children }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label style={styles.label}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function TodayStat({ icon, label, value, accent }) {
-  return (
-    <div style={{ background: "#161616", border: "1.5px solid #3a3a3a", borderRadius: 4, boxShadow: "0 2px 6px rgba(0,0,0,0.5)", padding: "14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, color: accent || "#8a7d6b" }}>
-        {icon}
-        <span style={{ ...styles.statLabel, color: "#8a7d6b" }}>{label}</span>
-      </div>
-      <div style={styles.todayValue}>{value}</div>
-    </div>
-  );
-}
-
-function LogStat({ label, value, accent }) {
-  return (
-    <div style={{ background: "#161616", border: "1.5px solid #3a3a3a", borderLeft: "2px solid rgba(155,107,201,0.4)", borderRadius: 4, padding: "14px 8px", display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-      <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6a6258", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
-      <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 17, fontWeight: 700, color: accent || "#f5ead5", letterSpacing: "-0.04em", whiteSpace: "nowrap", lineHeight: 1 }}>{value}</div>
-    </div>
-  );
-}
-
-function InsightRow({ label, value, accent }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "#161616", border: "1.5px solid #3a3a3a", borderRadius: 4, marginBottom: 10 }}>
-      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: "0.1em", color: "#8a7d6b", textTransform: "uppercase" }}>{label}</span>
-      <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 600, color: accent || "#f5ead5" }}>{value}</span>
-    </div>
-  );
-}
-
-function StatBlock({ label, value, sub, trend, good }) {
-  const isGood = (trend === "up" && good === "up") || (trend === "down" && good === "down");
-  const isBad = (trend === "down" && good === "up") || (trend === "up" && good === "down");
-  const color = isGood ? "#7a9b6e" : isBad ? "#8b3a3a" : "#6a6258";
-  const Icon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
-  return (
-    <div className="card" style={styles.statBlock}>
-      <div style={styles.statLabel}>{label}</div>
-      <div style={styles.statValue}>{value}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, color }}>
-        <Icon size={12} />
-        <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em" }}>{sub}</span>
-      </div>
-    </div>
-  );
-}
-
-function ChartCard({ title, sub, children }) {
-  return (
-    <div className="card" style={styles.chartCard}>
-      <div style={styles.chartHead}>
-        <div style={styles.chartTitle}>{title}</div>
-        <div style={styles.chartSub}>{sub}</div>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function CustomTooltip({ active, payload, label, suffix = "" }) {
-  if (!active || !payload?.length) return null;
-  const seen = new Set();
-  const filtered = payload.filter(p => { if (!p.name) return false; const k = p.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
-  if (!filtered.length) return null;
-  return (
-    <div style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", padding: "8px 12px", fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>
-      <div style={{ color: "#6a6258", marginBottom: 4 }}>{label}</div>
-      {filtered.map((p, i) => <div key={i} style={{ color: p.color }}>{p.name}: {p.value}{suffix}</div>)}
-    </div>
-  );
-}
-
-const styles = {
-  page: { minHeight: "100vh", background: "#0a0a0a", color: "#e8e0d0", fontFamily: "'Bricolage Grotesque', system-ui, sans-serif", padding: "20px 6px 60px" },
-  container: { maxWidth: 1200, margin: "0 auto" },
-  loading: { minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center" },
-  header: { display: "flex", flexDirection: "column", marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid rgba(155,107,201,0.15)", gap: 16 },
-  eyebrow: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.3em", color: "#9b6bc9", marginBottom: 8, opacity: 0.85 },
-  mpsLogoWrap: { display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24, paddingTop: 24, paddingBottom: 22, paddingLeft: 24, paddingRight: 24, background: "#0d0d0d", border: "2px solid #5e5e5e", borderRadius: 12, boxShadow: "0 14px 32px rgba(0,0,0,0.95), inset 0 2px 0 rgba(255,255,255,0.14), inset 0 0 60px rgba(155,107,201,0.12)" },
-  mpsLogo: { fontSize: 90, fontWeight: 900, fontStyle: "italic", letterSpacing: "0.04em", fontFamily: "'Bricolage Grotesque', system-ui, sans-serif", background: "linear-gradient(180deg, #ffffff 0%, #f5ead5 30%, #c9a86b 75%, #a888c9 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", filter: "drop-shadow(0 0 30px rgba(201,168,107,0.5))", lineHeight: 1, marginBottom: 4, display: "inline-block" },
-  mpsDivider: { height: 2, width: "80%", background: "linear-gradient(90deg, transparent, #c9a86b 30%, #9b6bc9 70%, transparent)", margin: "10px 0 8px" },
-  mpsTagline: { fontFamily: "JetBrains Mono, monospace", fontSize: 11, fontWeight: 300, letterSpacing: "0.32em", color: "#c9a86b" },
-  appName: { fontFamily: "JetBrains Mono, monospace", fontSize: 19, fontWeight: 600, color: "#c9a86b", textAlign: "center", marginTop: 10, marginBottom: 2, whiteSpace: "nowrap", letterSpacing: "0.32em" },
-  subtitle: { fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#6a6258", marginTop: 12, letterSpacing: "0.05em", textAlign: "center" },
-  actionRow: { display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 },
-  btnPrimary: { background: "transparent", color: "#c9a86b", border: "1px solid #c9a86b", padding: "12px 20px", fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: "0.2em", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s ease" },
-  btnPurple: { background: "transparent", color: "#9b6bc9", border: "1px solid #9b6bc9", padding: "12px 18px", fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: "0.2em", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s ease" },
-  btnGhost: { background: "transparent", border: "none", color: "#4a4238", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", transition: "color 0.2s ease" },
-  formCard: { background: "#111111", border: "1px solid #1a1a1a", borderLeft: "2px solid rgba(155,107,201,0.4)", padding: 24, marginBottom: 32 },
-  formGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 20, marginBottom: 20 },
-  formFoot: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 16, borderTop: "1px solid #1a1a1a" },
-  preview: { fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: "#8a7d6b" },
-  label: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.15em", color: "#8a7d6b", textTransform: "uppercase" },
-  input: { background: "#0a0a0a", border: "1px solid #2a2a2a", color: "#e8e0d0", padding: "10px 12px", fontSize: 13, outline: "none" },
-  range: { width: "100%", accentColor: "#c9a86b", height: 4 },
-  todayCard: { background: "#0f0f0f", border: "1.5px solid #4a4a4a", borderRadius: 6, boxShadow: "0 8px 20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)", padding: 24, marginBottom: 24 },
-  todayGrid: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginTop: 16 },
-  todayValue: { fontSize: 24, fontFamily: "'Bricolage Grotesque', system-ui, sans-serif", fontWeight: 700, color: "#f5ead5", letterSpacing: "-0.03em", lineHeight: 1 },
-  empty: { color: "#4a4238", fontStyle: "italic", padding: "16px 0", fontSize: 14 },
-  statsRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12, marginBottom: 32 },
-  statBlock: { background: "#0f0f0f", border: "1.5px solid #4a4a4a", borderRadius: 6, boxShadow: "0 8px 20px rgba(0,0,0,0.8)", padding: 16, display: "flex", flexDirection: "column", gap: 6 },
-  statLabel: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.2em", color: "#6a6258", textTransform: "uppercase" },
-  statValue: { fontSize: 30, fontFamily: "'Bricolage Grotesque', system-ui, sans-serif", fontWeight: 700, color: "#f5ead5", letterSpacing: "-0.03em", lineHeight: 1 },
-  chartsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20, marginBottom: 32 },
-  insightsCard: { background: "#0f0f0f", border: "1.5px solid #4a4a4a", borderRadius: 6, padding: 24, marginBottom: 32 },
-  insightsTitle: { fontSize: 24, fontWeight: 700, fontFamily: "'Bricolage Grotesque', sans-serif", color: "#f5ead5", letterSpacing: "-0.03em", margin: "0 0 16px 0" },
-  insightsGrid: { display: "flex", flexDirection: "column" },
-  chartCard: { background: "#161616", border: "1.5px solid #4a4a4a", borderRadius: 6, padding: 20 },
-  chartHead: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 },
-  chartTitle: { fontSize: 16, fontWeight: 700, color: "#f5ead5", letterSpacing: "-0.02em" },
-  chartSub: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6a6258", letterSpacing: "0.1em" },
-  legend: { display: "flex", gap: 16, fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 8, letterSpacing: "0.1em" },
-  logSection: { padding: 0, marginBottom: 32 },
-  logEntry: { background: "#0f0f0f", border: "1.5px solid #4a4a4a", borderRadius: 6, boxShadow: "0 8px 20px rgba(0,0,0,0.8)", padding: 14 },
-  logEntryToday: { background: "rgba(201,168,107,0.05)", border: "1px solid rgba(201,168,107,0.5)" },
-  monthHeaderButton: { width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(155,107,201,0.06)", border: "1px solid #1a1a1a", borderLeft: "2px solid rgba(155,107,201,0.4)", padding: "16px 18px", cursor: "pointer" },
-  monthHeaderText: { fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 22, fontWeight: 700, color: "#f5ead5", letterSpacing: "-0.02em" },
-  monthHeaderMeta: { display: "flex", alignItems: "center", gap: 12 },
-  monthCount: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.15em", color: "#8a7d6b" },
-  monthDropdown: { position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#0d0d0d", border: "1px solid #2a2a2a", borderLeft: "2px solid #9b6bc9", maxHeight: 320, overflowY: "auto", zIndex: 10, display: "flex", flexDirection: "column" },
-  monthDropdownItem: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "transparent", border: "none", borderBottom: "1px solid #1a1a1a", color: "#e8e0d0", padding: "14px 18px", fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 500, cursor: "pointer", textAlign: "left" },
-  monthDropdownItemActive: { background: "rgba(155,107,201,0.15)", color: "#9b6bc9", fontWeight: 700 },
-  emptyMonth: { fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#4a4238", fontStyle: "italic", padding: "16px 14px", textAlign: "center" },
-  weekGroup: { padding: "10px 0" },
-  weekGroupCurrent: { background: "rgba(155,107,201,0.06)", padding: "10px 0" },
-  weekHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  weekLabel: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.2em", color: "#6a6258" },
-  weekLabelCurrent: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.2em", color: "#9b6bc9", fontWeight: 500 },
-  currentBadge: { fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", color: "#0a0a0a", background: "#9b6bc9", padding: "3px 8px" },
-  todayBadge: { fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", color: "#0a0a0a", background: "#c9a86b", padding: "3px 8px" },
-  logEntryHead: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid #1a1a1a" },
-  logEntryDate: { fontFamily: "JetBrains Mono, monospace", fontSize: 12, letterSpacing: "0.1em", color: "#9b6bc9", fontWeight: 500 },
-  logEntryDateToday: { fontFamily: "JetBrains Mono, monospace", fontSize: 12, letterSpacing: "0.1em", color: "#c9a86b", fontWeight: 600 },
-  logEntryRow1: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 },
-  logEntryRow2: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 },
-  logHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #1a1a1a" },
-  logCount: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6a6258", letterSpacing: "0.2em" },
-  footer: { display: "flex", justifyContent: "space-between", paddingTop: 24, borderTop: "1px solid #1a1a1a", fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#4a4238", letterSpacing: "0.2em" },
-};
-
-// Mount — wait for window.storage to be available
-function tryMount() {
-  if (window.storage) {
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<SleepTracker />);
-  } else {
-    setTimeout(tryMount, 100);
+async function persistEntry(entry) {
+  // localStorage backup always
+  localStorage.setItem(STORE_PREFIX + entry.date, JSON.stringify(entry));
+  // Firestore
+  if (db) {
+    try {
+      await db.doc(storePath(entry.date)).set(entry);
+    } catch(e) { console.warn('Firestore save failed:', e); }
   }
 }
-tryMount();
-</script>
 
+async function deleteEntryFromStore(date) {
+  localStorage.removeItem(STORE_PREFIX + date);
+  if (db) {
+    try { await db.doc(storePath(date)).delete(); } catch(e){}
+  }
+}
+
+// ── Recovery Score ───────────────────────────────────────────
+function calcScore(entry) {
+  const dur     = entry.duration || 0;
+  const energy  = entry.energy   || 5;
+  const clarity = entry.clarity  || 5;
+  const sore    = entry.soreness || 5;
+  const rest    = entry.restlessness || 5;
+
+  const durScore  = Math.min(dur / 8, 1) * 30;          // 30pts: 8h = max
+  const engScore  = (energy / 10) * 25;                 // 25pts
+  const clarScore = (clarity / 10) * 25;                // 25pts
+  const soreScore = ((10 - sore) / 10) * 10;            // 10pts (lower sore = better)
+  const restScore = ((10 - rest) / 10) * 10;            // 10pts (lower rest = better)
+
+  return Math.round(durScore + engScore + clarScore + soreScore + restScore);
+}
+
+function scoreColor(s) {
+  if (s >= 75) return 'var(--green)';
+  if (s >= 50) return 'var(--gold)';
+  return 'var(--red)';
+}
+function scoreLabel(s) {
+  if (s >= 80) return 'Elite Recovery';
+  if (s >= 65) return 'Good Recovery';
+  if (s >= 50) return 'Moderate Recovery';
+  if (s >= 35) return 'Poor Recovery';
+  return 'Recovery Needed';
+}
+
+// ── Duration helpers ─────────────────────────────────────────
+function calcDuration(bedtime, waketime) {
+  if (!bedtime || !waketime) return 0;
+  const [bh, bm] = bedtime.split(':').map(Number);
+  const [wh, wm] = waketime.split(':').map(Number);
+  let mins = (wh * 60 + wm) - (bh * 60 + bm);
+  if (mins <= 0) mins += 24 * 60;
+  return Math.round(mins / 6) / 10; // hours with 1 decimal
+}
+
+function updateDurationDisplay() {
+  const bed  = document.getElementById('log-bedtime').value;
+  const wake = document.getElementById('log-wake').value;
+  const dur  = calcDuration(bed, wake);
+  const el   = document.getElementById('duration-display');
+  if (dur > 0) el.textContent = '⏱ ' + dur.toFixed(1) + ' hours of sleep';
+  else el.textContent = '';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('log-bedtime').addEventListener('input', updateDurationDisplay);
+  document.getElementById('log-wake').addEventListener('input', updateDurationDisplay);
+});
+
+function fmtDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
+}
+function prettyDate(str) {
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function monthKey(str) {
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+}
+
+// ── Save Entry ───────────────────────────────────────────────
+async function saveEntry() {
+  const date    = document.getElementById('log-date').value;
+  const bedtime = document.getElementById('log-bedtime').value;
+  const wake    = document.getElementById('log-wake').value;
+  const energy  = parseInt(document.getElementById('sl-energy').value);
+  const soreness= parseInt(document.getElementById('sl-soreness').value);
+  const clarity = parseInt(document.getElementById('sl-clarity').value);
+  const rest    = parseInt(document.getElementById('sl-restlessness').value);
+  const duration= calcDuration(bedtime, wake);
+
+  if (!date || !bedtime || !wake) { showToast('Fill in date and times'); return; }
+
+  const entry = { date, bedtime, waketime: wake, duration, energy, soreness, clarity, restlessness: rest };
+
+  entries = entries.filter(function(e){ return e.date !== date; });
+  entries.push(entry);
+  entries.sort(function(a,b){ return a.date.localeCompare(b.date); });
+
+  await persistEntry(entry);
+  renderAll();
+  switchTab('dashboard');
+  showToast('Sleep logged ✓');
+}
+
+// ── Delete Entry ─────────────────────────────────────────────
+async function deleteEntry(date) {
+  entries = entries.filter(function(e){ return e.date !== date; });
+  await deleteEntryFromStore(date);
+  renderAll();
+  showToast('Entry deleted');
+}
+
+// ── Render ───────────────────────────────────────────────────
+function renderAll() {
+  renderDashboard();
+  renderHistory();
+}
+
+function renderDashboard() {
+  const n = entries.length;
+  document.getElementById('total-entries').textContent = n;
+
+  if (n === 0) {
+    document.getElementById('score-display').textContent = '—';
+    document.getElementById('score-display').style.color = 'var(--faint)';
+    document.getElementById('score-label').textContent = 'No entries yet';
+    document.getElementById('avg-sleep').textContent = '—';
+    document.getElementById('avg-energy').textContent = '—';
+    document.getElementById('avg-clarity').textContent = '—';
+    document.getElementById('trend-chart').innerHTML = '';
+    document.getElementById('trend-labels').innerHTML = '';
+    document.getElementById('last-entry-display').innerHTML = 'No entries yet.';
+    return;
+  }
+
+  const latest = entries[entries.length - 1];
+  const score  = calcScore(latest);
+  const scoreEl = document.getElementById('score-display');
+  scoreEl.textContent = score;
+  scoreEl.style.color = scoreColor(score);
+  document.getElementById('score-label').textContent = scoreLabel(score) + ' — ' + prettyDate(latest.date);
+
+  const avgDur  = (entries.reduce(function(s,e){ return s + (e.duration||0); },0) / n).toFixed(1);
+  const avgEng  = Math.round(entries.reduce(function(s,e){ return s + (e.energy||0); },0) / n * 10) / 10;
+  const avgClar = Math.round(entries.reduce(function(s,e){ return s + (e.clarity||0); },0) / n * 10) / 10;
+  document.getElementById('avg-sleep').textContent   = avgDur;
+  document.getElementById('avg-energy').textContent  = avgEng;
+  document.getElementById('avg-clarity').textContent = avgClar;
+
+  // Trend chart (last 10)
+  const recent = entries.slice(-10);
+  const chartEl  = document.getElementById('trend-chart');
+  const labelsEl = document.getElementById('trend-labels');
+  const scores   = recent.map(calcScore);
+  const maxS = Math.max(...scores, 1);
+
+  chartEl.innerHTML = scores.map(function(s,i) {
+    const h = Math.max(Math.round((s / 100) * 56), 4);
+    const col = scoreColor(s);
+    return '<div class="mini-bar" style="height:'+h+'px;background:'+col+';opacity:0.85;" title="'+prettyDate(recent[i].date)+': '+s+'"></div>';
+  }).join('');
+
+  labelsEl.innerHTML = recent.map(function(e) {
+    const d = new Date(e.date + 'T12:00:00');
+    return '<div class="chart-lbl">'+String(d.getMonth()+1)+'/'+d.getDate()+'</div>';
+  }).join('');
+
+  // Last entry detail
+  document.getElementById('last-entry-display').innerHTML =
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+    '<span style="color:var(--text);font-weight:600;">' + prettyDate(latest.date) + '</span>' +
+    '<span style="color:var(--gold);font-family:\'Bebas Neue\',sans-serif;font-size:1.2rem;">' + (latest.duration||0).toFixed(1) + 'h</span>' +
+    '<span class="badge energy">Energy ' + (latest.energy||0) + '</span>' +
+    '<span class="badge soreness">Sore ' + (latest.soreness||0) + '</span>' +
+    '<span class="badge clarity">Clarity ' + (latest.clarity||0) + '</span>' +
+    '</div>';
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="empty-state">No sleep sessions logged yet.<br>Tap + to add your first entry.</div>';
+    return;
+  }
+
+  const sorted = entries.slice().reverse();
+  const groups = {};
+  sorted.forEach(function(e) {
+    const mk = monthKey(e.date);
+    if (!groups[mk]) groups[mk] = [];
+    groups[mk].push(e);
+  });
+
+  let html = '';
+  Object.keys(groups).forEach(function(month) {
+    html += '<div class="month-header">' + month + '</div>';
+    groups[month].forEach(function(e) {
+      const score = calcScore(e);
+      html += '<div class="history-entry">' +
+        '<div>' +
+          '<div class="he-date">' + prettyDate(e.date) + '</div>' +
+          '<div class="he-badges">' +
+            '<span class="badge energy">⚡ ' + (e.energy||0) + '</span>' +
+            '<span class="badge soreness">🦵 ' + (e.soreness||0) + '</span>' +
+            '<span class="badge clarity">🧠 ' + (e.clarity||0) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+          '<div style="text-align:right;">' +
+            '<div class="he-dur">' + (e.duration||0).toFixed(1) + 'h</div>' +
+            '<div class="he-score" style="color:' + scoreColor(score) + ';">' + score + '</div>' +
+          '</div>' +
+          '<button class="he-del" onclick="deleteEntry(\'' + e.date + '\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    });
+  });
+
+  el.innerHTML = html;
+}
+
+// ── Tab switching ─────────────────────────────────────────────
+function switchTab(name) {
+  ['dashboard','log','history'].forEach(function(t) {
+    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(btn, i) {
+    btn.classList.toggle('active', ['dashboard','log','history'][i] === name);
+  });
+  if (name === 'log') {
+    // Reset today's date if empty
+    if (!document.getElementById('log-date').value) {
+      document.getElementById('log-date').value = fmtDate(new Date());
+    }
+    updateDurationDisplay();
+  }
+}
+
+// ── Slider display ────────────────────────────────────────────
+function updateSlider(name, val) {
+  document.getElementById('val-' + name).textContent = val;
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2000);
+}
+</script>
 </body>
 </html>
