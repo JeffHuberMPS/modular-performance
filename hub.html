@@ -195,6 +195,7 @@
       grid-template-columns: 1fr 1fr;
       gap: var(--space-md);
       padding: var(--space-lg);
+      padding-bottom: 80px; /* space so DEV btn never overlaps last tile */
     }
 
     /* Last tile (5th) spans full width if it's the only one in its row */
@@ -465,6 +466,35 @@
       height: 4px;
       border-radius: 50%;
       background: rgba(201, 168, 107, 0.45);
+    }
+
+    /* ── Install Banner ───────────────────────────────────── */
+    #install-banner {
+      display: none; /* shown by JS when installable and not standalone */
+      margin: 12px 20px 0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(255, 193, 7, 0.08);
+      border: 1px solid rgba(255, 193, 7, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #install-banner.hidden { display: none !important; }
+    .install-banner__icon { font-size: 20px; flex-shrink: 0; }
+    .install-banner__text { flex: 1; }
+    .install-banner__title {
+      font-size: 12px; font-weight: 700; color: #FFC107;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .install-banner__sub {
+      font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; line-height: 1.4;
+    }
+    .install-banner__btn {
+      background: #FFC107; color: #000; border: none;
+      padding: 7px 14px; border-radius: 6px;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; cursor: pointer; flex-shrink: 0;
     }
 
     /* ── Trial Banner ──────────────────────────────────────── */
@@ -804,6 +834,16 @@
     </div>
   </div>
 
+  <!-- ── Install Banner ────────────────────────────────────── -->
+  <div id="install-banner" class="hidden">
+    <div class="install-banner__icon">📲</div>
+    <div class="install-banner__text">
+      <div class="install-banner__title">Install MPS App</div>
+      <div class="install-banner__sub">Full-screen · No browser bar · Native feel</div>
+    </div>
+    <button class="install-banner__btn" onclick="triggerInstall()">INSTALL</button>
+  </div>
+
   <!-- ── Trial Banner (rendered by JS if trial is active) ────── -->
   <div id="trial-banner-container"></div>
 
@@ -1117,6 +1157,40 @@
 
       // Re-render trial banner whenever tiles re-render
       renderTrialBanner();
+    }
+
+    /* ── PWA Install Banner ────────────────────────────────── */
+    let _installPrompt = null;
+
+    // Capture the browser's install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      _installPrompt = e;
+      // Only show if NOT already running standalone
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+      if (!isStandalone) {
+        document.getElementById('install-banner').classList.remove('hidden');
+      }
+    });
+
+    // Hide banner if already installed
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('install-banner').classList.add('hidden');
+      _installPrompt = null;
+    });
+
+    function triggerInstall() {
+      if (_installPrompt) {
+        _installPrompt.prompt();
+        _installPrompt.userChoice.then(() => {
+          _installPrompt = null;
+          document.getElementById('install-banner').classList.add('hidden');
+        });
+      } else {
+        // iOS fallback — no beforeinstallprompt, give manual instructions
+        showToast('On iPhone: tap Share → "Add to Home Screen"');
+      }
     }
 
     /* ── Smooth navigation ─────────────────────────────────── */
