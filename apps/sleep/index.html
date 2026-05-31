@@ -890,7 +890,7 @@ const SvgChart = (() => {
       const y = ys(t, min, max);
       return <g key={t}>
         <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1}/>
-        <text x={PAD.left - 6} y={y + 4} textAnchor="end" fill="#c9a86b" fontSize={12} fontFamily="system-ui,sans-serif">{t}</text>
+        <text x={PAD.left - 6} y={y + 4} textAnchor="end" fill="#ede0c4" fontSize={12} fontFamily="system-ui,sans-serif">{t}</text>
       </g>;
     })}</>;
   };
@@ -954,7 +954,7 @@ const ChartCard = ({ title, sub, children }) => (
     borderRadius: 12, padding: "16px", marginBottom: 12,
   }}>
     <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.14em",
-      textTransform: "uppercase", color: "#c9a86b", marginBottom: 2 }}>
+      textTransform: "uppercase", color: "#ede0c4", marginBottom: 2 }}>
       {title}
     </div>
     {sub && <div style={{ fontSize: 9, color: "#6a5e48", fontFamily: "JetBrains Mono, monospace", marginBottom: 12 }}>{sub}</div>}
