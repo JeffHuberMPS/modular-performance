@@ -868,6 +868,14 @@ const TodayStat = ({ icon, label, value, accent }) => (
   </div>
 );
 
+/* Module-level time formatter — mirrors fmt12 inside App */
+function _fmt12(t) {
+  if (!t) return "—";
+  const [h, m] = t.split(":").map(Number);
+  const p = h >= 12 ? "PM" : "AM";
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${p}`;
+}
+
 /* StatBlock — 7-day summary stat */
 const StatBlock = ({ label, value, sub, trend, good }) => {
   const arrow = trend === "up" ? (good ? "↑" : "↓") : trend === "down" ? (good ? "↓" : "↑") : "—";
@@ -945,8 +953,8 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     </div>
     {/* Row 1: Wake · Sleep · Duration */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-      <LogBlock label="Wake"     value={e.wakeTime  ? fmt12(e.wakeTime)  : "—"} />
-      <LogBlock label="Sleep"    value={e.sleepTime ? fmt12(e.sleepTime) : "—"} />
+      <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
+      <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} />
     </div>
     {/* Row 2: Recovery · Energy · Soreness · Clarity */}
