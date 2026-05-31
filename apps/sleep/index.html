@@ -916,7 +916,7 @@ const InsightRow = ({ label, value, accent }) => (
 );
 
 /* LogBlock — single stat cell inside a log entry card */
-const LogBlock = ({ label, value }) => (
+const LogBlock = ({ label, value, accent }) => (
   <div style={{
     background: "rgba(155,107,201,0.06)", border: "1px solid rgba(155,107,201,0.1)",
     borderRadius: 8, padding: "10px 12px",
@@ -924,7 +924,7 @@ const LogBlock = ({ label, value }) => (
     <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264", textTransform: "uppercase", marginBottom: 4 }}>
       {label}
     </div>
-    <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#9b6bc9", lineHeight: 1 }}>
+    <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || "#ede0c4", lineHeight: 1 }}>
       {value}
     </div>
   </div>
@@ -942,7 +942,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#9b6bc9" }}>
           {e.date.split("-").slice(1).concat(e.date.split("-").slice(0,1)).join("/").replace(/(\d+)\/(\d+)\/(\d+)/, (_, m, d, y) => `${m.padStart(2,"0")}/${d.padStart(2,"0")}/${y}`)}
         </span>
-        <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264" }}>
+        <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#c9a86b" }}>
           {e.weekday}
         </span>
       </div>
@@ -955,14 +955,14 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
       <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
-      <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} />
+      <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent="#9b6bc9" />
     </div>
     {/* Row 2: Recovery · Energy · Soreness · Clarity */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-      <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} />
+      <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent="#c9a86b" />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
-      <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} />
+      <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent="#9b6bc9" />
     </div>
   </div>
 );
