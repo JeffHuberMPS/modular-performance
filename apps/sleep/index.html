@@ -488,13 +488,21 @@ function SleepTracker() {
     return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "long" });
   };
 
-  const insights = {
-    avgWake:    avgMinutes(last7, "wakeTime"),
-    avgSleep:   avgMinutes(last7, "sleepTime"),
-    bestDay,
-    worstDay,
-    entryCount: last7.length,
-  };
+  const insights = (() => {
+    const avgWake  = avgMinutes(last7, "wakeTime");
+    const avgSleep = avgMinutes(last7, "sleepTime");
+    return {
+      avgWakeFormatted:  avgWake  ? fmt12(avgWake)  : null,
+      avgSleepFormatted: avgSleep ? fmt12(avgSleep) : null,
+      avgDuration:  stats.hours    > 0 ? `${stats.hours} hrs`    : null,
+      avgEnergy:    stats.energy   > 0 ? `${stats.energy}/10`   : null,
+      avgClarity:   stats.clarity  > 0 ? `${stats.clarity}/10`  : null,
+      avgSoreness:  stats.soreness > 0 ? `${stats.soreness}/10` : null,
+      bestDay,
+      worstDay,
+      entryCount: last7.length,
+    };
+  })();
 
   const trend = (key) => {
     if (last7.length < 4) return "flat";
@@ -720,13 +728,19 @@ function SleepTracker() {
             INSIGHTS TAB
             ══════════════════════════════════════════ */}
         {activeTab === "insights" && (
-          <section style={styles.insightsCard}>
-            <div style={styles.eyebrow}>7-DAY INSIGHTS</div>
-            <InsightRow label="Avg Wake Time"  value={insights.avgWake   || "—"} />
-            <InsightRow label="Avg Sleep Time" value={insights.avgSleep  || "—"} />
-            <InsightRow label="Best Recovery"  value={insights.bestDay   ? `${fmtDate(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} />
-            <InsightRow label="Worst Recovery" value={insights.worstDay  ? `${fmtDate(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} />
-            <InsightRow label="Entries Logged" value={`${insights.entryCount} / 7`} />
+          <section style={{ padding: "4px 0" }}>
+            <div style={styles.eyebrow}>WEEKLY INSIGHTS</div>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4", marginBottom: 20, letterSpacing: "-0.01em" }}>
+              This Week
+            </div>
+            <InsightRow label="Average Wake Time"   value={insights.avgWakeFormatted  || "—"} accent="#9b6bc9" />
+            <InsightRow label="Average Bedtime"     value={insights.avgSleepFormatted || "—"} accent="#9b6bc9" />
+            <InsightRow label="Average Duration"    value={insights.avgDuration       || "—"} accent="#c9a86b" />
+            <InsightRow label="Average Energy"      value={insights.avgEnergy         || "—"} accent="#c9a86b" />
+            <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent="#c9a86b" />
+            <InsightRow label="Average Soreness"    value={insights.avgSoreness       || "—"} accent="#c9a86b" />
+            <InsightRow label="Best Recovery Day"   value={insights.bestDay  ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} accent="#c9a86b" />
+            <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent="#c9a86b" />
           </section>
         )}
 
@@ -836,13 +850,16 @@ const StatBlock = ({ label, value, sub, trend, good }) => {
 };
 
 /* InsightRow */
-const InsightRow = ({ label, value }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "12px 0", borderBottom: "1px solid rgba(155,107,201,0.1)" }}>
-    <span style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", color: "#5a5264", textTransform: "uppercase" }}>
+const InsightRow = ({ label, value, accent }) => (
+  <div style={{
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(155,107,201,0.13)",
+    borderRadius: 10, padding: "15px 18px", marginBottom: 8,
+  }}>
+    <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.13em", color: "#6a5870", textTransform: "uppercase" }}>
       {label}
     </span>
-    <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#c9a86b" }}>
+    <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || "#9b6bc9" }}>
       {value}
     </span>
   </div>
