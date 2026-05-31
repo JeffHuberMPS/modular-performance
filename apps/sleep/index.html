@@ -734,13 +734,13 @@ function SleepTracker() {
               This Week
             </div>
             <InsightRow label="Average Wake Time"   value={insights.avgWakeFormatted  || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Bedtime"     value={insights.avgSleepFormatted || "—"} accent="#c9a86b" />
+            <InsightRow label="Average Bedtime"     value={insights.avgSleepFormatted || "—"} accent="#9b6bc9" />
             <InsightRow label="Average Duration"    value={insights.avgDuration       || "—"} accent="#c9a86b" />
             <InsightRow label="Average Energy"      value={insights.avgEnergy         || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent="#c9a86b" />
+            <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent="#9b6bc9" />
             <InsightRow label="Average Soreness"    value={insights.avgSoreness       || "—"} accent="#c9a86b" />
             <InsightRow label="Best Recovery Day"   value={insights.bestDay  ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} accent="#c9a86b" />
-            <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent="#c9a86b" />
+            <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent="#9b6bc9" />
           </section>
         )}
 
