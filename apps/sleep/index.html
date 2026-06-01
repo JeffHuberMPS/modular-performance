@@ -954,13 +954,13 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       </div>
     </div>
     {/* Row 1: Wake · Sleep · Duration */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 9.6, marginBottom: 9.6 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginBottom: 12.48 }}>
       <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent="#9b6bc9" />
     </div>
     {/* Row 2: Recovery · Energy · Soreness · Clarity */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 9.6 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12.48 }}>
       <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent="#c9a86b" />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
