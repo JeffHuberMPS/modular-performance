@@ -568,7 +568,7 @@
     // Google sign-in — popup on desktop, redirect on mobile/PWA
     async function signInGoogle() {
       clearError();
-      if (isInAppBrowser()) { showInAppWarning(); return; }
+      if (isInAppBrowser()) { escapeToRealBrowser('google'); return; }
       setLoading(true);
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -589,7 +589,7 @@
     // Apple sign-in — popup on desktop, redirect on mobile/PWA
     async function signInApple() {
       clearError();
-      if (isInAppBrowser()) { showInAppWarning(); return; }
+      if (isInAppBrowser()) { escapeToRealBrowser('apple'); return; }
       setLoading(true);
       try {
         const provider = new firebase.auth.OAuthProvider('apple.com');
@@ -607,10 +607,40 @@
       }
     }
 
-    // Show the "open in browser" banner for in-app browsers
+    // Show the "open in browser" banner (fallback only — used if auto break-out fails)
     function showInAppWarning() {
       const el = document.getElementById('auth-inapp');
       if (el) el.classList.add('show');
+    }
+
+    function isIOS() {
+      const ua = navigator.userAgent || '';
+      return /iPhone|iPad|iPod/i.test(ua)
+        || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
+    }
+    function isAndroid() {
+      return /Android/i.test(navigator.userAgent || '');
+    }
+
+    // Break out of an in-app webview (Instagram, etc.) into the real system
+    // browser, carrying a ?signin= flag so the chosen sign-in auto-starts there.
+    // Triggered by the user's tap on a sign-in button (gesture required by the OS).
+    function escapeToRealBrowser(providerName) {
+      const host = 'modular-performance.com';
+      const path = '/auth.html?signin=' + providerName;
+      if (isAndroid()) {
+        // Android: Chrome intent opens the page directly in Chrome
+        window.location.href =
+          'intent://' + host + path +
+          '#Intent;scheme=https;package=com.android.chrome;end';
+        setTimeout(showInAppWarning, 1500); // fallback if Chrome isn't installed
+      } else if (isIOS()) {
+        // iOS: undocumented scheme that jumps to Safari (works on most versions)
+        window.location.href = 'x-safari-https://' + host + path;
+        setTimeout(showInAppWarning, 1500); // fallback if iOS blocks the jump
+      } else {
+        showInAppWarning();
+      }
     }
 
     // Send SMS code
@@ -746,9 +776,8 @@
       }
     })();
 
-    /* ── In-app browser: warn on load + wire copy-link button ── */
+    /* ── Wire copy-link button (banner only appears as a fallback) ── */
     (function initInAppGuard() {
-      if (isInAppBrowser()) showInAppWarning();
       const copyBtn = document.getElementById('inapp-copy');
       if (copyBtn) {
         copyBtn.addEventListener('click', async function() {
@@ -793,6 +822,14 @@
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         window.location.href = '/hub.html';
+        return;
+      }
+      // Bounced here from an in-app browser with a ?signin= flag → auto-start it
+      // so the customer lands straight on the Google/Apple picker (one tap total).
+      if (!isInAppBrowser()) {
+        const want = new URLSearchParams(window.location.search).get('signin');
+        if (want === 'google') signInGoogle();
+        else if (want === 'apple') signInApple();
       }
     });
   </script>
