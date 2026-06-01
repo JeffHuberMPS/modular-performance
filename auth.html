@@ -294,6 +294,34 @@
     }
     .auth-error.show { display: block; }
 
+    /* In-app browser warning */
+    .auth-inapp {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(255, 193, 7, 0.08);
+      border: 1px solid rgba(255, 193, 7, 0.4);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: var(--space-md);
+      text-align: left;
+    }
+    .auth-inapp.show { display: flex; }
+    .auth-inapp strong { color: #FFC107; font-size: 0.9rem; }
+    .auth-inapp span { color: #cbd2dd; font-size: 0.8rem; line-height: 1.4; }
+    .auth-inapp b { color: #fff; }
+    .auth-inapp__copy {
+      align-self: flex-start;
+      background: #FFC107;
+      color: #0a0a0a;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     /* Loading spinner overlay */
     .auth-loading {
       position: fixed;
@@ -348,6 +376,13 @@
 
     <!-- Error display -->
     <div class="auth-error" id="auth-error"></div>
+
+    <!-- In-app browser warning (Instagram / Facebook / TikTok etc.) -->
+    <div class="auth-inapp" id="auth-inapp">
+      <strong>Open in your browser to sign in</strong>
+      <span>Google sign-in is blocked inside in-app browsers. Tap the menu (•••) at the top and choose <b>“Open in browser”</b>, then sign in there.</span>
+      <button class="auth-inapp__copy" id="inapp-copy" type="button">Copy link</button>
+    </div>
 
     <!-- ── Screen 1: Choose Method ──────────────────────────── -->
     <div class="auth-screen active" id="screen-choose">
@@ -453,7 +488,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js"></script>
-  <script src="/auth.js"></script>
 
   <script>
     /* ── Auth Page UI Logic ────────────────────────────────── */
@@ -511,16 +545,38 @@
              window.matchMedia('(display-mode: standalone)').matches;
     }
 
-    // Google sign-in — popup on browser, redirect on installed PWA
+    // Detect mobile devices (popups are unreliable → use redirect instead)
+    function isMobileDevice() {
+      const ua = navigator.userAgent || '';
+      return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+        || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua)); // iPadOS
+    }
+
+    // Detect in-app browsers (Instagram, Facebook, TikTok, etc.).
+    // Google blocks OAuth inside these webviews, so the user must open
+    // the site in a real browser (Safari / Chrome) to sign in with Google.
+    function isInAppBrowser() {
+      const ua = navigator.userAgent || '';
+      return /FBAN|FBAV|FB_IAB|Instagram|Line\/|Twitter|TikTok|musical_ly|Snapchat|Pinterest|; wv\)|GSA\//i.test(ua);
+    }
+
+    // Use redirect on any mobile device OR installed PWA; popup only on desktop
+    function shouldUseRedirect() {
+      return isMobileDevice() || isStandalonePWA();
+    }
+
+    // Google sign-in — popup on desktop, redirect on mobile/PWA
     async function signInGoogle() {
       clearError();
+      if (isInAppBrowser()) { showInAppWarning(); return; }
       setLoading(true);
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        if (isStandalonePWA()) {
+        provider.setCustomParameters({ prompt: 'select_account' });
+        if (shouldUseRedirect()) {
           // Redirect flow — result handled by getRedirectResult on page load
           await firebase.auth().signInWithRedirect(provider);
-          return; // page will reload
+          return; // page will redirect to Google then back
         }
         const result = await firebase.auth().signInWithPopup(provider);
         await handlePostSignIn(result.user);
@@ -530,15 +586,16 @@
       }
     }
 
-    // Apple sign-in — popup on browser, redirect on installed PWA
+    // Apple sign-in — popup on desktop, redirect on mobile/PWA
     async function signInApple() {
       clearError();
+      if (isInAppBrowser()) { showInAppWarning(); return; }
       setLoading(true);
       try {
         const provider = new firebase.auth.OAuthProvider('apple.com');
         provider.addScope('email');
         provider.addScope('name');
-        if (isStandalonePWA()) {
+        if (shouldUseRedirect()) {
           await firebase.auth().signInWithRedirect(provider);
           return;
         }
@@ -548,6 +605,12 @@
         setLoading(false);
         showError(friendlyError(err));
       }
+    }
+
+    // Show the "open in browser" banner for in-app browsers
+    function showInAppWarning() {
+      const el = document.getElementById('auth-inapp');
+      if (el) el.classList.add('show');
     }
 
     // Send SMS code
@@ -680,6 +743,24 @@
           animation-delay:${delay}s;
         `;
         bg.appendChild(el);
+      }
+    })();
+
+    /* ── In-app browser: warn on load + wire copy-link button ── */
+    (function initInAppGuard() {
+      if (isInAppBrowser()) showInAppWarning();
+      const copyBtn = document.getElementById('inapp-copy');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async function() {
+          const url = window.location.origin || 'https://modularperformance.com';
+          try {
+            await navigator.clipboard.writeText(url);
+            copyBtn.textContent = 'Copied!';
+          } catch (e) {
+            copyBtn.textContent = url;
+          }
+          setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 2500);
+        });
       }
     })();
 
