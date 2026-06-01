@@ -10,16 +10,11 @@ firebase-service-account.json
 *.pem
 *.key
 
-# GitHub token store + local deploy scripts with embedded credentials — NEVER commit
+# GitHub token store — NEVER commit
 mps-token.txt
-deploy.bat
-cleanup-and-push.bat
-go.bat
-push-mobile-auth-fix.bat
-fix-vercel-build.bat
-nuke-packagejson.bat
-push-clean-vercel.bat
-push-gold-theme.bat
+
+# Local deploy scripts often contain embedded credentials — never track .bat files
+*.bat
 
 # Vercel
 .vercel/
