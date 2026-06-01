@@ -1,5 +1,5 @@
 // MPS Service Worker — offline support + update notification
-const CACHE_VERSION = 'mps-v13';
+const CACHE_VERSION = 'mps-v14';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const FONT_CACHE    = CACHE_VERSION + '-fonts';
 
@@ -83,24 +83,30 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Static assets — cache first, fall back to network
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(res => {
+  // Our own app files (HTML/JS/CSS) — NETWORK FIRST so deploys show up
+  // immediately when online; fall back to cache only when offline.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(event.request).then(res => {
         if (res.ok && res.type !== 'opaque') {
           const clone = res.clone();
           caches.open(STATIC_CACHE).then(cache => cache.put(event.request, clone));
         }
         return res;
-      }).catch(() => {
-        // Offline fallback for HTML pages
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/index.html');
-        }
-      });
-    })
-  );
+      }).catch(() =>
+        caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          if (event.request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/index.html');
+          }
+          return undefined;
+        })
+      )
+    );
+    return;
+  }
+
+  // Any other cross-origin GET — let the browser handle it normally
 });
 
 // ── Message: skip waiting on update ────────────────────────────
