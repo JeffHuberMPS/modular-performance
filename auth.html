@@ -752,7 +752,7 @@
       const copyBtn = document.getElementById('inapp-copy');
       if (copyBtn) {
         copyBtn.addEventListener('click', async function() {
-          const url = window.location.origin || 'https://modularperformance.com';
+          const url = window.location.origin || 'https://modular-performance.com';
           try {
             await navigator.clipboard.writeText(url);
             copyBtn.textContent = 'Copied!';

@@ -10,6 +10,17 @@ firebase-service-account.json
 *.pem
 *.key
 
+# GitHub token store + local deploy scripts with embedded credentials — NEVER commit
+mps-token.txt
+deploy.bat
+cleanup-and-push.bat
+go.bat
+push-mobile-auth-fix.bat
+fix-vercel-build.bat
+nuke-packagejson.bat
+push-clean-vercel.bat
+push-gold-theme.bat
+
 # Vercel
 .vercel/
 
@@ -31,3 +42,5 @@ npm-debug.log*
 dist/
 build/
 package.json 
+.vercel
+.env*
