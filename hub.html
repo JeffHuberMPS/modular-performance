@@ -64,9 +64,8 @@
 
     /* Free/Medium = professional silver-gray + black with GOLD accent words and a thin
        gold wireframe outline. Clean desaturation only — NO sepia / old-photo wash. */
-    /* Free/Medium: every tracker is fully desaturated → only black/white/grey inside (no color leaks).
-       Gold accent comes from the shell title bar + tier banner (outside the iframe). */
-    body.tier-mono .shell-frame { filter: grayscale(1) contrast(1.02); }
+    /* Free/Medium: apps recolored to black + WHITE numbers + GOLD labels via applyFrameThemes
+       (matches the home dashboard). */
     body.tier-mono .shell-tab__dot { filter: grayscale(1); opacity: 0.5; }
     body.tier-mono .shell-tab.active { border-color: rgba(201,160,32,0.5); background: linear-gradient(180deg, rgba(40,38,28,0.6), rgba(12,11,8,0.65)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
     body.tier-mono .tracker-title__bar { background: #C9A020 !important; box-shadow: none !important; }
@@ -234,12 +233,32 @@
     }
     /* In gray mode, recolor variable-driven apps (Workout, Expenses) to black + gold + white. */
     function applyFrameThemes() {
-      /* Color is handled uniformly by the .shell-frame grayscale filter (CSS).
-         Clear any earlier per-app gold injection so nothing conflicts. */
-      ['workout', 'expenses', 'sleep'].forEach(id => {
+      const gray = document.body.classList.contains('tier-mono');
+      // Free/Medium: black bg + WHITE numbers + GOLD labels (matches home dashboard). No color leaks.
+      const overrides = {
+        workout: ':root{--mps-accent:#f5f5f5!important;--mps-blue:#161616!important;--mps-blue-light:#242424!important;--bg-2:#070707!important;--card:#0f0f0f!important;--card-2:#161616!important;--border:#2a2a2a!important;}'
+               + '.stat-label,.chart-subtitle,.target-tag,.split-picker-title,.cond-label,.brand-tagline,.section-title,.card-label,.metric-label{color:#C9A020!important;}'
+               + '[style*="7ac8ff"],[style*="4ab3f4"],[style*="2878c8"],[style*="74,179,244"]{color:#f5f5f5!important;}',
+        expenses: ':root{--mps-mint:#f5f5f5!important;--mps-card:#0f0f0f!important;--mps-essentials:#8a8580!important;--mps-lifestyle:#8a8580!important;--mps-recurring:#8a8580!important;--mps-investment:#8a8580!important;--mps-income:#8a8580!important;--mps-other:#8a8580!important;}'
+                + '.stat-label,.budget-card-label,.section-label,.summary-label,.card-label,.cat-label{color:#C9A020!important;}',
+        sleep: '[style*="9b6bc9"],[style*="155,107,201"],[style*="155, 107, 201"],[style*="b98ce6"],[style*="185,140,230"],[style*="210,175,255"]{color:#C9A020!important;border-color:#2a2a2a!important;}'
+      };
+      Object.keys(overrides).forEach(id => {
         const f = document.getElementById('frame-' + id);
         if (!f || !f.contentDocument) return;
-        try { const st = f.contentDocument.getElementById('mps-gold-theme'); if (st) st.textContent = ''; } catch (e) {}
+        try {
+          let st = f.contentDocument.getElementById('mps-gold-theme');
+          if (!st) { st = f.contentDocument.createElement('style'); st.id = 'mps-gold-theme'; f.contentDocument.head.appendChild(st); }
+          st.textContent = gray ? overrides[id] : '';
+        } catch (e) {}
+      });
+      /* React apps (Habits, Journal) read the theme at load — reload them when the theme flips. */
+      ['habits', 'journal'].forEach(id => {
+        const f = document.getElementById('frame-' + id);
+        if (!f || !f.src) return;
+        const want = gray ? '1' : '0', have = f.getAttribute('data-gray');
+        if (have == null) f.setAttribute('data-gray', want);
+        else if (have !== want) { f.setAttribute('data-gray', want); f.src = f.src; }
       });
     }
     function toggleTheme() {

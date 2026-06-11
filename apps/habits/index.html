@@ -313,15 +313,15 @@ function HabitTracker() {
 
   // ─── Theme ───
   const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
-  const PRIMARY = __GRAY ? '#C9A020' : '#8b0000';
-  const PRIMARY_LIGHT = __GRAY ? '#e6c652' : '#d62020';
-  const PRIMARY_GLOW = __GRAY ? 'rgba(201,160,32,0.5)' : 'rgba(139,0,0,0.5)';
+  const PRIMARY = __GRAY ? '#f5f5f5' : '#8b0000';
+  const PRIMARY_LIGHT = __GRAY ? '#C9A020' : '#d62020';
+  const PRIMARY_GLOW = __GRAY ? 'rgba(201,160,32,0.22)' : 'rgba(139,0,0,0.5)';
   const ACCENT = '#b8b8b8';
   const BG = '#050505';
   const CARD = '#121212';
   const CARD_RAISED = '#181818';
   const BORDER = '#1f1f1f';
-  const MUTED = '#6b6b6b';
+  const MUTED = __GRAY ? '#b89a5e' : '#6b6b6b';
   const TEXT = '#e8e8e8';
   const CARD_SHADOW_3D = '0 4px 12px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.04)';
   const CARD_SHADOW_3D_HOVER = '0 6px 18px rgba(139,0,0,0.25), 0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06)';
