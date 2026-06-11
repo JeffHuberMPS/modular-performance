@@ -484,6 +484,16 @@
     }
 
     /* ── Boot ─────────────────────────────────────────────── */
+    /* Auto-apply new deploys: when a fresh service worker takes control, reload once.
+       Kills the "I'm seeing an old cached version" problem for good. */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); }).catch(() => {});
+      let _swReloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (_swReloading) return; _swReloading = true; location.reload();
+      });
+    }
+
     buildTabs();
     buildDashCards();
     selectTab('home');
