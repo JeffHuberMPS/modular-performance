@@ -62,11 +62,11 @@
     .shell-tab__lock { font-size: 0.6rem; opacity: 0.5; }
     .shell-tab.locked { opacity: 0.5; }
 
-    body.tier-mono .shell-stage { filter: grayscale(1); }
-    body.tier-mono .shell-tab__dot { filter: grayscale(1); opacity: 0.4; }
-    body.tier-mono .shell-tab.active { border-color: rgba(255,255,255,0.32); background: linear-gradient(180deg, rgba(58,58,58,0.6), rgba(12,12,12,0.65)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14); }
-    body.tier-mono .metric-card::before { background: #888 !important; box-shadow: none !important; }
-    body.tier-mono .tracker-title__bar { background: #888 !important; box-shadow: none !important; }
+    /* "Wireframe gold" gray — desaturated but keeps a warm gold brand cast (not flat B&W). */
+    body.tier-mono .shell-stage { filter: grayscale(1) sepia(0.5) saturate(1.35) brightness(1.05); }
+    body.tier-mono .shell-tab__dot { filter: grayscale(1) sepia(0.6) saturate(1.4); opacity: 0.6; }
+    body.tier-mono .shell-tab.active { border-color: rgba(201,160,32,0.45); background: linear-gradient(180deg, rgba(48,44,30,0.6), rgba(12,11,8,0.65)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
+    body.tier-mono .tracker-title__bar { background: #9a8444 !important; box-shadow: none !important; }
 
     /* Uniform tracker title (shell-owned → identical for every tracker) */
     .tracker-title { flex: 0 0 auto; display: none; align-items: center; gap: 12px; padding: 13px var(--space-lg) 11px; border-bottom: 1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, rgba(16,16,16,0.6), rgba(8,8,8,0.6)); }
@@ -286,7 +286,7 @@
                       + '#mps-hub-nav,#hub-nav,.nav-title{display:none!important}'
                       + '.brand-block,.mps-header{display:none!important}'
                       + '*:has(> .mps-logo-rsp){display:none!important}'
-                      + 'body{padding-top:8px!important}';
+                      + 'body{padding-top:0!important}';
               if (app.id === 'journal') css += 'nav:first-of-type{display:none!important}';
               const s = d.createElement('style'); s.textContent = css; d.head.appendChild(s);
             }
@@ -462,7 +462,7 @@
 
     /* Auto-apply new deploys: reload once when a fresh service worker takes control. */
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); }).catch(() => {});
+      navigator.serviceWorker.register('/service-worker.js').then(reg => { reg.update(); }).catch(() => {});
       let _swReloading = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => { if (_swReloading) return; _swReloading = true; location.reload(); });
     }
