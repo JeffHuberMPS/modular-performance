@@ -9,15 +9,12 @@
 
   <title>MPS — Modular Performance</title>
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Saira+Condensed:ital,wght@0,600;0,700;1,900&display=swap" />
 
-  <!-- Shared Styles -->
   <link rel="stylesheet" href="/shared/styles.css" />
 
-  <!-- Firebase (same project as every app → login is shared) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -25,23 +22,21 @@
 
   <style>
     :root {
-      --shell-header-h: 52px;
-      --shell-tabs-h:   58px;
+      --shell-header-h: 56px;
+      --shell-tabs-h:   60px;
     }
 
-    html, body {
-      height: 100%;
-      overflow: hidden;            /* the shell owns the scroll; each app scrolls inside its frame */
-    }
+    html, body { height: 100%; overflow: hidden; }
 
     body {
-      background: var(--ns-black);
+      background:
+        radial-gradient(120% 80% at 50% -10%, #15130c 0%, #0b0b0b 48%, #070707 100%);
       display: flex;
       flex-direction: column;
       min-height: 100dvh;
     }
 
-    /* ── Top header ─────────────────────────────────────────── */
+    /* ── Header (glass) ─────────────────────────────────────── */
     .shell-header {
       flex: 0 0 auto;
       height: var(--shell-header-h);
@@ -49,51 +44,51 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 var(--space-lg);
-      border-bottom: 1px solid var(--border-subtle);
-      background: rgba(10, 10, 10, 0.96);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: linear-gradient(180deg, rgba(24,22,16,0.96) 0%, rgba(10,10,10,0.96) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -1px 0 rgba(201,160,32,0.28),
+        0 6px 18px rgba(0,0,0,0.5);
       position: relative;
       z-index: 30;
     }
 
-    .shell-logo {
-      font-family: var(--font-display, 'Bebas Neue'), sans-serif;
-      font-size: 1.6rem;
-      color: var(--ns-white);
-      letter-spacing: 0.05em;
+    .shell-logo { display: flex; align-items: baseline; gap: 9px; }
+    .logo-mps {
+      font-family: 'Saira Condensed', 'Bebas Neue', sans-serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 2rem;
+      letter-spacing: 0.04em;
       line-height: 1;
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
+      background: linear-gradient(180deg, #ffffff 0%, #f6e9c2 26%, #C9A020 60%, #8a6d15 88%, #5c4708 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6));
+    }
+    .shell-logo .bar {
+      align-self: center;
+      width: 22px; height: 2px;
+      background: linear-gradient(90deg, rgba(201,160,32,0.2), #C9A020 50%, rgba(192,192,192,0.7));
     }
     .shell-logo small {
       font-family: 'Inter', sans-serif;
       font-size: 0.5rem;
       letter-spacing: 0.32em;
       text-transform: uppercase;
-      color: var(--text-dim);
-    }
-    .shell-logo .bar {
-      display: inline-block;
-      width: 22px;
-      height: 2px;
-      background: var(--ns-yellow);
-      vertical-align: middle;
+      color: #b9b09a;
     }
 
-    .shell-user {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      position: relative;
-    }
+    .shell-user { display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
     .shell-avatar {
-      width: 32px; height: 32px;
+      width: 33px; height: 33px;
       border-radius: 50%;
-      background: #1a1a1a;
-      border: 2px solid var(--border-subtle);
+      background: radial-gradient(circle at 35% 30%, #232323, #121212);
+      border: 1px solid rgba(201,160,32,0.45);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 6px rgba(0,0,0,0.5);
       display: flex; align-items: center; justify-content: center;
       font-size: 0.72rem; font-weight: 700;
       color: var(--ns-yellow);
@@ -102,155 +97,138 @@
     .shell-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
     .shell-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      background: #1a1a1a;
-      border: 1px solid var(--border-subtle);
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: #161616;
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: var(--radius-md);
-      min-width: 180px;
-      box-shadow: var(--shadow-card);
-      z-index: 40;
-      display: none;
-      overflow: hidden;
+      min-width: 184px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      z-index: 40; display: none; overflow: hidden;
     }
     .shell-dropdown.open { display: block; }
-    .shell-dropdown__name {
-      padding: 12px 16px 6px;
-      font-size: 0.85rem;
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-    .shell-dropdown__plan {
-      padding: 0 16px 10px;
-      font-size: 0.72rem;
-      color: var(--text-dim);
-      border-bottom: 1px solid var(--border-subtle);
-    }
+    .shell-dropdown__name { padding: 12px 16px 6px; font-size: 0.85rem; color: var(--text-primary); font-weight: 600; }
+    .shell-dropdown__plan { padding: 0 16px 10px; font-size: 0.72rem; color: var(--text-dim); border-bottom: 1px solid var(--border-subtle); }
     .shell-dropdown__plan span { color: var(--ns-yellow); }
     .shell-dropdown__item {
-      display: block; width: 100%;
-      padding: 11px 16px;
-      background: none; border: none;
-      text-align: left;
-      color: var(--text-primary);
-      font-size: 0.85rem; font-family: inherit;
-      cursor: pointer;
-      transition: background var(--transition);
+      display: block; width: 100%; padding: 11px 16px;
+      background: none; border: none; text-align: left;
+      color: var(--text-primary); font-size: 0.85rem; font-family: inherit;
+      cursor: pointer; transition: background var(--transition);
     }
     .shell-dropdown__item:hover { background: var(--card-bg); }
     .shell-dropdown__item--danger { color: #ef4444; }
 
-    /* ── Tab strip ──────────────────────────────────────────── */
+    /* ── Tabs (glass chips) ─────────────────────────────────── */
     .shell-tabs {
       flex: 0 0 auto;
       height: var(--shell-tabs-h);
-      display: flex;
-      gap: 8px;
-      padding: 8px var(--space-lg);
-      overflow-x: auto;
-      overflow-y: hidden;
-      border-bottom: 1px solid var(--border-subtle);
-      background: rgba(10,10,10,0.96);
+      display: flex; gap: 9px;
+      padding: 9px var(--space-lg);
+      overflow-x: auto; overflow-y: hidden;
+      background: linear-gradient(180deg, rgba(14,14,14,0.9), rgba(8,8,8,0.9));
+      border-bottom: 1px solid rgba(255,255,255,0.05);
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      position: relative;
-      z-index: 20;
+      position: relative; z-index: 20;
     }
     .shell-tabs::-webkit-scrollbar { display: none; }
 
     .shell-tab {
       flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      min-width: 74px;
-      padding: 6px 14px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px; min-width: 78px;
+      padding: 6px 15px;
+      background: linear-gradient(180deg, rgba(46,46,46,0.5) 0%, rgba(18,18,18,0.5) 100%);
+      border: 1px solid rgba(255,255,255,0.09);
       border-radius: var(--radius-md);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.35);
       color: var(--text-dim);
-      font-family: var(--font-display, 'Bebas Neue'), sans-serif;
-      font-size: 0.92rem;
-      letter-spacing: 0.1em;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.95rem; letter-spacing: 0.1em;
       text-transform: uppercase;
-      cursor: pointer;
-      white-space: nowrap;
+      cursor: pointer; white-space: nowrap;
       transition: all var(--transition);
       position: relative;
     }
     .shell-tab__dot {
-      width: 18px; height: 3px; border-radius: 2px;
+      width: 22px; height: 3px; border-radius: 2px;
       background: var(--accent, #888);
-      opacity: 0.55;
+      opacity: 0.5;
+      box-shadow: 0 0 6px var(--accent, transparent);
       transition: opacity var(--transition);
     }
-    .shell-tab:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.18); }
+    .shell-tab:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
     .shell-tab.active {
-      color: var(--ns-white);
-      border-color: var(--accent, var(--ns-yellow));
-      background: color-mix(in srgb, var(--accent, #888) 12%, transparent);
+      color: #fff;
+      border-color: color-mix(in srgb, var(--accent, #C9A020) 55%, rgba(255,255,255,0.2));
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent, #C9A020) 20%, rgba(34,34,34,0.6)) 0%, rgba(12,12,12,0.65) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.14),
+        0 0 16px color-mix(in srgb, var(--accent, #C9A020) 28%, transparent);
     }
     .shell-tab.active .shell-tab__dot { opacity: 1; }
     .shell-tab__lock { font-size: 0.6rem; opacity: 0.5; }
     .shell-tab.locked { opacity: 0.5; }
 
-    /* ── App stage (holds the iframes) ──────────────────────── */
-    .shell-stage {
-      flex: 1 1 auto;
-      position: relative;
-      background: var(--ns-black);
-      overflow: hidden;
-    }
+    /* ── Stage ──────────────────────────────────────────────── */
+    .shell-stage { flex: 1 1 auto; position: relative; background: var(--ns-black); overflow: hidden; }
     .shell-frame {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: var(--ns-black);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.18s ease;
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      border: 0; background: var(--ns-black);
+      opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
     }
-    .shell-frame.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .shell-frame.active { opacity: 1; pointer-events: auto; }
 
-    /* Centered loader shown until the first frame paints */
-    .shell-loader {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--ns-black);
-      z-index: 5;
-    }
+    .shell-loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ns-black); z-index: 5; }
     .shell-loader.hidden { display: none; }
 
-    /* Locked-app panel (non-entitled users) */
     .shell-locked-panel {
-      position: absolute;
-      inset: 0;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: var(--space-2xl);
-      gap: 14px;
-      z-index: 6;
+      position: absolute; inset: 0; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: var(--space-2xl); gap: 14px; z-index: 6;
     }
     .shell-locked-panel.show { display: flex; }
-    .shell-locked-panel h2 {
-      font-family: var(--font-display, 'Bebas Neue'), sans-serif;
-      font-size: 1.8rem; color: var(--ns-white); letter-spacing: 0.04em;
-    }
+    .shell-locked-panel h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--ns-white); letter-spacing: 0.04em; }
     .shell-locked-panel p { color: var(--text-dim); max-width: 320px; font-size: 0.9rem; }
+
+    /* ── Tier capability banner ─────────────────────────────── */
+    .tier-banner {
+      flex: 0 0 auto; display: none; align-items: center; gap: 10px;
+      padding: 8px var(--space-lg);
+      background: linear-gradient(180deg, rgba(201,160,32,0.10), rgba(201,160,32,0.04));
+      border-bottom: 1px solid rgba(201,160,32,0.2);
+      font-size: 0.72rem; color: var(--text-dim);
+    }
+    .tier-banner.show { display: flex; }
+    .tier-banner__pill {
+      font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em;
+      color: var(--ns-yellow); border: 1px solid rgba(201,160,32,0.45);
+      border-radius: 4px; padding: 1px 9px; flex-shrink: 0;
+    }
+    .tier-banner__text b { color: var(--text-primary); font-weight: 600; }
+
+    /* ── Tier Tester (dev only) ─────────────────────────────── */
+    .tier-tester {
+      position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+      z-index: 50; display: none; flex-direction: column; align-items: flex-start; gap: 6px;
+      background: rgba(12,12,12,0.94);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      padding: 9px 11px; border: 1px solid rgba(201,160,32,0.3); border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+    }
+    .tier-tester.show { display: flex; }
+    .tier-tester__label { font-size: 0.56rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-faint); }
+    .tier-tester__row { display: flex; gap: 6px; }
+    .tier-opt {
+      background: linear-gradient(180deg, #222, #161616);
+      border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim);
+      font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all var(--transition);
+    }
+    .tier-opt:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
+    .tier-opt.active { color: var(--ns-yellow); border-color: var(--ns-yellow); background: linear-gradient(180deg, rgba(201,160,32,0.16), rgba(201,160,32,0.04)); }
 
     @media (display-mode: standalone) {
       .shell-header { padding-top: env(safe-area-inset-top); height: calc(var(--shell-header-h) + env(safe-area-inset-top)); }
@@ -260,10 +238,9 @@
 
 <body>
 
-  <!-- ── Header ───────────────────────────────────────────── -->
   <header class="shell-header">
     <div class="shell-logo">
-      MPS<span class="bar"></span><small>Modular Performance</small>
+      <span class="logo-mps">MPS</span><span class="bar"></span><small>Modular Performance</small>
     </div>
 
     <div class="shell-user" id="user-trigger">
@@ -277,10 +254,10 @@
     </div>
   </header>
 
-  <!-- ── Tabs ─────────────────────────────────────────────── -->
-  <nav class="shell-tabs" id="tab-strip"><!-- built by JS --></nav>
+  <nav class="shell-tabs" id="tab-strip"></nav>
 
-  <!-- ── Stage ────────────────────────────────────────────── -->
+  <div class="tier-banner" id="tier-banner"></div>
+
   <main class="shell-stage" id="stage">
     <div class="shell-loader" id="stage-loader"><div class="spinner"></div></div>
     <div class="shell-locked-panel" id="locked-panel">
@@ -288,40 +265,50 @@
       <p>This app isn’t part of your current plan. Add it from your plan page to unlock it here.</p>
       <button class="btn btn-primary" onclick="location.href='/billing.html'">Manage Plan</button>
     </div>
-    <!-- iframes injected by JS -->
   </main>
+
+  <div class="tier-tester" id="tier-tester">
+    <span class="tier-tester__label">Tier preview</span>
+    <div class="tier-tester__row">
+      <button class="tier-opt" data-tier="free"   onclick="previewTier('free')">Free</button>
+      <button class="tier-opt" data-tier="medium" onclick="previewTier('medium')">Medium</button>
+      <button class="tier-opt active" data-tier="all" onclick="previewTier('all')">All-Access</button>
+    </div>
+  </div>
 
   <div class="toast" id="shell-toast"></div>
 
   <script>
-    /* ════════════════════════════════════════════════════════
-       MPS UNIFIED APP (Site #2 — one app, tabs)
-       Each tab loads the real, unchanged app from /apps/<id>/.
-       Login + data are shared via Firebase (same origin).
-       ════════════════════════════════════════════════════════ */
-
     const APPS = [
       { id: 'workout',  label: 'Workout',  path: '/apps/workout/',  accent: '#4ab3f4' },
       { id: 'habits',   label: 'Habits',   path: '/apps/habits/',   accent: '#dc2626' },
-      { id: 'sleep',    label: 'Recovery', path: '/apps/sleep/',    accent: '#c9a86b' },
+      { id: 'sleep',    label: 'Recovery', path: '/apps/sleep/',    accent: '#9b6bc9' },
       { id: 'expenses', label: 'Expenses', path: '/apps/expenses/', accent: '#16a34a' },
-      { id: 'journal',  label: 'Journal',  path: '/apps/journal/',  accent: '#c4a882' }
+      { id: 'journal',  label: 'Journal',  path: '/apps/journal/',  accent: '#c9a86b' }
     ];
 
-    // New 3-tier model (Site #2). Free / Medium / All-Access.
     const TIER_APPS = {
-      free:   ['workout'],
-      medium: ['workout', 'habits', 'sleep'],
+      free:   ['workout', 'habits', 'sleep', 'expenses', 'journal'],
+      medium: ['workout', 'habits', 'sleep', 'expenses', 'journal'],
       all:    ['workout', 'habits', 'sleep', 'expenses', 'journal']
     };
 
+    const TIER_FEATURES = {
+      workout:  { free:'1 workout/day · last 7 days · no stats', medium:'Unlimited logging · 60-day history · basic stats', all:'Unlimited · full history · advanced stats + program templates' },
+      habits:   { free:'3 habits max · 7-day view', medium:'Unlimited · stacking · no-drop rule · 60 days', all:'Unlimited · streak analytics · compound view · weekly insights' },
+      sleep:    { free:'Basic view only · last 7 days', medium:'Full logging · trends · 60 days', all:'Full + biometrics · wearables · advanced insights' },
+      expenses: { free:'View-only · no logging', medium:'Full logging · tags · monthly reports · 60 days', all:'Advanced reports · budget alerts · spending insights' },
+      journal:  { free:'3 entries max · no search', medium:'Unlimited · basic search · all history', all:'Unlimited · full search + tags · monthly summaries' }
+    };
+
+    const TIER_LABEL = { free: 'Free', medium: 'Medium', all: 'All-Access' };
     const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
-    let unlockedApps = APPS.map(a => a.id);  // optimistic; tightened after auth resolves
+    let unlockedApps = APPS.map(a => a.id);
+    let previewTierMode = 'all';
     let activeId = null;
-    const loadedFrames = {};   // id -> true once its iframe src is set
+    const loadedFrames = {};
 
-    /* ── Build the tab strip ──────────────────────────────── */
     function buildTabs() {
       const strip = document.getElementById('tab-strip');
       strip.innerHTML = '';
@@ -330,29 +317,25 @@
         tab.className = 'shell-tab';
         tab.id = 'tab-' + app.id;
         tab.style.setProperty('--accent', app.accent);
-        tab.innerHTML =
-          '<span class="shell-tab__dot"></span>' +
-          '<span>' + app.label + '</span>';
+        tab.innerHTML = '<span class="shell-tab__dot"></span><span>' + app.label + '</span>';
         tab.addEventListener('click', () => selectTab(app.id));
         strip.appendChild(tab);
       });
     }
 
-    /* ── Switch tabs (lazy-load frame on first open) ──────── */
     function selectTab(id) {
       const app = APPS.find(a => a.id === id);
       if (!app) return;
       activeId = id;
+      updateTierBanner();
 
       document.querySelectorAll('.shell-tab').forEach(t =>
         t.classList.toggle('active', t.id === 'tab-' + id));
 
       const lockedPanel = document.getElementById('locked-panel');
-      const isUnlocked = unlockedApps.includes(id);
-
       document.querySelectorAll('.shell-frame').forEach(f => f.classList.remove('active'));
 
-      if (!isUnlocked) {
+      if (!unlockedApps.includes(id)) {
         document.getElementById('locked-title').textContent = app.label.toUpperCase() + ' Locked';
         lockedPanel.classList.add('show');
         document.getElementById('stage-loader').classList.add('hidden');
@@ -368,6 +351,17 @@
         frame.setAttribute('title', app.label);
         frame.setAttribute('loading', 'lazy');
         frame.addEventListener('load', () => {
+          /* Hide each app's own "← Hub" back-link: inside the unified app you
+             switch with the tabs, and that link would otherwise load the hub
+             INSIDE this tab (the duplication bug). */
+          try {
+            const d = frame.contentDocument;
+            if (d) {
+              const s = d.createElement('style');
+              s.textContent = '#mps-hub-nav{display:none!important} a[href="/hub.html"]{display:none!important}';
+              d.head.appendChild(s);
+            }
+          } catch (e) {}
           document.getElementById('stage-loader').classList.add('hidden');
         });
         frame.src = app.path;
@@ -375,13 +369,11 @@
         loadedFrames[id] = true;
       }
       frame.classList.add('active');
-
       if (loadedFrames[id] && frame.contentDocument) {
         document.getElementById('stage-loader').classList.add('hidden');
       }
     }
 
-    /* ── User menu ────────────────────────────────────────── */
     document.getElementById('user-trigger').addEventListener('click', (e) => {
       e.stopPropagation();
       document.getElementById('user-dropdown').classList.toggle('open');
@@ -407,7 +399,6 @@
       }
     }
 
-    /* ── Toast ────────────────────────────────────────────── */
     let toastTimer = null;
     function showToast(msg) {
       const t = document.getElementById('shell-toast');
@@ -417,19 +408,42 @@
       toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-    /* ── Auth + entitlements ──────────────────────────────── */
-    const TIER_LABEL = { free: 'Free', medium: 'Medium', all: 'All-Access' };
+    /* ── Tier preview (dev) ───────────────────────────────── */
+    function previewTier(tier) {
+      previewTierMode = tier;
+      document.querySelectorAll('.tier-opt').forEach(b =>
+        b.classList.toggle('active', b.dataset.tier === tier));
+      document.getElementById('dd-plan').textContent = TIER_LABEL[tier];
+      updateTierBanner();
+      showToast('Previewing ' + TIER_LABEL[tier] + ' tier');
+    }
 
-    firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) {                       // not signed in → go log in
-        location.replace('/auth.html');
+    function updateTierBanner() {
+      const banner = document.getElementById('tier-banner');
+      const tester = document.getElementById('tier-tester');
+      if (!banner || !tester || !tester.classList.contains('show')) {
+        if (banner) banner.classList.remove('show');
         return;
       }
+      const app = APPS.find(a => a.id === activeId);
+      if (!app) { banner.classList.remove('show'); return; }
+      const feats = (TIER_FEATURES[app.id] || {})[previewTierMode] || '';
+      const themeNote = previewTierMode === 'all' ? ' · Colorful theme available' : ' · Black/gray theme';
+      banner.innerHTML =
+        '<span class="tier-banner__pill">' + TIER_LABEL[previewTierMode].toUpperCase() + '</span>' +
+        '<span class="tier-banner__text"><b>' + app.label + ':</b> ' + feats + themeNote + '</span>';
+      banner.classList.add('show');
+    }
+
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) { location.replace('/auth.html'); return; }
 
       if (DEV_EMAILS.includes(user.email)) {
         unlockedApps = APPS.map(a => a.id);
         renderUser(user.displayName || 'Jeff', user.email, user.photoURL, 'All-Access');
         refreshTabLocks();
+        document.getElementById('tier-tester').classList.add('show');
+        previewTier('all');
         return;
       }
 
@@ -438,28 +452,21 @@
         const snap = await firebase.firestore().collection('users').doc(user.uid).get();
         const data = snap.exists ? snap.data() : {};
         if (data.billing_bypass === true || data.role === 'developer') {
-          unlockedApps = APPS.map(a => a.id);
-          planLabel = 'All-Access';
+          unlockedApps = APPS.map(a => a.id); planLabel = 'All-Access';
         } else if (Array.isArray(data.apps) && data.apps.length) {
-          unlockedApps = data.apps;
-          planLabel = TIER_LABEL[data.tier] || 'Custom';
+          unlockedApps = data.apps; planLabel = TIER_LABEL[data.tier] || 'Custom';
         } else {
-          // map old tier names onto the new 3-tier model where possible
-          const t = data.tier;
-          if (t === 'all') { unlockedApps = TIER_APPS.all; planLabel = 'All-Access'; }
-          else if (t === 'trio' || t === 'medium') { unlockedApps = TIER_APPS.medium; planLabel = 'Medium'; }
-          else { unlockedApps = TIER_APPS.free; planLabel = 'Free'; }
+          unlockedApps = TIER_APPS[data.tier] || TIER_APPS.free;
+          planLabel = TIER_LABEL[data.tier] || 'Free';
         }
       } catch (err) {
         console.error('[MPS Unified] entitlement lookup failed:', err);
-        unlockedApps = APPS.map(a => a.id);  // fail open — each app still self-guards
+        unlockedApps = APPS.map(a => a.id);
       }
-
       renderUser(user.displayName || user.email, user.email, user.photoURL, planLabel);
       refreshTabLocks();
     });
 
-    /* ── Mark locked tabs + re-pick a valid starting tab ──── */
     function refreshTabLocks() {
       APPS.forEach(app => {
         const tab = document.getElementById('tab-' + app.id);
@@ -474,16 +481,14 @@
           tab.appendChild(lk);
         }
       });
-
       if (!activeId || !unlockedApps.includes(activeId)) {
         const firstOpen = APPS.find(a => unlockedApps.includes(a.id));
         selectTab(firstOpen ? firstOpen.id : APPS[0].id);
       }
     }
 
-    /* ── Boot ─────────────────────────────────────────────── */
     buildTabs();
-    selectTab('workout');   // optimistic first paint; auth handler corrects if needed
+    selectTab('workout');
   </script>
 
 </body>
