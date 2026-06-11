@@ -305,7 +305,7 @@
                       + '*:has(> .mps-logo-rsp){display:none!important}'
                       + 'body{padding-top:0!important}'
                       /* Uniform font across every tracker (skip <i>/icon elements to keep icon fonts). */
-                      + 'body, body *:not(i):not([class*="icon"]):not([class*="ti-"]) { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important; }';
+                      + 'body, body *:not(i):not([class*="icon"]):not([class*="ti-"]), svg text, svg tspan, text, tspan { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important; }';
               if (app.id === 'journal') css += 'nav:first-of-type{display:none!important}';
               const s = d.createElement('style'); s.textContent = css; d.head.appendChild(s);
             }
