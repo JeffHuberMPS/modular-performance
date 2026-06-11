@@ -87,7 +87,7 @@
     .home-greeting { font-family: 'Bebas Neue',sans-serif; font-size: 1.9rem; letter-spacing: 0.04em; color: #fff; }
     .home-date { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
     .home-section-label { font-family: 'Bebas Neue',sans-serif; font-size: 0.85rem; letter-spacing: 0.22em; color: #8a8472; margin: 24px 2px 12px; }
-    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 880px; }
+    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 880px; margin: 0 auto; }
     .metric-card:nth-child(5) { grid-column: 1 / -1; max-width: calc(50% - 10px); justify-self: center; }
     .metric-card { position: relative; overflow: hidden; cursor: pointer; background: linear-gradient(180deg, rgba(28,28,28,0.7) 0%, rgba(13,13,13,0.7) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 22px rgba(0,0,0,0.4); padding: 20px 22px 22px; transition: transform 0.18s ease, border-color 0.18s ease; }
     .metric-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
@@ -313,7 +313,12 @@
       const hv = document.getElementById('m-' + id + '-h-v'), hl = document.getElementById('m-' + id + '-h-l');
       const h = metrics[0] || ['—', '—'];
       if (hv) hv.textContent = h[0]; if (hl) hl.textContent = h[1];
-      for (let i = 0; i < 4; i++) { const m = metrics[i + 1] || ['—', '—']; setMini(id, i, m[0], m[1]); }
+      const grid = document.getElementById('mini-grid-' + id);
+      if (!grid) return;
+      grid.innerHTML = metrics.slice(1).map(m => {
+        const v = (m && m[0] != null) ? m[0] : '—', l = (m && m[1] != null) ? m[1] : '—';
+        return '<div class="mini"><div class="mini__val">' + v + '</div><div class="mini__lbl">' + l + '</div></div>';
+      }).join('');
     }
     function buildDashCards() {
       const grid = document.getElementById('home-grid'); grid.innerHTML = '';
@@ -321,10 +326,10 @@
         const c = document.createElement('div');
         c.className = 'metric-card'; c.style.setProperty('--accent', app.accent); c.onclick = () => selectTab(app.id);
         let minis = '';
-        for (let i = 0; i < 4; i++) minis += '<div class="mini"><div class="mini__val" id="m-'+app.id+'-'+i+'-v">—</div><div class="mini__lbl" id="m-'+app.id+'-'+i+'-l">—</div></div>';
+        for (let i = 0; i < 4; i++) minis += '<div class="mini"><div class="mini__val">—</div><div class="mini__lbl">—</div></div>';
         c.innerHTML = '<div class="metric-card__head"><span class="pip"></span><span class="metric-card__title">' + app.label.toUpperCase() + '</span><span class="metric-card__open">Open ›</span></div>'
           + '<div class="metric-card__hl"><span class="hl-val" id="m-'+app.id+'-h-v">—</span><span class="hl-lbl" id="m-'+app.id+'-h-l">—</span></div>'
-          + '<div class="mini-grid">' + minis + '</div>';
+          + '<div class="mini-grid" id="mini-grid-'+app.id+'">' + minis + '</div>';
         grid.appendChild(c);
       });
     }
@@ -362,19 +367,42 @@
         let week=0; for (let i=0;i<7;i++) if (set.has(ymd(daysAgo(i)))) week++;
         let streak=0; for (let i=0;;i++){ if (set.has(ymd(daysAgo(i)))) streak++; else break; }
         const month = days.filter(d => (d.date||d.id||'').startsWith(monthPrefix)).length;
-        setCardMetrics('workout', [[String(strength),'avg strength'], [week+'/7','this week'], [String(streak),'day streak'], [String(month),'this month'], [String(days.length),'total logged']]);
+        setCardMetrics('workout', [[String(strength),'avg strength'], [week+' / 10','this week'], [String(streak),'day streak'], [String(month),'this month'], [String(days.length),'total logged']]);
       } catch(e){ setCardMetrics('workout', []); }
 
       try {
-        const logs = await MPS_DB.getHabitHistory(uid, 90);
-        const byDate = new Set(logs.map(l => l.date));
-        let sumDone=0; logs.forEach(l => { sumDone += Object.values(l.habits||{}).filter(Boolean).length; });
-        const avg15 = logs.length ? Math.round(sumDone/logs.length*10)/10 : 0;
-        const tl = logs.find(l => l.date === todayKey);
-        const doneToday = tl ? Object.values(tl.habits||{}).filter(Boolean).length : 0;
-        let streak=0; for (let i=0;;i++){ if (byDate.has(ymd(daysAgo(i)))) streak++; else break; }
-        let week=0; for (let i=0;i<7;i++) if (byDate.has(ymd(daysAgo(i)))) week++;
-        setCardMetrics('habits', [[avg15+' / 15','avg per day'], [String(doneToday)+' / 15','done today'], [String(streak),'day streak'], [week+'/7','days this week'], [String(logs.length),'days logged']]);
+        /* Habits store under users/{uid}/app_storage/{habits_v4, blocks_v4} (NOT habit_logs). */
+        const sget = async (key) => {
+          const snap = await firebase.firestore().doc('users/'+uid+'/app_storage/'+key).get();
+          const d = snap.exists ? snap.data() : null;
+          if (!d || d.value == null) return null;
+          try { return JSON.parse(d.value); } catch(e){ return null; }
+        };
+        const hlog = (await sget('habits_v4')) || {};   // { dateKey: { habitId: bool } }
+        const blocks = (await sget('blocks_v4')) || {
+          MRN: { habits: [{id:'h_wake'},{id:'h_gymtr'},{id:'h_breath'},{id:'h_read'},{id:'h_cold'}] },
+          WRK: { habits: [{id:'h_mind'},{id:'h_course'},{id:'h_outr'},{id:'h_chess'},{id:'h_auto'}] },
+          NGT: { habits: [{id:'h_journ'},{id:'h_pray'},{id:'h_bible'},{id:'h_guit'},{id:'h_sleep'}] }
+        };
+        const blockIds = bk => (blocks[bk] && blocks[bk].habits ? blocks[bk].habits : []).map(h => h.id);
+        const dates = Object.keys(hlog);
+        const n = dates.length;
+        const sum = { MRN:0, WRK:0, NGT:0, ALL:0 };
+        dates.forEach(dk => {
+          const day = hlog[dk] || {};
+          ['MRN','WRK','NGT'].forEach(bk => blockIds(bk).forEach(id => { if (day[id]) sum[bk]++; }));
+          sum.ALL += Object.values(day).filter(Boolean).length;
+        });
+        const avg = x => n ? Math.round(x/n*10)/10 : 0;
+        const todayDone = Object.values(hlog[todayKey] || {}).filter(Boolean).length;
+        setCardMetrics('habits', [
+          [avg(sum.ALL)+' / 15','avg per day'],
+          [avg(sum.MRN)+' / 5','avg morning'],
+          [avg(sum.WRK)+' / 5','avg work'],
+          [avg(sum.NGT)+' / 5','avg night'],
+          [String(todayDone)+' / 15','done today'],
+          [String(n),'days logged']
+        ]);
       } catch(e){ setCardMetrics('habits', []); }
 
       try {
