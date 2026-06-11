@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#FFC107" />
+  <meta name="theme-color" content="#0a0a0a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <title>MPS — North Star Hub</title>
+  <title>MPS — Modular Performance</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,1342 +17,473 @@
   <!-- Shared Styles -->
   <link rel="stylesheet" href="/shared/styles.css" />
 
-  <!-- Firebase (for real auth check) -->
+  <!-- Firebase (same project as every app → login is shared) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js"></script>
 
   <style>
-    /* ─────────────────────────────────────────────────────────
-       NORTH STAR HUB — STYLES
-    ───────────────────────────────────────────────────────── */
-
-    /* Z-index scale — these MUST be defined here since shared/styles.css doesn't include them */
     :root {
-      --z-dropdown: 100;
-      --z-overlay:  200;
-      --z-devpanel: 300;
+      --shell-header-h: 52px;
+      --shell-tabs-h:   58px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;            /* the shell owns the scroll; each app scrolls inside its frame */
     }
 
     body {
       background: var(--ns-black);
-      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
       min-height: 100dvh;
-      padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* ── Header ────────────────────────────────────────────── */
-    .hub-header {
+    /* ── Top header ─────────────────────────────────────────── */
+    .shell-header {
+      flex: 0 0 auto;
+      height: var(--shell-header-h);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px var(--space-lg);
+      padding: 0 var(--space-lg);
       border-bottom: 1px solid var(--border-subtle);
-      background: rgba(10, 10, 10, 0.95);
+      background: rgba(10, 10, 10, 0.96);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: var(--z-dropdown);
+      position: relative;
+      z-index: 30;
     }
 
-    .hub-logo-block {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .hub-logo {
-      font-family: var(--font-display);
-      font-size: 2.2rem;
+    .shell-logo {
+      font-family: var(--font-display, 'Bebas Neue'), sans-serif;
+      font-size: 1.6rem;
       color: var(--ns-white);
+      letter-spacing: 0.05em;
       line-height: 1;
-      letter-spacing: 0.04em;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
     }
-
-    .hub-logo-underline {
-      display: block;
-      width: 100%;
+    .shell-logo small {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.5rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .shell-logo .bar {
+      display: inline-block;
+      width: 22px;
       height: 2px;
       background: var(--ns-yellow);
-      margin-top: 3px;
+      vertical-align: middle;
     }
 
-    .hub-wordmark {
-      font-size: 0.55rem;
-      letter-spacing: 0.35em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-
-    .hub-user {
+    .shell-user {
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
       position: relative;
     }
-
-    .hub-avatar {
-      width: 36px;
-      height: 36px;
+    .shell-avatar {
+      width: 32px; height: 32px;
       border-radius: 50%;
       background: #1a1a1a;
       border: 2px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700;
       color: var(--ns-yellow);
-      overflow: hidden;
-      flex-shrink: 0;
+      overflow: hidden; flex-shrink: 0;
     }
+    .shell-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .hub-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    /* User dropdown */
-    .user-dropdown {
+    .shell-dropdown {
       position: absolute;
       top: calc(100% + 8px);
       right: 0;
       background: #1a1a1a;
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      min-width: 160px;
-      box-shadow: var(--shadow-elevated);
-      z-index: var(--z-dropdown);
+      min-width: 180px;
+      box-shadow: var(--shadow-card);
+      z-index: 40;
       display: none;
+      overflow: hidden;
     }
-
-    .user-dropdown.open { display: block; }
-
-    .user-dropdown__name {
-      padding: 12px 16px 8px;
-      font-size: 0.8rem;
+    .shell-dropdown.open { display: block; }
+    .shell-dropdown__name {
+      padding: 12px 16px 6px;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .shell-dropdown__plan {
+      padding: 0 16px 10px;
+      font-size: 0.72rem;
       color: var(--text-dim);
       border-bottom: 1px solid var(--border-subtle);
     }
-
-    .user-dropdown__item {
-      display: block;
-      width: 100%;
-      padding: 10px 16px;
-      background: none;
-      border: none;
+    .shell-dropdown__plan span { color: var(--ns-yellow); }
+    .shell-dropdown__item {
+      display: block; width: 100%;
+      padding: 11px 16px;
+      background: none; border: none;
       text-align: left;
       color: var(--text-primary);
-      font-size: 0.875rem;
+      font-size: 0.85rem; font-family: inherit;
       cursor: pointer;
-      transition: background var(--transition-fast);
+      transition: background var(--transition);
     }
+    .shell-dropdown__item:hover { background: var(--card-bg); }
+    .shell-dropdown__item--danger { color: #ef4444; }
 
-    .user-dropdown__item:hover {
+    /* ── Tab strip ──────────────────────────────────────────── */
+    .shell-tabs {
+      flex: 0 0 auto;
+      height: var(--shell-tabs-h);
+      display: flex;
+      gap: 8px;
+      padding: 8px var(--space-lg);
+      overflow-x: auto;
+      overflow-y: hidden;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(10,10,10,0.96);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      position: relative;
+      z-index: 20;
+    }
+    .shell-tabs::-webkit-scrollbar { display: none; }
+
+    .shell-tab {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 74px;
+      padding: 6px 14px;
       background: var(--card-bg);
-    }
-
-    .user-dropdown__item--danger {
-      color: #ef4444;
-    }
-
-    /* ── Welcome Bar ───────────────────────────────────────── */
-    .hub-welcome {
-      padding: 24px var(--space-lg) 0;
-    }
-
-    .hub-welcome__greeting {
-      font-family: var(--font-display);
-      font-size: 1.4rem;
-      color: var(--ns-yellow);
-      letter-spacing: 0.06em;
-    }
-
-    .hub-welcome__plan {
-      font-size: 0.75rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
       color: var(--text-dim);
-      margin-top: 4px;
+      font-family: var(--font-display, 'Bebas Neue'), sans-serif;
+      font-size: 0.92rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition);
+      position: relative;
     }
-
-    .hub-welcome__plan span {
-      color: var(--ns-yellow);
+    .shell-tab__dot {
+      width: 18px; height: 3px; border-radius: 2px;
+      background: var(--accent, #888);
+      opacity: 0.55;
+      transition: opacity var(--transition);
     }
+    .shell-tab:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.18); }
+    .shell-tab.active {
+      color: var(--ns-white);
+      border-color: var(--accent, var(--ns-yellow));
+      background: color-mix(in srgb, var(--accent, #888) 12%, transparent);
+    }
+    .shell-tab.active .shell-tab__dot { opacity: 1; }
+    .shell-tab__lock { font-size: 0.6rem; opacity: 0.5; }
+    .shell-tab.locked { opacity: 0.5; }
 
-    /* ── Page transition overlay ──────────────────────────── */
-    #mps-nav-fade {
-      position: fixed;
+    /* ── App stage (holds the iframes) ──────────────────────── */
+    .shell-stage {
+      flex: 1 1 auto;
+      position: relative;
+      background: var(--ns-black);
+      overflow: hidden;
+    }
+    .shell-frame {
+      position: absolute;
       inset: 0;
-      background: #000;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: var(--ns-black);
       opacity: 0;
-      z-index: 9999;
       pointer-events: none;
       transition: opacity 0.18s ease;
     }
-    #mps-nav-fade.active { opacity: 1; pointer-events: all; }
-
-    /* ── App Grid ──────────────────────────────────────────── */
-    .app-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-md);
-      padding: var(--space-lg);
-      padding-bottom: 80px; /* space so DEV btn never overlaps last tile */
-    }
-
-    /* Last tile (5th) spans full width if it's the only one in its row */
-    .app-tile:nth-child(5):nth-last-child(1) {
-      grid-column: 1 / -1;
-    }
-
-    /* ── App Tile — exact match to landing page suite cards ── */
-    .app-tile {
-      border-radius: 22px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      text-decoration: none;
-    }
-    .app-tile:hover:not(.locked) { transform: translateY(-6px); }
-    .app-tile.locked { opacity: 0.4; filter: grayscale(0.6); }
-    .app-tile.locked:hover { opacity: 0.55; }
-
-    /* ── Colored badge header ─────────────────────────────── */
-    .app-tile__top {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 18px 16px 18px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-      border-radius: 22px;
-    }
-    .app-tile__top::after {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%; width: 60%; height: 100%;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
-      animation: tileShimmer 4.5s ease-in-out infinite;
-      pointer-events: none;
-    }
-    @keyframes tileShimmer {
-      0%   { left: -100%; opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { left: 160%; opacity: 0; }
-    }
-
-    /* ── MPS italic gradient text ────────────────────────── */
-    .app-tile__mps {
-      font-family: var(--font-display);
-      font-style: italic;
-      font-weight: 900;
-      font-size: 28px;
-      letter-spacing: 0.04em;
-      line-height: 1;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      margin-bottom: 3px;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ── Thin colored divider line ───────────────────────── */
-    .app-tile__divider {
-      width: 80%;
-      height: 1px;
-      margin: 5px auto 5px;
-    }
-
-    /* ── "Modular Performance Systems" label ─────────────── */
-    .app-tile__subtitle {
-      font-size: 6px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      position: relative;
-      z-index: 1;
-      margin-bottom: 2px;
-    }
-
-    /* ── App name ────────────────────────────────────────── */
-    .app-tile__name {
-      font-family: var(--font-display);
-      font-size: 13px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.92);
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ── Description pill (below header) ────────────────── */
-    .app-tile__body {
-      padding: 12px 14px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-top: none;
-      border-radius: 0 0 22px 22px;
-      flex: 1;
-    }
-    .app-tile__tag {
-      font-size: 10.5px;
-      line-height: 1.5;
-      color: rgba(255,255,255,0.55);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      flex: 1;
-    }
-    .app-tile__action { margin-top: 6px; }
-    .app-tile__open {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-    .app-tile__unlock {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.25);
-    }
-    .lock-icon {
-      position: absolute;
-      top: 12px; right: 12px;
-      font-size: 0.75rem;
-      opacity: 0.35;
-    }
-
-    /* ── Per-app themes (ported 1:1 from landing page) ───── */
-    .app-tile[data-app="workout"] .app-tile__top {
-      background: radial-gradient(ellipse at center 30%, rgba(74,179,244,0.12) 0%, transparent 70%),
-                  linear-gradient(180deg, #0c1428 0%, #060a18 100%);
-      border: 1px solid rgba(74,179,244,0.50);
-      box-shadow: 0 0 28px rgba(74,179,244,0.14), inset 0 0 0 1px rgba(74,179,244,0.10);
-    }
-    .app-tile[data-app="workout"] .app-tile__mps {
-      background: linear-gradient(180deg,#fff 0%,#c8e6ff 40%,#4ab3f4 75%,#2878c8 100%);
-      -webkit-background-clip: text; background-clip: text;
-      filter: drop-shadow(0 0 10px rgba(74,179,244,0.45));
-    }
-    .app-tile[data-app="workout"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(74,179,244,0.7),transparent); }
-    .app-tile[data-app="workout"] .app-tile__subtitle { color: rgba(74,179,244,0.70); }
-    .app-tile[data-app="workout"] .app-tile__open { color: var(--workout-blue); }
-
-    .app-tile[data-app="habits"] .app-tile__top {
-      background: radial-gradient(ellipse at center 30%, rgba(220,38,38,0.12) 0%, transparent 70%),
-                  linear-gradient(180deg, #1a0808 0%, #0a0000 100%);
-      border: 1px solid rgba(220,38,38,0.50);
-      box-shadow: 0 0 28px rgba(220,38,38,0.14), inset 0 0 0 1px rgba(220,38,38,0.10);
-    }
-    .app-tile[data-app="habits"] .app-tile__mps {
-      background: linear-gradient(180deg,#fff 0%,#ffb3b3 40%,#dc2626 75%,#991b1b 100%);
-      -webkit-background-clip: text; background-clip: text;
-      filter: drop-shadow(0 0 10px rgba(220,38,38,0.50));
-    }
-    .app-tile[data-app="habits"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(220,38,38,0.7),transparent); }
-    .app-tile[data-app="habits"] .app-tile__subtitle { color: rgba(220,38,38,0.70); }
-    .app-tile[data-app="habits"] .app-tile__open { color: var(--habits-red); }
-
-    .app-tile[data-app="sleep"] .app-tile__top {
-      background: radial-gradient(ellipse at center 30%, rgba(155,107,201,0.12) 0%, transparent 70%),
-                  linear-gradient(180deg, #140d24 0%, #080410 100%);
-      border: 1px solid rgba(201,168,107,0.45);
-      box-shadow: 0 0 28px rgba(155,107,201,0.14), inset 0 0 0 1px rgba(201,168,107,0.10);
-    }
-    .app-tile[data-app="sleep"] .app-tile__mps {
-      background: linear-gradient(180deg,#fff8e8 0%,#f0d898 35%,#c9a86b 70%,#9b6bc9 100%);
-      -webkit-background-clip: text; background-clip: text;
-      filter: drop-shadow(0 0 10px rgba(201,168,107,0.45));
-    }
-    .app-tile[data-app="sleep"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(201,168,107,0.7),transparent); }
-    .app-tile[data-app="sleep"] .app-tile__subtitle { color: rgba(201,168,107,0.70); }
-    .app-tile[data-app="sleep"] .app-tile__open { color: var(--sleep-gold); }
-
-    .app-tile[data-app="expenses"] .app-tile__top {
-      background: radial-gradient(ellipse at center 30%, rgba(22,163,74,0.12) 0%, transparent 70%),
-                  linear-gradient(180deg, #081408 0%, #020a02 100%);
-      border: 1px solid rgba(22,163,74,0.50);
-      box-shadow: 0 0 28px rgba(22,163,74,0.14), inset 0 0 0 1px rgba(22,163,74,0.10);
-    }
-    .app-tile[data-app="expenses"] .app-tile__mps {
-      background: linear-gradient(180deg,#fff 0%,#a8f0c0 40%,#16a34a 75%,#0d6b30 100%);
-      -webkit-background-clip: text; background-clip: text;
-      filter: drop-shadow(0 0 10px rgba(22,163,74,0.50));
-    }
-    .app-tile[data-app="expenses"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(22,163,74,0.7),transparent); }
-    .app-tile[data-app="expenses"] .app-tile__subtitle { color: rgba(22,163,74,0.70); }
-    .app-tile[data-app="expenses"] .app-tile__open { color: var(--expenses-green); }
-
-    .app-tile[data-app="journal"] .app-tile__top {
-      background: radial-gradient(ellipse at center 30%, rgba(196,168,130,0.10) 0%, transparent 70%),
-                  linear-gradient(180deg, #130f0a 0%, #080603 100%);
-      border: 1px solid rgba(196,168,130,0.40);
-      box-shadow: 0 0 28px rgba(196,168,130,0.10), inset 0 0 0 1px rgba(196,168,130,0.08);
-    }
-    .app-tile[data-app="journal"] .app-tile__mps {
-      background: linear-gradient(180deg,#fff 0%,#ede0cc 40%,#c4a882 75%,#8c6e42 100%);
-      -webkit-background-clip: text; background-clip: text;
-      filter: drop-shadow(0 0 10px rgba(196,168,130,0.40));
-    }
-    .app-tile[data-app="journal"] .app-tile__divider { background: linear-gradient(90deg,transparent,rgba(196,168,130,0.6),transparent); }
-    .app-tile[data-app="journal"] .app-tile__subtitle { color: rgba(196,168,130,0.65); }
-    .app-tile[data-app="journal"] .app-tile__open { color: var(--sleep-gold); }
-
-    /* COMING SOON label inside journal tile header */
-    .journal-cs-label {
-      font-family: var(--font-display);
-      font-size: 9px;
-      letter-spacing: 0.28em;
-      color: rgba(196, 168, 130, 0.90);
-      text-transform: uppercase;
-      position: relative;
-      z-index: 1;
-      margin: 2px 0 1px;
-    }
-
-    /* Coming soon badge for Journal */
-    .coming-soon-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(201, 168, 107, 0.18);
-      border: 1px solid rgba(201, 168, 107, 0.55);
-      color: var(--sleep-gold);
-      font-size: 0.6rem;
-      font-family: var(--font-display);
-      letter-spacing: 0.18em;
-      padding: 4px 9px;
-      border-radius: 3px;
-    }
-
-    /* Journal tile — light tease, non-interactive */
-    .app-tile[data-app="journal"] {
-      pointer-events: none;
-      cursor: default;
-      position: relative;
-      overflow: hidden;
-      opacity: 0.72;
-      filter: grayscale(0.25);
-    }
-
-    /* COMING SOON strip at bottom of tile */
-    .journal-cs-strip {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-      padding: 6px 0 2px;
-      border-top: 1px solid rgba(201, 168, 107, 0.22);
-    }
-
-    .journal-cs-strip__text {
-      font-family: var(--font-display);
-      font-size: 0.65rem;
-      letter-spacing: 0.22em;
-      color: rgba(201, 168, 107, 0.75);
-    }
-
-    .journal-cs-strip__dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: rgba(201, 168, 107, 0.45);
-    }
-
-    /* ── Install Banner ───────────────────────────────────── */
-    #install-banner {
-      display: none; /* shown by JS when installable and not standalone */
-      margin: 12px 20px 0;
-      padding: 12px 16px;
-      border-radius: 10px;
-      background: rgba(255, 193, 7, 0.08);
-      border: 1px solid rgba(255, 193, 7, 0.35);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    #install-banner.hidden { display: none !important; }
-    .install-banner__icon { font-size: 20px; flex-shrink: 0; }
-    .install-banner__text { flex: 1; }
-    .install-banner__title {
-      font-size: 12px; font-weight: 700; color: #FFC107;
-      letter-spacing: 0.06em; text-transform: uppercase;
-    }
-    .install-banner__sub {
-      font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; line-height: 1.4;
-    }
-    .install-banner__btn {
-      background: #FFC107; color: #000; border: none;
-      padding: 7px 14px; border-radius: 6px;
-      font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
-      text-transform: uppercase; cursor: pointer; flex-shrink: 0;
-    }
-
-    /* ── Trial Banner ──────────────────────────────────────── */
-    .trial-banner {
-      margin: 12px 20px 0;
-      padding: 10px 16px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .trial-banner--active {
-      background: rgba(255,193,7,0.1);
-      border: 1px solid rgba(255,193,7,0.35);
-      color: #FFC107;
-    }
-    .trial-banner--ending {
-      background: rgba(220,38,38,0.12);
-      border: 1px solid rgba(220,38,38,0.4);
-      color: #f87171;
-    }
-    .trial-banner__icon { font-size: 16px; }
-    .trial-banner__cta {
-      margin-left: auto;
-      font-size: 12px;
-      color: #FFC107;
-      cursor: pointer;
-      text-decoration: underline;
-      white-space: nowrap;
-    }
-
-    /* Trial badge on tile */
-    .trial-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(255,193,7,0.15);
-      border: 1px solid rgba(255,193,7,0.4);
-      color: #FFC107;
-      font-size: 9px;
-      font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: 1.5px;
-      padding: 2px 6px;
-      border-radius: 3px;
-    }
-    .app-tile { position: relative; } /* ensure badge positions correctly */
-
-    /* ── Upgrade Sheet ─────────────────────────────────────── */
-    .upgrade-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      z-index: var(--z-overlay);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity var(--transition-base);
-    }
-
-    .upgrade-overlay.open {
+    .shell-frame.active {
       opacity: 1;
-      pointer-events: all;
+      pointer-events: auto;
     }
 
-    .upgrade-sheet {
-      background: #111;
-      border-top: 2px solid var(--ns-yellow);
-      border-radius: 16px 16px 0 0;
-      padding: var(--space-xl) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom));
-      width: 100%;
-      max-width: 480px;
-      transform: translateY(100%);
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .upgrade-overlay.open .upgrade-sheet {
-      transform: translateY(0);
-    }
-
-    .upgrade-sheet__header {
+    /* Centered loader shown until the first frame paints */
+    .shell-loader {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--space-lg);
-    }
-
-    .upgrade-sheet__title {
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      color: var(--ns-white);
-      letter-spacing: 0.06em;
-    }
-
-    .upgrade-sheet__close {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 1.2rem;
-      cursor: pointer;
-      padding: 4px;
-      line-height: 1;
-    }
-
-    .upgrade-sheet__current {
-      background: var(--card-bg);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 12px 16px;
-      margin-bottom: var(--space-lg);
-    }
-
-    .upgrade-sheet__current-label {
-      font-size: 0.7rem;
-      color: var(--text-faint);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-    .upgrade-sheet__current-plan {
-      font-size: 0.95rem;
-      color: var(--text-primary);
-      font-weight: 600;
-      margin-top: 4px;
-    }
-
-    .upgrade-options {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: var(--space-lg);
-    }
-
-    .upgrade-option {
-      background: var(--card-bg);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: all var(--transition-base);
-    }
-
-    .upgrade-option:hover {
-      border-color: var(--ns-yellow);
-      background: rgba(255, 193, 7, 0.05);
-    }
-
-    .upgrade-option--featured {
-      border-color: var(--ns-yellow);
-      background: rgba(255, 193, 7, 0.06);
-    }
-
-    .upgrade-option__label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .upgrade-option__price {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      color: var(--ns-yellow);
-      letter-spacing: 0.04em;
-    }
-
-    .upgrade-option__badge {
-      font-size: 0.6rem;
-      background: var(--ns-yellow);
-      color: var(--ns-black);
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-left: 6px;
-    }
-
-    .upgrade-sheet__cta {
-      background: var(--ns-yellow);
-      color: var(--ns-black);
-      border: none;
-      width: 100%;
-      padding: 14px;
-      border-radius: var(--radius-md);
-      font-size: 0.9rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all var(--transition-base);
-    }
-
-    .upgrade-sheet__cta:hover {
-      background: #ffd54f;
-      box-shadow: var(--shadow-yellow);
-    }
-
-    /* ── Footer ────────────────────────────────────────────── */
-    .hub-footer {
-      padding: var(--space-xl) var(--space-lg) var(--space-2xl);
-      text-align: center;
-      border-top: 1px solid var(--border-subtle);
-      margin-top: var(--space-md);
-    }
-
-    .hub-footer__copy {
-      font-size: 0.72rem;
-      color: var(--text-faint);
-    }
-
-    .hub-footer__links {
-      display: flex;
-      gap: var(--space-md);
       justify-content: center;
-      margin-top: 8px;
+      background: var(--ns-black);
+      z-index: 5;
     }
+    .shell-loader.hidden { display: none; }
 
-    .hub-footer__links a {
-      font-size: 0.72rem;
-      color: var(--text-faint);
-      text-decoration: none;
-      transition: color var(--transition-fast);
-    }
-
-    .hub-footer__links a:hover {
-      color: var(--text-dim);
-    }
-
-    /* ── Dev Panel ─────────────────────────────────────────── */
-    #dev-panel-btn {
-      position: fixed;
-      bottom: calc(24px + env(safe-area-inset-bottom));
-      left: 16px;
-      background: #1a1a1a;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 6px 12px;
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      cursor: pointer;
-      z-index: var(--z-devpanel);
-      display: none; /* shown only for developer role */
-    }
-
-    #dev-panel-btn:hover {
-      border-color: var(--ns-yellow);
-      color: var(--ns-yellow);
-    }
-
-    .dev-panel {
-      position: fixed;
-      bottom: calc(60px + env(safe-area-inset-bottom));
-      left: 16px;
-      background: #1a1a1a;
-      border: 1px solid var(--ns-yellow);
-      border-radius: var(--radius-md);
-      padding: var(--space-md);
-      z-index: var(--z-devpanel);
-      min-width: 220px;
-      box-shadow: var(--shadow-elevated);
+    /* Locked-app panel (non-entitled users) */
+    .shell-locked-panel {
+      position: absolute;
+      inset: 0;
       display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--space-2xl);
+      gap: 14px;
+      z-index: 6;
     }
-
-    .dev-panel.open { display: block; }
-
-    .dev-panel__title {
-      font-size: 0.65rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--ns-yellow);
-      margin-bottom: var(--space-md);
-      font-weight: 700;
+    .shell-locked-panel.show { display: flex; }
+    .shell-locked-panel h2 {
+      font-family: var(--font-display, 'Bebas Neue'), sans-serif;
+      font-size: 1.8rem; color: var(--ns-white); letter-spacing: 0.04em;
     }
+    .shell-locked-panel p { color: var(--text-dim); max-width: 320px; font-size: 0.9rem; }
 
-    .dev-tier-btn {
-      display: block;
-      width: 100%;
-      padding: 7px 12px;
-      margin-bottom: 6px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      color: var(--text-dim);
-      font-size: 0.8rem;
-      cursor: pointer;
-      text-align: left;
-      transition: all var(--transition-fast);
-    }
-
-    .dev-tier-btn:hover,
-    .dev-tier-btn.active {
-      border-color: var(--ns-yellow);
-      color: var(--ns-yellow);
-      background: rgba(255, 193, 7, 0.06);
-    }
-
-    .dev-panel__note {
-      font-size: 0.65rem;
-      color: var(--text-faint);
-      margin-top: 8px;
-      line-height: 1.4;
+    @media (display-mode: standalone) {
+      .shell-header { padding-top: env(safe-area-inset-top); height: calc(var(--shell-header-h) + env(safe-area-inset-top)); }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- ── Header ──────────────────────────────────────────────── -->
-  <header class="hub-header">
-    <a class="hub-logo-block" href="/hub.html" style="text-decoration:none;cursor:pointer;">
-      <div class="hub-logo">MPS<span class="hub-logo-underline"></span></div>
-      <div class="hub-wordmark">Modular Performance</div>
-    </a>
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header class="shell-header">
+    <div class="shell-logo">
+      MPS<span class="bar"></span><small>Modular Performance</small>
+    </div>
 
-    <div class="hub-user" id="user-menu-trigger">
-      <div class="hub-avatar" id="user-avatar">JH</div>
-
-      <div class="user-dropdown" id="user-dropdown">
-        <div class="user-dropdown__name" id="user-dropdown-name">Jeff Huber</div>
-        <button class="user-dropdown__item" onclick="goToBilling()">Billing &amp; Plan</button>
-        <button class="user-dropdown__item user-dropdown__item--danger" onclick="signOutUser()">Sign Out</button>
+    <div class="shell-user" id="user-trigger">
+      <div class="shell-avatar" id="user-avatar">JH</div>
+      <div class="shell-dropdown" id="user-dropdown">
+        <div class="shell-dropdown__name" id="dd-name">Jeff Huber</div>
+        <div class="shell-dropdown__plan">Plan: <span id="dd-plan">All-Access</span></div>
+        <button class="shell-dropdown__item" onclick="location.href='/billing.html'">Billing &amp; Plan</button>
+        <button class="shell-dropdown__item shell-dropdown__item--danger" onclick="signOutUser()">Sign Out</button>
       </div>
     </div>
   </header>
 
-  <!-- ── Welcome Bar ─────────────────────────────────────────── -->
-  <div class="hub-welcome">
-    <div class="hub-welcome__greeting" id="welcome-greeting">WELCOME BACK, JEFF</div>
-    <div class="hub-welcome__plan">
-      Current plan: <span id="plan-label">All-Access</span>
+  <!-- ── Tabs ─────────────────────────────────────────────── -->
+  <nav class="shell-tabs" id="tab-strip"><!-- built by JS --></nav>
+
+  <!-- ── Stage ────────────────────────────────────────────── -->
+  <main class="shell-stage" id="stage">
+    <div class="shell-loader" id="stage-loader"><div class="spinner"></div></div>
+    <div class="shell-locked-panel" id="locked-panel">
+      <h2 id="locked-title">App Locked</h2>
+      <p>This app isn’t part of your current plan. Add it from your plan page to unlock it here.</p>
+      <button class="btn btn-primary" onclick="location.href='/billing.html'">Manage Plan</button>
     </div>
-  </div>
+    <!-- iframes injected by JS -->
+  </main>
 
-  <!-- ── Install Banner ────────────────────────────────────── -->
-  <div id="install-banner" class="hidden">
-    <div class="install-banner__icon">📲</div>
-    <div class="install-banner__text">
-      <div class="install-banner__title">Install MPS App</div>
-      <div class="install-banner__sub">Full-screen · No browser bar · Native feel</div>
-    </div>
-    <button class="install-banner__btn" onclick="triggerInstall()">INSTALL</button>
-  </div>
+  <div class="toast" id="shell-toast"></div>
 
-  <!-- ── Trial Banner (rendered by JS if trial is active) ────── -->
-  <div id="trial-banner-container"></div>
-
-  <!-- ── App Grid ────────────────────────────────────────────── -->
-  <div class="app-grid" id="app-grid">
-
-    <!-- Workout -->
-    <div class="app-tile" data-app="workout" id="tile-workout" onclick="openApp('workout')">
-      <div class="app-tile__top">
-        <div class="app-tile__mps">MPS</div>
-        <div class="app-tile__divider"></div>
-        <div class="app-tile__subtitle">Modular Performance Systems</div>
-        <div class="app-tile__name">WORKOUT TRACKER</div>
-      </div>
-      <div class="app-tile__body">
-        <div class="app-tile__tag">Log every lift, skill session, and conditioning round. Track your personal records.</div>
-        <div class="app-tile__action">
-          <span class="app-tile__open">Open →</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Habits -->
-    <div class="app-tile" data-app="habits" id="tile-habits" onclick="openApp('habits')">
-      <div class="app-tile__top">
-        <div class="app-tile__mps">MPS</div>
-        <div class="app-tile__divider"></div>
-        <div class="app-tile__subtitle">Modular Performance Systems</div>
-        <div class="app-tile__name">HABIT TRACKER</div>
-      </div>
-      <div class="app-tile__body">
-        <div class="app-tile__tag">Check off your daily habits. Miss one? Restart that day. 90 days locked in builds a different man.</div>
-        <div class="app-tile__action">
-          <span class="app-tile__open">Open →</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sleep -->
-    <div class="app-tile" data-app="sleep" id="tile-sleep" onclick="openApp('sleep')">
-      <div class="app-tile__top">
-        <div class="app-tile__mps">MPS</div>
-        <div class="app-tile__divider"></div>
-        <div class="app-tile__subtitle">Modular Performance Systems</div>
-        <div class="app-tile__name">REST &amp; RECOVERY</div>
-      </div>
-      <div class="app-tile__body">
-        <div class="app-tile__tag">Track sleep quality, soreness, and energy. Know when to push harder — and when recovery is the training.</div>
-        <div class="app-tile__action">
-          <span class="app-tile__open">Open →</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Expenses -->
-    <div class="app-tile" data-app="expenses" id="tile-expenses" onclick="openApp('expenses')">
-      <div class="app-tile__top">
-        <div class="app-tile__mps">MPS</div>
-        <div class="app-tile__divider"></div>
-        <div class="app-tile__subtitle">Modular Performance Systems</div>
-        <div class="app-tile__name">EXPENSE TRACKER</div>
-      </div>
-      <div class="app-tile__body">
-        <div class="app-tile__tag">Every dollar logged. See exactly where money goes. Find the leaks. Build leverage.</div>
-        <div class="app-tile__action">
-          <span class="app-tile__open">Open →</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Journal — Coming Soon tease -->
-    <div class="app-tile" data-app="journal" id="tile-journal">
-      <div class="app-tile__top">
-        <div class="app-tile__mps">MPS</div>
-        <div class="app-tile__divider"></div>
-        <div class="app-tile__subtitle">Modular Performance Systems</div>
-        <div class="journal-cs-label">COMING SOON</div>
-        <div class="app-tile__name">JOURNAL</div>
-      </div>
-      <div class="app-tile__body">
-        <div class="app-tile__tag">5-minute daily reflection. Faith, wins, lessons. Build conviction. Track who you're becoming.</div>
-        <div class="journal-cs-strip">
-          <div class="journal-cs-strip__dot"></div>
-          <span class="journal-cs-strip__text">COMING SOON</span>
-          <div class="journal-cs-strip__dot"></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Footer ──────────────────────────────────────────────── -->
-  <footer class="hub-footer">
-    <div class="hub-footer__copy">Modular Performance © 2026</div>
-    <div class="hub-footer__links">
-      <a href="/privacy.html">Privacy Policy</a>
-      <a href="/terms.html">Terms</a>
-      <a href="mailto:support@modular-performance.com">Support</a>
-    </div>
-  </footer>
-
-  <!-- ── Upgrade Sheet ───────────────────────────────────────── -->
-  <div class="upgrade-overlay" id="upgrade-overlay" onclick="closeUpgradeSheet(event)">
-    <div class="upgrade-sheet" id="upgrade-sheet">
-      <div class="upgrade-sheet__header">
-        <div class="upgrade-sheet__title" id="upgrade-title">UNLOCK APP</div>
-        <button class="upgrade-sheet__close" onclick="closeUpgradeSheet()">✕</button>
-      </div>
-
-      <div class="upgrade-sheet__current">
-        <div class="upgrade-sheet__current-label">Current Plan</div>
-        <div class="upgrade-sheet__current-plan" id="current-plan-display">MPS Single — $5.99/mo</div>
-      </div>
-
-      <div class="upgrade-options" id="upgrade-options">
-        <!-- Populated by JS based on which app was tapped -->
-      </div>
-
-      <button class="upgrade-sheet__cta" id="upgrade-cta" onclick="startCheckout()">
-        Start 7-Day Free Trial
-      </button>
-      <div style="text-align:center;font-size:11px;color:var(--text-faint);margin-top:8px">
-        No charge for 7 days · Cancel anytime
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Dev Panel ───────────────────────────────────────────── -->
-  <button id="dev-panel-btn" onclick="toggleDevPanel()">⚙️ DEV</button>
-
-  <div class="dev-panel" id="dev-panel">
-    <div class="dev-panel__title">⚙️ Dev Preview Mode</div>
-    <button class="dev-tier-btn" data-tier="none"       onclick="previewTier('none')">Free (all locked)</button>
-    <button class="dev-tier-btn" data-tier="single"     onclick="previewTier('single')">Single (1 app)</button>
-    <button class="dev-tier-btn" data-tier="duo"        onclick="previewTier('duo')">Duo (2 apps)</button>
-    <button class="dev-tier-btn" data-tier="trio"       onclick="previewTier('trio')">Trio (3 apps)</button>
-    <button class="dev-tier-btn active" data-tier="all" onclick="previewTier('all')">All-Access (all unlocked)</button>
-    <div class="dev-panel__note">Preview only — real user data is never touched.</div>
-  </div>
-
-  <!-- ── Nav transition overlay ─────────────────────────────── -->
-  <div id="mps-nav-fade"></div>
-
-  <!-- ── Toast ───────────────────────────────────────────────── -->
-  <div class="toast" id="hub-toast"></div>
-
-  <!-- ── Scripts ─────────────────────────────────────────────── -->
   <script>
     /* ════════════════════════════════════════════════════════
-       NORTH STAR HUB — CORE LOGIC
+       MPS UNIFIED APP (Site #2 — one app, tabs)
+       Each tab loads the real, unchanged app from /apps/<id>/.
+       Login + data are shared via Firebase (same origin).
        ════════════════════════════════════════════════════════ */
 
-    // ── App Config ────────────────────────────────────────────
     const APPS = [
-      { id: 'workout',  name: 'MPS WORKOUT',  path: '/apps/workout/',  price: 5.99,  priceId: 'price_workout_monthly' },
-      { id: 'habits',   name: 'MPS HABITS',   path: '/apps/habits/',   price: 5.99,  priceId: 'price_habits_monthly' },
-      { id: 'sleep',    name: 'MPS SLEEP',    path: '/apps/sleep/',    price: 5.99,  priceId: 'price_sleep_monthly' },
-      { id: 'expenses', name: 'MPS EXPENSES', path: '/apps/expenses/', price: 5.99,  priceId: 'price_expenses_monthly' },
-      { id: 'journal',  name: 'MPS JOURNAL',  path: '/apps/journal/',  price: 5.99,  priceId: 'price_journal_monthly' }
+      { id: 'workout',  label: 'Workout',  path: '/apps/workout/',  accent: '#4ab3f4' },
+      { id: 'habits',   label: 'Habits',   path: '/apps/habits/',   accent: '#dc2626' },
+      { id: 'sleep',    label: 'Recovery', path: '/apps/sleep/',    accent: '#c9a86b' },
+      { id: 'expenses', label: 'Expenses', path: '/apps/expenses/', accent: '#16a34a' },
+      { id: 'journal',  label: 'Journal',  path: '/apps/journal/',  accent: '#c4a882' }
     ];
 
+    // New 3-tier model (Site #2). Free / Medium / All-Access.
     const TIER_APPS = {
-      none:   [],
-      single: ['workout'],
-      duo:    ['workout', 'habits'],
-      trio:   ['workout', 'habits', 'sleep'],
+      free:   ['workout'],
+      medium: ['workout', 'habits', 'sleep'],
       all:    ['workout', 'habits', 'sleep', 'expenses', 'journal']
     };
 
-    // ── User State ────────────────────────────────────────────
-    let currentUser = {
-      name:           'Jeff',
-      email:          'jeffreyhuber86@gmail.com',
-      photoURL:       null,
-      tier:           'all',
-      apps:           ['workout', 'habits', 'sleep', 'expenses', 'journal'],
-      role:           'user',          // overridden by Firebase auth below
-      billing_bypass: true
-    };
+    const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
-    let devPreviewTier = null;   // null = use real tier
-    let selectedUpgradeApp = null;
+    let unlockedApps = APPS.map(a => a.id);  // optimistic; tightened after auth resolves
+    let activeId = null;
+    const loadedFrames = {};   // id -> true once its iframe src is set
 
-    /* ── Init ──────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
-      renderUser();
-      renderTiles();
-      // DEV button hidden by default — Firebase auth listener enables it for Jeff only
-      document.getElementById('dev-panel-btn').style.display = 'none';
+    /* ── Build the tab strip ──────────────────────────────── */
+    function buildTabs() {
+      const strip = document.getElementById('tab-strip');
+      strip.innerHTML = '';
+      APPS.forEach(app => {
+        const tab = document.createElement('button');
+        tab.className = 'shell-tab';
+        tab.id = 'tab-' + app.id;
+        tab.style.setProperty('--accent', app.accent);
+        tab.innerHTML =
+          '<span class="shell-tab__dot"></span>' +
+          '<span>' + app.label + '</span>';
+        tab.addEventListener('click', () => selectTab(app.id));
+        strip.appendChild(tab);
+      });
+    }
 
-      // Handle ?upgrade=appname redirect from auth-guard
-      const upgradeParam = new URLSearchParams(window.location.search).get('upgrade');
-      if (upgradeParam) {
-        window.history.replaceState({}, '', '/hub.html');
-        openUpgradeSheet(upgradeParam);
+    /* ── Switch tabs (lazy-load frame on first open) ──────── */
+    function selectTab(id) {
+      const app = APPS.find(a => a.id === id);
+      if (!app) return;
+      activeId = id;
+
+      document.querySelectorAll('.shell-tab').forEach(t =>
+        t.classList.toggle('active', t.id === 'tab-' + id));
+
+      const lockedPanel = document.getElementById('locked-panel');
+      const isUnlocked = unlockedApps.includes(id);
+
+      document.querySelectorAll('.shell-frame').forEach(f => f.classList.remove('active'));
+
+      if (!isUnlocked) {
+        document.getElementById('locked-title').textContent = app.label.toUpperCase() + ' Locked';
+        lockedPanel.classList.add('show');
+        document.getElementById('stage-loader').classList.add('hidden');
+        return;
       }
-    });
+      lockedPanel.classList.remove('show');
 
-    /* ── Firebase Auth — wire real user data + DEV button ── */
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (!user) return;
-
-      // Update currentUser with real Firebase data
-      currentUser.name     = user.displayName || currentUser.name;
-      currentUser.email    = user.email        || currentUser.email;
-      currentUser.photoURL = user.photoURL     || null;
-
-      // DEV button — Jeff's account only
-      const DEV_EMAIL = 'jeffreyhuber86@gmail.com';
-      if (user.email === DEV_EMAIL) {
-        currentUser.role = 'developer';
-        document.getElementById('dev-panel-btn').style.display = 'block';
-      } else {
-        currentUser.role = 'user';
-        document.getElementById('dev-panel-btn').style.display = 'none';
+      let frame = document.getElementById('frame-' + id);
+      if (!frame) {
+        frame = document.createElement('iframe');
+        frame.className = 'shell-frame';
+        frame.id = 'frame-' + id;
+        frame.setAttribute('title', app.label);
+        frame.setAttribute('loading', 'lazy');
+        frame.addEventListener('load', () => {
+          document.getElementById('stage-loader').classList.add('hidden');
+        });
+        frame.src = app.path;
+        document.getElementById('stage').appendChild(frame);
+        loadedFrames[id] = true;
       }
+      frame.classList.add('active');
 
-      // Refresh UI with real name/avatar
-      renderUser();
+      if (loadedFrames[id] && frame.contentDocument) {
+        document.getElementById('stage-loader').classList.add('hidden');
+      }
+    }
+
+    /* ── User menu ────────────────────────────────────────── */
+    document.getElementById('user-trigger').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('user-dropdown').classList.toggle('open');
     });
+    document.addEventListener('click', () =>
+      document.getElementById('user-dropdown').classList.remove('open'));
 
-    /* ── Render User ───────────────────────────────────────── */
-    function renderUser() {
-      const name = currentUser.name || 'User';
-      document.getElementById('welcome-greeting').textContent = `WELCOME BACK, ${name.split(' ')[0].toUpperCase()}`;
-      document.getElementById('user-dropdown-name').textContent = name;
+    function signOutUser() {
+      firebase.auth().signOut()
+        .then(() => location.href = '/auth.html')
+        .catch(() => showToast('Sign-out failed. Try again.'));
+    }
 
-      const tierLabel = {
-        none: 'Free', single: 'Single — Lifetime', duo: 'Duo — Lifetime',
-        trio: 'Trio — Lifetime', all: 'All-Access — Lifetime'
-      };
-      document.getElementById('plan-label').textContent = tierLabel[currentUser.tier] || currentUser.tier;
-
-      // Set avatar
+    function renderUser(name, email, photoURL, planLabel) {
+      document.getElementById('dd-name').textContent = name || 'User';
+      document.getElementById('dd-plan').textContent = planLabel || '—';
       const avatar = document.getElementById('user-avatar');
-      if (currentUser.photoURL) {
-        avatar.innerHTML = `<img src="${currentUser.photoURL}" alt="${name}" />`;
+      if (photoURL) {
+        avatar.innerHTML = '<img src="' + photoURL + '" alt="">';
       } else {
-        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        const initials = (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
         avatar.textContent = initials;
       }
     }
 
-    /* ── Trial Helpers ─────────────────────────────────────── */
-    function getTrialDaysLeft() {
-      if (!currentUser.trial_end) return null;
-      const endMs   = currentUser.trial_end.toMillis
-        ? currentUser.trial_end.toMillis()
-        : currentUser.trial_end * 1000;
-      const diffMs  = endMs - Date.now();
-      if (diffMs <= 0) return 0;
-      return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    /* ── Toast ────────────────────────────────────────────── */
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('shell-toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-    function renderTrialBanner() {
-      const container = document.getElementById('trial-banner-container');
-      if (!container) return;
+    /* ── Auth + entitlements ──────────────────────────────── */
+    const TIER_LABEL = { free: 'Free', medium: 'Medium', all: 'All-Access' };
 
-      const daysLeft = getTrialDaysLeft();
-
-      // No trial — hide banner
-      if (!currentUser.trial_active || daysLeft === null || daysLeft <= 0) {
-        container.innerHTML = '';
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {                       // not signed in → go log in
+        location.replace('/auth.html');
         return;
       }
 
-      const isEnding = currentUser.trial_ending_soon || daysLeft <= 3;
-      const cls      = isEnding ? 'trial-banner--ending' : 'trial-banner--active';
-      const icon     = isEnding ? '⚠️' : '⚡';
-      const msg      = isEnding
-        ? `Your free trial ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} — add a card to keep access.`
-        : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left in your free trial. Enjoy!`;
+      if (DEV_EMAILS.includes(user.email)) {
+        unlockedApps = APPS.map(a => a.id);
+        renderUser(user.displayName || 'Jeff', user.email, user.photoURL, 'All-Access');
+        refreshTabLocks();
+        return;
+      }
 
-      container.innerHTML = `
-        <div class="trial-banner ${cls}">
-          <span class="trial-banner__icon">${icon}</span>
-          <span>${msg}</span>
-          ${isEnding ? `<span class="trial-banner__cta" onclick="openUpgradeSheet('workout')">Add card →</span>` : ''}
-        </div>
-      `;
-    }
-
-    /* ── Render Tiles ──────────────────────────────────────── */
-    function renderTiles() {
-      const tier    = devPreviewTier || currentUser.tier;
-      const unlockedApps = currentUser.billing_bypass
-        ? APPS.map(a => a.id)
-        : (TIER_APPS[tier] || []);
-
-      const daysLeft   = getTrialDaysLeft();
-      const inTrial    = currentUser.trial_active && daysLeft !== null && daysLeft > 0;
-
-      APPS.forEach(app => {
-        const tile = document.getElementById(`tile-${app.id}`);
-        if (!tile) return;
-
-        const isUnlocked = unlockedApps.includes(app.id);
-        const actionEl   = tile.querySelector('.app-tile__action');
-
-        // Remove any existing trial badge before re-render
-        const existingBadge = tile.querySelector('.trial-badge');
-        if (existingBadge) existingBadge.remove();
-
-        if (isUnlocked) {
-          tile.classList.remove('locked');
-          // Remove lock icon if present
-          const lockEl = tile.querySelector('.lock-icon');
-          if (lockEl) lockEl.remove();
-          actionEl.innerHTML = `<span class="app-tile__open">Open →</span>`;
-
-          // Add TRIAL badge if user is in a trial period
-          if (inTrial && !currentUser.billing_bypass) {
-            const badge = document.createElement('span');
-            badge.className = 'trial-badge';
-            badge.textContent = daysLeft <= 3 ? `${daysLeft}D LEFT` : 'TRIAL';
-            tile.appendChild(badge);
-          }
+      let planLabel = '—';
+      try {
+        const snap = await firebase.firestore().collection('users').doc(user.uid).get();
+        const data = snap.exists ? snap.data() : {};
+        if (data.billing_bypass === true || data.role === 'developer') {
+          unlockedApps = APPS.map(a => a.id);
+          planLabel = 'All-Access';
+        } else if (Array.isArray(data.apps) && data.apps.length) {
+          unlockedApps = data.apps;
+          planLabel = TIER_LABEL[data.tier] || 'Custom';
         } else {
-          tile.classList.add('locked');
-          // Add lock icon if not already there (inside the top section)
-          if (!tile.querySelector('.lock-icon')) {
-            const lock = document.createElement('span');
-            lock.className = 'lock-icon';
-            lock.textContent = '🔒';
-            const topEl = tile.querySelector('.app-tile__top');
-            if (topEl) topEl.appendChild(lock);
-            else tile.prepend(lock);
-          }
-          actionEl.innerHTML = `<span class="app-tile__unlock">Unlock →</span>`;
+          // map old tier names onto the new 3-tier model where possible
+          const t = data.tier;
+          if (t === 'all') { unlockedApps = TIER_APPS.all; planLabel = 'All-Access'; }
+          else if (t === 'trio' || t === 'medium') { unlockedApps = TIER_APPS.medium; planLabel = 'Medium'; }
+          else { unlockedApps = TIER_APPS.free; planLabel = 'Free'; }
+        }
+      } catch (err) {
+        console.error('[MPS Unified] entitlement lookup failed:', err);
+        unlockedApps = APPS.map(a => a.id);  // fail open — each app still self-guards
+      }
+
+      renderUser(user.displayName || user.email, user.email, user.photoURL, planLabel);
+      refreshTabLocks();
+    });
+
+    /* ── Mark locked tabs + re-pick a valid starting tab ──── */
+    function refreshTabLocks() {
+      APPS.forEach(app => {
+        const tab = document.getElementById('tab-' + app.id);
+        if (!tab) return;
+        const locked = !unlockedApps.includes(app.id);
+        tab.classList.toggle('locked', locked);
+        tab.querySelector('.shell-tab__lock')?.remove();
+        if (locked) {
+          const lk = document.createElement('span');
+          lk.className = 'shell-tab__lock';
+          lk.textContent = '🔒';
+          tab.appendChild(lk);
         }
       });
 
-      // Re-render trial banner whenever tiles re-render
-      renderTrialBanner();
-    }
-
-    /* ── PWA Install Banner ────────────────────────────────── */
-    let _installPrompt = null;
-
-    // Capture the browser's install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      _installPrompt = e;
-      // Only show if NOT already running standalone
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-        || window.navigator.standalone === true;
-      if (!isStandalone) {
-        document.getElementById('install-banner').classList.remove('hidden');
-      }
-    });
-
-    // Hide banner if already installed
-    window.addEventListener('appinstalled', () => {
-      document.getElementById('install-banner').classList.add('hidden');
-      _installPrompt = null;
-    });
-
-    function triggerInstall() {
-      if (_installPrompt) {
-        _installPrompt.prompt();
-        _installPrompt.userChoice.then(() => {
-          _installPrompt = null;
-          document.getElementById('install-banner').classList.add('hidden');
-        });
-      } else {
-        // iOS fallback — no beforeinstallprompt, give manual instructions
-        showToast('On iPhone: tap Share → "Add to Home Screen"');
+      if (!activeId || !unlockedApps.includes(activeId)) {
+        const firstOpen = APPS.find(a => unlockedApps.includes(a.id));
+        selectTab(firstOpen ? firstOpen.id : APPS[0].id);
       }
     }
 
-    /* ── Smooth navigation ─────────────────────────────────── */
-    function mpsNavigate(url) {
-      const fade = document.getElementById('mps-nav-fade');
-      fade.classList.add('active');
-      setTimeout(function() { window.location.href = url; }, 200);
-    }
-
-    /* ── Open App ──────────────────────────────────────────── */
-    function openApp(appId) {
-      const tier = devPreviewTier || currentUser.tier;
-      const unlockedApps = currentUser.billing_bypass
-        ? APPS.map(a => a.id)
-        : (TIER_APPS[tier] || []);
-
-      if (unlockedApps.includes(appId)) {
-        const app = APPS.find(a => a.id === appId);
-        if (app) mpsNavigate(app.path);
-      } else {
-        openUpgradeSheet(appId);
-      }
-    }
-
-    /* ── Upgrade Sheet ─────────────────────────────────────── */
-    function openUpgradeSheet(appId) {
-      selectedUpgradeApp = appId;
-      const app = APPS.find(a => a.id === appId);
-      const tier = currentUser.tier;
-
-      document.getElementById('upgrade-title').textContent = `UNLOCK ${app ? app.name : 'APP'}`;
-
-      const tierLabel = {
-        none: 'Free — $0/mo', single: 'Single — $5.99/mo', duo: 'Duo — $9.99/mo',
-        trio: 'Trio — $14.99/mo', all: 'All-Access — $21.99/mo'
-      };
-      document.getElementById('current-plan-display').textContent = tierLabel[tier] || 'Free';
-
-      // Build upgrade options
-      const options = document.getElementById('upgrade-options');
-      options.innerHTML = `
-        <div class="upgrade-option" onclick="selectUpgradePlan('duo')">
-          <div>
-            <div class="upgrade-option__label">Add this app</div>
-            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">Upgrade to Duo · 7 days free</div>
-          </div>
-          <div class="upgrade-option__price">+$4/mo</div>
-        </div>
-        <div class="upgrade-option upgrade-option--featured" onclick="selectUpgradePlan('all')">
-          <div>
-            <div class="upgrade-option__label">
-              Go All-Access
-              <span class="upgrade-option__badge">Best Value</span>
-            </div>
-            <div style="font-size:0.72rem;color:var(--text-faint);margin-top:2px">All 5 apps · 7 days free</div>
-          </div>
-          <div class="upgrade-option__price">$21.99/mo</div>
-        </div>
-      `;
-
-      document.getElementById('upgrade-overlay').classList.add('open');
-    }
-
-    let selectedPlan = 'all';
-    function selectUpgradePlan(plan) {
-      selectedPlan = plan;
-      document.querySelectorAll('.upgrade-option').forEach(el => el.style.borderColor = '');
-      event.currentTarget.style.borderColor = 'var(--ns-yellow)';
-    }
-
-    function closeUpgradeSheet(event) {
-      if (event && event.target !== document.getElementById('upgrade-overlay') &&
-          !event.target.classList.contains('upgrade-sheet__close')) {
-        return;
-      }
-      document.getElementById('upgrade-overlay').classList.remove('open');
-    }
-
-    function startCheckout() {
-      document.getElementById('upgrade-overlay').classList.remove('open');
-      if (typeof MPS_Billing !== 'undefined') {
-        MPS_Billing.startStripeCheckout(selectedPlan, 'monthly');
-      } else {
-        showToast('Billing not available — try again.');
-      }
-    }
-
-    /* ── User Menu ─────────────────────────────────────────── */
-    document.getElementById('user-menu-trigger').addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.getElementById('user-dropdown').classList.toggle('open');
-    });
-
-    document.addEventListener('click', () => {
-      document.getElementById('user-dropdown').classList.remove('open');
-    });
-
-    function goToBilling() {
-      window.location.href = '/billing.html';
-    }
-
-    function signOutUser() {
-      firebase.auth().signOut().then(function() {
-        window.location.href = '/auth.html';
-      }).catch(function() {
-        showToast('Sign-out failed. Try again.');
-      });
-    }
-
-    /* ── Dev Panel ─────────────────────────────────────────── */
-    function toggleDevPanel() {
-      document.getElementById('dev-panel').classList.toggle('open');
-    }
-
-    function previewTier(tier) {
-      devPreviewTier = tier === 'all' ? null : tier;
-
-      // Update active button
-      document.querySelectorAll('.dev-tier-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tier === tier);
-      });
-
-      renderTiles();
-      showToast(`DEV: Previewing ${tier === 'all' ? 'All-Access' : tier} tier`);
-    }
-
-    /* ── Toast ─────────────────────────────────────────────── */
-    let toastTimeout = null;
-    function showToast(msg) {
-      const toast = document.getElementById('hub-toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
-    }
+    /* ── Boot ─────────────────────────────────────────────── */
+    buildTabs();
+    selectTab('workout');   // optimistic first paint; auth handler corrects if needed
   </script>
 
 </body>
