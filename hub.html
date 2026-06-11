@@ -308,7 +308,12 @@
                  it), and give all five the SAME gap from the top. */
               let css = 'a[href="/hub.html"]{display:none!important}'
                       + '#mps-hub-nav,#hub-nav,.nav-title{display:none!important}'
-                      + 'body{padding-top:18px!important}';
+                      /* Hide each tracker's full-screen MPS brand splash so it feels
+                         like ONE app — the unified top bar already brands MPS.
+                         Workout=.brand-block, Expenses=.mps-header, React apps=parent of .mps-logo-rsp */
+                      + '.brand-block,.mps-header{display:none!important}'
+                      + '*:has(> .mps-logo-rsp){display:none!important}'
+                      + 'body{padding-top:14px!important}';
               if (app.id === 'journal') css += 'nav:first-of-type{display:none!important}';
               const s = d.createElement('style');
               s.textContent = css;
