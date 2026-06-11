@@ -19,154 +19,84 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js"></script>
+  <script src="/shared/firebase.js"></script>
 
   <style>
-    :root {
-      --shell-header-h: 56px;
-      --shell-tabs-h:   60px;
-    }
-
+    :root { --shell-header-h: 56px; --shell-tabs-h: 60px; }
     html, body { height: 100%; overflow: hidden; }
-
     body {
-      background:
-        radial-gradient(120% 80% at 50% -10%, #15130c 0%, #0b0b0b 48%, #070707 100%);
-      display: flex;
-      flex-direction: column;
-      min-height: 100dvh;
+      background: radial-gradient(120% 80% at 50% -10%, #15130c 0%, #0b0b0b 48%, #070707 100%);
+      display: flex; flex-direction: column; min-height: 100dvh;
     }
 
     /* ── Header (glass) ─────────────────────────────────────── */
     .shell-header {
-      flex: 0 0 auto;
-      height: var(--shell-header-h);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex: 0 0 auto; height: var(--shell-header-h);
+      display: flex; align-items: center; justify-content: space-between;
       padding: 0 var(--space-lg);
       background: linear-gradient(180deg, rgba(24,22,16,0.96) 0%, rgba(10,10,10,0.96) 100%);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        inset 0 -1px 0 rgba(201,160,32,0.28),
-        0 6px 18px rgba(0,0,0,0.5);
-      position: relative;
-      z-index: 30;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(201,160,32,0.28), 0 6px 18px rgba(0,0,0,0.5);
+      position: relative; z-index: 30;
     }
-
-    .shell-logo { display: flex; align-items: baseline; gap: 9px; }
+    .shell-logo { display: flex; align-items: baseline; gap: 9px; cursor: pointer; }
     .logo-mps {
-      font-family: 'Saira Condensed', 'Bebas Neue', sans-serif;
-      font-style: italic;
-      font-weight: 900;
-      font-size: 2rem;
-      letter-spacing: 0.04em;
-      line-height: 1;
+      font-family: 'Saira Condensed', 'Bebas Neue', sans-serif; font-style: italic; font-weight: 900;
+      font-size: 2rem; letter-spacing: 0.04em; line-height: 1;
       background: linear-gradient(180deg, #ffffff 0%, #f6e9c2 26%, #C9A020 60%, #8a6d15 88%, #5c4708 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6));
     }
-    .shell-logo .bar {
-      align-self: center;
-      width: 22px; height: 2px;
-      background: linear-gradient(90deg, rgba(201,160,32,0.2), #C9A020 50%, rgba(192,192,192,0.7));
-    }
-    .shell-logo small {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.5rem;
-      letter-spacing: 0.32em;
-      text-transform: uppercase;
-      color: #b9b09a;
-    }
+    .shell-logo .bar { align-self: center; width: 22px; height: 2px; background: linear-gradient(90deg, rgba(201,160,32,0.2), #C9A020 50%, rgba(192,192,192,0.7)); }
+    .shell-logo small { font-family: 'Inter', sans-serif; font-size: 0.5rem; letter-spacing: 0.32em; text-transform: uppercase; color: #b9b09a; }
 
     .shell-user { display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
     .shell-avatar {
-      width: 33px; height: 33px;
-      border-radius: 50%;
+      width: 33px; height: 33px; border-radius: 50%;
       background: radial-gradient(circle at 35% 30%, #232323, #121212);
       border: 1px solid rgba(201,160,32,0.45);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 6px rgba(0,0,0,0.5);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.72rem; font-weight: 700;
-      color: var(--ns-yellow);
-      overflow: hidden; flex-shrink: 0;
+      font-size: 0.72rem; font-weight: 700; color: var(--ns-yellow); overflow: hidden; flex-shrink: 0;
     }
     .shell-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
     .shell-dropdown {
-      position: absolute; top: calc(100% + 8px); right: 0;
-      background: #161616;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: var(--radius-md);
-      min-width: 184px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
-      z-index: 40; display: none; overflow: hidden;
+      position: absolute; top: calc(100% + 8px); right: 0; background: #161616;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); min-width: 184px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6); z-index: 40; display: none; overflow: hidden;
     }
     .shell-dropdown.open { display: block; }
     .shell-dropdown__name { padding: 12px 16px 6px; font-size: 0.85rem; color: var(--text-primary); font-weight: 600; }
     .shell-dropdown__plan { padding: 0 16px 10px; font-size: 0.72rem; color: var(--text-dim); border-bottom: 1px solid var(--border-subtle); }
     .shell-dropdown__plan span { color: var(--ns-yellow); }
-    .shell-dropdown__item {
-      display: block; width: 100%; padding: 11px 16px;
-      background: none; border: none; text-align: left;
-      color: var(--text-primary); font-size: 0.85rem; font-family: inherit;
-      cursor: pointer; transition: background var(--transition);
-    }
+    .shell-dropdown__item { display: block; width: 100%; padding: 11px 16px; background: none; border: none; text-align: left; color: var(--text-primary); font-size: 0.85rem; font-family: inherit; cursor: pointer; transition: background var(--transition); }
     .shell-dropdown__item:hover { background: var(--card-bg); }
     .shell-dropdown__item--danger { color: #ef4444; }
 
     /* ── Tabs (glass chips) ─────────────────────────────────── */
     .shell-tabs {
-      flex: 0 0 auto;
-      height: var(--shell-tabs-h);
-      display: flex; gap: 9px;
-      padding: 9px var(--space-lg);
+      flex: 0 0 auto; height: var(--shell-tabs-h); display: flex; gap: 9px; padding: 9px var(--space-lg);
       overflow-x: auto; overflow-y: hidden;
       background: linear-gradient(180deg, rgba(14,14,14,0.9), rgba(8,8,8,0.9));
       border-bottom: 1px solid rgba(255,255,255,0.05);
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      position: relative; z-index: 20;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none; position: relative; z-index: 20;
     }
     .shell-tabs::-webkit-scrollbar { display: none; }
-
     .shell-tab {
-      flex: 0 0 auto;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 4px; min-width: 78px;
-      padding: 6px 15px;
+      flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; min-width: 78px; padding: 6px 15px;
       background: linear-gradient(180deg, rgba(46,46,46,0.5) 0%, rgba(18,18,18,0.5) 100%);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.09); border-radius: var(--radius-md);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.35);
-      color: var(--text-dim);
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 0.95rem; letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer; white-space: nowrap;
-      transition: all var(--transition);
-      position: relative;
+      color: var(--text-dim); font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.1em;
+      text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: all var(--transition); position: relative;
     }
-    .shell-tab__dot {
-      width: 22px; height: 3px; border-radius: 2px;
-      background: var(--accent, #888);
-      opacity: 0.5;
-      box-shadow: 0 0 6px var(--accent, transparent);
-      transition: opacity var(--transition);
-    }
+    .shell-tab__dot { width: 22px; height: 3px; border-radius: 2px; background: var(--accent, #888); opacity: 0.5; box-shadow: 0 0 6px var(--accent, transparent); transition: opacity var(--transition); }
     .shell-tab:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
     .shell-tab.active {
-      color: #fff;
-      border-color: color-mix(in srgb, var(--accent, #C9A020) 55%, rgba(255,255,255,0.2));
-      background:
-        linear-gradient(180deg, color-mix(in srgb, var(--accent, #C9A020) 20%, rgba(34,34,34,0.6)) 0%, rgba(12,12,12,0.65) 100%);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.14),
-        0 0 16px color-mix(in srgb, var(--accent, #C9A020) 28%, transparent);
+      color: #fff; border-color: color-mix(in srgb, var(--accent, #C9A020) 55%, rgba(255,255,255,0.2));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent, #C9A020) 20%, rgba(34,34,34,0.6)) 0%, rgba(12,12,12,0.65) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 0 16px color-mix(in srgb, var(--accent, #C9A020) 28%, transparent);
     }
     .shell-tab.active .shell-tab__dot { opacity: 1; }
     .shell-tab__lock { font-size: 0.6rem; opacity: 0.5; }
@@ -174,59 +104,54 @@
 
     /* ── Stage ──────────────────────────────────────────────── */
     .shell-stage { flex: 1 1 auto; position: relative; background: var(--ns-black); overflow: hidden; }
-    .shell-frame {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      border: 0; background: var(--ns-black);
-      opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
-    }
+    .shell-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--ns-black); opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
     .shell-frame.active { opacity: 1; pointer-events: auto; }
-
     .shell-loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ns-black); z-index: 5; }
     .shell-loader.hidden { display: none; }
 
-    .shell-locked-panel {
-      position: absolute; inset: 0; display: none;
-      flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: var(--space-2xl); gap: 14px; z-index: 6;
+    /* ── Home dashboard ─────────────────────────────────────── */
+    .home-view {
+      position: absolute; inset: 0; overflow-y: auto; display: none;
+      padding: 26px var(--space-lg) 40px;
+      background: radial-gradient(130% 70% at 50% -5%, #14120b 0%, #0a0a0a 55%, #060606 100%);
     }
+    .home-view.active { display: block; }
+    .home-greeting { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: 0.04em; color: #fff; }
+    .home-date { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+    .home-section-label { font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; letter-spacing: 0.22em; color: #8a8472; margin: 24px 2px 12px; }
+
+    .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .metric-card {
+      position: relative; overflow: hidden; cursor: pointer;
+      background: linear-gradient(180deg, rgba(28,28,28,0.7) 0%, rgba(13,13,13,0.7) 100%);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 22px rgba(0,0,0,0.4);
+      padding: 16px 16px 14px; min-height: 116px; transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+    .metric-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+    .metric-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 50%, rgba(255,255,255,0.1)); }
+    .metric-card__name { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.14em; color: #cfcfcf; display: flex; align-items: center; gap: 7px; }
+    .metric-card__name .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .metric-card__value { font-family: 'Saira Condensed', 'Bebas Neue', sans-serif; font-weight: 700; font-size: 2.4rem; line-height: 1; color: #fff; margin-top: 12px; }
+    .metric-card__label { font-size: 0.72rem; color: var(--text-dim); margin-top: 3px; }
+    .metric-card__sub { font-size: 0.68rem; color: #6f6f6f; margin-top: 8px; }
+    .metric-card__open { position: absolute; right: 12px; bottom: 12px; color: #555; font-size: 0.7rem; }
+
+    .shell-locked-panel { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--space-2xl); gap: 14px; z-index: 6; }
     .shell-locked-panel.show { display: flex; }
     .shell-locked-panel h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--ns-white); letter-spacing: 0.04em; }
     .shell-locked-panel p { color: var(--text-dim); max-width: 320px; font-size: 0.9rem; }
 
-    /* ── Tier capability banner ─────────────────────────────── */
-    .tier-banner {
-      flex: 0 0 auto; display: none; align-items: center; gap: 10px;
-      padding: 8px var(--space-lg);
-      background: linear-gradient(180deg, rgba(201,160,32,0.10), rgba(201,160,32,0.04));
-      border-bottom: 1px solid rgba(201,160,32,0.2);
-      font-size: 0.72rem; color: var(--text-dim);
-    }
+    /* ── Tier banner + tester ───────────────────────────────── */
+    .tier-banner { flex: 0 0 auto; display: none; align-items: center; gap: 10px; padding: 8px var(--space-lg); background: linear-gradient(180deg, rgba(201,160,32,0.10), rgba(201,160,32,0.04)); border-bottom: 1px solid rgba(201,160,32,0.2); font-size: 0.72rem; color: var(--text-dim); }
     .tier-banner.show { display: flex; }
-    .tier-banner__pill {
-      font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em;
-      color: var(--ns-yellow); border: 1px solid rgba(201,160,32,0.45);
-      border-radius: 4px; padding: 1px 9px; flex-shrink: 0;
-    }
+    .tier-banner__pill { font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em; color: var(--ns-yellow); border: 1px solid rgba(201,160,32,0.45); border-radius: 4px; padding: 1px 9px; flex-shrink: 0; }
     .tier-banner__text b { color: var(--text-primary); font-weight: 600; }
-
-    /* ── Tier Tester (dev only) ─────────────────────────────── */
-    .tier-tester {
-      position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
-      z-index: 50; display: none; flex-direction: column; align-items: flex-start; gap: 6px;
-      background: rgba(12,12,12,0.94);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      padding: 9px 11px; border: 1px solid rgba(201,160,32,0.3); border-radius: var(--radius-md);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.55);
-    }
+    .tier-tester { position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 50; display: none; flex-direction: column; align-items: flex-start; gap: 6px; background: rgba(12,12,12,0.94); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 9px 11px; border: 1px solid rgba(201,160,32,0.3); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.55); }
     .tier-tester.show { display: flex; }
     .tier-tester__label { font-size: 0.56rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-faint); }
     .tier-tester__row { display: flex; gap: 6px; }
-    .tier-opt {
-      background: linear-gradient(180deg, #222, #161616);
-      border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim);
-      font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase;
-      padding: 5px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all var(--transition);
-    }
+    .tier-opt { background: linear-gradient(180deg, #222, #161616); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all var(--transition); }
     .tier-opt:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
     .tier-opt.active { color: var(--ns-yellow); border-color: var(--ns-yellow); background: linear-gradient(180deg, rgba(201,160,32,0.16), rgba(201,160,32,0.04)); }
 
@@ -239,10 +164,9 @@
 <body>
 
   <header class="shell-header">
-    <div class="shell-logo">
+    <div class="shell-logo" onclick="selectTab('home')">
       <span class="logo-mps">MPS</span><span class="bar"></span><small>Modular Performance</small>
     </div>
-
     <div class="shell-user" id="user-trigger">
       <div class="shell-avatar" id="user-avatar">JH</div>
       <div class="shell-dropdown" id="user-dropdown">
@@ -260,6 +184,14 @@
 
   <main class="shell-stage" id="stage">
     <div class="shell-loader" id="stage-loader"><div class="spinner"></div></div>
+
+    <section class="home-view" id="home-view">
+      <div class="home-greeting" id="home-greeting">Welcome back</div>
+      <div class="home-date" id="home-date"></div>
+      <div class="home-section-label">Your performance · at a glance</div>
+      <div class="home-grid" id="home-grid"></div>
+    </section>
+
     <div class="shell-locked-panel" id="locked-panel">
       <h2 id="locked-title">App Locked</h2>
       <p>This app isn’t part of your current plan. Add it from your plan page to unlock it here.</p>
@@ -286,12 +218,7 @@
       { id: 'expenses', label: 'Expenses', path: '/apps/expenses/', accent: '#16a34a' },
       { id: 'journal',  label: 'Journal',  path: '/apps/journal/',  accent: '#c9a86b' }
     ];
-
-    const TIER_APPS = {
-      free:   ['workout', 'habits', 'sleep', 'expenses', 'journal'],
-      medium: ['workout', 'habits', 'sleep', 'expenses', 'journal'],
-      all:    ['workout', 'habits', 'sleep', 'expenses', 'journal']
-    };
+    const NAV = [{ id: 'home', label: 'Home', accent: '#C9A020' }].concat(APPS);
 
     const TIER_FEATURES = {
       workout:  { free:'1 workout/day · last 7 days · no stats', medium:'Unlimited logging · 60-day history · basic stats', all:'Unlimited · full history · advanced stats + program templates' },
@@ -300,7 +227,6 @@
       expenses: { free:'View-only · no logging', medium:'Full logging · tags · monthly reports · 60 days', all:'Advanced reports · budget alerts · spending insights' },
       journal:  { free:'3 entries max · no search', medium:'Unlimited · basic search · all history', all:'Unlimited · full search + tags · monthly summaries' }
     };
-
     const TIER_LABEL = { free: 'Free', medium: 'Medium', all: 'All-Access' };
     const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
@@ -309,51 +235,60 @@
     let activeId = null;
     const loadedFrames = {};
 
+    /* ── Date helpers (local) ─────────────────────────────── */
+    function ymd(d) { const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
+    function daysAgo(n) { const d=new Date(); d.setDate(d.getDate()-n); return d; }
+
+    /* ── Tabs ─────────────────────────────────────────────── */
     function buildTabs() {
       const strip = document.getElementById('tab-strip');
       strip.innerHTML = '';
-      APPS.forEach(app => {
+      NAV.forEach(item => {
         const tab = document.createElement('button');
         tab.className = 'shell-tab';
-        tab.id = 'tab-' + app.id;
-        tab.style.setProperty('--accent', app.accent);
-        tab.innerHTML = '<span class="shell-tab__dot"></span><span>' + app.label + '</span>';
-        tab.addEventListener('click', () => selectTab(app.id));
+        tab.id = 'tab-' + item.id;
+        tab.style.setProperty('--accent', item.accent);
+        tab.innerHTML = '<span class="shell-tab__dot"></span><span>' + item.label + '</span>';
+        tab.addEventListener('click', () => selectTab(item.id));
         strip.appendChild(tab);
       });
     }
 
     function selectTab(id) {
-      const app = APPS.find(a => a.id === id);
-      if (!app) return;
       activeId = id;
-      updateTierBanner();
-
-      document.querySelectorAll('.shell-tab').forEach(t =>
-        t.classList.toggle('active', t.id === 'tab-' + id));
-
+      document.querySelectorAll('.shell-tab').forEach(t => t.classList.toggle('active', t.id === 'tab-' + id));
+      const homeView = document.getElementById('home-view');
       const lockedPanel = document.getElementById('locked-panel');
       document.querySelectorAll('.shell-frame').forEach(f => f.classList.remove('active'));
+      lockedPanel.classList.remove('show');
+      document.getElementById('stage-loader').classList.add('hidden');
 
+      if (id === 'home') {
+        homeView.classList.add('active');
+        updateTierBanner();
+        loadDashboard();
+        return;
+      }
+      homeView.classList.remove('active');
+      updateTierBanner();
+
+      const app = APPS.find(a => a.id === id);
+      if (!app) return;
       if (!unlockedApps.includes(id)) {
         document.getElementById('locked-title').textContent = app.label.toUpperCase() + ' Locked';
         lockedPanel.classList.add('show');
-        document.getElementById('stage-loader').classList.add('hidden');
         return;
       }
-      lockedPanel.classList.remove('show');
 
       let frame = document.getElementById('frame-' + id);
       if (!frame) {
+        document.getElementById('stage-loader').classList.remove('hidden');
         frame = document.createElement('iframe');
         frame.className = 'shell-frame';
         frame.id = 'frame-' + id;
         frame.setAttribute('title', app.label);
         frame.setAttribute('loading', 'lazy');
         frame.addEventListener('load', () => {
-          /* Hide each app's own "← Hub" back-link: inside the unified app you
-             switch with the tabs, and that link would otherwise load the hub
-             INSIDE this tab (the duplication bug). */
           try {
             const d = frame.contentDocument;
             if (d) {
@@ -369,102 +304,152 @@
         loadedFrames[id] = true;
       }
       frame.classList.add('active');
-      if (loadedFrames[id] && frame.contentDocument) {
-        document.getElementById('stage-loader').classList.add('hidden');
-      }
     }
 
-    document.getElementById('user-trigger').addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.getElementById('user-dropdown').classList.toggle('open');
-    });
-    document.addEventListener('click', () =>
-      document.getElementById('user-dropdown').classList.remove('open'));
-
-    function signOutUser() {
-      firebase.auth().signOut()
-        .then(() => location.href = '/auth.html')
-        .catch(() => showToast('Sign-out failed. Try again.'));
+    /* ── Dashboard (live metrics from all trackers) ───────── */
+    let dashLoaded = false;
+    function setCard(id, value, label, sub) {
+      const v = document.getElementById('m-' + id + '-value');
+      const l = document.getElementById('m-' + id + '-label');
+      const s = document.getElementById('m-' + id + '-sub');
+      if (v) v.textContent = value;
+      if (l) l.textContent = label;
+      if (s) s.textContent = sub || '';
     }
 
+    function buildDashCards() {
+      const grid = document.getElementById('home-grid');
+      grid.innerHTML = '';
+      APPS.forEach(app => {
+        const c = document.createElement('div');
+        c.className = 'metric-card';
+        c.style.setProperty('--accent', app.accent);
+        c.onclick = () => selectTab(app.id);
+        c.innerHTML =
+          '<div class="metric-card__name"><span class="pip"></span>' + app.label.toUpperCase() + '</div>' +
+          '<div class="metric-card__value" id="m-' + app.id + '-value">—</div>' +
+          '<div class="metric-card__label" id="m-' + app.id + '-label">loading…</div>' +
+          '<div class="metric-card__sub" id="m-' + app.id + '-sub"></div>' +
+          '<div class="metric-card__open">›</div>';
+        grid.appendChild(c);
+      });
+    }
+
+    async function loadDashboard() {
+      const greet = document.getElementById('home-greeting');
+      const dateEl = document.getElementById('home-date');
+      const hour = new Date().getHours();
+      const part = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+      const name = (firebase.auth().currentUser?.displayName || 'Jeff').split(' ')[0];
+      greet.textContent = 'Good ' + part + ', ' + name;
+      dateEl.textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+
+      const uid = firebase.auth().currentUser?.uid;
+      if (!uid || typeof MPS_DB === 'undefined') return;
+      if (dashLoaded) return;          /* compute once per session */
+      dashLoaded = true;
+
+      const today = new Date();
+      const todayKey = ymd(today);
+
+      try {
+        const days = await MPS_DB.getWorkoutHistory(uid, ymd(daysAgo(29)), todayKey);
+        const set = new Set(days.map(d => d.date || d.id));
+        let week = 0; for (let i=0;i<7;i++) if (set.has(ymd(daysAgo(i)))) week++;
+        let streak = 0; for (let i=0;;i++) { if (set.has(ymd(daysAgo(i)))) streak++; else break; }
+        setCard('workout', week + '/7', 'workouts this week', streak + ' day streak');
+      } catch (e) { setCard('workout', '—', 'this week', ''); }
+
+      try {
+        const logs = await MPS_DB.getHabitHistory(uid, 7);
+        const todayLog = logs.find(l => l.date === todayKey);
+        const done = todayLog ? Object.values(todayLog.habits || {}).filter(Boolean).length : 0;
+        setCard('habits', done, 'done today', logs.length + '/7 days logged');
+      } catch (e) { setCard('habits', '—', 'today', ''); }
+
+      try {
+        const logs = await MPS_DB.getSleepHistory(uid, 7);
+        const latest = logs[0];
+        if (latest && latest.energy != null) setCard('sleep', latest.energy + '/10', 'last energy', 'soreness ' + (latest.soreness ?? '—') + '/10');
+        else setCard('sleep', '—', 'no logs yet', '');
+      } catch (e) { setCard('sleep', '—', 'recovery', ''); }
+
+      try {
+        const monthStart = ymd(new Date(today.getFullYear(), today.getMonth(), 1));
+        const logs = await MPS_DB.getExpenseHistory(uid, monthStart, todayKey);
+        let total = 0;
+        logs.forEach(l => (l.transactions || []).forEach(t => { const a = Number(t.amount); if (!isNaN(a)) total += a; }));
+        setCard('expenses', '$' + Math.round(total).toLocaleString(), 'spent this month', '');
+      } catch (e) { setCard('expenses', '—', 'this month', ''); }
+
+      try {
+        const entries = await MPS_DB.getJournalEntries(uid, 60);
+        const set = new Set(entries.map(e => e.date));
+        let streak = 0; for (let i=0;;i++) { if (set.has(ymd(daysAgo(i)))) streak++; else break; }
+        const mp = todayKey.slice(0,7);
+        const monthCount = entries.filter(e => (e.date || '').startsWith(mp)).length;
+        setCard('journal', streak, 'day streak', monthCount + ' entries this month');
+      } catch (e) { setCard('journal', '—', 'journal', ''); }
+    }
+
+    /* ── User menu ────────────────────────────────────────── */
+    document.getElementById('user-trigger').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('user-dropdown').classList.toggle('open'); });
+    document.addEventListener('click', () => document.getElementById('user-dropdown').classList.remove('open'));
+    function signOutUser() { firebase.auth().signOut().then(() => location.href = '/auth.html').catch(() => showToast('Sign-out failed. Try again.')); }
     function renderUser(name, email, photoURL, planLabel) {
       document.getElementById('dd-name').textContent = name || 'User';
       document.getElementById('dd-plan').textContent = planLabel || '—';
       const avatar = document.getElementById('user-avatar');
-      if (photoURL) {
-        avatar.innerHTML = '<img src="' + photoURL + '" alt="">';
-      } else {
-        const initials = (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-        avatar.textContent = initials;
-      }
+      if (photoURL) avatar.innerHTML = '<img src="' + photoURL + '" alt="">';
+      else avatar.textContent = (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
 
     let toastTimer = null;
-    function showToast(msg) {
-      const t = document.getElementById('shell-toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      if (toastTimer) clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-    }
+    function showToast(msg) { const t = document.getElementById('shell-toast'); t.textContent = msg; t.classList.add('show'); if (toastTimer) clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000); }
 
     /* ── Tier preview (dev) ───────────────────────────────── */
     function previewTier(tier) {
       previewTierMode = tier;
-      document.querySelectorAll('.tier-opt').forEach(b =>
-        b.classList.toggle('active', b.dataset.tier === tier));
+      document.querySelectorAll('.tier-opt').forEach(b => b.classList.toggle('active', b.dataset.tier === tier));
       document.getElementById('dd-plan').textContent = TIER_LABEL[tier];
       updateTierBanner();
       showToast('Previewing ' + TIER_LABEL[tier] + ' tier');
     }
-
     function updateTierBanner() {
       const banner = document.getElementById('tier-banner');
       const tester = document.getElementById('tier-tester');
-      if (!banner || !tester || !tester.classList.contains('show')) {
-        if (banner) banner.classList.remove('show');
-        return;
-      }
+      if (!banner || !tester || !tester.classList.contains('show') || activeId === 'home') { if (banner) banner.classList.remove('show'); return; }
       const app = APPS.find(a => a.id === activeId);
       if (!app) { banner.classList.remove('show'); return; }
       const feats = (TIER_FEATURES[app.id] || {})[previewTierMode] || '';
       const themeNote = previewTierMode === 'all' ? ' · Colorful theme available' : ' · Black/gray theme';
-      banner.innerHTML =
-        '<span class="tier-banner__pill">' + TIER_LABEL[previewTierMode].toUpperCase() + '</span>' +
-        '<span class="tier-banner__text"><b>' + app.label + ':</b> ' + feats + themeNote + '</span>';
+      banner.innerHTML = '<span class="tier-banner__pill">' + TIER_LABEL[previewTierMode].toUpperCase() + '</span><span class="tier-banner__text"><b>' + app.label + ':</b> ' + feats + themeNote + '</span>';
       banner.classList.add('show');
     }
 
+    /* ── Auth ─────────────────────────────────────────────── */
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) { location.replace('/auth.html'); return; }
-
       if (DEV_EMAILS.includes(user.email)) {
         unlockedApps = APPS.map(a => a.id);
         renderUser(user.displayName || 'Jeff', user.email, user.photoURL, 'All-Access');
         refreshTabLocks();
         document.getElementById('tier-tester').classList.add('show');
         previewTier('all');
+        if (activeId === 'home') loadDashboard();
         return;
       }
-
       let planLabel = '—';
       try {
         const snap = await firebase.firestore().collection('users').doc(user.uid).get();
         const data = snap.exists ? snap.data() : {};
-        if (data.billing_bypass === true || data.role === 'developer') {
-          unlockedApps = APPS.map(a => a.id); planLabel = 'All-Access';
-        } else if (Array.isArray(data.apps) && data.apps.length) {
-          unlockedApps = data.apps; planLabel = TIER_LABEL[data.tier] || 'Custom';
-        } else {
-          unlockedApps = TIER_APPS[data.tier] || TIER_APPS.free;
-          planLabel = TIER_LABEL[data.tier] || 'Free';
-        }
-      } catch (err) {
-        console.error('[MPS Unified] entitlement lookup failed:', err);
-        unlockedApps = APPS.map(a => a.id);
-      }
+        if (data.billing_bypass === true || data.role === 'developer') { unlockedApps = APPS.map(a => a.id); planLabel = 'All-Access'; }
+        else if (Array.isArray(data.apps) && data.apps.length) { unlockedApps = data.apps; planLabel = TIER_LABEL[data.tier] || 'Custom'; }
+        else { unlockedApps = APPS.map(a => a.id); planLabel = TIER_LABEL[data.tier] || 'Free'; }
+      } catch (err) { unlockedApps = APPS.map(a => a.id); }
       renderUser(user.displayName || user.email, user.email, user.photoURL, planLabel);
       refreshTabLocks();
+      if (activeId === 'home') loadDashboard();
     });
 
     function refreshTabLocks() {
@@ -474,21 +459,14 @@
         const locked = !unlockedApps.includes(app.id);
         tab.classList.toggle('locked', locked);
         tab.querySelector('.shell-tab__lock')?.remove();
-        if (locked) {
-          const lk = document.createElement('span');
-          lk.className = 'shell-tab__lock';
-          lk.textContent = '🔒';
-          tab.appendChild(lk);
-        }
+        if (locked) { const lk = document.createElement('span'); lk.className = 'shell-tab__lock'; lk.textContent = '🔒'; tab.appendChild(lk); }
       });
-      if (!activeId || !unlockedApps.includes(activeId)) {
-        const firstOpen = APPS.find(a => unlockedApps.includes(a.id));
-        selectTab(firstOpen ? firstOpen.id : APPS[0].id);
-      }
     }
 
+    /* ── Boot ─────────────────────────────────────────────── */
     buildTabs();
-    selectTab('workout');
+    buildDashCards();
+    selectTab('home');
   </script>
 
 </body>
