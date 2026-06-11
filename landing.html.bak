@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<!-- MPS Landing v5 — tile-pill build -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#FFC107" />
+  <meta name="description" content="Every system. One platform. Built for the ones who don't quit. Track workouts, habits, sleep, expenses, and more." />
+  <title>Modular Performance — Every System. One Platform.</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Saira+Condensed:wght@700;900&family=Orbitron:wght@900&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="/shared/styles.css" />
+
+  <style>
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ns-black);
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ─────────────────────────────────────────────────── */
+    .landing-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: var(--z-dropdown);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px var(--space-xl);
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--ns-white);
+      letter-spacing: 0.08em;
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--ns-yellow); }
+    .nav-cta {
+      padding: 9px 20px;
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-decoration: none;
+    }
+    .nav-cta:hover { background: #ffd54f; box-shadow: var(--shadow-yellow); }
+
+    /* ── HERO ────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px var(--space-lg) var(--space-3xl);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Scanline effect */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(255,255,255,0.012) 3px,
+        rgba(255,255,255,0.012) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Floating geometric shapes */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .hero-shape {
+      position: absolute;
+      border: 1px solid rgba(255,193,7,0.08);
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      5%   { opacity: 1; }
+      95%  { opacity: 1; }
+      100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+    }
+
+    .hero-content { position: relative; z-index: 1; max-width: 700px; }
+
+    .hero-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--ns-yellow);
+      margin-bottom: var(--space-lg);
+    }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-size: clamp(5rem, 18vw, 12rem);
+      color: var(--ns-white);
+      line-height: 0.9;
+      letter-spacing: 0.04em;
+      margin-bottom: var(--space-lg);
+    }
+    .hero-headline span { color: var(--ns-yellow); }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--text-dim);
+      line-height: 1.5;
+      max-width: 500px;
+      margin: 0 auto var(--space-2xl);
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-btn-primary {
+      padding: 15px 32px;
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-decoration: none;
+    }
+    .hero-btn-primary:hover { background: #ffd54f; box-shadow: var(--shadow-yellow); transform: translateY(-2px); }
+
+    .hero-btn-ghost {
+      padding: 15px 32px;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-decoration: none;
+    }
+    .hero-btn-ghost:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
+
+    .hero-fine {
+      margin-top: var(--space-lg);
+      font-size: 0.72rem;
+      color: var(--text-faint);
+    }
+
+    /* ── SECTIONS SHARED ─────────────────────────────────────── */
+    .section {
+      padding: var(--space-3xl) var(--space-lg);
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--ns-yellow);
+      margin-bottom: var(--space-md);
+      text-align: center;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      color: var(--text-primary);
+      line-height: 1.1;
+      letter-spacing: 0.04em;
+      text-align: center;
+      margin-bottom: var(--space-xl);
+    }
+    .section-title span { color: var(--ns-yellow); }
+
+    /* ── PROBLEM SECTION ─────────────────────────────────────── */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-lg);
+      margin-top: var(--space-xl);
+    }
+    .problem-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-top: 2px solid rgba(220,38,38,0.4);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+    .problem-card__icon { font-size: 1.5rem; margin-bottom: 10px; }
+    .problem-card__text { font-size: 0.9rem; color: var(--text-dim); line-height: 1.5; }
+
+    /* ── APP SUITE SECTION ───────────────────────────────────── */
+    .suite-scroll {
+      display: flex;
+      gap: var(--space-md);
+      overflow-x: auto;
+      padding-bottom: var(--space-md);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-subtle) transparent;
+    }
+    .suite-scroll::-webkit-scrollbar { height: 4px; }
+    .suite-scroll::-webkit-scrollbar-track { background: transparent; }
+    .suite-scroll::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
+
+    /* Premium branded app tiles */
+    .suite-tile {
+      flex-shrink: 0;
+      width: 168px;
+      border-radius: 22px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      position: relative;
+    }
+    .suite-tile:hover { transform: translateY(-6px); }
+
+    .suite-tile::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 24px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.07);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .tile-header {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+    }
+
+    .tile-header::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      animation: tileShimmer 4.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes tileShimmer {
+      0%   { left: -100%; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { left: 160%; opacity: 0; }
+    }
+
+    .tile-mps {
+      font-family: 'Saira Condensed', 'Orbitron', 'Bebas Neue', sans-serif;
+      font-weight: 900;
+      font-style: italic;
+      font-size: 28px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 3px;
+      position: relative;
+      z-index: 1;
+    }
+    .tile-divider {
+      width: 80%;
+      height: 1px;
+      margin: 5px auto 5px;
+    }
+    .tile-system {
+      font-size: 6px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 2px;
+    }
+    .tile-name {
+      font-family: 'Bebas Neue', 'Saira Condensed', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+    .tile-desc {
+      font-size: 10.5px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.55);
+      position: relative;
+      z-index: 1;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .tile-pill {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      font-size: 10.5px;
+      line-height: 1.55;
+      color: rgba(255,255,255,0.58);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: left;
+    }
+
+    /* Workout — dark navy / icy blue */
+    .suite-tile[data-app="workout"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(74,179,244,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #0c1428 0%, #060a18 100%);
+      border: 1px solid rgba(74,179,244,0.50);
+      box-shadow: 0 0 28px rgba(74,179,244,0.14), inset 0 0 0 1px rgba(74,179,244,0.10);
+    }
+    .suite-tile[data-app="workout"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#c8e6ff 40%,#4ab3f4 75%,#2878c8 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(74,179,244,0.45));
+    }
+    .suite-tile[data-app="workout"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(74,179,244,0.7),transparent); }
+    .suite-tile[data-app="workout"] .tile-system  { color: rgba(74,179,244,0.70); }
+    .suite-tile[data-app="workout"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Habits — black / crimson red */
+    .suite-tile[data-app="habits"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(220,38,38,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #1a0808 0%, #0a0000 100%);
+      border: 1px solid rgba(220,38,38,0.50);
+      box-shadow: 0 0 28px rgba(220,38,38,0.14), inset 0 0 0 1px rgba(220,38,38,0.10);
+    }
+    .suite-tile[data-app="habits"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#ffb3b3 40%,#dc2626 75%,#991b1b 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(220,38,38,0.50));
+    }
+    .suite-tile[data-app="habits"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(220,38,38,0.7),transparent); }
+    .suite-tile[data-app="habits"] .tile-system  { color: rgba(220,38,38,0.70); }
+    .suite-tile[data-app="habits"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Sleep — deep purple / warm gold */
+    .suite-tile[data-app="sleep"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(155,107,201,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #140d24 0%, #080410 100%);
+      border: 1px solid rgba(201,168,107,0.45);
+      box-shadow: 0 0 28px rgba(155,107,201,0.14), inset 0 0 0 1px rgba(201,168,107,0.10);
+    }
+    .suite-tile[data-app="sleep"] .tile-mps {
+      background: linear-gradient(180deg,#fff8e8 0%,#f0d898 35%,#c9a86b 70%,#9b6bc9 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(201,168,107,0.45));
+    }
+    .suite-tile[data-app="sleep"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(201,168,107,0.7),transparent); }
+    .suite-tile[data-app="sleep"] .tile-system  { color: rgba(201,168,107,0.70); }
+    .suite-tile[data-app="sleep"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Expenses — deep forest / mint green */
+    .suite-tile[data-app="expenses"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(22,163,74,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #081408 0%, #020a02 100%);
+      border: 1px solid rgba(22,163,74,0.50);
+      box-shadow: 0 0 28px rgba(22,163,74,0.14), inset 0 0 0 1px rgba(22,163,74,0.10);
+    }
+    .suite-tile[data-app="expenses"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#a8f0c0 40%,#16a34a 75%,#0d6b30 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(22,163,74,0.50));
+    }
+    .suite-tile[data-app="expenses"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(22,163,74,0.7),transparent); }
+    .suite-tile[data-app="expenses"] .tile-system  { color: rgba(22,163,74,0.70); }
+    .suite-tile[data-app="expenses"] .tile-name    { color: rgba(255,255,255,0.92); }
+
+    /* Journal — warm black / parchment cream */
+    .suite-tile[data-app="journal"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(196,168,130,0.10) 0%, transparent 70%),
+                  linear-gradient(180deg, #130f0a 0%, #080603 100%);
+      border: 1px solid rgba(196,168,130,0.40);
+      box-shadow: 0 0 28px rgba(196,168,130,0.10), inset 0 0 0 1px rgba(196,168,130,0.08);
+    }
+    .suite-tile[data-app="journal"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#ede0cc 40%,#c4a882 75%,#8c6e42 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(196,168,130,0.40));
+    }
+    .suite-tile[data-app="journal"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(196,168,130,0.6),transparent); }
+    .suite-tile[data-app="journal"] .tile-system  { color: rgba(196,168,130,0.65); }
+    .suite-tile[data-app="journal"] .tile-name    { color: rgba(255,255,255,0.90); }
+
+    /* ── PRICING SECTION ─────────────────────────────────────── */
+    .pricing-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: var(--space-xl);
+    }
+    .pricing-toggle-btn {
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-dim);
+      transition: all var(--transition-base);
+    }
+    .pricing-toggle-btn.active {
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      border-color: var(--ns-yellow);
+    }
+    .pricing-save-badge {
+      font-size: 0.65rem;
+      background: rgba(22,163,74,0.2);
+      color: var(--expenses-green);
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .pricing-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      transition: all var(--transition-base);
+    }
+    .pricing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); }
+    .pricing-card.featured {
+      border-color: var(--ns-yellow);
+      background: rgba(255,193,7,0.04);
+    }
+
+    .pricing-card__badge {
+      display: inline-block;
+      font-size: 0.6rem;
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-sm);
+    }
+    .pricing-card__name {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      color: var(--text-primary);
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .pricing-card__price {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      color: var(--ns-yellow);
+      line-height: 1;
+    }
+    .pricing-card__price sup { font-size: 1rem; vertical-align: top; margin-top: 6px; }
+    .pricing-card__interval {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: var(--space-md);
+    }
+    .pricing-card__savings {
+      font-size: 0.7rem;
+      color: var(--expenses-green);
+      margin-bottom: var(--space-md);
+    }
+    .pricing-card__desc { font-size: 0.78rem; color: var(--text-dim); }
+    .pricing-card__cta {
+      display: block;
+      width: 100%;
+      margin-top: var(--space-md);
+      padding: 11px;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-dim);
+      transition: all var(--transition-base);
+      text-decoration: none;
+      text-align: center;
+    }
+    .pricing-card.featured .pricing-card__cta {
+      background: var(--ns-yellow);
+      color: var(--ns-black);
+      border-color: var(--ns-yellow);
+    }
+    .pricing-card__cta:hover { opacity: 0.85; }
+
+    /* ── SOCIAL PROOF ────────────────────────────────────────── */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-lg);
+    }
+    .testimonial-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+    .testimonial-card__stars { color: var(--ns-yellow); font-size: 0.9rem; margin-bottom: 10px; }
+    .testimonial-card__text { font-size: 0.875rem; color: var(--text-dim); line-height: 1.6; margin-bottom: var(--space-md); font-style: italic; }
+    .testimonial-card__author { font-size: 0.78rem; color: var(--text-faint); font-weight: 600; }
+
+    /* ── FINAL CTA ───────────────────────────────────────────── */
+    .final-cta {
+      text-align: center;
+      padding: var(--space-3xl) var(--space-lg);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .final-cta__headline {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      color: var(--text-primary);
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+      margin-bottom: var(--space-xl);
+    }
+    .final-cta__headline span { color: var(--ns-yellow); }
+    .final-cta__fine {
+      margin-top: var(--space-md);
+      font-size: 0.78rem;
+      color: var(--text-faint);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────────── */
+    .landing-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: var(--space-2xl) var(--space-xl);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    .footer-logo { font-family: var(--font-display); font-size: 1.4rem; color: var(--ns-white); letter-spacing: 0.08em; }
+    .footer-logo span { color: var(--ns-yellow); }
+    .footer-links { display: flex; gap: var(--space-lg); flex-wrap: wrap; justify-content: center; }
+    .footer-links a { font-size: 0.78rem; color: var(--text-faint); text-decoration: none; transition: color var(--transition-fast); }
+    .footer-links a:hover { color: var(--text-dim); }
+    .footer-copy { font-size: 0.72rem; color: var(--text-faint); }
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    .section-divider {
+      width: 40px;
+      height: 2px;
+      background: var(--ns-yellow);
+      margin: 0 auto var(--space-xl);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Nav ───────────────────────────────────────────────── -->
+  <nav class="landing-nav">
+    <a href="/" class="nav-logo">M<span>P</span>S</a>
+    <a href="/auth.html" class="nav-cta">Start Free Trial</a>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HERO
+  ════════════════════════════════════════════════════════════ -->
+  <section class="hero" id="hero">
+    <div class="hero-bg" id="hero-bg"></div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">Modular Performance Systems</div>
+
+      <h1 class="hero-headline">M<span>P</span>S</h1>
+
+      <p class="hero-tagline">
+        Every system. One platform. Built for the ones who don't quit.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="/auth.html" class="hero-btn-primary">Start Free Trial</a>
+        <a href="#suite" class="hero-btn-ghost">See the apps</a>
+      </div>
+
+      <div class="hero-fine">No credit card required for first 14 days.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       THE PROBLEM
+  ════════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title">Most athletes track nothing.<br/><span>The elite track everything.</span></h2>
+    <div class="section-divider"></div>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-card__icon">⚡</div>
+        <div class="problem-card__text">
+          You gas out mid-round because you don't track conditioning volume. What doesn't get measured doesn't get improved.
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">🔄</div>
+        <div class="problem-card__text">
+          Your habits reset every Monday because there's no system. Good intentions without structure is just motivation — and motivation fades.
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card__icon">💸</div>
+        <div class="problem-card__text">
+          You don't know where your money goes. Every month the same story. No system means no leverage, no leverage means no freedom.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       THE SUITE
+  ════════════════════════════════════════════════════════════ -->
+  <section class="section" id="suite">
+    <div class="section-label">The Suite</div>
+    <h2 class="section-title">Five systems.<br/><span>One command center.</span></h2>
+    <div class="section-divider"></div>
+
+    <div class="suite-scroll">
+      <div class="suite-tile" data-app="workout">
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Workout Tracker</div>
+        </div>
+        <div class="tile-pill">Log every lift, skill session, and conditioning round. Track PRs. See progress.</div>
+      </div>
+      <div class="suite-tile" data-app="habits">
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Habit Tracker</div>
+        </div>
+        <div class="tile-pill">Build the daily systems that compound into the person you're becoming.</div>
+      </div>
+      <div class="suite-tile" data-app="sleep">
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Rest &amp; Recovery</div>
+        </div>
+        <div class="tile-pill">Track recovery scores, energy, and soreness. Perform on demand.</div>
+      </div>
+      <div class="suite-tile" data-app="expenses">
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Expense Tracker</div>
+        </div>
+        <div class="tile-pill">Your money, systemized. Know exactly where every dollar goes.</div>
+      </div>
+      <div class="suite-tile" data-app="journal">
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Journal</div>
+        </div>
+        <div class="tile-pill">Faith, reflection, and growth. Grounded in purpose, led by conviction.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PRICING
+  ════════════════════════════════════════════════════════════ -->
+  <section class="section" id="pricing">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">One system.<br/><span>Your price.</span></h2>
+    <div class="section-divider"></div>
+
+    <div class="pricing-toggle">
+      <button class="pricing-toggle-btn active" id="toggle-monthly" onclick="setPricingInterval('monthly')">Monthly</button>
+      <button class="pricing-toggle-btn"        id="toggle-annual"  onclick="setPricingInterval('annual')">
+        Annual <span class="pricing-save-badge">Save 18%</span>
+      </button>
+    </div>
+
+    <div class="pricing-grid" id="pricing-grid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SOCIAL PROOF
+  ════════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-label">Built by athletes. Used by athletes.</div>
+    <h2 class="section-title">What they're <span>saying.</span></h2>
+    <div class="section-divider"></div>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="testimonial-card__stars">★★★★★</div>
+        <div class="testimonial-card__text">[TESTIMONIAL 1]</div>
+        <div class="testimonial-card__author">— [NAME], [ROLE/SPORT]</div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-card__stars">★★★★★</div>
+        <div class="testimonial-card__text">[TESTIMONIAL 2]</div>
+        <div class="testimonial-card__author">— [NAME], [ROLE/SPORT]</div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-card__stars">★★★★★</div>
+        <div class="testimonial-card__text">[TESTIMONIAL 3]</div>
+        <div class="testimonial-card__author">— [NAME], [ROLE/SPORT]</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FINAL CTA
+  ════════════════════════════════════════════════════════════ -->
+  <div class="final-cta">
+    <h2 class="final-cta__headline">Stop planning.<br/><span>Start tracking.</span></h2>
+    <a href="/auth.html" class="hero-btn-primary">Start Free Trial</a>
+    <div class="final-cta__fine">No credit card required for first 14 days.</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════════════════ -->
+  <footer class="landing-footer">
+    <div class="footer-logo">M<span>P</span>S</div>
+    <div class="footer-links">
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+      <a href="mailto:support@modular-performance.com">Support</a>
+      <a href="mailto:jeff@modular-performance.com">Contact</a>
+    </div>
+    <div class="footer-copy">© 2026 Modular Performance. All rights reserved.</div>
+  </footer>
+
+  <!-- ── Firebase (for auth redirect check) ──────────────────── -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+
+  <script>
+    /* ── Auth redirect: skip landing if already signed in ───── */
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.replace('/hub.html');
+    });
+
+    /* ── Hero background shapes ──────────────────────────────── */
+    (function generateHeroBg() {
+      const container = document.getElementById('hero-bg');
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'hero-shape';
+        const size  = 30 + Math.random() * 120;
+        const left  = Math.random() * 100;
+        const delay = Math.random() * 30;
+        const dur   = 20 + Math.random() * 30;
+        const isCircle = Math.random() > 0.5;
+        el.style.cssText = `
+          width:${size}px; height:${size}px;
+          left:${left}%;
+          bottom:-${size}px;
+          border-radius:${isCircle ? '50%' : '4px'};
+          animation-duration:${dur}s;
+          animation-delay:${delay}s;
+          border-color: rgba(255,193,7,${0.04 + Math.random() * 0.08});
+        `;
+        container.appendChild(el);
+      }
+    })();
+
+    /* ── Pricing ───────

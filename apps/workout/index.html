@@ -27,6 +27,9 @@
     --mps-blue: #1a2f5c;
     --mps-blue-light: #2a4a8c;
     --mps-accent: #4ab3f4;
+    --mps-accent-rgb: 74, 179, 244;
+    --mps-accent-2: #7ac8ff;
+    --mps-accent-2-rgb: 122, 200, 255;
     --bg: #000000;
     --bg-2: #050810;
     --card: #0d1428;
@@ -37,6 +40,30 @@
     --text-faint: #5a6585;
     --success: #2d8b4e;
   }
+  /* ── Gray/Gold theme (Free + Medium) — shell adds body.mps-gray ── */
+  body.mps-gray {
+    --mps-accent: #f5f5f5;          /* numbers + accents → white */
+    --mps-accent-rgb: 150, 150, 150; /* glows/shadows → subtle neutral */
+    --mps-accent-2: #f5f5f5;
+    --mps-accent-2-rgb: 150, 150, 150;
+    --mps-blue: #161616;
+    --mps-blue-light: #242424;
+    --bg-2: #070707;
+    --card: #0f0f0f;
+    --card-2: #161616;
+    --border: #2a2a2a;
+    --text-dim: #9a9a9a;
+    --text-faint: #6a6a6a;
+    --success: #6f8a6f;
+  }
+  body.mps-gray .stat-label,
+  body.mps-gray .target-tag,
+  body.mps-gray .cond-label,
+  body.mps-gray .split-picker-title,
+  body.mps-gray .chart-subtitle,
+  body.mps-gray .section-title { color: #C9A020 !important; }   /* labels → gold */
+  body.mps-gray .brand-h1 { color: #C9A020 !important; }
+  body.mps-gray .brand-mps-display { background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 35%, #c9c9c9 70%, #8a8a8a 100%) !important; -webkit-background-clip: text; background-clip: text; }
   /* ── Smooth page transitions ─────────────────────────── */
   @keyframes mpsPageIn { from { opacity: 0; } to { opacity: 1; } }
   body { animation: mpsPageIn 0.28s ease-out both; }
@@ -54,7 +81,7 @@
     align-items: center;
     padding: 0 16px;
     background: rgba(7, 12, 28, 0.96);
-    border-bottom: 1px solid rgba(74, 179, 244, 0.18);
+    border-bottom: 1px solid rgba(var(--mps-accent-rgb), 0.18);
     backdrop-filter: blur(14px);
     z-index: 1000;
   }
@@ -73,7 +100,7 @@
     transform: translateX(-50%);
     font-family: 'Bebas Neue', sans-serif;
     font-size: 16px;
-    color: rgba(74, 179, 244, 0.7);
+    color: rgba(var(--mps-accent-rgb), 0.7);
     letter-spacing: 0.12em;
   }
 
@@ -89,7 +116,7 @@
   }
   .brand-block {
     background: #000000;
-    background-image: radial-gradient(ellipse 60% 50% at 50% 45%, rgba(74,179,244,0.20) 0%, rgba(74,179,244,0.06) 45%, transparent 75%);
+    background-image: radial-gradient(ellipse 60% 50% at 50% 45%, rgba(var(--mps-accent-rgb),0.20) 0%, rgba(var(--mps-accent-rgb),0.06) 45%, transparent 75%);
     border: 3px solid transparent;
     border-radius: 22px;
     padding: 38px 20px 28px;
@@ -99,7 +126,7 @@
     position: relative;
     overflow: hidden;
     background-clip: padding-box;
-    box-shadow: 0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(74,179,244,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95);
+    box-shadow: 0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(var(--mps-accent-rgb),0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95);
   }
   .brand-block::after { display: none; }
   .brand-block::before { display: none; }
@@ -120,8 +147,8 @@
     position: relative;
     display: inline-block;
     text-shadow:
-      0 0 16px rgba(74, 179, 244, 0.65),
-      0 0 28px rgba(74, 179, 244, 0.35),
+      0 0 16px rgba(var(--mps-accent-rgb), 0.65),
+      0 0 28px rgba(var(--mps-accent-rgb), 0.35),
       0 2px 6px rgba(0, 0, 0, 0.9);
   }
   .brand-mps-svg {
@@ -132,8 +159,8 @@
     position: relative;
     z-index: 1;
     filter:
-      drop-shadow(0 0 14px rgba(74, 179, 244, 0.55))
-      drop-shadow(0 0 24px rgba(74, 179, 244, 0.3))
+      drop-shadow(0 0 14px rgba(var(--mps-accent-rgb), 0.55))
+      drop-shadow(0 0 24px rgba(var(--mps-accent-rgb), 0.3))
       drop-shadow(0 3px 6px rgba(0, 0, 0, 0.9));
   }
   .brand-mps-display {
@@ -157,7 +184,7 @@
     width: 92%;
     height: 1px;
     margin: 16px auto 14px;
-    background: linear-gradient(90deg, transparent, rgba(74,179,244,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(74,179,244,0.6) 75%, transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--mps-accent-rgb),0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(var(--mps-accent-rgb),0.6) 75%, transparent);
   }
   .brand-tagline {
     font-size: 11px;
@@ -209,7 +236,7 @@
   .btn-primary:hover { background: var(--mps-blue-light); }
   .btn-accent {
     background: var(--mps-accent); border-color: var(--mps-accent); color: #1a1a1a;
-    box-shadow: 0 4px 12px rgba(74, 179, 244, 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
+    box-shadow: 0 4px 12px rgba(var(--mps-accent-rgb), 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
   }
   .btn-accent:hover { background: #6cc4ff; }
   .btn-ghost { background: transparent; box-shadow: none; }
@@ -225,11 +252,11 @@
   }
   .day-btn.today {
     border-color: var(--mps-accent); color: var(--mps-accent);
-    box-shadow: 0 4px 12px rgba(74, 179, 244, 0.18), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    box-shadow: 0 4px 12px rgba(var(--mps-accent-rgb), 0.18), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
   }
   .day-btn.active {
     background: var(--mps-blue); color: #fff; border-color: var(--mps-blue-light);
-    box-shadow: 0 6px 16px rgba(74, 179, 244, 0.25), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    box-shadow: 0 6px 16px rgba(var(--mps-accent-rgb), 0.25), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
     transform: translateY(-1px);
   }
   .day-btn .day-num { display: block; font-size: 15px; margin-top: 2px; color: inherit; }
@@ -243,7 +270,7 @@
   }
   .split-card.skill {
     border-left-color: var(--mps-accent);
-    box-shadow: 0 6px 16px rgba(74, 179, 244, 0.12), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    box-shadow: 0 6px 16px rgba(var(--mps-accent-rgb), 0.12), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
   }
   .split-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
   .split-name {
@@ -263,7 +290,7 @@
       0 4px 8px rgba(0, 0, 0, 0.65),
       0 1px 2px rgba(0, 0, 0, 0.5),
       inset 0 1px 0 rgba(255, 255, 255, 0.09),
-      inset 0 2px 4px rgba(74, 179, 244, 0.04),
+      inset 0 2px 4px rgba(var(--mps-accent-rgb), 0.04),
       inset 0 -2px 0 rgba(0, 0, 0, 0.55);
   }
   .exercise::before {
@@ -272,7 +299,7 @@
     inset: 0;
     border-radius: 12px;
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(74, 179, 244, 0.07) 0%, transparent 25%, transparent 65%, rgba(0, 0, 0, 0.25) 100%);
+    background: linear-gradient(180deg, rgba(var(--mps-accent-rgb), 0.07) 0%, transparent 25%, transparent 65%, rgba(0, 0, 0, 0.25) 100%);
   }
   .exercise.done {
     border-color: rgba(45, 139, 78, 0.65);
@@ -317,7 +344,7 @@
   }
   .checkbox.checked {
     background: var(--mps-accent); border-color: var(--mps-accent); color: #1a1a1a;
-    box-shadow: 0 4px 10px rgba(74, 179, 244, 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+    box-shadow: 0 4px 10px rgba(var(--mps-accent-rgb), 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
   }
   .remove-set { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 18px; padding: 0; }
   .remove-set:hover { color: var(--mps-accent); background: none; }
@@ -366,7 +393,7 @@
   .history-card-date {
     font-size: 11px; font-weight: 700; color: var(--mps-accent);
     letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;
-    text-shadow: 0 0 6px rgba(74, 179, 244, 0.3);
+    text-shadow: 0 0 6px rgba(var(--mps-accent-rgb), 0.3);
   }
   .history-card-split {
     font-size: 14px; font-weight: 700; color: #e8e8e8; margin-bottom: 3px;
@@ -398,14 +425,14 @@
   .plan-day-card:last-child { margin-bottom: 0; }
   .plan-day-card.rest { cursor: default; }
   .plan-day-card.today {
-    border-color: rgba(74, 179, 244, 0.5);
-    box-shadow: 0 4px 12px rgba(74, 179, 244, 0.18), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    border-color: rgba(var(--mps-accent-rgb), 0.5);
+    box-shadow: 0 4px 12px rgba(var(--mps-accent-rgb), 0.18), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
     background: linear-gradient(180deg, #14213f 0%, #0d172e 100%);
   }
   .plan-day-card[data-clickable]:active { transform: translateY(1px); }
   .plan-day-arrow {
     color: var(--mps-accent); font-size: 20px; font-weight: 700;
-    flex-shrink: 0; text-shadow: 0 0 8px rgba(74, 179, 244, 0.5);
+    flex-shrink: 0; text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.5);
   }
   .history-card-meta {
     font-size: 11px; color: var(--text-dim);
@@ -416,7 +443,7 @@
     margin-right: 4px; vertical-align: middle;
   }
   .hist-badge-run { background: #226633; color: #fff; border: 1px solid #226633; }
-  .hist-badge-machine { background: #4ab3f4; color: #fff; border: 1px solid #4ab3f4; }
+  .hist-badge-machine { background: var(--mps-accent); color: #1a1a1a; border: 1px solid var(--mps-accent); }
   .hist-badge-sprint { background: #dc4856; color: #fff; border: 1px solid #dc4856; }
   .history-card-right {
     text-align: right; flex-shrink: 0; padding-left: 4px;
@@ -424,7 +451,7 @@
   }
   .history-card-circuits {
     font-size: 24px; font-weight: 800; color: var(--mps-accent); line-height: 1;
-    text-shadow: 0 0 10px rgba(74, 179, 244, 0.5);
+    text-shadow: 0 0 10px rgba(var(--mps-accent-rgb), 0.5);
   }
   .history-card-circuits-label {
     font-size: 9px; font-weight: 700; color: var(--text-dim);
@@ -439,14 +466,14 @@
     box-shadow: 0 10px 24px rgba(0,0,0,0.9), 0 4px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
   }
   .pr-group-header {
-    background: linear-gradient(180deg, rgba(74, 179, 244, 0.08) 0%, rgba(74, 179, 244, 0.02) 100%);
+    background: linear-gradient(180deg, rgba(var(--mps-accent-rgb), 0.08) 0%, rgba(var(--mps-accent-rgb), 0.02) 100%);
     color: var(--mps-accent);
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 3px;
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(74, 179, 244, 0.3);
-    text-shadow: 0 0 10px rgba(74, 179, 244, 0.5);
+    border-bottom: 1px solid rgba(var(--mps-accent-rgb), 0.3);
+    text-shadow: 0 0 10px rgba(var(--mps-accent-rgb), 0.5);
     text-transform: uppercase;
   }
   .pr-group-body {
@@ -465,7 +492,7 @@
   .pr-name { color: #e8e8e8; font-weight: 600; }
   .pr-weight {
     color: var(--mps-accent); font-weight: 800; font-size: 14px;
-    text-shadow: 0 0 8px rgba(74, 179, 244, 0.4);
+    text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.4);
   }
   .empty { text-align: center; color: var(--text-faint); padding: 28px; font-size: 13px; }
   /* ========== DASHBOARD CHARTS ========== */
@@ -478,7 +505,7 @@
   }
   .strength-pill {
     background: linear-gradient(180deg, #131e3d 0%, #0a1124 100%);
-    border: 1px solid rgba(74, 179, 244, 0.25);
+    border: 1px solid rgba(var(--mps-accent-rgb), 0.25);
     border-radius: 10px;
     padding: 10px 4px;
     text-align: center;
@@ -490,7 +517,7 @@
     font-size: 17px;
     color: var(--mps-accent);
     line-height: 1;
-    text-shadow: 0 0 8px rgba(74, 179, 244, 0.5);
+    text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.5);
     margin-bottom: 4px;
   }
   .strength-pill-label {
@@ -508,7 +535,7 @@
   }
   .chart-card {
     background: #000;
-    border: 1px solid rgba(74, 179, 244, 0.2);
+    border: 1px solid rgba(var(--mps-accent-rgb), 0.2);
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 16px;
@@ -566,15 +593,15 @@
     cursor: pointer;
     transition: all 0.15s ease;
     font-family: inherit;
-    border: 1px solid rgba(74, 179, 244, 0.3);
+    border: 1px solid rgba(var(--mps-accent-rgb), 0.3);
     background: transparent;
-    color: rgba(74, 179, 244, 0.7);
+    color: rgba(var(--mps-accent-rgb), 0.7);
   }
   .pill.active {
     background: var(--mps-accent);
     color: #0a1124;
     border-color: var(--mps-accent);
-    box-shadow: 0 0 12px rgba(74, 179, 244, 0.4);
+    box-shadow: 0 0 12px rgba(var(--mps-accent-rgb), 0.4);
   }
   .pill-sub {
     font-size: 10px;
@@ -602,7 +629,7 @@
   .cond-input:focus {
     outline: none;
     border-color: var(--mps-accent);
-    box-shadow: 0 0 0 2px rgba(74, 179, 244, 0.15);
+    box-shadow: 0 0 0 2px rgba(var(--mps-accent-rgb), 0.15);
   }
   .cond-time-inputs {
     display: flex; gap: 6px; align-items: center; flex: 1;
@@ -619,12 +646,12 @@
     letter-spacing: 0.5px;
     cursor: pointer;
     font-family: inherit;
-    box-shadow: 0 0 12px rgba(74, 179, 244, 0.3);
+    box-shadow: 0 0 12px rgba(var(--mps-accent-rgb), 0.3);
   }
   .cond-recent {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(74, 179, 244, 0.15);
+    border-top: 1px solid rgba(var(--mps-accent-rgb), 0.15);
   }
   .cond-recent-item {
     display: flex; justify-content: space-between; align-items: center;
@@ -670,7 +697,7 @@
   }
   .hist-detail-close {
     position: absolute; top: 12px; right: 12px;
-    background: rgba(74,179,244,0.1); border: 1px solid rgba(74,179,244,0.3);
+    background: rgba(var(--mps-accent-rgb),0.1); border: 1px solid rgba(var(--mps-accent-rgb),0.3);
     color: var(--mps-accent); font-size: 18px; font-weight: 700;
     width: 32px; height: 32px; border-radius: 8px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -690,8 +717,8 @@
   .hist-detail-summary b { color: #fff; font-weight: 700; }
   .hist-detail-block {
     margin-top: 14px;
-    background: rgba(74,179,244,0.04);
-    border: 1px solid rgba(74,179,244,0.15);
+    background: rgba(var(--mps-accent-rgb),0.04);
+    border: 1px solid rgba(var(--mps-accent-rgb),0.15);
     border-radius: 10px;
     padding: 12px;
   }
@@ -713,8 +740,8 @@
     grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
   }
   .hist-detail-set {
-    background: rgba(74,179,244,0.08);
-    border: 1px solid rgba(74,179,244,0.2);
+    background: rgba(var(--mps-accent-rgb),0.08);
+    border: 1px solid rgba(var(--mps-accent-rgb),0.2);
     border-radius: 5px;
     padding: 5px 6px;
     text-align: center;
@@ -860,6 +887,11 @@ function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');f.classL
 <div class="toast" id="toast"></div>
 <script>
 'use strict';
+// Gray/Gold theme (Free/Medium): charts use canvas (can't read CSS vars), so resolve here.
+const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+const ACR = __GRAY ? '150,150,150' : '74, 179, 244';   // accent rgb for canvas fills
+const AC  = __GRAY ? '#cfcfcf' : '#4ab3f4';             // solid accent for canvas (lines/points)
+const AC2 = __GRAY ? '#f5f5f5' : '#7ac8ff';            // light accent for canvas
 // Surface real errors on-screen (browser hides them as "Script error.")
 function showErrorBanner(msg) {
   const banner = document.getElementById('error-banner') || (() => {
@@ -1409,7 +1441,7 @@ function renderAutoFillBanner() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'autofill-banner';
-    banner.style.cssText = 'background:rgba(74, 179, 244, 0.12); border:1px solid rgba(74, 179, 244, 0.4); border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;';
+    banner.style.cssText = 'background:rgba(var(--mps-accent-rgb), 0.12); border:1px solid rgba(var(--mps-accent-rgb), 0.4); border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;';
     const splitsContainer = document.getElementById('splits-container');
     splitsContainer.parentNode.insertBefore(banner, splitsContainer);
   }
@@ -2455,11 +2487,11 @@ function renderHistory() {
             <div class="history-card-meta">${metaLine} · tap to delete</div>
           </div>
           <div class="history-card-right">
-            <div class="history-card-circuits" style="color:#7ac8ff;">${rightTop}</div>
+            <div class="history-card-circuits" style="color:var(--mps-accent-2);">${rightTop}</div>
             <div class="history-card-circuits-label">${rightTopLabel}</div>
             ${rightBottom ? `
-            <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(74,179,244,0.2);">
-              <div style="font-size:14px; font-weight:800; color:#7ac8ff; line-height:1; text-shadow:0 0 8px rgba(74,179,244,0.5);">${rightBottom}</div>
+            <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(var(--mps-accent-rgb),0.2);">
+              <div style="font-size:14px; font-weight:800; color:var(--mps-accent-2); line-height:1; text-shadow:0 0 8px rgba(var(--mps-accent-rgb),0.5);">${rightBottom}</div>
               <div style="font-size:8px; font-weight:700; color:var(--text-dim); letter-spacing:1.2px; margin-top:3px;">${rightBottomLabel}</div>
             </div>
             ` : ''}
@@ -2568,8 +2600,8 @@ function renderHistory() {
           <div class="history-card-circuits">${circuits}</div>
           <div class="history-card-circuits-label">CIRCUIT${circuits === 1 ? '' : 'S'}</div>
           ${strengthScore > 0 ? `
-          <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(74,179,244,0.2);">
-            <div style="font-size:18px; font-weight:800; color:#7ac8ff; line-height:1; text-shadow:0 0 8px rgba(74,179,244,0.5);">${scoreDisplay}</div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(var(--mps-accent-rgb),0.2);">
+            <div style="font-size:18px; font-weight:800; color:var(--mps-accent-2); line-height:1; text-shadow:0 0 8px rgba(var(--mps-accent-rgb),0.5);">${scoreDisplay}</div>
             <div style="font-size:8px; font-weight:700; color:var(--text-dim); letter-spacing:1.2px; margin-top:3px;">STRENGTH</div>
           </div>
           ` : ''}
@@ -2622,8 +2654,8 @@ function showConditioningDeleteOverlay(idx) {
   overlay.id = 'cond-delete-overlay';
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
   overlay.innerHTML = `
-    <div style="background:linear-gradient(180deg, #131e3d 0%, #0a1124 100%); border:1px solid rgba(74,179,244,0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
-      <div style="font-size:18px; font-weight:800; color:#7ac8ff; margin-bottom:10px;">Delete this entry?</div>
+    <div style="background:linear-gradient(180deg, #131e3d 0%, #0a1124 100%); border:1px solid rgba(var(--mps-accent-rgb),0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+      <div style="font-size:18px; font-weight:800; color:var(--mps-accent-2); margin-bottom:10px;">Delete this entry?</div>
       <div style="font-size:13px; color:#9aa; margin-bottom:4px;">${dateLabel}</div>
       <div style="font-size:15px; color:#fff; margin-bottom:20px;">${summary}</div>
       <div style="display:flex; gap:10px;">
@@ -2745,9 +2777,9 @@ function showHistoryDetail(h) {
   }
   const dayStrength = daySets > 0 ? Math.round(dayVolume / daySets) : 0;
   const strengthBadgeHtml = dayStrength > 0 ? `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, rgba(122,200,255,0.18), rgba(74,179,244,0.06)); border:1px solid rgba(122,200,255,0.5); border-radius:10px; padding:10px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(74,179,244,0.2), inset 0 1px 0 rgba(255,255,255,0.06);">
-      <div style="font-size:10px; font-weight:700; color:#7ac8ff; letter-spacing:1.8px; opacity:0.85;">STRENGTH SCORE</div>
-      <div style="font-size:22px; font-weight:800; color:#7ac8ff; text-shadow:0 0 10px rgba(122,200,255,0.6); line-height:1;">${dayStrength}</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, rgba(var(--mps-accent-2-rgb),0.18), rgba(var(--mps-accent-rgb),0.06)); border:1px solid rgba(var(--mps-accent-2-rgb),0.5); border-radius:10px; padding:10px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(var(--mps-accent-rgb),0.2), inset 0 1px 0 rgba(255,255,255,0.06);">
+      <div style="font-size:10px; font-weight:700; color:var(--mps-accent-2); letter-spacing:1.8px; opacity:0.85;">STRENGTH SCORE</div>
+      <div style="font-size:22px; font-weight:800; color:var(--mps-accent-2); text-shadow:0 0 10px rgba(var(--mps-accent-2-rgb),0.6); line-height:1;">${dayStrength}</div>
     </div>
   ` : '';
   const overlay = document.createElement('div');
@@ -3160,13 +3192,13 @@ function _renderDashboard() {
     <div class="stat-grid" style="margin-bottom:18px;">
       <div class="stat"><div class="stat-value" style="font-size:18px;">${totalRounds}</div><div class="stat-label">Total Rounds</div></div>
       <div class="stat"><div class="stat-value" style="font-size:18px;">${totalCircuits}</div><div class="stat-label">Circuits Done</div></div>
-      <div class="stat" style="background:linear-gradient(180deg, rgba(122,200,255,0.10) 0%, rgba(74,179,244,0.04) 100%); border:1px solid rgba(122,200,255,0.45); box-shadow:0 4px 14px rgba(74,179,244,0.22), inset 0 1px 0 rgba(255,255,255,0.06);"><div class="stat-value" style="font-size:18px; color:#7ac8ff; text-shadow:0 0 10px rgba(122,200,255,0.6);">${allTimeStrength}</div><div class="stat-label" style="color:#7ac8ff; opacity:0.85;">Strength Score</div></div>
+      <div class="stat" style="background:linear-gradient(180deg, rgba(var(--mps-accent-2-rgb),0.10) 0%, rgba(var(--mps-accent-rgb),0.04) 100%); border:1px solid rgba(var(--mps-accent-2-rgb),0.45); box-shadow:0 4px 14px rgba(var(--mps-accent-rgb),0.22), inset 0 1px 0 rgba(255,255,255,0.06);"><div class="stat-value" style="font-size:18px; color:var(--mps-accent-2); text-shadow:0 0 10px rgba(var(--mps-accent-2-rgb),0.6);">${allTimeStrength}</div><div class="stat-label" style="color:var(--mps-accent-2); opacity:0.85;">Strength Score</div></div>
     </div>
     <!-- ===== CHARTS ===== -->
     <div class="chart-card">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div class="chart-title" style="margin:0;">Strength Score</div>
-        <div id="strength-score-badge" style="background:linear-gradient(135deg, rgba(74,179,244,0.25), rgba(74,179,244,0.1)); border:1px solid rgba(74,179,244,0.5); color:#7ac8ff; font-weight:700; font-size:14px; padding:4px 12px; border-radius:20px; letter-spacing:0.5px;">—</div>
+        <div id="strength-score-badge" style="background:linear-gradient(135deg, rgba(var(--mps-accent-rgb),0.25), rgba(var(--mps-accent-rgb),0.1)); border:1px solid rgba(var(--mps-accent-rgb),0.5); color:var(--mps-accent-2); font-weight:700; font-size:14px; padding:4px 12px; border-radius:20px; letter-spacing:0.5px;">—</div>
       </div>
       <div class="chart-subtitle" id="chart-strength-subtitle">daily · last 6 weeks</div>
       <div class="pill-row" id="strength-toggle-row" style="margin-top:10px;">
@@ -3177,7 +3209,7 @@ function _renderDashboard() {
       <div id="strength-week-picker" style="display:none; margin-bottom:10px;">
         <select id="strength-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-strength"></canvas>
         <div id="chart-strength-empty" class="chart-empty" style="display:none;">No lifts logged yet</div>
       </div>
@@ -3194,7 +3226,7 @@ function _renderDashboard() {
       <div id="avgweight-week-picker" style="display:none; margin-bottom:10px;">
         <select id="avgweight-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-avg-weight"></canvas>
         <div id="chart-avg-weight-empty" class="chart-empty" style="display:none;">No lifts logged yet</div>
       </div>
@@ -3209,7 +3241,7 @@ function _renderDashboard() {
       <div id="avgreps-week-picker" style="display:none; margin-bottom:10px;">
         <select id="avgreps-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-avg-reps"></canvas>
         <div id="chart-avg-reps-empty" class="chart-empty" style="display:none;">No lifts logged yet</div>
       </div>
@@ -3239,7 +3271,7 @@ function _renderDashboard() {
       <div id="totalrounds-week-picker" style="display:none; margin-bottom:10px;">
         <select id="totalrounds-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-total-rounds"></canvas>
         <div id="chart-total-rounds-empty" class="chart-empty" style="display:none;">No rounds logged yet</div>
       </div>
@@ -3247,7 +3279,7 @@ function _renderDashboard() {
     <div class="chart-card" style="margin-top:12px;">
       <div class="chart-title">Backup &amp; Sync</div>
       <div class="chart-subtitle">Move your data between devices</div>
-      <div id="backup-status-row" style="margin-top:10px; padding:10px 12px; background:rgba(74,179,244,0.08); border:1px solid rgba(74,179,244,0.25); border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div id="backup-status-row" style="margin-top:10px; padding:10px 12px; background:rgba(var(--mps-accent-rgb),0.08); border:1px solid rgba(var(--mps-accent-rgb),0.25); border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
         <div>
           <div style="font-size:10px; color:var(--text-dim); letter-spacing:0.5px;">AUTO-BACKUP STATUS</div>
           <div id="backup-status-text" style="font-size:13px; font-weight:700; color:var(--mps-accent); margin-top:2px;">checking…</div>
@@ -3613,7 +3645,7 @@ function renderWeekCard(weekIdx, highlight) {
     }
   }
   return `
-    <div class="pr-group-card" style="${highlight ? 'border-color: rgba(74, 179, 244, 0.5);' : ''}">
+    <div class="pr-group-card" style="${highlight ? 'border-color: rgba(var(--mps-accent-rgb), 0.5);' : ''}">
       <div class="pr-group-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <span>WEEK ${weekIdx + 1}${highlight ? ' · CURRENT' : ''}</span>
         <span style="font-size:10px; font-weight:600; letter-spacing:1px; color:var(--text-dim); text-shadow:none;">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
@@ -3654,7 +3686,7 @@ async function showPlanLoadConfirm(dateStr) {
         ${liftSplit ? `<div style="margin-bottom:4px;"><span style="color:var(--mps-accent); font-weight:700;">LIFT:</span> ${escapeHtml(liftSplit)}</div>` : ''}
         <div><span style="color:var(--mps-accent); font-weight:700;">SKILL:</span> ${escapeHtml(skillStr)}</div>
       </div>
-      ${hasData ? `<div style="font-size:12px; color:var(--mps-accent); margin-bottom:12px; padding:8px; background:rgba(74,179,244,0.1); border-radius:6px; border:1px solid rgba(74,179,244,0.3);">⚠ This day already has data. Loading will replace it.</div>` : ''}
+      ${hasData ? `<div style="font-size:12px; color:var(--mps-accent); margin-bottom:12px; padding:8px; background:rgba(var(--mps-accent-rgb),0.1); border-radius:6px; border:1px solid rgba(var(--mps-accent-rgb),0.3);">⚠ This day already has data. Loading will replace it.</div>` : ''}
       <div style="display:flex; gap:8px;">
         <button id="plan-cancel" style="flex:1; padding:12px; background:transparent; border:1px solid var(--border); color:var(--text-dim); border-radius:7px; font-weight:600; font-size:14px;">Cancel</button>
         <button id="plan-confirm" style="flex:1; padding:12px; background:var(--mps-accent); border:none; color:#1a1a1a; border-radius:7px; font-weight:700; font-size:14px;">Load</button>
@@ -4015,7 +4047,7 @@ const Isometric3DBarPlugin = {
   id: 'iso3d',
   // Color theme overrides per accent color
   themeMap: {
-    '#4ab3f4': { top: '#7ac8ff', side: '#1a4570' }, // blue
+    '#4ab3f4': { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') }, // blue
     '#9b6bc9': { top: '#c9a3eb', side: '#4a2470' }, // purple
     '#4ade80': { top: '#86efac', side: '#166534' }, // bright green (legacy)
     '#226633': { top: '#3d9658', side: '#0d2818' }, // forest green
@@ -4031,7 +4063,7 @@ const Isometric3DBarPlugin = {
       const rawBorder = dataset.borderColor;
       const borderStr = (typeof rawBorder === 'string') ? rawBorder : '#4ab3f4';
       const defaultAccent = borderStr.toLowerCase();
-      const defaultTheme = this.themeMap[defaultAccent] || { top: '#7ac8ff', side: '#1a4570' };
+      const defaultTheme = this.themeMap[defaultAccent] || { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') };
       const perBarThemes = Array.isArray(dataset.barThemes) ? dataset.barThemes : null;
       meta.data.forEach((bar, barIdx) => {
         if (!bar) return;
@@ -4090,21 +4122,21 @@ const CHART_BASE_OPTS = {
     legend: { labels: { color: '#ccc', font: { size: 10 } } },
     tooltip: {
       backgroundColor: '#0a1124',
-      titleColor: '#4ab3f4',
+      titleColor: AC,
       bodyColor: '#fff',
-      borderColor: 'rgba(74, 179, 244, 0.3)',
+      borderColor: `rgba(${ACR}, 0.3)`,
       borderWidth: 1
     }
   },
   scales: {
     x: {
       ticks: { color: '#888', font: { size: 9 } },
-      grid: { color: 'rgba(74, 179, 244, 0.08)' }
+      grid: { color: `rgba(${ACR}, 0.08)` }
     },
     y: {
       beginAtZero: true,
       ticks: { color: '#888', font: { size: 9 } },
-      grid: { color: 'rgba(74, 179, 244, 0.08)' }
+      grid: { color: `rgba(${ACR}, 0.08)` }
     }
   }
 };
@@ -4150,8 +4182,8 @@ function renderChartTrainingFreq() {
       labels: dates.map(shortDayLabel),
       datasets: [{
         data: counts,
-        backgroundColor: 'rgba(74, 179, 244, 0.75)',
-        borderColor: '#4ab3f4',
+        backgroundColor: `rgba(${ACR}, 0.75)`,
+        borderColor: AC,
         borderWidth: 1,
       }]
     },
@@ -4281,7 +4313,7 @@ function renderChartTotalRounds() {
       data: {
         labels: ['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6'],
         datasets: [
-          { label: 'Lift', data: liftPerWeek, backgroundColor: 'rgba(74, 179, 244, 0.75)', borderColor: '#4ab3f4', borderWidth: 1, stack: 'rounds' },
+          { label: 'Lift', data: liftPerWeek, backgroundColor: `rgba(${ACR}, 0.75)`, borderColor: AC, borderWidth: 1, stack: 'rounds' },
           { label: 'Skill', data: skillPerWeek, backgroundColor: 'rgba(155, 107, 201, 0.75)', borderColor: '#9b6bc9', borderWidth: 1, stack: 'rounds' },
           { label: 'Conditioning', data: condPerWeek, backgroundColor: 'rgba(34, 102, 51, 0.85)', borderColor: '#226633', borderWidth: 1, stack: 'rounds' }
         ]
@@ -4351,7 +4383,7 @@ function renderChartTotalRounds() {
       data: {
         labels: dayLabels,
         datasets: [
-          { label: 'Lift', data: liftDay, backgroundColor: 'rgba(74, 179, 244, 0.75)', borderColor: '#4ab3f4', borderWidth: 1, stack: 'rounds' },
+          { label: 'Lift', data: liftDay, backgroundColor: `rgba(${ACR}, 0.75)`, borderColor: AC, borderWidth: 1, stack: 'rounds' },
           { label: 'Skill', data: skillDay, backgroundColor: 'rgba(155, 107, 201, 0.75)', borderColor: '#9b6bc9', borderWidth: 1, stack: 'rounds' },
           { label: 'Conditioning', data: condDay, backgroundColor: 'rgba(34, 102, 51, 0.85)', borderColor: '#226633', borderWidth: 1, stack: 'rounds' }
         ]
@@ -4505,20 +4537,20 @@ function renderMetricChart(canvasId, emptyId, instanceKey, weeks, valueFn, toolt
   const dataset = isBar
     ? {
         data: formatted,
-        backgroundColor: 'rgba(74, 179, 244, 0.75)',
-        borderColor: '#4ab3f4',
+        backgroundColor: `rgba(${ACR}, 0.75)`,
+        borderColor: AC,
         borderWidth: 1,
       }
     : {
         data: formatted,
-        borderColor: '#4ab3f4',
-        backgroundColor: 'rgba(74, 179, 244, 0.15)',
+        borderColor: AC,
+        backgroundColor: `rgba(${ACR}, 0.15)`,
         tension: 0.3,
         fill: true,
         spanGaps: true,
         pointRadius: 5,
         pointHoverRadius: 7,
-        pointBackgroundColor: '#4ab3f4',
+        pointBackgroundColor: AC,
         pointBorderColor: '#fff',
         pointBorderWidth: 1.5,
         borderWidth: 2.5
@@ -4702,8 +4734,8 @@ function _renderAvgWeightChart() {
         labels,
         datasets: [{
           data,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -4823,8 +4855,8 @@ function _renderAvgWeightChart() {
         labels: dayLabels,
         datasets: [{
           data: dayData,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -4947,8 +4979,8 @@ function _renderAvgRepsChart() {
         labels,
         datasets: [{
           data,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -5065,8 +5097,8 @@ function _renderAvgRepsChart() {
         labels: dayLabels,
         datasets: [{
           data: dayData,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -5200,11 +5232,11 @@ function _renderStrengthScoreChart() {
   // Shared line dataset config
   const lineDataset = (data) => ({
     data,
-    borderColor: '#4ab3f4',
-    backgroundColor: 'rgba(74, 179, 244, 0.15)',
+    borderColor: AC,
+    backgroundColor: `rgba(${ACR}, 0.15)`,
     tension: 0.3, fill: true, spanGaps: true,
     pointRadius: 5, pointHoverRadius: 7,
-    pointBackgroundColor: '#4ab3f4', pointBorderColor: '#fff',
+    pointBackgroundColor: AC, pointBorderColor: '#fff',
     pointBorderWidth: 1.5, borderWidth: 2.5
   });
   if (strengthChartView === '6weeks') {
@@ -5230,8 +5262,8 @@ function _renderStrengthScoreChart() {
           {
             type: 'bar',
             data,
-            backgroundColor: data.map(v => v > 0 ? 'rgba(74, 179, 244, 0.55)' : 'rgba(74, 179, 244, 0.08)'),
-            borderColor: '#4ab3f4',
+            backgroundColor: data.map(v => v > 0 ? `rgba(${ACR}, 0.55)` : `rgba(${ACR}, 0.08)`),
+            borderColor: AC,
             borderWidth: 1.5,
             borderRadius: 0,
             borderSkipped: false,
@@ -5247,7 +5279,7 @@ function _renderStrengthScoreChart() {
             spanGaps: false,
             pointRadius: data.map(v => v > 0 ? 6 : 0),
             pointHoverRadius: data.map(v => v > 0 ? 8 : 0),
-            pointBackgroundColor: '#7ac8ff',
+            pointBackgroundColor: AC2,
             pointBorderColor: '#fff',
             pointBorderWidth: 1.5,
             order: 1
@@ -5337,8 +5369,8 @@ function _renderStrengthScoreChart() {
       ...baseDataset,
       pointRadius: dayData.map(v => v == null ? 4 : 6),
       pointHoverRadius: dayData.map(v => v == null ? 5 : 8),
-      pointBackgroundColor: dayData.map(v => v == null ? 'rgba(74, 179, 244, 0.15)' : '#4ab3f4'),
-      pointBorderColor: dayData.map(v => v == null ? 'rgba(74, 179, 244, 0.5)' : '#fff'),
+      pointBackgroundColor: dayData.map(v => v == null ? `rgba(${ACR}, 0.15)` : '#4ab3f4'),
+      pointBorderColor: dayData.map(v => v == null ? `rgba(${ACR}, 0.5)` : '#fff'),
       pointBorderWidth: dayData.map(v => v == null ? 1 : 1.5),
       // Replace nulls with 0 so dots render across the whole week
       data: dayData.map(v => v == null ? 0 : v)
@@ -5523,7 +5555,7 @@ function renderChartSkillVsLift() {
     data: {
       labels: ['Wk 1','Wk 2','Wk 3','Wk 4'],
       datasets: [
-        { label: 'Lift',  data: weekData.map(w=>w.lift),  backgroundColor: 'rgba(74, 179, 244, 0.85)' },
+        { label: 'Lift',  data: weekData.map(w=>w.lift),  backgroundColor: `rgba(${ACR}, 0.85)` },
         { label: 'Skill', data: weekData.map(w=>w.skill), backgroundColor: 'rgba(155, 107, 201, 0.85)' }
       ]
     },
@@ -5570,8 +5602,8 @@ function renderChartSplitFreq() {
       labels: shortLabels,
       datasets: [{
         data: values,
-        backgroundColor: 'rgba(74, 179, 244, 0.75)',
-        borderColor: '#4ab3f4',
+        backgroundColor: `rgba(${ACR}, 0.75)`,
+        borderColor: AC,
         borderWidth: 1,
       }]
     },
@@ -5613,12 +5645,12 @@ function renderChartConditioning() {
     // cells = [{label, value}, ...]
     const badge = document.createElement('div');
     badge.id = 'cond-chart-stats-badge';
-    badge.style.cssText = 'display:grid; gap:6px; background:linear-gradient(135deg, rgba(122,200,255,0.15), rgba(74,179,244,0.04)); border:1px solid rgba(122,200,255,0.4); border-radius:10px; padding:12px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(74,179,244,0.15), inset 0 1px 0 rgba(255,255,255,0.06);';
+    badge.style.cssText = 'display:grid; gap:6px; background:linear-gradient(135deg, rgba(var(--mps-accent-2-rgb),0.15), rgba(var(--mps-accent-rgb),0.04)); border:1px solid rgba(var(--mps-accent-2-rgb),0.4); border-radius:10px; padding:12px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(var(--mps-accent-rgb),0.15), inset 0 1px 0 rgba(255,255,255,0.06);';
     badge.style.gridTemplateColumns = `repeat(${cells.length}, 1fr)`;
     badge.innerHTML = cells.map(c => `
       <div style="text-align:center;">
-        <div style="font-size:9px; font-weight:700; color:#7ac8ff; letter-spacing:1.2px; opacity:0.85; margin-bottom:4px;">${c.label}</div>
-        <div style="font-size:16px; font-weight:800; color:#7ac8ff; text-shadow:0 0 8px rgba(122,200,255,0.5); line-height:1; white-space:nowrap;">${c.value}</div>
+        <div style="font-size:9px; font-weight:700; color:var(--mps-accent-2); letter-spacing:1.2px; opacity:0.85; margin-bottom:4px;">${c.label}</div>
+        <div style="font-size:16px; font-weight:800; color:var(--mps-accent-2); text-shadow:0 0 8px rgba(var(--mps-accent-2-rgb),0.5); line-height:1; white-space:nowrap;">${c.value}</div>
       </div>
     `).join('');
     ctx.parentElement.parentElement.insertBefore(badge, ctx.parentElement);
@@ -5845,7 +5877,7 @@ function renderChartConditioning() {
             label: 'chronological',
             type: 'line',
             data: points.map(p => ({ x: p.miles, y: p.seconds / 60 })),
-            borderColor: 'rgba(74, 179, 244, 0.55)',
+            borderColor: `rgba(${ACR}, 0.55)`,
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 0,
@@ -6049,12 +6081,12 @@ function renderChartConditioning() {
     const COLORS = {
       running: { bg: 'rgba(34, 102, 51, 0.85)',  border: '#226633' },   // forest green
       sprint:  { bg: 'rgba(220, 72, 86, 0.80)',  border: '#dc4856' },   // crimson red
-      machine: { bg: 'rgba(74, 179, 244, 0.80)', border: '#4ab3f4' }    // MPS blue
+      machine: { bg: `rgba(${ACR}, 0.80)`, border: AC }    // MPS blue
     };
     const THEMES_3D = {
       running: { top: '#3d9658', side: '#0d2818' },  // forest green
       sprint:  { top: '#ef5a68', side: '#7a1f28' },  // crimson red
-      machine: { top: '#7ac8ff', side: '#1a4570' }   // blue
+      machine: { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') }   // blue
     };
     // Plugin: draw session label above each bar
     const allLabelPlugin = {
