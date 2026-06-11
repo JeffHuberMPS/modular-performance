@@ -403,10 +403,10 @@
         setCardMetrics('habits', [
           [avg(sum.ALL)+' / 15','avg per day'],
           [avg(sum.MRN)+' / 5','avg morning'],
+          [String(n),'days logged'],
           [avg(sum.WRK)+' / 5','avg work'],
-          [avg(sum.NGT)+' / 5','avg night'],
           [String(todayDone)+' / 15','done today'],
-          [String(n),'days logged']
+          [avg(sum.NGT)+' / 5','avg night']
         ]);
       } catch(e){ setCardMetrics('habits', []); }
 
