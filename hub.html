@@ -295,11 +295,17 @@
           try {
             const d = frame.contentDocument;
             if (d) {
+              /* Load Inter into the app frame so the override below has the font available. */
+              const fl = d.createElement('link'); fl.rel = 'stylesheet';
+              fl.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+              d.head.appendChild(fl);
               let css = 'a[href="/hub.html"]{display:none!important}'
                       + '#mps-hub-nav,#hub-nav,.nav-title{display:none!important}'
                       + '.brand-block,.mps-header{display:none!important}'
                       + '*:has(> .mps-logo-rsp){display:none!important}'
-                      + 'body{padding-top:0!important}';
+                      + 'body{padding-top:0!important}'
+                      /* Uniform font across every tracker (skip <i>/icon elements to keep icon fonts). */
+                      + 'body, body *:not(i):not([class*="icon"]):not([class*="ti-"]) { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important; }';
               if (app.id === 'journal') css += 'nav:first-of-type{display:none!important}';
               const s = d.createElement('style'); s.textContent = css; d.head.appendChild(s);
             }
