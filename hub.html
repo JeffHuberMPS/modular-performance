@@ -109,6 +109,17 @@
     .shell-loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ns-black); z-index: 5; }
     .shell-loader.hidden { display: none; }
 
+    /* Tier theme: colorful is All-Access ONLY. Free/Medium = professional black/gray.
+       Grayscale cascades onto the app iframes too, neutralizing their colour. */
+    body.tier-mono .shell-stage { filter: grayscale(1); }
+    body.tier-mono .shell-tab__dot { filter: grayscale(1); opacity: 0.4; }
+    body.tier-mono .shell-tab.active {
+      border-color: rgba(255,255,255,0.32);
+      background: linear-gradient(180deg, rgba(58,58,58,0.6), rgba(12,12,12,0.65));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+    }
+    body.tier-mono .metric-card::before { background: #888 !important; box-shadow: none !important; }
+
     /* ── Home dashboard ─────────────────────────────────────── */
     .home-view {
       position: absolute; inset: 0; overflow-y: auto; display: none;
@@ -410,6 +421,7 @@
     /* ── Tier preview (dev) ───────────────────────────────── */
     function previewTier(tier) {
       previewTierMode = tier;
+      document.body.classList.toggle('tier-mono', tier !== 'all');
       document.querySelectorAll('.tier-opt').forEach(b => b.classList.toggle('active', b.dataset.tier === tier));
       document.getElementById('dd-plan').textContent = TIER_LABEL[tier];
       updateTierBanner();
@@ -448,6 +460,7 @@
         else { unlockedApps = APPS.map(a => a.id); planLabel = TIER_LABEL[data.tier] || 'Free'; }
       } catch (err) { unlockedApps = APPS.map(a => a.id); }
       renderUser(user.displayName || user.email, user.email, user.photoURL, planLabel);
+      document.body.classList.toggle('tier-mono', planLabel !== 'All-Access');
       refreshTabLocks();
       if (activeId === 'home') loadDashboard();
     });
