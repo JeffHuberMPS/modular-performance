@@ -333,33 +333,50 @@
       const today = new Date(), todayKey = ymd(today), monthPrefix = todayKey.slice(0,7);
 
       try {
-        const days = await MPS_DB.getWorkoutHistory(uid, ymd(daysAgo(365)), todayKey);
+        const days = await MPS_DB.getWorkoutHistory(uid, '2000-01-01', todayKey);
+        /* All-time Strength Score — matches the Workout app exactly: total volume / total sets (raw). */
+        let vol=0, sets=0;
+        days.forEach(h => {
+          if (!Array.isArray(h.detail)) return;
+          const skills = new Set(h.skills || []);
+          h.detail.forEach(ex => {
+            if (skills.has(ex.blockName)) return;
+            (ex.sets||[]).forEach(s => {
+              if (!s || !s.done) return;
+              const w = parseFloat(s.weight)||0, r = parseFloat(s.reps)||0;
+              if (w<=0 && r<=0) return;
+              vol += w*r; sets += 1;
+            });
+          });
+        });
+        const strength = sets>0 ? Math.round(vol/sets) : 0;
         const set = new Set(days.map(d => d.date || d.id));
         let week=0; for (let i=0;i<7;i++) if (set.has(ymd(daysAgo(i)))) week++;
         let streak=0; for (let i=0;;i++){ if (set.has(ymd(daysAgo(i)))) streak++; else break; }
-        const month = days.filter(d => (d.date||d.id||'').startsWith(monthPrefix)).length;
-        setCardMetrics('workout', [[week+'/7','this week'], [String(streak),'day streak'], [String(month),'this month'], [String(days.length),'total logged']]);
+        setCardMetrics('workout', [[String(strength),'avg strength'], [week+'/7','this week'], [String(streak),'day streak'], [String(days.length),'total logged']]);
       } catch(e){ setCardMetrics('workout', []); }
 
       try {
-        const logs = await MPS_DB.getHabitHistory(uid, 60);
+        const logs = await MPS_DB.getHabitHistory(uid, 90);
         const byDate = new Set(logs.map(l => l.date));
+        let sumDone=0; logs.forEach(l => { sumDone += Object.values(l.habits||{}).filter(Boolean).length; });
+        const avg15 = logs.length ? Math.round(sumDone/logs.length*10)/10 : 0;
         const tl = logs.find(l => l.date === todayKey);
         const doneToday = tl ? Object.values(tl.habits||{}).filter(Boolean).length : 0;
-        let week=0; for (let i=0;i<7;i++) if (byDate.has(ymd(daysAgo(i)))) week++;
         let streak=0; for (let i=0;;i++){ if (byDate.has(ymd(daysAgo(i)))) streak++; else break; }
-        setCardMetrics('habits', [[String(doneToday),'done today'], [week+'/7','days this week'], [String(streak),'day streak'], [String(logs.length),'logged (60d)']]);
+        setCardMetrics('habits', [[avg15+' / 15','avg per day'], [String(doneToday)+' / 15','done today'], [String(streak),'day streak'], [String(logs.length),'days logged']]);
       } catch(e){ setCardMetrics('habits', []); }
 
       try {
         const logs = await MPS_DB.getSleepHistory(uid, 30);
+        const calcHours = (sl, wk) => { if(!sl||!wk) return 0; const a=sl.split(':').map(Number), b=wk.split(':').map(Number); let m=b[0]*60+b[1]-(a[0]*60+a[1]); if(m<0)m+=1440; return m/60; };
+        const durs = logs.map(l => calcHours(l.sleepTime, l.wakeTime)).filter(h => h > 0);
+        const avgDur = durs.length ? Math.round(durs.reduce((a,b)=>a+b,0)/durs.length*10)/10 : null;
         const latest = logs[0];
-        const e7 = logs.slice(0,7).map(l=>Number(l.energy)).filter(n=>!isNaN(n));
-        const avgE = e7.length ? Math.round(e7.reduce((a,b)=>a+b,0)/e7.length*10)/10 : null;
         setCardMetrics('sleep', [
+          [avgDur!=null ? avgDur+'h':'—','avg duration'],
           [latest&&latest.energy!=null ? latest.energy+'/10':'—','last energy'],
           [latest&&latest.soreness!=null ? latest.soreness+'/10':'—','last soreness'],
-          [avgE!=null ? avgE+'/10':'—','avg energy 7d'],
           [String(logs.length),'entries (30d)']
         ]);
       } catch(e){ setCardMetrics('sleep', []); }
@@ -371,9 +388,9 @@
         logs.forEach(l => (l.transactions||[]).forEach(t => { const a=Number(t.amount); if(!isNaN(a)){ total+=a; txns++; } }));
         const avg = today.getDate() ? total/today.getDate() : 0;
         setCardMetrics('expenses', [
+          ['$'+Math.round(avg).toLocaleString(),'avg / day'],
           ['$'+Math.round(total).toLocaleString(),'this month'],
           [String(txns),'transactions'],
-          ['$'+Math.round(avg).toLocaleString(),'avg / day'],
           [String(logs.length),'days logged']
         ]);
       } catch(e){ setCardMetrics('expenses', []); }
