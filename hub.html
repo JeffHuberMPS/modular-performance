@@ -62,11 +62,17 @@
     .shell-tab__lock { font-size: 0.6rem; opacity: 0.5; }
     .shell-tab.locked { opacity: 0.5; }
 
-    /* "Wireframe gold" gray — desaturated but keeps a warm gold brand cast (not flat B&W). */
-    body.tier-mono .shell-stage { filter: grayscale(1) sepia(0.5) saturate(1.35) brightness(1.05); }
-    body.tier-mono .shell-tab__dot { filter: grayscale(1) sepia(0.6) saturate(1.4); opacity: 0.6; }
-    body.tier-mono .shell-tab.active { border-color: rgba(201,160,32,0.45); background: linear-gradient(180deg, rgba(48,44,30,0.6), rgba(12,11,8,0.65)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
-    body.tier-mono .tracker-title__bar { background: #9a8444 !important; box-shadow: none !important; }
+    /* Free/Medium = professional silver-gray + black with GOLD accent words and a thin
+       gold wireframe outline. Clean desaturation only — NO sepia / old-photo wash. */
+    body.tier-mono .shell-frame { filter: grayscale(1); }
+    body.tier-mono .shell-tab__dot { filter: grayscale(1); opacity: 0.5; }
+    body.tier-mono .shell-tab.active { border-color: rgba(201,160,32,0.5); background: linear-gradient(180deg, rgba(40,38,28,0.6), rgba(12,11,8,0.65)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
+    body.tier-mono .tracker-title__bar { background: #bdbdbd !important; box-shadow: none !important; }
+    body.tier-mono .metric-card { border-color: rgba(201,160,32,0.30) !important; }
+    body.tier-mono .metric-card::before { background: #bdbdbd !important; box-shadow: none !important; }
+    body.tier-mono .metric-card__head .pip { background: #bdbdbd !important; box-shadow: none !important; }
+    body.tier-mono .hl-lbl { color: #C9A020 !important; }
+    body.tier-mono .mini__lbl { color: #a08f5e !important; }
 
     /* Uniform tracker title (shell-owned → identical for every tracker) */
     .tracker-title { flex: 0 0 auto; display: none; align-items: center; gap: 12px; padding: 13px var(--space-lg) 11px; border-bottom: 1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, rgba(16,16,16,0.6), rgba(8,8,8,0.6)); }
@@ -87,8 +93,8 @@
     .home-greeting { font-family: 'Bebas Neue',sans-serif; font-size: 1.9rem; letter-spacing: 0.04em; color: #fff; }
     .home-date { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
     .home-section-label { font-family: 'Bebas Neue',sans-serif; font-size: 0.85rem; letter-spacing: 0.22em; color: #8a8472; margin: 24px 2px 12px; }
-    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 880px; margin: 0 auto; }
-    .metric-card:nth-child(5) { grid-column: 1 / -1; max-width: calc(50% - 10px); justify-self: center; }
+    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; max-width: 906px; margin: 0 auto; }
+    .metric-card:nth-child(5) { grid-column: 1 / -1; max-width: calc(50% - 13px); justify-self: center; }
     .metric-card { position: relative; overflow: hidden; cursor: pointer; background: linear-gradient(180deg, rgba(28,28,28,0.7) 0%, rgba(13,13,13,0.7) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 22px rgba(0,0,0,0.4); padding: 20px 22px 22px; transition: transform 0.18s ease, border-color 0.18s ease; }
     .metric-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
     .metric-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 50%, rgba(255,255,255,0.1)); }
@@ -429,8 +435,11 @@
         const avg = today.getDate() ? total/today.getDate() : 0;
         const wkStart = ymd(daysAgo(6));
         let wkSpend=0; logs.forEach(l => { if ((l.date||'') >= wkStart) (l.transactions||[]).forEach(t => { const a=Number(t.amount); if(!isNaN(a)) wkSpend+=a; }); });
+        const todayLog = logs.find(l => l.date === todayKey);
+        let todaySpend=0; if (todayLog) (todayLog.transactions||[]).forEach(t => { const a=Number(t.amount); if(!isNaN(a)) todaySpend+=a; });
         setCardMetrics('expenses', [
           ['$'+Math.round(avg).toLocaleString(),'avg / day'],
+          ['$'+Math.round(todaySpend).toLocaleString(),'today'],
           ['$'+Math.round(total).toLocaleString(),'this month'],
           [String(txns),'transactions'],
           ['$'+Math.round(wkSpend).toLocaleString(),'this week'],
