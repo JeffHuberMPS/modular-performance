@@ -372,14 +372,13 @@
 
       try {
         /* Habits store under users/{uid}/app_storage/{habits_v4, blocks_v4} (NOT habit_logs). */
-        const sget = async (key) => {
-          const snap = await firebase.firestore().doc('users/'+uid+'/app_storage/'+key).get();
-          const d = snap.exists ? snap.data() : null;
-          if (!d || d.value == null) return null;
-          try { return JSON.parse(d.value); } catch(e){ return null; }
+        const sget = (key) => {
+          /* React trackers persist to localStorage (same origin → shared with the hub);
+             their Firestore app_storage path is blocked by security rules. */
+          try { const v = localStorage.getItem(key); return v != null ? JSON.parse(v) : null; } catch(e){ return null; }
         };
-        const hlog = (await sget('habits_v4')) || {};   // { dateKey: { habitId: bool } }
-        const blocks = (await sget('blocks_v4')) || {
+        const hlog = sget('habits_v4') || {};   // { dateKey: { habitId: bool } }
+        const blocks = sget('blocks_v4') || {
           MRN: { habits: [{id:'h_wake'},{id:'h_gymtr'},{id:'h_breath'},{id:'h_read'},{id:'h_cold'}] },
           WRK: { habits: [{id:'h_mind'},{id:'h_course'},{id:'h_outr'},{id:'h_chess'},{id:'h_auto'}] },
           NGT: { habits: [{id:'h_journ'},{id:'h_pray'},{id:'h_bible'},{id:'h_guit'},{id:'h_sleep'}] }
