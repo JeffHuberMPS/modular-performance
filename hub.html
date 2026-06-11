@@ -64,7 +64,7 @@
 
     /* Free/Medium = professional silver-gray + black with GOLD accent words and a thin
        gold wireframe outline. Clean desaturation only — NO sepia / old-photo wash. */
-    body.tier-mono .shell-frame { filter: grayscale(1); }
+    body.tier-mono .shell-frame:not(#frame-workout) { filter: grayscale(1); }
     body.tier-mono .shell-tab__dot { filter: grayscale(1); opacity: 0.5; }
     body.tier-mono .shell-tab.active { border-color: rgba(201,160,32,0.5); background: linear-gradient(180deg, rgba(40,38,28,0.6), rgba(12,11,8,0.65)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
     body.tier-mono .tracker-title__bar { background: #C9A020 !important; box-shadow: none !important; }
@@ -228,6 +228,21 @@
       const tg = document.getElementById('theme-toggle');
       tg.style.display = (currentTier === 'all') ? 'inline-flex' : 'none';
       document.getElementById('theme-toggle-label').textContent = (themePref === 'mono') ? 'Dark/Gray' : 'Colorful';
+      applyFrameThemes();
+    }
+    /* In gray mode, recolor variable-driven apps (Workout, Expenses) to black + gold + white. */
+    function applyFrameThemes() {
+      const gray = document.body.classList.contains('tier-mono');
+      const gold = ':root{--mps-accent:#C9A020!important;--mps-blue:#221f15!important;--mps-blue-light:#34301f!important;--bg-2:#060606!important;--card:#121212!important;--card-2:#18170f!important;--border:#38331f!important;--text-dim:#8d887b!important;--text-faint:#5a564b!important;}';
+      ['workout'].forEach(id => {
+        const f = document.getElementById('frame-' + id);
+        if (!f || !f.contentDocument) return;
+        try {
+          let st = f.contentDocument.getElementById('mps-gold-theme');
+          if (!st) { st = f.contentDocument.createElement('style'); st.id = 'mps-gold-theme'; f.contentDocument.head.appendChild(st); }
+          st.textContent = gray ? gold : '';
+        } catch (e) {}
+      });
     }
     function toggleTheme() {
       themePref = (themePref === 'mono') ? 'color' : 'mono';
@@ -311,6 +326,7 @@
             }
           } catch (e) {}
           document.getElementById('stage-loader').classList.add('hidden');
+          applyFrameThemes();
         });
         frame.src = app.path;
         document.getElementById('stage').appendChild(frame);
