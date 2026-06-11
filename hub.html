@@ -64,7 +64,7 @@
 
     /* Free/Medium = professional silver-gray + black with GOLD accent words and a thin
        gold wireframe outline. Clean desaturation only — NO sepia / old-photo wash. */
-    body.tier-mono .shell-frame:not(#frame-workout) { filter: grayscale(1); }
+    /* apps self-theme to black+gold in gray mode via applyFrameThemes — no blanket grayscale */
     body.tier-mono .shell-tab__dot { filter: grayscale(1); opacity: 0.5; }
     body.tier-mono .shell-tab.active { border-color: rgba(201,160,32,0.5); background: linear-gradient(180deg, rgba(40,38,28,0.6), rgba(12,11,8,0.65)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
     body.tier-mono .tracker-title__bar { background: #C9A020 !important; box-shadow: none !important; }
@@ -233,15 +233,27 @@
     /* In gray mode, recolor variable-driven apps (Workout, Expenses) to black + gold + white. */
     function applyFrameThemes() {
       const gray = document.body.classList.contains('tier-mono');
-      const gold = ':root{--mps-accent:#C9A020!important;--mps-blue:#221f15!important;--mps-blue-light:#34301f!important;--bg-2:#060606!important;--card:#121212!important;--card-2:#18170f!important;--border:#38331f!important;--text-dim:#8d887b!important;--text-faint:#5a564b!important;}';
-      ['workout'].forEach(id => {
+      const overrides = {
+        workout: ':root{--mps-accent:#C9A020!important;--mps-blue:#221f15!important;--mps-blue-light:#34301f!important;--bg-2:#060606!important;--card:#121212!important;--card-2:#18170f!important;--border:#38331f!important;--text-dim:#8d887b!important;--text-faint:#5a564b!important;}',
+        expenses: ':root{--mps-mint:#C9A020!important;--mps-card:#101010!important;--mps-essentials:#9a958a!important;--mps-lifestyle:#9a958a!important;--mps-recurring:#9a958a!important;--mps-investment:#9a958a!important;--mps-income:#9a958a!important;--mps-other:#9a958a!important;}',
+        sleep: '[style*="9b6bc9"],[style*="155,107,201"],[style*="155, 107, 201"],[style*="b98ce6"],[style*="185,140,230"],[style*="210,175,255"]{color:#C9A020!important;border-color:#C9A020!important;}'
+      };
+      Object.keys(overrides).forEach(id => {
         const f = document.getElementById('frame-' + id);
         if (!f || !f.contentDocument) return;
         try {
           let st = f.contentDocument.getElementById('mps-gold-theme');
           if (!st) { st = f.contentDocument.createElement('style'); st.id = 'mps-gold-theme'; f.contentDocument.head.appendChild(st); }
-          st.textContent = gray ? gold : '';
+          st.textContent = gray ? overrides[id] : '';
         } catch (e) {}
+      });
+      /* React apps (Habits, Journal) bake gray-mode in at load — reload them when the theme flips. */
+      ['habits', 'journal'].forEach(id => {
+        const f = document.getElementById('frame-' + id);
+        if (!f || !f.src) return;
+        const want = gray ? '1' : '0', have = f.getAttribute('data-gray');
+        if (have == null) f.setAttribute('data-gray', want);
+        else if (have !== want) { f.setAttribute('data-gray', want); f.src = f.src; }
       });
     }
     function toggleTheme() {

@@ -100,8 +100,9 @@
     const { useState, useEffect, useCallback, useRef } = React;
 
     // ── THEME ─────────────────────────────────────────────────────
-    const NAVY   = '#4a6fa5';
-    const NAVYL  = '#6b8fc5';
+    const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+    const NAVY   = __GRAY ? '#C9A020' : '#4a6fa5';
+    const NAVYL  = __GRAY ? '#e6c652' : '#6b8fc5';
     const GOLD   = '#c9a86b';
     const CREAM  = '#e8d5b0';
     const BG     = '#080808';

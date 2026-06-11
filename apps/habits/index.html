@@ -312,9 +312,10 @@ function HabitTracker() {
   });
 
   // ─── Theme ───
-  const PRIMARY = '#8b0000';
-  const PRIMARY_LIGHT = '#d62020';
-  const PRIMARY_GLOW = 'rgba(139,0,0,0.5)';
+  const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+  const PRIMARY = __GRAY ? '#C9A020' : '#8b0000';
+  const PRIMARY_LIGHT = __GRAY ? '#e6c652' : '#d62020';
+  const PRIMARY_GLOW = __GRAY ? 'rgba(201,160,32,0.5)' : 'rgba(139,0,0,0.5)';
   const ACCENT = '#b8b8b8';
   const BG = '#050505';
   const CARD = '#121212';
