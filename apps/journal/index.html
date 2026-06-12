@@ -59,16 +59,23 @@
         var COLL = 'users/' + uid + '/app_storage';
         window.currentUser = user;
 
+        // localStorage fallback so the app never hangs when Firestore (app_storage) is blocked.
+        var LS = function (key) { return 'mps_jnl_' + uid + '_' + key; };
         window.storage = {
           get: function (key) {
             return db.doc(COLL + '/jnl__' + key).get().then(function (snap) {
-              return snap.exists && snap.data().value !== undefined ? snap.data().value : null;
+              if (snap.exists && snap.data().value !== undefined) return snap.data().value;
+              try { var l = localStorage.getItem(LS(key)); return l ? JSON.parse(l) : null; } catch (e) { return null; }
+            }).catch(function () {
+              try { var l = localStorage.getItem(LS(key)); return l ? JSON.parse(l) : null; } catch (e) { return null; }
             });
           },
           set: function (key, value) {
-            return db.doc(COLL + '/jnl__' + key).set({ value: value }).then(function () { return true; }).catch(function () { return false; });
+            try { localStorage.setItem(LS(key), JSON.stringify(value)); } catch (e) {}
+            return db.doc(COLL + '/jnl__' + key).set({ value: value }).then(function () { return true; }).catch(function () { return true; });
           },
           delete: function (key) {
+            try { localStorage.removeItem(LS(key)); } catch (e) {}
             return db.doc(COLL + '/jnl__' + key).delete().catch(function () {});
           },
           list: function () {
@@ -76,6 +83,10 @@
               return snap.docs.map(function (d) { return d.id; })
                 .filter(function (k) { return k.startsWith('jnl__'); })
                 .map(function (k) { return k.slice(5); });
+            }).catch(function () {
+              var out = [], p = 'mps_jnl_' + uid + '_';
+              try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(p) === 0) out.push(k.slice(p.length)); } } catch (e) {}
+              return out;
             });
           }
         };
@@ -610,7 +621,7 @@
       const [entries, setEntries] = useState({});
       const [ready,   setReady]   = useState(false);
 
-      useEffect(() => { load().then(d => { setEntries(d); setReady(true); }); }, []);
+      useEffect(() => { load().then(d => { setEntries(d); setReady(true); }).catch(() => setReady(true)); }, []);
 
       const saveEntries = useCallback(async (updated) => {
         setEntries(updated);
