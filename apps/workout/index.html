@@ -1198,7 +1198,9 @@ async function cloudBackupNow() {
   if (!doc || _cloudBusy) return false;
   _cloudBusy = true;
   try {
-    await doc.set({ data: _collectLocal(), ts: Date.now(), v: 1 });
+    // Store as a JSON string (primitive) — the data object is built in this iframe's
+    // realm and Firestore (parent realm) rejects cross-realm objects.
+    await doc.set({ data: JSON.stringify(_collectLocal()), ts: Date.now(), v: 1 });
     try { localStorage.setItem(K_LAST_BACKUP, new Date().toISOString()); } catch (e) {}
     try { updateBackupStatus(); } catch (e) {}
     _cloudBusy = false;
@@ -1214,7 +1216,8 @@ async function cloudRestoreIfEmpty() {
   try {
     const snap = await doc.get();
     if (snap.exists && snap.data() && snap.data().data) {
-      const d = snap.data().data;
+      let d; try { d = JSON.parse(snap.data().data); } catch (e) { return false; }
+      if (!d || typeof d !== 'object') return false;
       let cloudHasHistory = false;
       try { cloudHasHistory = !!d[K_HISTORY] && JSON.parse(d[K_HISTORY] || '[]').length > 0; } catch (e) {}
       if (!cloudHasHistory) return false;     // nothing real to restore (avoids reload loop)
