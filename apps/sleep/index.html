@@ -175,7 +175,8 @@ const PURPLE = __GRAY ? '#f5f5f5' : PURPLE;
 const GOLD   = __GRAY ? '#C9A020' : GOLD;
 const PRGB   = __GRAY ? '150,150,150' : '155,107,201';
 const GRGB   = __GRAY ? '201,160,32' : '201,168,107';
-const LBL    = __GRAY ? '#b89a5e' : '#5a5264';   // labels → gold in gray (matches Habits)
+const LBL    = __GRAY ? '#b89a5e' : '#a684cc';   // labels: gold in gray, PURPLE in colorful
+const BRDR   = __GRAY ? '150,150,150' : '155,107,201';   // card borders: neutral in gray, PURPLE in colorful
 /* Recharts removed — using pure SVG charts below */
 
 /* Lucide React icons — with emoji fallbacks if CDN fails */
@@ -857,8 +858,8 @@ const Field = ({ label, children }) => (
 const TodayStat = ({ icon, label, value, accent }) => (
   <div style={{
     background: "rgba(18,18,20, 0.85)",
-    border: "1px solid rgba(150,150,150,0.22)",
-    borderLeft: "3px solid rgba(150,150,150,0.6)",
+    border: `1px solid rgba(${BRDR},0.22)`,
+    borderLeft: `3px solid rgba(${BRDR},0.6)`,
     borderRadius: 10,
     padding: "14px 16px",
     display: "flex",
@@ -899,7 +900,7 @@ const StatBlock = ({ label, value, sub, trend, good }) => {
   return (
     <div style={{
       flex: "1 1 calc(50% - 6px)", minWidth: 120,
-      background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.12)",
+      background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
       borderRadius: 10, padding: "14px 16px",
     }}>
       <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 6 }}>
@@ -919,7 +920,7 @@ const StatBlock = ({ label, value, sub, trend, good }) => {
 const InsightRow = ({ label, value, accent }) => (
   <div style={{
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(150,150,150,0.13)",
+    background: "rgba(255,255,255,0.03)", border: `1px solid rgba(${BRDR},0.13)`,
     borderRadius: 10, padding: "15px 18px", marginBottom: 8,
   }}>
     <span style={{ fontSize: 13, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.13em", color: LBL, textTransform: "uppercase" }}>
@@ -935,7 +936,7 @@ const InsightRow = ({ label, value, accent }) => (
 const LogBlock = ({ label, value, accent }) => (
   <div style={{
     background: "rgba(150,150,150,0.06)",
-    border: "1px solid rgba(150,150,150,0.12)",
+    border: `1px solid rgba(${BRDR},0.12)`,
     borderLeft: "3px solid rgba(150,150,150,0.55)",
     borderRadius: 8, padding: "8px 10px",
   }}>
@@ -951,7 +952,7 @@ const LogBlock = ({ label, value, accent }) => (
 /* LogCard — full entry card with 7 stat blocks */
 const LogCard = ({ e, onEdit, onDelete }) => (
   <div style={{
-    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(150,150,150,0.13)",
+    background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
     borderRadius: 10, padding: "14px 16px", marginBottom: 16,
   }}>
     {/* Date header */}
@@ -1015,7 +1016,7 @@ const DateTick = ({ x, y, payload, weekdayMap }) => {
 /* ── Pure SVG chart components — no external library, always renders ── */
 const SvgChart = (() => {
   const PAD = { top: 12, right: 10, bottom: 46, left: 48 };
-  const W = 600, H = 260;
+  const W = 600, H = 440;
   const pw = W - PAD.left - PAD.right;
   const ph = H - PAD.top - PAD.bottom;
   const ys = (v, min, max) => PAD.top + ph - ((v - min) / (max - min)) * ph;
@@ -1044,7 +1045,7 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const bw = Math.max(3, pw / data.length * 0.6);
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:260,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:440,display:"block"}}>
         <defs>
           <linearGradient id="svgBarGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#c9a3eb"/><stop offset="100%" stopColor="#5a3088"/>
@@ -1066,7 +1067,7 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const n = data.length;
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:260,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:440,display:"block"}}>
         <YAxisLines ticks={ticks} domain={domain}/>
         {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke={GOLD} strokeDasharray="3 5" opacity={0.35}/>}
         {lines.map(({key, stroke}) => {
@@ -1087,7 +1088,7 @@ const SvgChart = (() => {
 /* ChartCard */
 const ChartCard = ({ title, sub, children }) => (
   <div style={{
-    background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.12)",
+    background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
     borderRadius: 12, padding: "16px", marginBottom: 12,
   }}>
     <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12, letterSpacing: "0.14em",
