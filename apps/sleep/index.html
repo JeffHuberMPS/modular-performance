@@ -730,7 +730,7 @@ function SleepTracker() {
               {/* Energy vs Soreness — pure SVG, always renders */}
               <ChartCard title="Energy vs Soreness" sub="1–10 scale · last 30">
                 <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:GOLD},{key:"soreness",stroke:PURPLE}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
-                <div style={{display:"flex",gap:16,marginTop:6,fontSize:10,fontFamily:"JetBrains Mono, monospace"}}>
+                <div style={{display:"flex",gap:16,marginTop:8,fontSize:12,fontFamily:"JetBrains Mono, monospace"}}>
                   <span style={{color:"#9aa3b2"}}><span style={{color:GOLD}}>——</span> energy</span>
                   <span style={{color:"#9aa3b2"}}><span style={{color:PURPLE}}>——</span> soreness</span>
                 </div>
@@ -867,7 +867,7 @@ const TodayStat = ({ icon, label, value, accent }) => (
   }}>
     <div style={{
       display: "flex", alignItems: "center", gap: 6,
-      fontSize: 10, fontFamily: "JetBrains Mono, monospace",
+      fontSize: 12, fontFamily: "JetBrains Mono, monospace",
       letterSpacing: "0.14em", color: LBL,
       textTransform: "uppercase",
     }}>
@@ -1005,7 +1005,7 @@ const DateTick = ({ x, y, payload, weekdayMap }) => {
   const wd = weekdayMap?.[payload.value];
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={12} textAnchor="middle" fill="#4a4255" fontSize={9} fontFamily="JetBrains Mono, monospace">
+      <text x={0} y={0} dy={14} textAnchor="middle" fill="#6a6a6a" fontSize={14} fontFamily="JetBrains Mono, monospace">
         {wd ? wd.slice(0, 1) : payload.value.slice(-2)}
       </text>
     </g>
@@ -1014,8 +1014,8 @@ const DateTick = ({ x, y, payload, weekdayMap }) => {
 
 /* ── Pure SVG chart components — no external library, always renders ── */
 const SvgChart = (() => {
-  const PAD = { top: 8, right: 8, bottom: 36, left: 40 };
-  const W = 600, H = 200;
+  const PAD = { top: 12, right: 10, bottom: 46, left: 48 };
+  const W = 600, H = 260;
   const pw = W - PAD.left - PAD.right;
   const ph = H - PAD.top - PAD.bottom;
   const ys = (v, min, max) => PAD.top + ph - ((v - min) / (max - min)) * ph;
@@ -1027,7 +1027,7 @@ const SvgChart = (() => {
       const y = ys(t, min, max);
       return <g key={t}>
         <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1}/>
-        <text x={PAD.left - 6} y={y + 4} textAnchor="end" fill="#ede0c4" fontSize={12} fontFamily="system-ui,sans-serif">{t}</text>
+        <text x={PAD.left - 8} y={y + 5} textAnchor="end" fill="#ede0c4" fontSize={16} fontFamily="system-ui,sans-serif">{t}</text>
       </g>;
     })}</>;
   };
@@ -1035,7 +1035,7 @@ const SvgChart = (() => {
   const XLabels = ({ data }) => {
     const step = Math.max(1, Math.ceil(data.length / 7));
     return <>{data.map((d, i) => i % step === 0
-      ? <text key={i} x={xs(i, data.length)} y={H - 4} textAnchor="middle" fill="#5a6470" fontSize={10} fontFamily="system-ui,sans-serif">{d.label}</text>
+      ? <text key={i} x={xs(i, data.length)} y={H - 6} textAnchor="middle" fill="#8a8a8a" fontSize={15} fontFamily="system-ui,sans-serif">{d.label}</text>
       : null
     )}</>;
   };
@@ -1044,7 +1044,7 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const bw = Math.max(3, pw / data.length * 0.6);
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:200,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:260,display:"block"}}>
         <defs>
           <linearGradient id="svgBarGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#c9a3eb"/><stop offset="100%" stopColor="#5a3088"/>
@@ -1066,7 +1066,7 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const n = data.length;
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:200,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:260,display:"block"}}>
         <YAxisLines ticks={ticks} domain={domain}/>
         {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke={GOLD} strokeDasharray="3 5" opacity={0.35}/>}
         {lines.map(({key, stroke}) => {
@@ -1090,11 +1090,11 @@ const ChartCard = ({ title, sub, children }) => (
     background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.12)",
     borderRadius: 12, padding: "16px", marginBottom: 12,
   }}>
-    <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.14em",
-      textTransform: "uppercase", color: "#ede0c4", marginBottom: 2 }}>
+    <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12, letterSpacing: "0.14em",
+      textTransform: "uppercase", color: "#ede0c4", marginBottom: 3 }}>
       {title}
     </div>
-    {sub && <div style={{ fontSize: 9, color: "#6a5e48", fontFamily: "JetBrains Mono, monospace", marginBottom: 12 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 12, color: "#9a8a6a", fontFamily: "JetBrains Mono, monospace", marginBottom: 14 }}>{sub}</div>}
     {children}
   </div>
 );
