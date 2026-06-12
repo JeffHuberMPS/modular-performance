@@ -175,6 +175,7 @@ const PURPLE = __GRAY ? '#f5f5f5' : PURPLE;
 const GOLD   = __GRAY ? '#C9A020' : GOLD;
 const PRGB   = __GRAY ? '150,150,150' : '155,107,201';
 const GRGB   = __GRAY ? '201,160,32' : '201,168,107';
+const LBL    = __GRAY ? '#b89a5e' : '#5a5264';   // labels → gold in gray (matches Habits)
 /* Recharts removed — using pure SVG charts below */
 
 /* Lucide React icons — with emoji fallbacks if CDN fails */
@@ -767,7 +768,7 @@ function SleepTracker() {
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.18em", color: PURPLE, textTransform: "uppercase" }}>Full Log</div>
-              <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#5a5264" }}>{entries.length} {entries.length === 1 ? "entry" : "entries"}</div>
+              <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: LBL }}>{entries.length} {entries.length === 1 ? "entry" : "entries"}</div>
             </div>
 
             {entries.length === 0 ? (
@@ -789,7 +790,7 @@ function SleepTracker() {
                     <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4" }}>
                       {fmtMonth(month + "-01")}
                     </div>
-                    <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#5a5264" }}>
+                    <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: LBL }}>
                       {mes.length} {mes.length === 1 ? "entry" : "entries"} ∨
                     </div>
                   </div>
@@ -808,7 +809,7 @@ function SleepTracker() {
                       return (
                         <div key={ws} style={{ padding: "10px 12px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                            <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.14em", color: "#5a5264", textTransform: "uppercase" }}>
+                            <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.14em", color: LBL, textTransform: "uppercase" }}>
                               Week of {fmtWeekRange(wsDate)}
                             </div>
                             {isCurrent && (
@@ -867,7 +868,7 @@ const TodayStat = ({ icon, label, value, accent }) => (
     <div style={{
       display: "flex", alignItems: "center", gap: 6,
       fontSize: 10, fontFamily: "JetBrains Mono, monospace",
-      letterSpacing: "0.14em", color: "#7a6a8a",
+      letterSpacing: "0.14em", color: LBL,
       textTransform: "uppercase",
     }}>
       <span style={{ color: PURPLE, display: "flex", alignItems: "center" }}>{icon}</span>
@@ -901,13 +902,13 @@ const StatBlock = ({ label, value, sub, trend, good }) => {
       background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.12)",
       borderRadius: 10, padding: "14px 16px",
     }}>
-      <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264", textTransform: "uppercase", marginBottom: 6 }}>
+      <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 6 }}>
         {label}
       </div>
       <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4", lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 10, color: "#5a5264", fontFamily: "JetBrains Mono, monospace", marginTop: 4 }}>
+      <div style={{ fontSize: 10, color: LBL, fontFamily: "JetBrains Mono, monospace", marginTop: 4 }}>
         — {sub} <span style={{ color: arrowColor }}>{arrow}</span>
       </div>
     </div>
@@ -921,7 +922,7 @@ const InsightRow = ({ label, value, accent }) => (
     background: "rgba(255,255,255,0.03)", border: "1px solid rgba(150,150,150,0.13)",
     borderRadius: 10, padding: "15px 18px", marginBottom: 8,
   }}>
-    <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.13em", color: "#6a5870", textTransform: "uppercase" }}>
+    <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.13em", color: LBL, textTransform: "uppercase" }}>
       {label}
     </span>
     <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || PURPLE }}>
@@ -938,7 +939,7 @@ const LogBlock = ({ label, value, accent }) => (
     borderLeft: "3px solid rgba(150,150,150,0.55)",
     borderRadius: 8, padding: "8px 10px",
   }}>
-    <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264", textTransform: "uppercase", marginBottom: 4 }}>
+    <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 4 }}>
       {label}
     </div>
     <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || "#ede0c4", lineHeight: 1 }}>
@@ -964,7 +965,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         </span>
       </div>
       <div style={{ display: "flex", gap: 5 }}>
-        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#5a5264", display: "flex", alignItems: "center" }} onClick={onEdit}><Pencil size={12} /></button>
+        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: LBL, display: "flex", alignItems: "center" }} onClick={onEdit}><Pencil size={12} /></button>
         <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
       </div>
     </div>
@@ -1104,7 +1105,7 @@ const CustomTooltip = ({ active, payload, label, suffix = "" }) => {
   return (
     <div style={{ background: "#141416", border: "1px solid rgba(150,150,150,0.3)",
       borderRadius: 6, padding: "8px 12px", fontFamily: "JetBrains Mono, monospace", fontSize: 10 }}>
-      <div style={{ color: "#5a5264", marginBottom: 4 }}>{label}</div>
+      <div style={{ color: LBL, marginBottom: 4 }}>{label}</div>
       {payload.map((p, i) => (
         <div key={i} style={{ color: p.color || GOLD }}>{p.name}: {p.value}{suffix}</div>
       ))}
@@ -1155,7 +1156,7 @@ const styles = {
     fontFamily: "JetBrains Mono, monospace", width: "100%", boxSizing: "border-box" },
   range:       { width: "100%", accentColor: GOLD },
   formFoot:    { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  preview:     { fontSize: 11, color: "#5a5264", fontFamily: "JetBrains Mono, monospace", flex: 1 },
+  preview:     { fontSize: 11, color: LBL, fontFamily: "JetBrains Mono, monospace", flex: 1 },
 
   /* Today snapshot */
   todayCard:   { background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.2)",
@@ -1182,7 +1183,7 @@ const styles = {
   logSub:      { fontSize: 10, color: "#4a4255", fontFamily: "JetBrains Mono, monospace", marginTop: 2 },
   logStats:    { display: "flex", gap: 8, fontSize: 11, fontFamily: "JetBrains Mono, monospace" },
   iconBtn:     { background: "transparent", border: "1px solid rgba(150,150,150,0.2)",
-    borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#5a5264",
+    borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: LBL,
     display: "flex", alignItems: "center" },
   empty:       { fontSize: 11, color: "#4a4255", fontFamily: "JetBrains Mono, monospace",
     textAlign: "center", padding: "24px 0", letterSpacing: "0.1em" },
