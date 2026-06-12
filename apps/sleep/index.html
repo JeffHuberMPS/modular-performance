@@ -52,7 +52,7 @@
       position: fixed; top: 0; left: 0; right: 0; height: 46px;
       display: flex; align-items: center; padding: 0 16px;
       background: rgba(10,10,10,0.96);
-      border-bottom: 1px solid rgba(155,107,201,0.25);
+      border-bottom: 1px solid rgba(150,150,150,0.25);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       z-index: 1000;
     }
@@ -81,6 +81,12 @@
     .btn-primary:hover { background: #c9a86b !important; color: #0a0a0a !important; }
     .btn-purple:hover { background: #9b6bc9 !important; color: #0a0a0a !important; }
     .btn-ghost:hover { color: #c9a86b !important; }
+    /* ── Gray/Gold theme (Free + Medium) — shell adds body.mps-gray ── */
+    body.mps-gray #hub-nav a, body.mps-gray #hub-nav .nav-title, body.mps-gray #auth-loading { color: #C9A020 !important; }
+    body.mps-gray .card:hover { border-color: #C9A020 !important; }
+    body.mps-gray .btn-primary:hover { background: #C9A020 !important; }
+    body.mps-gray .btn-purple:hover { background: #f5f5f5 !important; }
+    body.mps-gray .btn-ghost:hover { color: #C9A020 !important; }
     input[type="number"], input[type="time"], input[type="date"], input[type="range"] {
       font-family: 'JetBrains Mono', monospace;
       color-scheme: dark;
@@ -162,6 +168,13 @@
 
 /* ── CDN Globals ── */
 const { useState, useEffect, useMemo } = React;
+
+/* ── Gray/Gold theme (Free/Medium): purple → white, gold stays gold. __GRAY reads parent tier. ── */
+const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+const PURPLE = __GRAY ? '#f5f5f5' : PURPLE;
+const GOLD   = __GRAY ? '#C9A020' : GOLD;
+const PRGB   = __GRAY ? '150,150,150' : '155,107,201';
+const GRGB   = __GRAY ? '201,160,32' : '201,168,107';
 /* Recharts removed — using pure SVG charts below */
 
 /* Lucide React icons — with emoji fallbacks if CDN fails */
@@ -521,7 +534,7 @@ function SleepTracker() {
   if (loading) {
     return (
       <div style={styles.loading}>
-        <div style={{ fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.3em", color: "#9b6bc9", fontSize: 12 }}>
+        <div style={{ fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.3em", color: PURPLE, fontSize: 12 }}>
           LOADING
         </div>
       </div>
@@ -535,7 +548,7 @@ function SleepTracker() {
         {/* Save success toast */}
         {saveSuccess && (
           <div style={{
-            background: "rgba(155,107,201,0.15)", border: "1px solid #9b6bc9",
+            background: "rgba(150,150,150,0.15)", border: `1px solid ${PURPLE}`,
             color: "#c9a8e8", padding: "12px 16px", marginBottom: 16,
             fontFamily: "JetBrains Mono, monospace", fontSize: 12,
             letterSpacing: "0.1em", textAlign: "center"
@@ -569,12 +582,12 @@ function SleepTracker() {
               WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
               filter: 'drop-shadow(0 6px 20px rgba(201,168,107,0.55))',
             }}>MPS</div>
-            <div style={{ width: '72%', height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(155,107,201,0.3) 15%, rgba(185,140,230,0.85) 35%, rgba(210,175,255,1) 50%, rgba(185,140,230,0.85) 65%, rgba(155,107,201,0.3) 85%, transparent 100%)', margin: '14px auto 13px', boxShadow: '0 0 6px rgba(155,107,201,0.9), 0 0 18px rgba(155,107,201,0.4)' }} />
+            <div style={{ width: '72%', height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(150,150,150,0.3) 15%, rgba(190,190,190,0.85) 35%, rgba(220,220,220,1) 50%, rgba(190,190,190,0.85) 65%, rgba(150,150,150,0.3) 85%, transparent 100%)', margin: '14px auto 13px', boxShadow: '0 0 6px rgba(150,150,150,0.9), 0 0 18px rgba(150,150,150,0.4)' }} />
             <div style={{ fontSize: '11px', letterSpacing: '5px', color: '#b09878', fontWeight: 400, marginBottom: '13px', fontFamily: "'Bebas Neue', sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
             <div style={{ fontSize: '22px', letterSpacing: '5px', fontWeight: 400, fontFamily: "'Bebas Neue', sans-serif" }}>
-              <span style={{ color: '#c9a86b', textShadow: '0 0 14px rgba(201,168,107,0.4)' }}>REST </span>
-              <span style={{ color: '#9b6bc9', textShadow: '0 0 14px rgba(155,107,201,0.6)' }}>&amp;</span>
-              <span style={{ color: '#c9a86b', textShadow: '0 0 14px rgba(201,168,107,0.4)' }}> RECOVERY</span>
+              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,168,107,0.4)' }}>REST </span>
+              <span style={{ color: PURPLE, textShadow: '0 0 14px rgba(150,150,150,0.6)' }}>&amp;</span>
+              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,168,107,0.4)' }}> RECOVERY</span>
             </div>
           </div>
 
@@ -638,21 +651,21 @@ function SleepTracker() {
               <Field label={`Mental Clarity · ${form.clarity}/10`}>
                 <input type="range" min="1" max="10" value={form.clarity}
                   onChange={(e) => setForm({ ...form, clarity: +e.target.value })}
-                  style={{ ...styles.range, accentColor: "#9b6bc9" }} />
+                  style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
               <Field label={`Restlessness · ${form.restlessness}/10`}>
                 <input type="range" min="1" max="10" value={form.restlessness}
                   onChange={(e) => setForm({ ...form, restlessness: +e.target.value })}
-                  style={{ ...styles.range, accentColor: "#9b6bc9" }} />
+                  style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
             </div>
             <div style={styles.formFoot}>
               <div style={styles.preview}>
                 {form.sleepTime ? (
                   <>
-                    Duration: <strong style={{ color: "#9b6bc9" }}>{calcHours(form.sleepTime, form.wakeTime)}h</strong>
+                    Duration: <strong style={{ color: PURPLE }}>{calcHours(form.sleepTime, form.wakeTime)}h</strong>
                     {" · "}
-                    Recovery: <strong style={{ color: "#c9a86b" }}>
+                    Recovery: <strong style={{ color: GOLD }}>
                       {calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness)}%
                     </strong>
                   </>
@@ -681,12 +694,12 @@ function SleepTracker() {
             <section style={styles.todayCard}>
               <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
               <div style={styles.todayGrid}>
-                <TodayStat icon={<IconSun />}       label="Woke"     value={today?.wakeTime ? fmt12(today.wakeTime) : "—"} accent="#9b6bc9" />
-                <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? `${today.hours}h` : "—"} accent="#9b6bc9" />
-                <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent="#9b6bc9" />
-                <TodayStat icon={<IconHeart />}     label="Soreness" value={today ? `${today.soreness}/10` : "—"} accent="#9b6bc9" />
-                <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent="#9b6bc9" />
-                <TodayStat icon={<IconBattery />}   label="Recovery" value={today?.recovery != null ? `${today.recovery}%` : "—"} accent="#9b6bc9" />
+                <TodayStat icon={<IconSun />}       label="Woke"     value={today?.wakeTime ? fmt12(today.wakeTime) : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? `${today.hours}h` : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent={PURPLE} />
+                <TodayStat icon={<IconHeart />}     label="Soreness" value={today ? `${today.soreness}/10` : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent={PURPLE} />
+                <TodayStat icon={<IconBattery />}   label="Recovery" value={today?.recovery != null ? `${today.recovery}%` : "—"} accent={PURPLE} />
               </div>
               {!today && <div style={{...styles.empty, marginTop: 8}}>No entry yet — tap + LOG ENTRY to start.</div>}
             </section>
@@ -710,15 +723,15 @@ function SleepTracker() {
 
               {/* Recovery Score — pure SVG, always renders */}
               <ChartCard title="Recovery Score" sub="% · last 30 nights">
-                <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:"#c9a86b"}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
+                <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:GOLD}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
               </ChartCard>
 
               {/* Energy vs Soreness — pure SVG, always renders */}
               <ChartCard title="Energy vs Soreness" sub="1–10 scale · last 30">
-                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:"#c9a86b"},{key:"soreness",stroke:"#9b6bc9"}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
+                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:GOLD},{key:"soreness",stroke:PURPLE}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
                 <div style={{display:"flex",gap:16,marginTop:6,fontSize:10,fontFamily:"JetBrains Mono, monospace"}}>
-                  <span style={{color:"#9aa3b2"}}><span style={{color:"#c9a86b"}}>——</span> energy</span>
-                  <span style={{color:"#9aa3b2"}}><span style={{color:"#9b6bc9"}}>——</span> soreness</span>
+                  <span style={{color:"#9aa3b2"}}><span style={{color:GOLD}}>——</span> energy</span>
+                  <span style={{color:"#9aa3b2"}}><span style={{color:PURPLE}}>——</span> soreness</span>
                 </div>
               </ChartCard>
 
@@ -735,14 +748,14 @@ function SleepTracker() {
             <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4", marginBottom: 20, letterSpacing: "-0.01em" }}>
               This Week
             </div>
-            <InsightRow label="Average Wake Time"   value={insights.avgWakeFormatted  || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Bedtime"     value={insights.avgSleepFormatted || "—"} accent="#9b6bc9" />
-            <InsightRow label="Average Duration"    value={insights.avgDuration       || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Energy"      value={insights.avgEnergy         || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent="#9b6bc9" />
-            <InsightRow label="Average Soreness"    value={insights.avgSoreness       || "—"} accent="#c9a86b" />
-            <InsightRow label="Best Recovery Day"   value={insights.bestDay  ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} accent="#c9a86b" />
-            <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent="#9b6bc9" />
+            <InsightRow label="Average Wake Time"   value={insights.avgWakeFormatted  || "—"} accent={GOLD} />
+            <InsightRow label="Average Bedtime"     value={insights.avgSleepFormatted || "—"} accent={PURPLE} />
+            <InsightRow label="Average Duration"    value={insights.avgDuration       || "—"} accent={GOLD} />
+            <InsightRow label="Average Energy"      value={insights.avgEnergy         || "—"} accent={GOLD} />
+            <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent={PURPLE} />
+            <InsightRow label="Average Soreness"    value={insights.avgSoreness       || "—"} accent={GOLD} />
+            <InsightRow label="Best Recovery Day"   value={insights.bestDay  ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} accent={GOLD} />
+            <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent={PURPLE} />
           </section>
         )}
 
@@ -753,7 +766,7 @@ function SleepTracker() {
           <div>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.18em", color: "#9b6bc9", textTransform: "uppercase" }}>Full Log</div>
+              <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.18em", color: PURPLE, textTransform: "uppercase" }}>Full Log</div>
               <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#5a5264" }}>{entries.length} {entries.length === 1 ? "entry" : "entries"}</div>
             </div>
 
@@ -770,9 +783,9 @@ function SleepTracker() {
               const todayWs = dateToStr(startOfWeek(todayStr()));
 
               return Object.entries(byMonth).map(([month, mes]) => (
-                <div key={month} style={{ background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.15)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+                <div key={month} style={{ background: "rgba(20,16,28,0.85)", border: "1px solid rgba(150,150,150,0.15)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
                   {/* Month header */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(155,107,201,0.08)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(150,150,150,0.08)" }}>
                     <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4" }}>
                       {fmtMonth(month + "-01")}
                     </div>
@@ -799,7 +812,7 @@ function SleepTracker() {
                               Week of {fmtWeekRange(wsDate)}
                             </div>
                             {isCurrent && (
-                              <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", color: "#9b6bc9", background: "rgba(155,107,201,0.12)", border: "1px solid rgba(155,107,201,0.3)", borderRadius: 4, padding: "2px 8px" }}>
+                              <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", color: PURPLE, background: "rgba(150,150,150,0.12)", border: "1px solid rgba(150,150,150,0.3)", borderRadius: 4, padding: "2px 8px" }}>
                                 CURRENT
                               </div>
                             )}
@@ -832,7 +845,7 @@ function SleepTracker() {
 /* Field — form label wrapper */
 const Field = ({ label, children }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-    <label style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#9b6bc9", textTransform: "uppercase" }}>
+    <label style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: PURPLE, textTransform: "uppercase" }}>
       {label}
     </label>
     {children}
@@ -843,8 +856,8 @@ const Field = ({ label, children }) => (
 const TodayStat = ({ icon, label, value, accent }) => (
   <div style={{
     background: "rgba(20, 16, 28, 0.85)",
-    border: "1px solid rgba(155,107,201,0.22)",
-    borderLeft: "3px solid rgba(155,107,201,0.6)",
+    border: "1px solid rgba(150,150,150,0.22)",
+    borderLeft: "3px solid rgba(150,150,150,0.6)",
     borderRadius: 10,
     padding: "14px 16px",
     display: "flex",
@@ -857,7 +870,7 @@ const TodayStat = ({ icon, label, value, accent }) => (
       letterSpacing: "0.14em", color: "#7a6a8a",
       textTransform: "uppercase",
     }}>
-      <span style={{ color: "#9b6bc9", display: "flex", alignItems: "center" }}>{icon}</span>
+      <span style={{ color: PURPLE, display: "flex", alignItems: "center" }}>{icon}</span>
       {label}
     </div>
     <div style={{
@@ -885,7 +898,7 @@ const StatBlock = ({ label, value, sub, trend, good }) => {
   return (
     <div style={{
       flex: "1 1 calc(50% - 6px)", minWidth: 120,
-      background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.12)",
+      background: "rgba(20,16,28,0.85)", border: "1px solid rgba(150,150,150,0.12)",
       borderRadius: 10, padding: "14px 16px",
     }}>
       <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264", textTransform: "uppercase", marginBottom: 6 }}>
@@ -905,13 +918,13 @@ const StatBlock = ({ label, value, sub, trend, good }) => {
 const InsightRow = ({ label, value, accent }) => (
   <div style={{
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(155,107,201,0.13)",
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(150,150,150,0.13)",
     borderRadius: 10, padding: "15px 18px", marginBottom: 8,
   }}>
     <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.13em", color: "#6a5870", textTransform: "uppercase" }}>
       {label}
     </span>
-    <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || "#9b6bc9" }}>
+    <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || PURPLE }}>
       {value}
     </span>
   </div>
@@ -920,9 +933,9 @@ const InsightRow = ({ label, value, accent }) => (
 /* LogBlock — single stat cell inside a log entry card */
 const LogBlock = ({ label, value, accent }) => (
   <div style={{
-    background: "rgba(155,107,201,0.06)",
-    border: "1px solid rgba(155,107,201,0.12)",
-    borderLeft: "3px solid rgba(155,107,201,0.55)",
+    background: "rgba(150,150,150,0.06)",
+    border: "1px solid rgba(150,150,150,0.12)",
+    borderLeft: "3px solid rgba(150,150,150,0.55)",
     borderRadius: 8, padding: "8px 10px",
   }}>
     <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264", textTransform: "uppercase", marginBottom: 4 }}>
@@ -937,36 +950,36 @@ const LogBlock = ({ label, value, accent }) => (
 /* LogCard — full entry card with 7 stat blocks */
 const LogCard = ({ e, onEdit, onDelete }) => (
   <div style={{
-    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(155,107,201,0.13)",
+    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(150,150,150,0.13)",
     borderRadius: 10, padding: "14px 16px", marginBottom: 16,
   }}>
     {/* Date header */}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#9b6bc9" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: PURPLE }}>
           {e.date.split("-").slice(1).concat(e.date.split("-").slice(0,1)).join("/").replace(/(\d+)\/(\d+)\/(\d+)/, (_, m, d, y) => `${m.padStart(2,"0")}/${d.padStart(2,"0")}/${y}`)}
         </span>
-        <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.14em", color: "#c9a86b" }}>
+        <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.14em", color: GOLD }}>
           {e.weekday}
         </span>
       </div>
       <div style={{ display: "flex", gap: 5 }}>
-        <button style={{ background: "transparent", border: "1px solid rgba(155,107,201,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#5a5264", display: "flex", alignItems: "center" }} onClick={onEdit}><Pencil size={12} /></button>
-        <button style={{ background: "transparent", border: "1px solid rgba(155,107,201,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
+        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#5a5264", display: "flex", alignItems: "center" }} onClick={onEdit}><Pencil size={12} /></button>
+        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
       </div>
     </div>
     {/* Row 1: Wake · Sleep · Duration */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginBottom: 12.48 }}>
       <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
-      <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent="#9b6bc9" />
+      <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
     {/* Row 2: Recovery · Energy · Soreness · Clarity */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12.48 }}>
-      <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent="#c9a86b" />
+      <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
-      <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent="#9b6bc9" />
+      <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
     </div>
   </div>
 );
@@ -978,7 +991,7 @@ const Isometric3DBar = (props) => {
   const d = 4;
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height} fill={props.fill || "#9b6bc9"} />
+      <rect x={x} y={y} width={width} height={height} fill={props.fill || PURPLE} />
       <polygon points={`${x},${y} ${x+d},${y-d} ${x+width+d},${y-d} ${x+width},${y}`} fill="rgba(255,255,255,0.15)" />
       <polygon points={`${x+width},${y} ${x+width+d},${y-d} ${x+width+d},${y+height-d} ${x+width},${y+height}`} fill="rgba(0,0,0,0.25)" />
     </g>
@@ -1037,7 +1050,7 @@ const SvgChart = (() => {
           </linearGradient>
         </defs>
         <YAxisLines ticks={ticks} domain={domain}/>
-        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke="#9b6bc9" strokeDasharray="3 5" opacity={0.4}/>}
+        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke={PURPLE} strokeDasharray="3 5" opacity={0.4}/>}
         {data.map((d, i) => {
           const v = d[dataKey]; if (v == null) return null;
           const bh = ((v - min) / (max - min)) * ph;
@@ -1054,7 +1067,7 @@ const SvgChart = (() => {
     return (
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:200,display:"block"}}>
         <YAxisLines ticks={ticks} domain={domain}/>
-        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke="#c9a86b" strokeDasharray="3 5" opacity={0.35}/>}
+        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke={GOLD} strokeDasharray="3 5" opacity={0.35}/>}
         {lines.map(({key, stroke}) => {
           const pts = data.reduce((acc, d, i) => {
             const v = d[key]; if (v == null) return acc;
@@ -1073,7 +1086,7 @@ const SvgChart = (() => {
 /* ChartCard */
 const ChartCard = ({ title, sub, children }) => (
   <div style={{
-    background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.12)",
+    background: "rgba(20,16,28,0.85)", border: "1px solid rgba(150,150,150,0.12)",
     borderRadius: 12, padding: "16px", marginBottom: 12,
   }}>
     <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.14em",
@@ -1089,11 +1102,11 @@ const ChartCard = ({ title, sub, children }) => (
 const CustomTooltip = ({ active, payload, label, suffix = "" }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#120e1c", border: "1px solid rgba(155,107,201,0.3)",
+    <div style={{ background: "#120e1c", border: "1px solid rgba(150,150,150,0.3)",
       borderRadius: 6, padding: "8px 12px", fontFamily: "JetBrains Mono, monospace", fontSize: 10 }}>
       <div style={{ color: "#5a5264", marginBottom: 4 }}>{label}</div>
       {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color || "#c9a86b" }}>{p.name}: {p.value}{suffix}</div>
+        <div key={i} style={{ color: p.color || GOLD }}>{p.name}: {p.value}{suffix}</div>
       ))}
     </div>
   );
@@ -1125,11 +1138,11 @@ const styles = {
     letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" },
   actionRow:   { display: "flex", gap: 8, flexWrap: "wrap" },
   btnPrimary:  { flex: 1, background: "rgba(201,168,107,0.12)", border: "1px solid rgba(201,168,107,0.4)",
-    color: "#c9a86b", borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
+    color: GOLD, borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
     fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
-  btnPurple:   { flex: 1, background: "rgba(155,107,201,0.1)", border: "1px solid rgba(155,107,201,0.3)",
-    color: "#9b6bc9", borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
+  btnPurple:   { flex: 1, background: "rgba(150,150,150,0.1)", border: "1px solid rgba(150,150,150,0.3)",
+    color: PURPLE, borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
     fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
 
@@ -1137,18 +1150,18 @@ const styles = {
   formCard:    { background: "rgba(20,16,28,0.95)", border: "1px solid rgba(201,168,107,0.2)",
     borderRadius: 12, padding: 16, marginBottom: 16 },
   formGrid:    { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 },
-  input:       { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(155,107,201,0.25)",
+  input:       { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(150,150,150,0.25)",
     borderRadius: 6, padding: "8px 10px", color: "#e8d5b0", fontSize: 13,
     fontFamily: "JetBrains Mono, monospace", width: "100%", boxSizing: "border-box" },
-  range:       { width: "100%", accentColor: "#c9a86b" },
+  range:       { width: "100%", accentColor: GOLD },
   formFoot:    { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
   preview:     { fontSize: 11, color: "#5a5264", fontFamily: "JetBrains Mono, monospace", flex: 1 },
 
   /* Today snapshot */
-  todayCard:   { background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.2)",
+  todayCard:   { background: "rgba(20,16,28,0.85)", border: "1px solid rgba(150,150,150,0.2)",
     borderRadius: 12, padding: "16px 16px 14px", marginBottom: 12 },
   eyebrow:     { fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.18em",
-    color: "#9b6bc9", textTransform: "uppercase", marginBottom: 12 },
+    color: PURPLE, textTransform: "uppercase", marginBottom: 12 },
   todayGrid:   { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
 
   /* 7-day stats row */
@@ -1158,17 +1171,17 @@ const styles = {
   chartsGrid:  { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 12px" },
 
   /* Insights */
-  insightsCard: { background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.15)",
+  insightsCard: { background: "rgba(20,16,28,0.85)", border: "1px solid rgba(150,150,150,0.15)",
     borderRadius: 12, padding: "16px", marginBottom: 12 },
 
   /* Log tab */
   logRow:      { display: "flex", alignItems: "center", gap: 10, padding: "12px 0",
-    borderBottom: "1px solid rgba(155,107,201,0.08)" },
+    borderBottom: "1px solid rgba(150,150,150,0.08)" },
   logLeft:     { flex: 1 },
   logDate:     { fontSize: 13, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#e8d5b0" },
   logSub:      { fontSize: 10, color: "#4a4255", fontFamily: "JetBrains Mono, monospace", marginTop: 2 },
   logStats:    { display: "flex", gap: 8, fontSize: 11, fontFamily: "JetBrains Mono, monospace" },
-  iconBtn:     { background: "transparent", border: "1px solid rgba(155,107,201,0.2)",
+  iconBtn:     { background: "transparent", border: "1px solid rgba(150,150,150,0.2)",
     borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#5a5264",
     display: "flex", alignItems: "center" },
   empty:       { fontSize: 11, color: "#4a4255", fontFamily: "JetBrains Mono, monospace",

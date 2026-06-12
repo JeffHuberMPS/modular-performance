@@ -234,28 +234,15 @@
     /* In gray mode, recolor variable-driven apps (Workout, Expenses) to black + gold + white. */
     function applyFrameThemes() {
       const gray = document.body.classList.contains('tier-mono');
-      // Workout: fully re-skinned at source — just toggle its theme class (white numbers + gold labels, zero leaks).
-      try {
-        const wf = document.getElementById('frame-workout');
-        if (wf && wf.contentDocument && wf.contentDocument.body) wf.contentDocument.body.classList.toggle('mps-gray', gray);
-      } catch (e) {}
-      // Expenses, Sleep: interim CSS injection (full source re-skin pending, same as Workout).
-      const overrides = {
-        expenses: ':root{--mps-mint:#f5f5f5!important;--mps-card:#0f0f0f!important;--mps-essentials:#8a8580!important;--mps-lifestyle:#8a8580!important;--mps-recurring:#8a8580!important;--mps-investment:#8a8580!important;--mps-income:#8a8580!important;--mps-other:#8a8580!important;}'
-                + '.stat-label,.budget-card-label,.section-label,.summary-label,.card-label,.cat-label{color:#C9A020!important;}',
-        sleep: '[style*="9b6bc9"],[style*="155,107,201"],[style*="155, 107, 201"],[style*="b98ce6"],[style*="185,140,230"],[style*="210,175,255"]{color:#C9A020!important;border-color:#2a2a2a!important;}'
-      };
-      Object.keys(overrides).forEach(id => {
-        const f = document.getElementById('frame-' + id);
-        if (!f || !f.contentDocument) return;
+      // Re-skinned at source — toggle their theme class (white numbers + gold labels, zero leaks).
+      ['workout', 'expenses', 'sleep'].forEach(id => {
         try {
-          let st = f.contentDocument.getElementById('mps-gold-theme');
-          if (!st) { st = f.contentDocument.createElement('style'); st.id = 'mps-gold-theme'; f.contentDocument.head.appendChild(st); }
-          st.textContent = gray ? overrides[id] : '';
+          const f = document.getElementById('frame-' + id);
+          if (f && f.contentDocument && f.contentDocument.body) f.contentDocument.body.classList.toggle('mps-gray', gray);
         } catch (e) {}
       });
-      /* React apps (Habits, Journal) read the theme at load — reload them when the theme flips. */
-      ['habits', 'journal'].forEach(id => {
+      /* React apps (Habits, Journal, Sleep) read the theme at load — reload them when the theme flips. */
+      ['habits', 'journal', 'sleep'].forEach(id => {
         const f = document.getElementById('frame-' + id);
         if (!f || !f.src) return;
         const want = gray ? '1' : '0', have = f.getAttribute('data-gray');

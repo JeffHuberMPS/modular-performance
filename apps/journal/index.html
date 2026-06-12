@@ -108,9 +108,9 @@
     const BG     = '#080808';
     const C1     = '#0e0c0a';
     const C2     = '#141210';
-    const BR     = __GRAY ? 'rgba(255,255,255,0.08)' : 'rgba(74,111,165,0.14)';
+    const BR     = __GRAY ? 'rgba(255,255,255,0.08)' : 'rgba(150,150,150,0.14)';
     const BRG    = 'rgba(201,168,107,0.18)';
-    const BRB    = __GRAY ? 'rgba(201,160,32,0.32)' : 'rgba(74,111,165,0.30)';
+    const BRB    = __GRAY ? 'rgba(201,160,32,0.32)' : 'rgba(150,150,150,0.30)';
 
     const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -264,7 +264,7 @@
             <div style={{ display:'flex', gap:8 }}>
               {MOODS.map(m => (
                 <button key={m.id} onClick={() => setMood(mood===m.id?'':m.id)} style={{
-                  flex:1, padding:'10px 4px', background: mood===m.id ? 'rgba(74,111,165,0.12)' : C2,
+                  flex:1, padding:'10px 4px', background: mood===m.id ? 'rgba(150,150,150,0.12)' : C2,
                   border:`1px solid ${mood===m.id ? NAVY : BR}`, borderRadius:10,
                   display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', transition:'all 0.15s'
                 }}>
@@ -351,7 +351,7 @@
           {/* Save */}
           <button onClick={handleSave} disabled={!hasContent||saving} style={{
             width:'100%', padding:'14px',
-            background: saved ? 'rgba(74,111,165,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,#2a4a80,${NAVY})` : C1,
+            background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,#2a4a80,${NAVY})` : C1,
             border: saved ? `1px solid ${NAVY}` : 'none',
             borderRadius:10, color: saved ? NAVYL : '#fff',
             fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em',
@@ -382,7 +382,7 @@
             {allMonths.map(m => (
               <button key={m} onClick={() => setSelMonth(m)} style={{
                 flexShrink:0, padding:'5px 11px',
-                background: selMonth===m ? 'rgba(74,111,165,0.14)' : C1,
+                background: selMonth===m ? 'rgba(150,150,150,0.14)' : C1,
                 border:`1px solid ${selMonth===m ? NAVY : BR}`,
                 borderRadius:6, color: selMonth===m ? NAVYL : '#374151',
                 fontSize:10, fontWeight:700, letterSpacing:'0.06em', cursor:'pointer'
@@ -403,13 +403,13 @@
                 return (
                   <div key={dateStr} style={{ marginBottom:10 }}>
                     <button onClick={() => setExpanded(isOpen ? null : dateStr)} style={{
-                      width:'100%', background: isOpen ? 'rgba(74,111,165,0.08)' : C1,
+                      width:'100%', background: isOpen ? 'rgba(150,150,150,0.08)' : C1,
                       border:`1px solid ${isOpen ? BRB : BR}`, borderRadius: isOpen ? '12px 12px 0 0' : 12,
                       padding:'13px 15px', cursor:'pointer', textAlign:'left',
                       display:'flex', alignItems:'center', gap:12, transition:'all 0.2s'
                     }}>
                       <div style={{
-                        width:38, height:38, borderRadius:8, background:'rgba(74,111,165,0.07)',
+                        width:38, height:38, borderRadius:8, background:'rgba(150,150,150,0.07)',
                         border:`1px solid ${BR}`, display:'flex', flexDirection:'column',
                         alignItems:'center', justifyContent:'center', flexShrink:0
                       }}>
@@ -529,7 +529,7 @@
             border:`1px solid ${BRB}`, borderRadius:14, padding:'22px 20px',
             marginBottom:14, textAlign:'center', position:'relative', overflow:'hidden'
           }}>
-            <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'rgba(74,111,165,0.05)' }} />
+            <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'rgba(150,150,150,0.05)' }} />
             <div style={{ color:'#374151', fontSize:9, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:8 }}>Current Streak</div>
             <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:72, color:'#fff', lineHeight:1 }}>{streak}</div>
             <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:16, color:NAVYL, letterSpacing:'0.1em', marginTop:2 }}>
@@ -631,7 +631,7 @@
           <div style={{ padding:'16px 20px 0' }}>
             <div style={{
               background: '#000000',
-              backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(74,111,165,0.20) 0%, rgba(74,111,165,0.06) 45%, transparent 75%)',
+              backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(150,150,150,0.20) 0%, rgba(150,150,150,0.06) 45%, transparent 75%)',
               border: '3px solid transparent',
               borderRadius: '22px',
               padding: '38px 20px 28px',
@@ -640,7 +640,7 @@
               position: 'relative',
               overflow: 'hidden',
               backgroundClip: 'padding-box',
-              boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(74,111,165,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+              boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(150,150,150,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
             }}>
               <div className="mps-logo-rsp" style={{
                 fontFamily: "'Saira Condensed', 'Arial Black', sans-serif",
@@ -650,7 +650,7 @@
                 WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
               }}>MPS</div>
-              <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(74,111,165,0.6) 25%, rgba(201,168,107,0.8) 50%, rgba(74,111,165,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
+              <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(150,150,150,0.6) 25%, rgba(201,168,107,0.8) 50%, rgba(150,150,150,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
               <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px', fontFamily:"'Bebas Neue',sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
               <div style={{ fontSize: '20px', letterSpacing: '6px', color: GOLD, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px', fontFamily:"'Bebas Neue',sans-serif" }}>
                 <span>MPS</span><span>JOURNAL</span>
