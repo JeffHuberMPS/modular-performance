@@ -316,6 +316,7 @@ function HabitTracker() {
   const PRIMARY = __GRAY ? '#f5f5f5' : '#8b0000';
   const PRIMARY_LIGHT = __GRAY ? '#C9A020' : '#d62020';
   const PRIMARY_GLOW = __GRAY ? 'rgba(201,160,32,0.22)' : 'rgba(150,150,150,0.5)';
+  const SEG = __GRAY ? '#2e2e2e' : PRIMARY;   // active toggle segment: dark grey in gray mode (not white)
   const ACCENT = '#b8b8b8';
   const BG = '#050505';
   const CARD = '#121212';
@@ -379,7 +380,7 @@ function HabitTracker() {
           {view === 'insights' ? (
             <div style={{ display: 'flex', gap: '4px', padding: '3px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '8px', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
               {['weekly','monthly'].map(v => (
-                <button key={v} onClick={() => setInsightView(v)} style={{ padding: '6px 10px', background: insightView === v ? PRIMARY : 'transparent', color: insightView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '10px', letterSpacing: '1.5px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
+                <button key={v} onClick={() => setInsightView(v)} style={{ padding: '6px 10px', background: insightView === v ? SEG : 'transparent', color: insightView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '10px', letterSpacing: '1.5px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
               ))}
             </div>
           ) : (
@@ -496,7 +497,7 @@ function HabitTracker() {
           {/* Chart toggle */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '4px', boxShadow: CARD_SHADOW_3D }}>
             {['daily','weekly'].map(v => (
-              <button key={v} onClick={() => setChartView(v)} style={{ flex: 1, padding: '10px', background: chartView === v ? PRIMARY : 'transparent', color: chartView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
+              <button key={v} onClick={() => setChartView(v)} style={{ flex: 1, padding: '10px', background: chartView === v ? SEG : 'transparent', color: chartView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
             ))}
           </div>
 
