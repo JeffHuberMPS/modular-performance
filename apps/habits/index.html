@@ -315,6 +315,7 @@ function HabitTracker() {
   const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
   const PRIMARY = __GRAY ? '#f5f5f5' : '#8b0000';
   const PRIMARY_LIGHT = __GRAY ? '#C9A020' : '#d62020';
+  const PL_RGB = __GRAY ? '201, 160, 32' : '214, 32, 32';   // theme color for icon chips (gold gray / red colorful)
   const PRIMARY_GLOW = __GRAY ? 'rgba(201,160,32,0.22)' : 'rgba(150,150,150,0.5)';
   const SEG = __GRAY ? '#2e2e2e' : PRIMARY;   // active toggle segment: dark grey in gray mode (not white)
   const ACCENT = '#b8b8b8';
@@ -526,7 +527,7 @@ function HabitTracker() {
                       const isDone = !!dayData[h.id];
                       return (
                         <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 11px', background: isDone ? 'rgba(150,150,150,0.15)' : '#0a0a0a', border: `1px solid ${isDone ? PRIMARY : BORDER}`, borderRadius: '8px' }}>
-                          <HabitIcon id={h.id} color={PRIMARY_LIGHT}/>
+                          <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: `rgba(${PL_RGB},0.15)`, border: `1px solid rgba(${PL_RGB},0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><HabitIcon id={h.id} color={PRIMARY_LIGHT} size={16}/></div>
                           <div style={{ flex: 1, fontSize: '14px', color: '#f5f5f5', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.label}</div>
                           <div style={{ width: '26px', height: '26px', borderRadius: '6px', border: `2px solid ${isDone ? PRIMARY_LIGHT : BORDER}`, background: isDone ? PRIMARY : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '14px' }}>{isDone ? '✓' : ''}</div>
                         </div>
@@ -597,7 +598,7 @@ function HabitTracker() {
                 const checked = !!habits[selKey]?.[h.id];
                 return (
                   <div key={h.id} onClick={() => toggleHabit(h.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 15px', background: checked ? `linear-gradient(135deg, rgba(150,150,150,0.15) 0%, ${CARD_RAISED} 100%)` : CARD_RAISED, border: `1px solid ${checked ? PRIMARY : BORDER}`, borderRadius: '12px', cursor: 'pointer', boxShadow: checked ? CARD_SHADOW_3D_HOVER : CARD_SHADOW_3D, transition: 'all 0.15s ease' }}>
-                    <HabitIcon id={h.id} color={PRIMARY_LIGHT} size={19}/>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: `rgba(${PL_RGB},0.15)`, border: `1px solid rgba(${PL_RGB},0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><HabitIcon id={h.id} color={PRIMARY_LIGHT} size={19}/></div>
                     <div style={{ flex: 1, fontSize: '16px', color: '#f5f5f5', fontWeight: 600 }}>{h.label}</div>
                     <div style={{ width: '28px', height: '28px', borderRadius: '7px', border: `2px solid ${checked ? PRIMARY_LIGHT : BORDER}`, background: checked ? PRIMARY : 'transparent', boxShadow: checked ? `0 0 12px ${PRIMARY_GLOW}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '16px', transition: 'all 0.15s ease' }}>{checked ? '✓' : ''}</div>
                   </div>
