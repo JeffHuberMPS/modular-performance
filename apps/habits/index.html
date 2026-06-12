@@ -511,17 +511,17 @@ function HabitTracker() {
       {/* Bar detail modal */}
       {barDetail && (
         <div onClick={() => setBarDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: CARD_RAISED, border: '2px solid rgba(192,192,192,0.4)', borderRadius: '16px', padding: '12px 12px 10px', maxWidth: '520px', width: '100%', boxShadow: `0 0 30px ${PRIMARY_GLOW}, 0 20px 60px rgba(0,0,0,0.9)`, margin: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD_RAISED, border: '2px solid rgba(192,192,192,0.4)', borderRadius: '16px', padding: '8px 12px 6px', maxWidth: '520px', width: '100%', boxShadow: `0 0 30px ${PRIMARY_GLOW}, 0 20px 60px rgba(0,0,0,0.9)`, margin: 'auto' }}>
             {(() => {
               const detailBlock = barDetail.blockKey === 'DAY' ? { icon: '📊', habits: ALL_HABITS } : blocks[barDetail.blockKey];
               return (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
                     <div style={{ fontSize: '13px', color: PRIMARY_LIGHT, letterSpacing: '2px', fontWeight: 700, display: 'flex', alignItems: 'center' }}><BlockIcon k={barDetail.blockKey} color={PRIMARY_LIGHT}/>{barDetail.blockKey}</div>
                     <button onClick={() => setBarDetail(null)} style={{ background: 'transparent', color: MUTED, border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
-                  <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '4px' }}>{barDetail.label}</div>
-                  <div style={{ display: (detailBlock?.habits.length > 7) ? 'grid' : 'flex', flexDirection: 'column', gridTemplateColumns: (detailBlock?.habits.length > 7) ? '1fr 1fr' : null, gap: '4px' }}>
+                  <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '2px' }}>{barDetail.label}</div>
+                  <div style={{ display: (detailBlock?.habits.length > 7) ? 'grid' : 'flex', flexDirection: 'column', gridTemplateColumns: (detailBlock?.habits.length > 7) ? '1fr 1fr' : null, gap: '3px' }}>
                     {detailBlock?.habits.map(h => {
                       const dayData = habits[barDetail.dateKey || barDetail.dayKeys?.[0]] || {};
                       const isDone = !!dayData[h.id];
