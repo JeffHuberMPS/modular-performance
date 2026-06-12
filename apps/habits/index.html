@@ -510,7 +510,7 @@ function HabitTracker() {
       {/* Bar detail modal */}
       {barDetail && (
         <div onClick={() => setBarDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: CARD_RAISED, border: '2px solid rgba(192,192,192,0.4)', borderRadius: '16px', padding: '22px', maxWidth: '440px', width: '100%', boxShadow: `0 0 30px ${PRIMARY_GLOW}, 0 20px 60px rgba(0,0,0,0.9)`, maxHeight: '92vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD_RAISED, border: '2px solid rgba(192,192,192,0.4)', borderRadius: '16px', padding: '16px', maxWidth: '520px', width: '100%', boxShadow: `0 0 30px ${PRIMARY_GLOW}, 0 20px 60px rgba(0,0,0,0.9)`, maxHeight: '94vh', overflowY: 'auto' }}>
             {(() => {
               const detailBlock = barDetail.blockKey === 'DAY' ? { icon: '📊', habits: ALL_HABITS } : blocks[barDetail.blockKey];
               return (
@@ -519,15 +519,15 @@ function HabitTracker() {
                     <div style={{ fontSize: '13px', color: PRIMARY_LIGHT, letterSpacing: '2px', fontWeight: 700, display: 'flex', alignItems: 'center' }}><BlockIcon k={barDetail.blockKey} color={PRIMARY_LIGHT}/>{barDetail.blockKey}</div>
                     <button onClick={() => setBarDetail(null)} style={{ background: 'transparent', color: MUTED, border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
-                  <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '16px' }}>{barDetail.label}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '10px' }}>{barDetail.label}</div>
+                  <div style={{ display: (detailBlock?.habits.length > 7) ? 'grid' : 'flex', flexDirection: 'column', gridTemplateColumns: (detailBlock?.habits.length > 7) ? '1fr 1fr' : null, gap: '6px' }}>
                     {detailBlock?.habits.map(h => {
                       const dayData = habits[barDetail.dateKey || barDetail.dayKeys?.[0]] || {};
                       const isDone = !!dayData[h.id];
                       return (
-                        <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: isDone ? 'rgba(150,150,150,0.15)' : '#0a0a0a', border: `1px solid ${isDone ? PRIMARY : BORDER}`, borderRadius: '8px' }}>
-                          <HabitIcon id={h.id} color={isDone ? PRIMARY_LIGHT : MUTED}/>
-                          <div style={{ flex: 1, fontSize: '14px', color: isDone ? TEXT : MUTED, fontWeight: 500 }}>{h.label}</div>
+                        <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 11px', background: isDone ? 'rgba(150,150,150,0.15)' : '#0a0a0a', border: `1px solid ${isDone ? PRIMARY : BORDER}`, borderRadius: '8px' }}>
+                          <HabitIcon id={h.id} color={PRIMARY_LIGHT}/>
+                          <div style={{ flex: 1, fontSize: '14px', color: '#f5f5f5', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.label}</div>
                           <div style={{ width: '26px', height: '26px', borderRadius: '6px', border: `2px solid ${isDone ? PRIMARY_LIGHT : BORDER}`, background: isDone ? PRIMARY : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '14px' }}>{isDone ? '✓' : ''}</div>
                         </div>
                       );
@@ -597,8 +597,8 @@ function HabitTracker() {
                 const checked = !!habits[selKey]?.[h.id];
                 return (
                   <div key={h.id} onClick={() => toggleHabit(h.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 15px', background: checked ? `linear-gradient(135deg, rgba(150,150,150,0.15) 0%, ${CARD_RAISED} 100%)` : CARD_RAISED, border: `1px solid ${checked ? PRIMARY : BORDER}`, borderRadius: '12px', cursor: 'pointer', boxShadow: checked ? CARD_SHADOW_3D_HOVER : CARD_SHADOW_3D, transition: 'all 0.15s ease' }}>
-                    <HabitIcon id={h.id} color={checked ? PRIMARY_LIGHT : MUTED} size={19}/>
-                    <div style={{ flex: 1, fontSize: '16px', color: TEXT, fontWeight: 500 }}>{h.label}</div>
+                    <HabitIcon id={h.id} color={PRIMARY_LIGHT} size={19}/>
+                    <div style={{ flex: 1, fontSize: '16px', color: '#f5f5f5', fontWeight: 600 }}>{h.label}</div>
                     <div style={{ width: '28px', height: '28px', borderRadius: '7px', border: `2px solid ${checked ? PRIMARY_LIGHT : BORDER}`, background: checked ? PRIMARY : 'transparent', boxShadow: checked ? `0 0 12px ${PRIMARY_GLOW}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '16px', transition: 'all 0.15s ease' }}>{checked ? '✓' : ''}</div>
                   </div>
                 );
