@@ -477,7 +477,7 @@ function HabitTracker() {
             {blockStats.map(b => (
               <div key={b.key} style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginBottom: '8px' }}>
-                  <span style={{ color: TEXT, letterSpacing: '1px' }}>{b.icon} {b.key}</span>
+                  <span style={{ color: TEXT, letterSpacing: '1px', display: 'inline-flex', alignItems: 'center' }}><BlockIcon k={b.key} color={TEXT}/>{b.key}</span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <div style={{ padding: '4px 10px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '6px', textAlign: 'center', minWidth: '60px' }}>
                       <div style={{ fontSize: '8px', color: MUTED, letterSpacing: '1px', lineHeight: 1 }}>AVG</div>
@@ -516,7 +516,7 @@ function HabitTracker() {
               return (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ fontSize: '13px', color: PRIMARY_LIGHT, letterSpacing: '2px', fontWeight: 700 }}>{detailBlock?.icon} {barDetail.blockKey}</div>
+                    <div style={{ fontSize: '13px', color: PRIMARY_LIGHT, letterSpacing: '2px', fontWeight: 700, display: 'flex', alignItems: 'center' }}><BlockIcon k={barDetail.blockKey} color={PRIMARY_LIGHT}/>{barDetail.blockKey}</div>
                     <button onClick={() => setBarDetail(null)} style={{ background: 'transparent', color: MUTED, border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
                   <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '16px' }}>{barDetail.label}</div>
@@ -526,7 +526,6 @@ function HabitTracker() {
                       const isDone = !!dayData[h.id];
                       return (
                         <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: isDone ? 'rgba(150,150,150,0.15)' : '#0a0a0a', border: `1px solid ${isDone ? PRIMARY : BORDER}`, borderRadius: '8px' }}>
-                          <div style={{ fontSize: '20px' }}>{h.emoji}</div>
                           <div style={{ flex: 1, fontSize: '14px', color: isDone ? TEXT : MUTED, fontWeight: 500 }}>{h.label}</div>
                           <div style={{ width: '26px', height: '26px', borderRadius: '6px', border: `2px solid ${isDone ? PRIMARY_LIGHT : BORDER}`, background: isDone ? PRIMARY : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '14px' }}>{isDone ? '✓' : ''}</div>
                         </div>
@@ -554,7 +553,7 @@ function HabitTracker() {
           {logTab === 'habits' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '6px', marginBottom: '10px' }}>
               {Object.keys(blocks).map(k => (
-                <button key={k} onClick={() => setActiveBlock(k)} style={blockTabStyle(activeBlock === k, PRIMARY, BORDER, bodyFont, TEXT)}>{blocks[k].icon} {k}</button>
+                <button key={k} onClick={() => setActiveBlock(k)} style={blockTabStyle(activeBlock === k, PRIMARY, BORDER, bodyFont, TEXT)}><BlockIcon k={k}/>{k}</button>
               ))}
             </div>
           )}
@@ -578,7 +577,7 @@ function HabitTracker() {
                         const bc = done === total && total > 0;
                         return (
                           <div key={bk} style={{ padding: '7px 4px', background: '#0a0a0a', border: `1px solid ${bc ? PRIMARY : BORDER}`, borderRadius: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '14px' }}>{blocks[bk]?.icon}</div>
+                            <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BlockIcon k={bk}/></div>
                             <div style={{ fontSize: '8px', color: MUTED, letterSpacing: '1px', marginTop: '2px' }}>{bk}</div>
                             <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '2px', color: bc ? PRIMARY_LIGHT : done > 0 ? TEXT : MUTED }}>{done}/{total}</div>
                           </div>
@@ -597,7 +596,6 @@ function HabitTracker() {
                 const checked = !!habits[selKey]?.[h.id];
                 return (
                   <div key={h.id} onClick={() => toggleHabit(h.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 15px', background: checked ? `linear-gradient(135deg, rgba(150,150,150,0.15) 0%, ${CARD_RAISED} 100%)` : CARD_RAISED, border: `1px solid ${checked ? PRIMARY : BORDER}`, borderRadius: '12px', cursor: 'pointer', boxShadow: checked ? CARD_SHADOW_3D_HOVER : CARD_SHADOW_3D, transition: 'all 0.15s ease' }}>
-                    <div style={{ fontSize: '18px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', borderRadius: '7px', border: `1px solid ${BORDER}` }}>{h.emoji}</div>
                     <div style={{ flex: 1, fontSize: '16px', color: TEXT, fontWeight: 500 }}>{h.label}</div>
                     <div style={{ width: '28px', height: '28px', borderRadius: '7px', border: `2px solid ${checked ? PRIMARY_LIGHT : BORDER}`, background: checked ? PRIMARY : 'transparent', boxShadow: checked ? `0 0 12px ${PRIMARY_GLOW}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '16px', transition: 'all 0.15s ease' }}>{checked ? '✓' : ''}</div>
                   </div>
@@ -633,7 +631,7 @@ function HabitTracker() {
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontSize: '13px', letterSpacing: '2px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{block.icon} {blockKey}</div>
+                      <div style={{ fontSize: '13px', letterSpacing: '2px', color: PRIMARY_LIGHT, fontWeight: 700, display: 'flex', alignItems: 'center' }}><BlockIcon k={blockKey} color={PRIMARY_LIGHT}/>{blockKey}</div>
                       <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>AVG</div>
@@ -663,7 +661,7 @@ function HabitTracker() {
                           </div>
                         ) : (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '12px', alignItems: 'center' }}>
-                            <div style={{ fontSize: '14px', color: TEXT, fontWeight: 500 }}>{h.emoji} {h.label}</div>
+                            <div style={{ fontSize: '14px', color: TEXT, fontWeight: 500 }}>{h.label}</div>
                             <div style={{ textAlign: 'right', minWidth: '54px' }}>
                               <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>STRENGTH</div>
                               <div style={{ fontSize: '15px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{habitMetrics.find(x => x.id === h.id)?.strength || 0}%</div>
@@ -712,6 +710,14 @@ function StatCard({ label, value, sub, accent, card, border, muted, shadow }) {
   );
 }
 
+// Clean monochrome block icons (replaces the childish emojis — CEO-grade, not a toy)
+function BlockIcon({ k, color, size = 15 }) {
+  const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color || "currentColor", strokeWidth: 1.9, strokeLinecap: "round", strokeLinejoin: "round", style: { verticalAlign: '-2px', marginRight: '7px', flexShrink: 0 } };
+  if (k === 'MRN') return <svg {...p}><path d="M3 22h18M5.5 18h13M12 2v3M4.5 10.5 6 12M19.5 10.5 18 12"/><path d="M8 18a4 4 0 0 1 8 0"/></svg>;
+  if (k === 'WRK') return <svg {...p}><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+  if (k === 'NGT') return <svg {...p}><path d="M20 14.5A8 8 0 1 1 9.5 4a6 6 0 0 0 10.5 10.5z"/></svg>;
+  return <svg {...p}><path d="M4 20V11M9.3 20V5M14.6 20v-7M20 20V8"/></svg>;
+}
 function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap, theme, fmtKey }) {
   const { PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont } = theme;
   const [selectedBar, setSelectedBar] = React.useState(null);
@@ -751,13 +757,16 @@ function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap
   return (
     <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '16px 14px 14px', marginBottom: '14px', boxShadow: CARD_SHADOW_3D, position: 'relative', overflow: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <div style={{ fontSize: '14px', color: TEXT, fontWeight: 700, letterSpacing: '1px' }}>{block.icon} {blockKey}</div>
+        <div style={{ fontSize: '14px', color: TEXT, fontWeight: 700, letterSpacing: '1px', display: 'flex', alignItems: 'center' }}><BlockIcon k={blockKey} color={TEXT}/>{blockKey}</div>
         <div style={{ padding: '6px 12px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '8px', textAlign: 'center', minWidth: '72px' }}>
           <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1.5px' }}>AVERAGE</div>
           <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700, lineHeight: 1.1 }}>
             {(() => { const nz = bars.filter(b => b.value > 0); const s = nz.reduce((x,b) => x+b.value, 0); const avg = nz.length > 0 ? s/nz.length : 0; return `${Math.round(avg)} / ${maxY}`; })()}
           </div>
         </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', paddingLeft: '24px', marginBottom: '6px' }}>
+        {bars.map((bar, i) => <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '12px', color: PRIMARY_LIGHT, fontWeight: 700, letterSpacing: '0.5px' }}>{bar.value}/{maxY}</div>)}
       </div>
       <div style={{ display: 'flex', height: `${chartHeight+30}px`, paddingLeft: '24px', position: 'relative' }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '6px', height: `${chartHeight}px`, borderBottom: `1px solid ${BORDER}`, position: 'relative' }}>
@@ -767,7 +776,6 @@ function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap
             const hasVal = bar.value > 0;
             return (
               <div key={i} onClick={() => { if (onBarTap) onBarTap({ blockKey, isWeek: chartView === 'weekly', dateKey: chartView === 'daily' ? bar.dateKeys[0] : null, dayKeys: chartView === 'weekly' ? bar.dateKeys : null, label: bar.fullLabel, summary: `${bar.value}/${maxY}` }); }} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', cursor: 'pointer', position: 'relative' }}>
-                {hasVal && <div style={{ position: 'absolute', bottom: `${bh+6}px`, fontSize: '10px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{bar.value}</div>}
                 {hasVal ? (
                   <div style={{ position: 'relative', width: '100%', maxWidth: '36px', height: `${bh}px` }}>
                     <div style={{ position: 'absolute', top: 0, left: '100%', width: `${DEPTH}px`, height: '100%', background: 'linear-gradient(180deg,#6b1018 0%,#3a0610 100%)', transform: 'skewY(-45deg)', transformOrigin: 'left top' }} />
