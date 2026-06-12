@@ -150,7 +150,7 @@
         <div class="shell-avatar" id="user-avatar">JH</div>
         <div class="shell-dropdown" id="user-dropdown">
           <div class="shell-dropdown__name" id="dd-name">Jeff Huber</div>
-          <div class="shell-dropdown__plan">Plan: <span id="dd-plan">All-Access</span></div>
+          <div class="shell-dropdown__plan">Plan: <span id="dd-plan">Premium</span></div>
           <button class="shell-dropdown__item" onclick="location.href='/billing.html'">Billing &amp; Plan</button>
           <button class="shell-dropdown__item shell-dropdown__item--danger" onclick="signOutUser()">Sign Out</button>
         </div>
@@ -185,9 +185,9 @@
   <div class="tier-tester" id="tier-tester">
     <span class="tier-tester__label">Tier preview</span>
     <div class="tier-tester__row">
-      <button class="tier-opt" data-tier="free" onclick="previewTier('free')">Free</button>
-      <button class="tier-opt" data-tier="medium" onclick="previewTier('medium')">Medium</button>
-      <button class="tier-opt active" data-tier="all" onclick="previewTier('all')">All-Access</button>
+      <button class="tier-opt" data-tier="free" onclick="previewTier('free')">Core</button>
+      <button class="tier-opt" data-tier="medium" onclick="previewTier('medium')">Elite</button>
+      <button class="tier-opt active" data-tier="all" onclick="previewTier('all')">Premium</button>
     </div>
   </div>
 
@@ -217,11 +217,11 @@
       expenses: { free:'View-only · no logging', medium:'Full logging · tags · monthly reports · 60 days', all:'Advanced reports · budget alerts · spending insights' },
       journal:  { free:'3 entries max · no search', medium:'Unlimited · basic search · all history', all:'Unlimited · full search + tags · monthly summaries' }
     };
-    const TIER_LABEL = { free: 'Free', medium: 'Medium', all: 'All-Access' };
+    const TIER_LABEL = { free: 'Core', medium: 'Elite', all: 'Premium' };
     const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '62';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '63';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -495,7 +495,8 @@
         let lastAgo = '—';
         if (entries[0] && entries[0].date) { for (let i=0;i<365;i++){ if (entries[0].date === ymd(daysAgo(i))) { lastAgo = i===0?'today': i===1?'1d ago' : i+'d ago'; break; } } }
         let week=0; for (let i=0;i<7;i++) if (set.has(ymd(daysAgo(i)))) week++;
-        setCardMetrics('journal', [[String(streak),'day streak'], [String(month),'this month'], [String(entries.length),'total entries'], [lastAgo,'last entry'], [String(week),'this week']]);
+        let best=0, run=0; for (let i=364;i>=0;i--){ if (set.has(ymd(daysAgo(i)))) { run++; if(run>best) best=run; } else run=0; }
+        setCardMetrics('journal', [[String(streak),'day streak'], [String(month),'this month'], [String(entries.length),'total entries'], [lastAgo,'last entry'], [String(week),'this week'], [String(best),'best streak']]);
       } catch(e){ setCardMetrics('journal', []); }
     }
 
@@ -567,10 +568,10 @@
       try {
         const snap = await firebase.firestore().collection('users').doc(user.uid).get();
         const data = snap.exists ? snap.data() : {};
-        if (data.billing_bypass === true || data.role === 'developer') { unlockedApps = APPS.map(a => a.id); planLabel = 'All-Access'; tier = 'all'; }
+        if (data.billing_bypass === true || data.role === 'developer') { unlockedApps = APPS.map(a => a.id); planLabel = 'Premium'; tier = 'all'; }
         else if (Array.isArray(data.apps) && data.apps.length) { unlockedApps = data.apps; tier = data.tier || 'all'; planLabel = TIER_LABEL[tier] || 'Custom'; }
-        else { unlockedApps = APPS.map(a => a.id); tier = data.tier || 'free'; planLabel = TIER_LABEL[tier] || 'Free'; }
-      } catch (err) { unlockedApps = APPS.map(a => a.id); tier = 'all'; planLabel = 'All-Access'; }
+        else { unlockedApps = APPS.map(a => a.id); tier = data.tier || 'free'; planLabel = TIER_LABEL[tier] || 'Core'; }
+      } catch (err) { unlockedApps = APPS.map(a => a.id); tier = 'all'; planLabel = 'Premium'; }
       currentTier = tier;
       renderUser(user.displayName || user.email, user.email, user.photoURL, planLabel);
       applyTheme();
