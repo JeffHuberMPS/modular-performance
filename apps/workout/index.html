@@ -4108,6 +4108,8 @@ const Isometric3DBarPlugin = {
 };
 if (typeof Chart !== 'undefined') {
   Chart.register(Isometric3DBarPlugin);
+  // Inter everywhere — including chart canvas text (axis labels, tooltips, legends).
+  Chart.defaults.font.family = 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
   // Force every bar chart to render sharp 90-degree corners (no rounded tops/sides)
   Chart.defaults.elements = Chart.defaults.elements || {};
   Chart.defaults.elements.bar = Chart.defaults.elements.bar || {};
