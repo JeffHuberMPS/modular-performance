@@ -1148,6 +1148,7 @@ async function safeGet(key) {
 async function safeSet(key, val) {
   if (useLocalStorage) {
     try { localStorage.setItem(key, val); } catch (e) { console.error('localStorage save fail', e); }
+    try { scheduleCloudBackup(); } catch (e) {}
     return;
   }
   try {
@@ -1157,16 +1158,71 @@ async function safeSet(key, val) {
     useLocalStorage = true;
     try { localStorage.setItem(key, val); } catch (e2) { console.error('localStorage save fail', e2); }
   }
+  try { scheduleCloudBackup(); } catch (e) {}
 }
 async function safeDelete(key) {
   if (useLocalStorage) {
     try { localStorage.removeItem(key); } catch (e) {}
+    try { scheduleCloudBackup(); } catch (e) {}
     return;
   }
   try { await window.storage.delete(key); } catch (e) {
     useLocalStorage = true;
     try { localStorage.removeItem(key); } catch (e2) {}
   }
+  try { scheduleCloudBackup(); } catch (e) {}
+}
+
+// ============ SILENT CLOUD BACKUP ============
+// Reuses the hub's authenticated Firebase (same-origin parent). Backs up the full
+// local snapshot to users/{uid}/settings/workout_backup on open + after every
+// log/delete. Fire-and-forget — never blocks the UI. Auto-restores on a fresh device.
+function _cloudDB()  { try { return (window.parent && window.parent.firebase) ? window.parent.firebase.firestore() : null; } catch (e) { return null; } }
+function _cloudUID() { try { return window.parent.firebase.auth().currentUser.uid; } catch (e) { return null; } }
+function _cloudDoc() { const db = _cloudDB(), uid = _cloudUID(); return (db && uid) ? db.doc('users/' + uid + '/settings/workout_backup') : null; }
+function _collectLocal() {
+  const data = {};
+  [K_STATE, K_HISTORY, K_PRS, K_TEMPLATE, (typeof K_CONDITIONING !== 'undefined' ? K_CONDITIONING : null)].forEach(k => {
+    if (!k) return;
+    try { const v = localStorage.getItem(k); if (v !== null) data[k] = v; } catch (e) {}
+  });
+  return data;
+}
+let _cloudTimer = null, _cloudBusy = false;
+function scheduleCloudBackup() {
+  if (_cloudTimer) clearTimeout(_cloudTimer);
+  _cloudTimer = setTimeout(cloudBackupNow, 1800);   // debounce so rapid saves = one write
+}
+async function cloudBackupNow() {
+  const doc = _cloudDoc();
+  if (!doc || _cloudBusy) return false;
+  _cloudBusy = true;
+  try {
+    await doc.set({ data: _collectLocal(), ts: Date.now(), v: 1 });
+    try { localStorage.setItem(K_LAST_BACKUP, new Date().toISOString()); } catch (e) {}
+    try { updateBackupStatus(); } catch (e) {}
+    _cloudBusy = false;
+    return true;
+  } catch (e) { _cloudBusy = false; return false; }
+}
+async function cloudRestoreIfEmpty() {
+  const doc = _cloudDoc();
+  if (!doc) return false;
+  let hasLocal = false;
+  try { const hv = localStorage.getItem(K_HISTORY); hasLocal = !!hv && JSON.parse(hv || '[]').length > 0; } catch (e) {}
+  if (hasLocal) return false;                 // device already has data — never overwrite
+  try {
+    const snap = await doc.get();
+    if (snap.exists && snap.data() && snap.data().data) {
+      const d = snap.data().data;
+      let cloudHasHistory = false;
+      try { cloudHasHistory = !!d[K_HISTORY] && JSON.parse(d[K_HISTORY] || '[]').length > 0; } catch (e) {}
+      if (!cloudHasHistory) return false;     // nothing real to restore (avoids reload loop)
+      Object.keys(d).forEach(k => { try { localStorage.setItem(k, d[k]); } catch (e) {} });
+      return true;
+    }
+  } catch (e) {}
+  return false;
 }
 async function loadAll() {
   const s = await safeGet(K_STATE);
@@ -3278,7 +3334,7 @@ function _renderDashboard() {
     </div>
     <div class="chart-card" style="margin-top:12px;">
       <div class="chart-title">Backup &amp; Sync</div>
-      <div class="chart-subtitle">Move your data between devices</div>
+      <div class="chart-subtitle">Your data backs up to the cloud automatically</div>
       <div id="backup-status-row" style="margin-top:10px; padding:10px 12px; background:rgba(var(--mps-accent-rgb),0.08); border:1px solid rgba(var(--mps-accent-rgb),0.25); border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
         <div>
           <div style="font-size:10px; color:var(--text-dim); letter-spacing:0.5px;">AUTO-BACKUP STATUS</div>
@@ -3287,14 +3343,14 @@ function _renderDashboard() {
         <button id="backup-now-btn" style="padding:8px 14px; border-radius:6px; border:1px solid var(--mps-accent); background:transparent; color:var(--mps-accent); font-weight:700; font-size:12px;">Backup now</button>
       </div>
       <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <button id="backup-export-btn" class="end-btn" style="flex:1; min-width:120px; background:#226633; color:#ffffff;">⬇ Export Data</button>
-        <button id="backup-import-btn" class="end-btn" style="flex:1; min-width:120px; background:#9b6bc9; color:#fff;">⬆ Import Data</button>
+        <button id="backup-export-btn" class="end-btn" style="flex:1; min-width:120px; background:transparent; color:var(--mps-accent); border:1px solid var(--mps-accent);">⬇ Export a copy</button>
+        <button id="backup-import-btn" class="end-btn" style="flex:1; min-width:120px; background:transparent; color:var(--text-dim); border:1px solid var(--border);">⬆ Import a file</button>
         <input type="file" id="backup-import-file" accept=".json,application/json" style="display:none;">
       </div>
       <div style="font-size:11px; color:var(--text-dim); margin-top:12px; line-height:1.5;">
-        <strong style="color:var(--mps-accent);">Auto-backup:</strong> Fires after every workout save + on app open if >24h since last backup. Files save to your Downloads folder as <code style="background:#0a1124; padding:1px 4px; border-radius:3px;">mps_autobackup_YYYY-MM-DD_NNN.json</code>.<br>
-        <strong style="color:#3d9658;">Export:</strong> Downloads all your workout data as a JSON file.<br>
-        <strong style="color:#9b6bc9;">Import:</strong> Upload a previously-exported JSON file to restore data on a new device or after clearing browser cache.
+        <strong style="color:var(--mps-accent);">Automatic:</strong> Your data backs up to your account every time you open the app and after every change — silently, nothing to manage.<br>
+        <strong style="color:var(--mps-accent);">Export a copy:</strong> Optional — download a JSON snapshot to keep offline.<br>
+        <strong style="color:var(--mps-accent);">Import a file:</strong> Restore from a JSON snapshot you exported earlier.
       </div>
     </div>
   `;
@@ -3333,25 +3389,8 @@ async function runAutoBackup(reason) {
       _autoBackupInFlight = false;
       return false;
     }
-    // Get and increment backup counter for versioned filename
-    let count = 1;
-    try {
-      const stored = await safeGet(K_BACKUP_COUNT);
-      if (stored) count = (parseInt(stored, 10) || 0) + 1;
-    } catch (e) {}
-    await safeSet(K_BACKUP_COUNT, String(count));
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const dateStr = new Date().toISOString().split('T')[0];
-    a.href = url;
-    a.download = `mps_autobackup_${dateStr}_${String(count).padStart(3, '0')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    // Record last successful backup time
-    await safeSet(K_LAST_BACKUP, new Date().toISOString());
+    // Silent cloud backup (replaces the old download-to-Downloads behavior).
+    await cloudBackupNow();
     // Update dashboard indicator if visible
     updateBackupStatus();
     _autoBackupInFlight = false;
@@ -3377,10 +3416,11 @@ async function updateBackupStatus() {
   const el = document.getElementById('backup-status-text');
   if (!el) return;
   try {
-    const last = await safeGet(K_LAST_BACKUP);
+    const rec = await safeGet(K_LAST_BACKUP);
+    const last = rec && rec.value;
     if (!last) {
-      el.textContent = 'No backup yet';
-      el.style.color = '#dc4856';
+      el.textContent = 'Cloud backup on — saving automatically';
+      el.style.color = 'var(--text-dim)';
       return;
     }
     const ms = Date.now() - new Date(last).getTime();
@@ -3392,20 +3432,21 @@ async function updateBackupStatus() {
     else if (hours > 0) label = `${hours}h ago`;
     else if (mins > 0) label = `${mins}m ago`;
     else label = 'just now';
-    el.textContent = `Last backup: ${label} ✓`;
-    el.style.color = (ms > 24 * 3600000) ? '#d97706' : '#4ab3f4';
+    el.textContent = `Synced to cloud · ${label} ✓`;
+    el.style.color = 'var(--mps-accent)';
   } catch (e) {
-    el.textContent = 'Backup status unknown';
+    el.textContent = 'Cloud backup on';
+    el.style.color = 'var(--text-dim)';
   }
 }
-// Called once at app boot — fires backup if >24h since last
+// Called once at app boot — restore on a fresh device, then back up current state (silent).
 async function checkAutoBackupOnOpen() {
-  const ms = await msSinceLastBackup();
-  // If never backed up OR >24h ago → auto-backup now
-  if (ms === null || ms > 24 * 3600000) {
-    // Wait 2s after app load so the user sees the dashboard before the download dialog appears
-    setTimeout(() => { runAutoBackup('open'); }, 2000);
-  }
+  await new Promise(r => setTimeout(r, 800));   // let the parent's Firebase auth settle
+  try {
+    const restored = await cloudRestoreIfEmpty();
+    if (restored) { location.reload(); return; }   // fresh device pulled cloud data → re-render with it
+  } catch (e) {}
+  cloudBackupNow();                                // fire-and-forget backup on open
 }
 function wireBackupButtons() {
   const exportBtn = document.getElementById('backup-export-btn');
