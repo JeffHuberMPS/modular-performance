@@ -30,6 +30,7 @@
     --mps-accent-rgb: 74, 179, 244;
     --mps-accent-2: #7ac8ff;
     --mps-accent-2-rgb: 122, 200, 255;
+    --feat-rgb: 122, 200, 255;   /* "featured" stat card (Strength Score) highlight */
     --bg: #000000;
     --bg-2: #050810;
     --card: #0d1428;
@@ -46,6 +47,7 @@
     --mps-accent-rgb: 150, 150, 150; /* glows/shadows → subtle neutral */
     --mps-accent-2: #f5f5f5;
     --mps-accent-2-rgb: 150, 150, 150;
+    --feat-rgb: 201, 160, 32;   /* featured card rim = gold in gray mode (was grey, which read blue on black) */
     --mps-blue: #161616;
     --mps-blue-light: #242424;
     --bg-2: #070707;
@@ -3253,7 +3255,7 @@ function _renderDashboard() {
     <div class="stat-grid" style="margin-bottom:18px;">
       <div class="stat"><div class="stat-value" style="font-size:18px;">${totalRounds}</div><div class="stat-label">Total Rounds</div></div>
       <div class="stat"><div class="stat-value" style="font-size:18px;">${totalCircuits}</div><div class="stat-label">Circuits Done</div></div>
-      <div class="stat" style="background:linear-gradient(180deg, rgba(var(--mps-accent-2-rgb),0.10) 0%, rgba(var(--mps-accent-rgb),0.04) 100%); border:1px solid rgba(var(--mps-accent-2-rgb),0.45); box-shadow:0 4px 14px rgba(var(--mps-accent-rgb),0.22), inset 0 1px 0 rgba(255,255,255,0.06);"><div class="stat-value" style="font-size:18px; color:var(--mps-accent-2); text-shadow:0 0 10px rgba(var(--mps-accent-2-rgb),0.6);">${allTimeStrength}</div><div class="stat-label" style="color:var(--mps-accent-2); opacity:0.85;">Strength Score</div></div>
+      <div class="stat" style="background:linear-gradient(180deg, rgba(var(--feat-rgb),0.10) 0%, rgba(var(--feat-rgb),0.04) 100%); border:1px solid rgba(var(--feat-rgb),0.45); box-shadow:0 4px 14px rgba(var(--feat-rgb),0.22), inset 0 1px 0 rgba(255,255,255,0.06);"><div class="stat-value" style="font-size:18px; color:var(--mps-accent-2); text-shadow:0 0 10px rgba(var(--feat-rgb),0.6);">${allTimeStrength}</div><div class="stat-label" style="color:rgb(var(--feat-rgb)); opacity:0.85;">Strength Score</div></div>
     </div>
     <!-- ===== CHARTS ===== -->
     <div class="chart-card">
