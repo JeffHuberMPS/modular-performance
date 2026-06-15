@@ -69,34 +69,57 @@
     var db = firebase.firestore();
     var COLL = 'users/' + uid + '/app_storage';
 
-    // window.storage — API expected by the React components
+    // window.storage — API expected by the React components.
+    // localStorage-first: app_storage is blocked by Firestore rules, so reads/writes
+    // fall back to localStorage (the reliable on-device store). The silent cloud
+    // backup below mirrors that localStorage to an allowed Firestore location.
     window.storage = {
       get: function(key) {
         return db.doc(COLL + '/' + key).get().then(function(snap) {
-          return snap.exists ? snap.data() : null;
+          if (snap.exists) return snap.data();
+          var v = localStorage.getItem(key); return v !== null ? { value: v } : null;
+        }).catch(function() {
+          var v = localStorage.getItem(key); return v !== null ? { value: v } : null;
         });
       },
       set: function(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) {}
+        try { window.habitsScheduleBackup && window.habitsScheduleBackup(); } catch (e) {}
         return db.doc(COLL + '/' + key).set({ value: value }).then(function() {
           return true;
-        }).catch(function() { return false; });
+        }).catch(function() { return true; });
       },
       delete: function(key) {
+        try { localStorage.removeItem(key); } catch (e) {}
+        try { window.habitsScheduleBackup && window.habitsScheduleBackup(); } catch (e) {}
         return db.doc(COLL + '/' + key).delete().catch(function(){});
       },
       list: function() {
         return db.collection(COLL).get().then(function(snap) {
           return snap.docs.map(function(d) { return d.id; });
-        });
+        }).catch(function() { return []; });
       }
     };
 
-    // Show app
-    document.getElementById('auth-loading').style.display = 'none';
-    document.getElementById('root').style.display = 'block';
+    // ===== SILENT CLOUD BACKUP (habits) =====
+    // Mirrors localStorage (habits_v4/gym_v4/blocks_v4) to
+    // users/{uid}/settings/habits_backup (an allowed Firestore location) so habits
+    // sync across devices. Restores on a fresh device. Fire-and-forget.
+    var _bDoc = db.doc('users/' + uid + '/settings/habits_backup');
+    var _bKeys = ['habits_v4', 'gym_v4', 'blocks_v4'];
+    function _bMatch(k){ return _bKeys.indexOf(k) >= 0; }
+    function _bCollect(){ var d={}; _bKeys.forEach(function(k){ try{ var v=localStorage.getItem(k); if(v!==null) d[k]=v; }catch(e){} }); return d; }
+    function _bHasLocal(){ for(var i=0;i<_bKeys.length;i++){ try{ if(localStorage.getItem(_bKeys[i])!==null) return true; }catch(e){} } return false; }
+    var _bTimer=null,_bBusy=false;
+    window.habitsScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
+    function _bNow(){ if(_bBusy) return; _bBusy=true; try{ _bDoc.set({data:_bCollect(),ts:Date.now(),v:1}).then(function(){_bBusy=false;}).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+    function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
 
-    // Mount React — tiny delay to ensure Babel+DOM ready
-    setTimeout(mountApp, 50);
+    // Restore first (download on fresh device), then show app; seed cloud on open.
+    var _revealed=false;
+    function _reveal(){ if(_revealed) return; _revealed=true; document.getElementById('auth-loading').style.display='none'; document.getElementById('root').style.display='block'; setTimeout(mountApp, 50); window.habitsScheduleBackup(); }
+    setTimeout(_reveal, 3000);   // safety: never stay stuck on the loading screen
+    _bRestoreIfEmpty().then(function(restored){ if(restored){ location.reload(); return; } _reveal(); });
   });
 
   function mountApp() {

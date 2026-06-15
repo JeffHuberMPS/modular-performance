@@ -72,10 +72,12 @@
           },
           set: function (key, value) {
             try { localStorage.setItem(LS(key), JSON.stringify(value)); } catch (e) {}
+            try { window.journalScheduleBackup && window.journalScheduleBackup(); } catch (e) {}
             return db.doc(COLL + '/jnl__' + key).set({ value: value }).then(function () { return true; }).catch(function () { return true; });
           },
           delete: function (key) {
             try { localStorage.removeItem(LS(key)); } catch (e) {}
+            try { window.journalScheduleBackup && window.journalScheduleBackup(); } catch (e) {}
             return db.doc(COLL + '/jnl__' + key).delete().catch(function () {});
           },
           list: function () {
@@ -91,8 +93,25 @@
           }
         };
 
-        document.getElementById('loading-screen').style.display = 'none';
-        tryMount();
+        // ===== SILENT CLOUD BACKUP (journal) =====
+        // Mirrors localStorage (mps_jnl_<uid>_*) to users/{uid}/settings/journal_backup
+        // (an allowed Firestore location) so entries sync across devices. Restores on a
+        // fresh device. Fire-and-forget — never blocks UI.
+        var _bDoc = db.doc('users/' + uid + '/settings/journal_backup');
+        var _bPfx = 'mps_jnl_' + uid + '_';
+        function _bMatch(k){ return !!k && k.indexOf(_bPfx) === 0; }
+        function _bCollect(){ var d={}; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(_bMatch(k)) d[k]=localStorage.getItem(k); } }catch(e){} return d; }
+        function _bHasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_bMatch(localStorage.key(i))) return true; } }catch(e){} return false; }
+        var _bTimer=null,_bBusy=false;
+        window.journalScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
+        function _bNow(){ if(_bBusy) return; _bBusy=true; try{ _bDoc.set({data:_bCollect(),ts:Date.now(),v:1}).then(function(){_bBusy=false;}).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+        function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
+
+        // Restore first (download on fresh device), then mount; seed cloud on open.
+        var _mounted=false;
+        function _go(){ if(_mounted) return; _mounted=true; document.getElementById('loading-screen').style.display='none'; tryMount(); window.journalScheduleBackup(); }
+        setTimeout(_go, 3000);   // safety: never stay stuck on the loading screen
+        _bRestoreIfEmpty().then(function(restored){ if(restored){ location.reload(); return; } _go(); });
       });
     });
 

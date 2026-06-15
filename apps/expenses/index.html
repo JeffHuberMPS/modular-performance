@@ -870,7 +870,30 @@ let state = {
 const HARDCODED_WEBHOOK = 'https://hook.us2.make.com/nis6wpus7j1hmn75yi1py29hns0lmgnf';
 if (!state.sync.webhook) { state.sync.webhook = HARDCODED_WEBHOOK; save(STORE.sync, state.sync); }
 function load(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
-function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); try { window.expenseScheduleBackup && window.expenseScheduleBackup(); } catch (e) {} }
+
+// ===== SILENT CLOUD BACKUP (expenses) =====
+// Mirrors localStorage (mps_expense:*) to users/{uid}/settings/expenses_backup
+// (an allowed Firestore location) so expenses sync across devices. Restores on a
+// fresh device. Fire-and-forget — never blocks the UI.
+(function(){
+  function _db(){ try{ return firebase.firestore(); }catch(e){ return null; } }
+  function _uid(){ try{ return firebase.auth().currentUser.uid; }catch(e){ return null; } }
+  function _doc(){ var db=_db(), uid=_uid(); return (db&&uid)? db.doc('users/'+uid+'/settings/expenses_backup') : null; }
+  function _match(k){ return !!k && k.indexOf('mps_expense:')===0; }
+  function _collect(){ var d={}; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(_match(k)) d[k]=localStorage.getItem(k); } }catch(e){} return d; }
+  function _hasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_match(localStorage.key(i))) return true; } }catch(e){} return false; }
+  var _t=null,_busy=false;
+  window.expenseScheduleBackup=function(){ if(_t) clearTimeout(_t); _t=setTimeout(_now,1800); };
+  function _now(){ var doc=_doc(); if(!doc||_busy) return; _busy=true; try{ doc.set({data:_collect(),ts:Date.now(),v:1}).then(function(){_busy=false;}).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
+  function _restoreIfEmpty(){ var doc=_doc(); if(!doc) return Promise.resolve(false); if(_hasLocal()) return Promise.resolve(false); return doc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
+  try {
+    firebase.auth().onAuthStateChanged(function(u){
+      if(!u) return;
+      _restoreIfEmpty().then(function(restored){ if(restored){ location.reload(); return; } window.expenseScheduleBackup(); });
+    });
+  } catch(e) {}
+})();
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function fmt$(n) { const v = Number(n)||0; const sign = v<0?'-':''; return sign+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmt$short(n) { const v = Number(n)||0; if(Math.abs(v)>=1000) return '$'+(v/1000).toFixed(1)+'k'; return '$'+Math.round(v).toLocaleString(); }
