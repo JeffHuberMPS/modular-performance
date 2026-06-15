@@ -279,8 +279,8 @@
     <div class="billing-section-title">Change Plan</div>
 
     <div class="billing-interval-toggle">
-      <button class="interval-btn active" id="btn-monthly" onclick="setInterval('monthly')">Monthly</button>
-      <button class="interval-btn"        id="btn-annual"  onclick="setInterval('annual')">Annual (Save up to 18%)</button>
+      <button class="interval-btn active" id="btn-monthly" onclick="setBillingInterval('monthly')">Monthly</button>
+      <button class="interval-btn"        id="btn-annual"  onclick="setBillingInterval('annual')">Annual (Save up to 18%)</button>
     </div>
 
     <div class="plan-options" id="plan-options">
@@ -330,7 +330,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/firebase-config.js"></script>
-  <script src="/auth.js"></script>
   <script src="/stripe-config.js"></script>
   <script src="/billing.js"></script>
 
@@ -339,17 +338,28 @@
     let selectedInterval = 'monthly';
     let selectedPlan     = null;
 
-    // Show test mode banner
-    if (STRIPE_CONFIG.isTestMode) {
-      document.getElementById('test-mode-banner').style.display = 'block';
+    const PLANS = (window.STRIPE_CONFIG && STRIPE_CONFIG.plans) || {};
+    // Map every tier spelling used across the app to a plan key in stripe-config.
+    const TIER_ALIAS = {
+      free:'single', core:'single', single:'single',
+      medium:'duo', elite:'trio', duo:'duo', trio:'trio',
+      all:'allaccess', 'all-access':'allaccess', allaccess:'allaccess', premium:'allaccess'
+    };
+    function normTier(t) { return TIER_ALIAS[String(t || '').toLowerCase()] || 'single'; }
+    function planPriceStr(plan) {
+      const p = selectedInterval === 'annual' ? plan.annual_price : plan.monthly_price;
+      return selectedInterval === 'annual' ? `$${p}/yr` : `$${p}/mo`;
     }
 
-    // Wait for auth to load
-    MPS_Auth.onAuthReady((user, userDoc) => {
-      if (!user) {
-        window.location.href = '/auth.html';
-        return;
-      }
+    // Auth via Firebase (same as the hub) — no external auth.js dependency.
+    firebase.auth().onAuthStateChanged(async function(user) {
+      if (!user) { window.location.href = '/auth.html'; return; }
+      let userDoc = null;
+      try {
+        const snap = await firebase.firestore().collection('users').doc(user.uid).get();
+        userDoc = snap.exists ? snap.data() : null;
+      } catch (e) { /* fall through to default below */ }
+      if (!userDoc) userDoc = { tier: 'single', email: user.email };
       window.__MPS_USER = userDoc;
       renderCurrentPlan(userDoc);
       renderPlanOptions(userDoc);
@@ -357,17 +367,14 @@
     });
 
     function renderCurrentPlan(userDoc) {
-      if (!userDoc) return;
-      const plan = STRIPE_CONFIG.plans[userDoc.tier] || STRIPE_CONFIG.plans.single;
-      document.getElementById('current-plan-name').textContent  = plan.label;
-      document.getElementById('current-plan-price').textContent = `$${plan.monthly}/mo`;
-      // next billing date and payment method come from Stripe via backend
-      // Placeholder until /api/billing-info is wired
+      const plan = PLANS[normTier(userDoc.tier)] || PLANS.single || { name: '—', monthly_price: 0 };
+      document.getElementById('current-plan-name').textContent  = plan.name || '—';
+      document.getElementById('current-plan-price').textContent = plan.monthly_price ? `$${plan.monthly_price}/mo` : '';
       document.getElementById('next-billing-date').textContent = '—';
       document.getElementById('payment-method').textContent    = '—';
     }
 
-    function setInterval(interval) {
+    function setBillingInterval(interval) {
       selectedInterval = interval;
       document.getElementById('btn-monthly').classList.toggle('active', interval === 'monthly');
       document.getElementById('btn-annual').classList.toggle('active',  interval === 'annual');
@@ -377,57 +384,38 @@
     function renderPlanOptions(userDoc) {
       const container = document.getElementById('plan-options');
       container.innerHTML = '';
-      const currentTier = userDoc ? userDoc.tier : 'single';
+      const currentKey = normTier(userDoc ? userDoc.tier : 'single');
 
-      Object.entries(STRIPE_CONFIG.plans).forEach(([key, plan]) => {
-        const isCurrent = key === currentTier;
-        const price     = selectedInterval === 'annual' ? plan.annual : plan.monthly;
-        const priceStr  = selectedInterval === 'annual' ? `$${plan.annual}/yr` : `$${plan.monthly}/mo`;
-
+      Object.entries(PLANS).forEach(([key, plan]) => {
+        const isCurrent = key === currentKey;
         const el = document.createElement('div');
         el.className = `plan-option${isCurrent ? ' current' : ''}${selectedPlan === key ? ' selected' : ''}`;
         el.innerHTML = `
           <div>
             <div class="plan-option__name">
-              ${plan.label}
-              ${plan.featured ? '<span class="plan-option__badge">Best Value</span>' : ''}
-              ${isCurrent     ? '<span class="plan-option__badge" style="background:#1a1a1a;color:var(--text-dim);border:1px solid var(--border-subtle)">Current</span>' : ''}
+              ${plan.name}
+              ${isCurrent ? '<span class="plan-option__badge" style="background:#1a1a1a;color:var(--text-dim);border:1px solid var(--border-subtle)">Current</span>' : ''}
             </div>
-            <div class="plan-option__desc">${plan.description}</div>
+            <div class="plan-option__desc">${plan.apps} app${plan.apps > 1 ? 's' : ''}</div>
           </div>
-          <div class="plan-option__price">${priceStr}</div>
+          <div class="plan-option__price">${planPriceStr(plan)}</div>
         `;
-
         if (!isCurrent) {
-          el.addEventListener('click', () => {
-            selectedPlan = key;
-            renderPlanOptions(userDoc);
-          });
+          el.addEventListener('click', () => { selectedPlan = key; renderPlanOptions(userDoc); });
         }
-
         container.appendChild(el);
       });
 
-      document.getElementById('change-plan-btn').disabled = !selectedPlan || selectedPlan === currentTier;
+      document.getElementById('change-plan-btn').disabled = !selectedPlan || selectedPlan === currentKey;
     }
 
-    function changePlan() {
-      if (!selectedPlan) return;
-      startStripeCheckout(selectedPlan, selectedInterval);
-    }
+    // Stripe isn't wired yet — show a friendly notice instead of a dead button.
+    function changePlan()         { showBillingError('Payments are coming soon — plan changes aren\'t available here yet.'); }
+    function openCustomerPortal() { showBillingError('The billing portal is coming soon.'); }
 
-    async function loadInvoices(userDoc) {
-      // TODO: fetch from /api/invoices once backend is wired
-      // Placeholder rows
-      const tbody = document.getElementById('invoice-body');
-      tbody.innerHTML = `
-        <tr>
-          <td>—</td>
-          <td>—</td>
-          <td><span class="invoice-status invoice-status--pending">Pending setup</span></td>
-          <td>—</td>
-        </tr>
-      `;
+    function loadInvoices() {
+      document.getElementById('invoice-body').innerHTML =
+        '<tr><td colspan="4" style="color:var(--text-faint);font-size:0.8rem;">No invoices yet.</td></tr>';
     }
   </script>
 

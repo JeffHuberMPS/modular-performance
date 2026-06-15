@@ -864,11 +864,10 @@ let state = {
   selectedMonth: load(STORE.selectedMonth, new Date().getMonth()),
   selectedYear: new Date().getFullYear(),
   editingId: null,
-  sync: load(STORE.sync, { webhook: 'https://hook.us2.make.com/nis6wpus7j1hmn75yi1py29hns0lmgnf' }),
+  sync: load(STORE.sync, { webhook: '' }),
   syncMeta: load(STORE.syncMeta, { lastSync: null, status: 'never' })
 };
-const HARDCODED_WEBHOOK = 'https://hook.us2.make.com/nis6wpus7j1hmn75yi1py29hns0lmgnf';
-if (!state.sync.webhook) { state.sync.webhook = HARDCODED_WEBHOOK; save(STORE.sync, state.sync); }
+// Webhook is user-supplied via Settings — never hardcode a personal endpoint here.
 function load(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
 function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); try { window.expenseScheduleBackup && window.expenseScheduleBackup(); } catch (e) {} }
 
