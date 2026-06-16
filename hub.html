@@ -229,7 +229,7 @@
     const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '71';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '72';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -242,6 +242,7 @@
     function applyTheme() {
       const mono = (currentTier !== 'all') || (themePref === 'mono');
       document.body.classList.toggle('tier-mono', mono);
+      document.body.classList.toggle('tier-core', currentTier === 'free');   // Core-only feature locks
       const tg = document.getElementById('theme-toggle');
       tg.style.display = (currentTier === 'all') ? 'inline-flex' : 'none';
       document.getElementById('theme-toggle-label').textContent = (themePref === 'mono') ? 'Dark/Gray' : 'Colorful';
@@ -250,18 +251,28 @@
     /* In gray mode, recolor variable-driven apps (Workout, Expenses) to black + gold + white. */
     function applyFrameThemes() {
       const gray = document.body.classList.contains('tier-mono');
-      // Re-skinned at source — toggle their theme class (white numbers + gold labels, zero leaks).
+      const core = document.body.classList.contains('tier-core');
+      // Vanilla apps (Workout, Expenses): instant theme class; reload only when the Core flag
+      // flips (so Core feature-locks re-read at load). Core flips are rare (dev tester only).
       ['workout', 'expenses'].forEach(id => {
         try {
           const f = document.getElementById('frame-' + id);
-          if (f && f.contentDocument && f.contentDocument.body) f.contentDocument.body.classList.toggle('mps-gray', gray);
+          if (f && f.contentDocument && f.contentDocument.body) {
+            f.contentDocument.body.classList.toggle('mps-gray', gray);
+            f.contentDocument.body.classList.toggle('mps-core', core);
+          }
+          if (f && f.src) {
+            const want = core ? '1' : '0', have = f.getAttribute('data-core');
+            if (have == null) f.setAttribute('data-core', want);
+            else if (have !== want) { f.setAttribute('data-core', want); f.src = f.src; }
+          }
         } catch (e) {}
       });
-      /* React apps (Habits, Journal, Sleep) read the theme at load — reload them when the theme flips. */
+      /* React apps (Habits, Journal, Sleep) read theme + tier at load — reload when either flips. */
       ['habits', 'journal', 'sleep'].forEach(id => {
         const f = document.getElementById('frame-' + id);
         if (!f || !f.src) return;
-        const want = gray ? '1' : '0', have = f.getAttribute('data-gray');
+        const want = (gray ? '1' : '0') + (core ? 'C' : 'N'), have = f.getAttribute('data-gray');
         if (have == null) f.setAttribute('data-gray', want);
         else if (have !== want) { f.setAttribute('data-gray', want); f.src = f.src; }
       });
