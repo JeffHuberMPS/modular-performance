@@ -188,7 +188,11 @@ function HabitTracker() {
     },
   };
 
-  const [blocks, setBlocks] = useState(DEFAULT_BLOCKS);
+  const [blocksRaw, setBlocks] = useState(DEFAULT_BLOCKS);
+  // Core: show only the first 3 habits per block (the rest is an Elite upgrade). Core can't edit
+  // habits (the edit/insights view is locked), so capping the display data is safe — no data is lost.
+  const __isCore = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
+  const blocks = __isCore ? Object.fromEntries(Object.entries(blocksRaw).map(([k, b]) => [k, { ...b, habits: (b.habits || []).slice(0, 3) }])) : blocksRaw;
 
   useEffect(() => {
     (async () => {
@@ -652,6 +656,11 @@ function HabitTracker() {
                   </div>
                 );
               })}
+              {__CORE && (
+                <div onClick={() => { try { window.top.location.href = '/billing.html'; } catch(e) {} }} style={{ padding: '13px', textAlign: 'center', background: 'rgba(201,160,32,0.06)', border: `1px dashed ${BORDER}`, borderRadius: '12px', cursor: 'pointer', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12.5px', color: '#C9A020', fontWeight: 700, letterSpacing: '0.4px' }}>🔒 Core tracks 3 habits per block — unlock all with Elite</div>
+                </div>
+              )}
               <button onClick={async () => {
                 setSaveFlash(true);
                 try { await window.storage.set('habits_v4', JSON.stringify(habitsRef.current)); } catch(e) {}
