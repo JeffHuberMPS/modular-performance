@@ -205,7 +205,7 @@ function HabitTracker() {
         }
         if (g && g.value) setGymDone(JSON.parse(g.value));
         if (b && b.value) setBlocks(JSON.parse(b.value));
-      } catch (e) { console.error('storage load failed:', e); }
+      } catch (e) {}
       if (!habitsLoaded) {
         try {
           const lh = localStorage.getItem('habits_v4');
@@ -225,7 +225,7 @@ function HabitTracker() {
     habitsRef.current = next;
     const s = JSON.stringify(next);
     try { localStorage.setItem('habits_v4', s); } catch(e) {}
-    try { await window.storage.set('habits_v4', s); } catch(e) { console.error('save failed', e); }
+    try { await window.storage.set('habits_v4', s); } catch(e) {}
   };
 
   const saveGym = async (next) => {

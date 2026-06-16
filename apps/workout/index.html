@@ -1267,7 +1267,6 @@ async function dedupeHistoryByDate() {
   if (seen.size === history.length) return; // no duplicates
   history = [...seen.values()].sort((a, b) => a.date.localeCompare(b.date));
   await saveHistory();
-  console.log('Deduplicated history to', history.length, 'records');
 }
 async function migrateLegacyRounds() {
   if (!history || history.length === 0) return;
@@ -1311,7 +1310,6 @@ async function migrateLegacyRounds() {
   });
   if (changed) {
     await saveHistory();
-    console.log('Migrated legacy round counts');
   }
 }
 function buildLastSessionCache() {
