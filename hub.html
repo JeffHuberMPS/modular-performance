@@ -211,11 +211,11 @@
     const NAV = [{ id: 'home', label: 'Home', accent: '#C9A020' }].concat(APPS);
 
     const TIER_FEATURES = {
-      workout:  { free:'1 workout/day · last 7 days · no stats', medium:'Unlimited logging · 60-day history · basic stats', all:'Unlimited · full history · advanced stats + program templates' },
-      habits:   { free:'3 habits max · 7-day view', medium:'Unlimited · stacking · no-drop rule · 60 days', all:'Unlimited · streak analytics · compound view · weekly insights' },
-      sleep:    { free:'Basic view only · last 7 days', medium:'Full logging · trends · 60 days', all:'Full + biometrics · wearables · advanced insights' },
-      expenses: { free:'View-only · no logging', medium:'Full logging · tags · monthly reports · 60 days', all:'Advanced reports · budget alerts · spending insights' },
-      journal:  { free:'3 entries max · no search', medium:'Unlimited · basic search · all history', all:'Unlimited · full search + tags · monthly summaries' }
+      workout:  { free:'Log freely · PRs & stats locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
+      habits:   { free:'Log all habits free · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
+      sleep:    { free:'Log freely · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
+      expenses: { free:'Log freely · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
+      journal:  { free:'Write freely · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' }
     };
     const TIER_LABEL = { free: 'Core', medium: 'Elite', all: 'Premium' };
     // Normalize every tier spelling used across the codebase (single/duo/trio/all-access,
@@ -229,7 +229,7 @@
     const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '77';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '78';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
