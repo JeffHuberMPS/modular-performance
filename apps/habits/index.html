@@ -550,7 +550,7 @@ function HabitTracker() {
           </div>
 
           {[...Object.keys(blocks), 'DAY'].map(blockKey => (
-            <BarChart3D key={blockKey} blockKey={blockKey} block={blockKey === 'DAY' ? { icon: '📊', name: 'Total', habits: ALL_HABITS } : blocks[blockKey]} chartView={chartView} habits={habits} selectedDate={selectedDate} onBarTap={setBarDetail} theme={{ PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont }} fmtKey={fmtKey} />
+            <BarChart3D key={blockKey} blockKey={blockKey} block={blockKey === 'DAY' ? { icon: '📊', name: 'Total', habits: ALL_HABITS } : blocks[blockKey]} chartView={chartView} habits={habits} selectedDate={selectedDate} onBarTap={setBarDetail} theme={{ PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2 }} fmtKey={fmtKey} />
           ))}
         </>
       )}
@@ -791,7 +791,7 @@ function HabitIcon({ id, color, size = 18 }) {
   }
 }
 function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap, theme, fmtKey }) {
-  const { PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont } = theme;
+  const { PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2 } = theme;
   const [selectedBar, setSelectedBar] = React.useState(null);
 
   const habitCount = block.habits.length;
