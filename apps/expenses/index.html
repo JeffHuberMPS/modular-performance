@@ -1159,7 +1159,10 @@ function renderRules() {
 // =================================================================
 // INSIGHTS
 // =================================================================
+function isCore(){ try{ return !!(window.parent && window.parent!==window && window.parent.document.body.classList.contains('tier-core')); }catch(e){ return false; } }
+function coreLockHTML(title, desc){ return '<div style="text-align:center;padding:48px 22px;"><div style="font-size:34px;margin-bottom:10px;">🔒</div><div style="font-size:16px;font-weight:800;color:#f5f5f5;letter-spacing:1px;margin-bottom:8px;">'+title+' IS AN ELITE FEATURE</div><div style="font-size:13px;color:#9a9a9a;line-height:1.6;margin-bottom:20px;max-width:300px;margin-left:auto;margin-right:auto;">'+desc+'</div><a href="/billing.html" target="_top" style="display:inline-block;padding:12px 26px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:13px;letter-spacing:1px;border-radius:10px;text-decoration:none;">↑ UNLOCK WITH ELITE</a></div>'; }
 function renderInsights() {
+  if (isCore()) { const h=document.getElementById('view-insights'); if(h) h.innerHTML = coreLockHTML('INSIGHTS', 'Unlock spending insights — top categories, merchants, biggest buys, and monthly reports. Logging stays free; upgrade to see the patterns.'); return; }
   const year=state.selectedYear,month=state.selectedMonth;
   const all=monthEntries(year,month);const purchases=all.filter(e=>e.item==='Purchase');const incomeEntries=all.filter(e=>e.item==='Income'||e.item==='Paycheck');
   const catTotals={};purchases.forEach(e=>{catTotals[e.category]=(catTotals[e.category]||0)+Math.abs(Number(e.amount)||0);});

@@ -3024,8 +3024,11 @@ function categorizeExercise(name) {
   if (n.includes('squat') || n.includes('lunge') || n.includes('rdl') || n.includes('mornings')) return 'QUADS';
   return 'OTHER';
 }
+function isCore(){ try{ return !!(window.parent && window.parent!==window && window.parent.document.body.classList.contains('tier-core')); }catch(e){ return false; } }
+function coreLockHTML(title, desc){ return '<div style="text-align:center;padding:48px 22px;"><div style="font-size:34px;margin-bottom:10px;">🔒</div><div style="font-size:16px;font-weight:800;color:#f5f5f5;letter-spacing:1px;margin-bottom:8px;">'+title+' IS AN ELITE FEATURE</div><div style="font-size:13px;color:#9a9a9a;line-height:1.6;margin-bottom:20px;max-width:300px;margin-left:auto;margin-right:auto;">'+desc+'</div><a href="/billing.html" target="_top" style="display:inline-block;padding:12px 26px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:13px;letter-spacing:1px;border-radius:10px;text-decoration:none;">↑ UNLOCK WITH ELITE</a></div>'; }
 function renderPRs() {
   const c = document.getElementById('pr-list');
+  if (isCore()) { if(c) c.innerHTML = coreLockHTML('PRs &amp; STATS', 'Unlock your personal records and strength stats. Logging workouts stays free; upgrade to track your PRs over time.'); return; }
   const entries = Object.entries(prs);
   if (entries.length === 0) { c.innerHTML = '<div class="empty">No PRs yet. Lift heavy.</div>'; return; }
   // Group by muscle
