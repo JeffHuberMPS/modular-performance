@@ -33,13 +33,13 @@ module.exports = async (req, res) => {
       metadata: { uid },
       subscription_data: {
         metadata: { uid },
-        // 7-day free trial for all new subscriptions.
+        // 14-day free trial for all new subscriptions (matches the landing page).
         // Only applies to first-time subscribers — Stripe skips the trial
         // if the customer already has or had a subscription.
-        trial_period_days: 7
+        trial_period_days: 14
       },
-      // Collect payment method upfront even during trial
-      payment_method_collection: 'always'
+      // No card required to start the trial (matches "No card required" on the landing page).
+      payment_method_collection: 'if_required'
     };
 
     // Attach existing Stripe customer if we have one.

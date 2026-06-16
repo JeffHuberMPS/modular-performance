@@ -697,7 +697,7 @@ function SleepTracker() {
               <button className="btn-primary" style={styles.btnPrimary} onClick={saveEntry}>SAVE</button>
             </div>
             {saveError && (
-              <div style={{ marginTop: 12, padding: 8, background: "#2a1010", border: "1px solid #8b3a3a", color: "#e8a0a0", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}>
+              <div style={{ marginTop: 12, padding: 8, background: __GRAY ? "#1a1a1a" : "#2a1010", border: __GRAY ? "1px solid #444" : "1px solid #8b3a3a", color: __GRAY ? "#bbbbbb" : "#e8a0a0", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}>
                 {saveError}
               </div>
             )}
@@ -984,7 +984,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       </div>
       <div style={{ display: "flex", gap: 5 }}>
         <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: LBL, display: "flex", alignItems: "center" }} onClick={onEdit}><Pencil size={12} /></button>
-        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
+        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: __GRAY ? "#999999" : "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
       </div>
     </div>
     {/* Row 1: Wake · Sleep · Duration */}
