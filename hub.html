@@ -229,7 +229,7 @@
     const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '84';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '85';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -262,7 +262,9 @@
             f.contentDocument.body.classList.toggle('mps-core', core);
           }
           if (f && f.src) {
-            const want = core ? '1' : '0', have = f.getAttribute('data-core');
+            // Reload on gray OR core change so the app's load-time __GRAY flag re-evaluates
+            // (its JS bakes gray/blue accents at load; a class toggle alone won't update them).
+            const want = (gray ? '1' : '0') + (core ? 'C' : 'N'), have = f.getAttribute('data-core');
             if (have == null) f.setAttribute('data-core', want);
             else if (have !== want) { f.setAttribute('data-core', want); f.src = f.src; }
           }
