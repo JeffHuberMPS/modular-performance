@@ -191,8 +191,8 @@ const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window 
 const PURPLE = __GRAY ? '#f5f5f5' : '#9b6bc9';
 const GOLD   = __GRAY ? '#C9A020' : '#C9A020';
 const PRGB   = __GRAY ? '150,150,150' : '155,107,201';
-const GRGB   = __GRAY ? '201,160,32' : '201,168,107';
-const LBL    = __GRAY ? '#b89a5e' : '#a684cc';   // labels: gold in gray, PURPLE in colorful
+const GRGB   = __GRAY ? '201,160,32' : '201,160,32';
+const LBL    = __GRAY ? '#C9A020' : '#a684cc';   // labels: gold in gray, PURPLE in colorful
 const BRDR   = __GRAY ? '150,150,150' : '155,107,201';   // card borders: neutral in gray, PURPLE in colorful
 /* Recharts removed — using pure SVG charts below */
 
@@ -582,7 +582,7 @@ function SleepTracker() {
           {/* Big Hero Card — gold/sleep theme */}
           <div style={{
             background: '#000000',
-            backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(201,168,107,0.22) 0%, rgba(201,168,107,0.07) 45%, transparent 75%)',
+            backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(201,160,32,0.22) 0%, rgba(201,160,32,0.07) 45%, transparent 75%)',
             border: '3px solid transparent',
             borderRadius: '22px',
             padding: '38px 20px 28px',
@@ -591,7 +591,7 @@ function SleepTracker() {
             position: 'relative',
             overflow: 'hidden',
             backgroundClip: 'padding-box',
-            boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(201,168,107,0.28), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+            boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(201,160,32,0.28), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
           }}>
             <div className="mps-logo-rsp" style={{
               fontFamily: "'Saira Condensed', 'Arial Black', sans-serif",
@@ -599,14 +599,14 @@ function SleepTracker() {
               letterSpacing: '4px', lineHeight: 1,
               background: 'linear-gradient(180deg, #ffffff 0%, #f5e6c0 12%, #e8c87a 28%, #C9A020 50%, #8a6a2a 72%, #4a3410 90%, #1e1408 100%)',
               WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 6px 20px rgba(201,168,107,0.55))',
+              filter: 'drop-shadow(0 6px 20px rgba(201,160,32,0.55))',
             }}>MPS</div>
             <div style={{ width: '72%', height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(150,150,150,0.3) 15%, rgba(190,190,190,0.85) 35%, rgba(220,220,220,1) 50%, rgba(190,190,190,0.85) 65%, rgba(150,150,150,0.3) 85%, transparent 100%)', margin: '14px auto 13px', boxShadow: '0 0 6px rgba(150,150,150,0.9), 0 0 18px rgba(150,150,150,0.4)' }} />
             <div style={{ fontSize: '11px', letterSpacing: '5px', color: '#b09878', fontWeight: 400, marginBottom: '13px', fontFamily: "'Bebas Neue', sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
             <div style={{ fontSize: '22px', letterSpacing: '5px', fontWeight: 400, fontFamily: "'Bebas Neue', sans-serif" }}>
-              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,168,107,0.4)' }}>REST </span>
+              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,160,32,0.4)' }}>REST </span>
               <span style={{ color: PURPLE, textShadow: '0 0 14px rgba(150,150,150,0.6)' }}>&amp;</span>
-              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,168,107,0.4)' }}> RECOVERY</span>
+              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,160,32,0.4)' }}> RECOVERY</span>
             </div>
           </div>
 
@@ -1120,7 +1120,7 @@ const ChartCard = ({ title, sub, children }) => (
       textTransform: "uppercase", color: "#f5f5f5", marginBottom: 3 }}>
       {title}
     </div>
-    {sub && <div style={{ fontSize: 12, color: "#9a8a6a", fontFamily: "JetBrains Mono, monospace", marginBottom: 14 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 12, color: "#C9A020", fontFamily: "JetBrains Mono, monospace", marginBottom: 14 }}>{sub}</div>}
     {children}
   </div>
 );
@@ -1149,22 +1149,22 @@ const styles = {
 
   /* Header / brand block */
   header:      { marginBottom: 20 },
-  mpsLogoWrap: { background: "rgba(201,168,107,0.05)", border: "1px solid rgba(201,168,107,0.2)",
+  mpsLogoWrap: { background: "rgba(201,160,32,0.05)", border: "1px solid rgba(201,160,32,0.2)",
     borderRadius: 12, padding: "18px 20px 14px", textAlign: "center", marginBottom: 10 },
   mpsLogo:     { fontFamily: "'Saira Condensed', 'Arial Black', sans-serif", fontStyle: "italic",
     fontWeight: 900, fontSize: 52, letterSpacing: 6, lineHeight: 1,
     background: "linear-gradient(160deg, #ffffff 0%, #fff8e0 30%, #C9A020 60%, #7a5020 100%)",
     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-    filter: "drop-shadow(0 0 14px rgba(201,168,107,0.5))", display: "inline-block" },
-  mpsDivider:  { height: 1, background: "linear-gradient(90deg, transparent, rgba(201,168,107,0.5), transparent)", margin: "8px 0 6px" },
-  mpsTagline:  { fontSize: 9, letterSpacing: "0.32em", color: "rgba(201,168,107,0.6)",
+    filter: "drop-shadow(0 0 14px rgba(201,160,32,0.5))", display: "inline-block" },
+  mpsDivider:  { height: 1, background: "linear-gradient(90deg, transparent, rgba(201,160,32,0.5), transparent)", margin: "8px 0 6px" },
+  mpsTagline:  { fontSize: 9, letterSpacing: "0.32em", color: "rgba(201,160,32,0.6)",
     fontFamily: "JetBrains Mono, monospace", textTransform: "uppercase", marginBottom: 4 },
   appName:     { fontFamily: "'Bebas Neue', 'Arial Black', sans-serif", fontSize: 20,
     letterSpacing: 4, color: "#e8d5b0" },
   subtitle:    { fontSize: 10, color: "#4a4255", fontFamily: "JetBrains Mono, monospace",
     letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" },
   actionRow:   { display: "flex", gap: 8, flexWrap: "wrap" },
-  btnPrimary:  { flex: 1, background: "rgba(201,168,107,0.12)", border: "1px solid rgba(201,168,107,0.4)",
+  btnPrimary:  { flex: 1, background: "rgba(201,160,32,0.12)", border: "1px solid rgba(201,160,32,0.4)",
     color: GOLD, borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
     fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
@@ -1174,7 +1174,7 @@ const styles = {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
 
   /* Form */
-  formCard:    { background: "rgba(18,18,20,0.95)", border: "1px solid rgba(201,168,107,0.2)",
+  formCard:    { background: "rgba(18,18,20,0.95)", border: "1px solid rgba(201,160,32,0.2)",
     borderRadius: 12, padding: 16, marginBottom: 16 },
   formGrid:    { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 },
   input:       { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(150,150,150,0.25)",
