@@ -341,11 +341,11 @@
     const PLANS = (window.STRIPE_CONFIG && STRIPE_CONFIG.plans) || {};
     // Map every tier spelling used across the app to a plan key in stripe-config.
     const TIER_ALIAS = {
-      free:'single', core:'single', single:'single',
-      medium:'duo', elite:'trio', duo:'duo', trio:'trio',
-      all:'allaccess', 'all-access':'allaccess', allaccess:'allaccess', premium:'allaccess'
+      free:'core', core:'core', single:'core', none:'core',
+      medium:'elite', elite:'elite', duo:'elite', trio:'elite',
+      all:'premium', 'all-access':'premium', allaccess:'premium', premium:'premium'
     };
-    function normTier(t) { return TIER_ALIAS[String(t || '').toLowerCase()] || 'single'; }
+    function normTier(t) { return TIER_ALIAS[String(t || '').toLowerCase()] || 'core'; }
     function planPriceStr(plan) {
       const p = selectedInterval === 'annual' ? plan.annual_price : plan.monthly_price;
       return selectedInterval === 'annual' ? `$${p}/yr` : `$${p}/mo`;
@@ -367,7 +367,7 @@
     });
 
     function renderCurrentPlan(userDoc) {
-      const plan = PLANS[normTier(userDoc.tier)] || PLANS.single || { name: '—', monthly_price: 0 };
+      const plan = PLANS[normTier(userDoc.tier)] || PLANS.core || { name: '—', monthly_price: 0 };
       document.getElementById('current-plan-name').textContent  = plan.name || '—';
       document.getElementById('current-plan-price').textContent = plan.monthly_price ? `$${plan.monthly_price}/mo` : '';
       document.getElementById('next-billing-date').textContent = '—';
@@ -396,7 +396,7 @@
               ${plan.name}
               ${isCurrent ? '<span class="plan-option__badge" style="background:#1a1a1a;color:var(--text-dim);border:1px solid var(--border-subtle)">Current</span>' : ''}
             </div>
-            <div class="plan-option__desc">${plan.apps} app${plan.apps > 1 ? 's' : ''}</div>
+            <div class="plan-option__desc">${plan.tagline || ''}</div>
           </div>
           <div class="plan-option__price">${planPriceStr(plan)}</div>
         `;

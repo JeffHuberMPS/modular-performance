@@ -218,10 +218,18 @@
       journal:  { free:'3 entries max · no search', medium:'Unlimited · basic search · all history', all:'Unlimited · full search + tags · monthly summaries' }
     };
     const TIER_LABEL = { free: 'Core', medium: 'Elite', all: 'Premium' };
+    // Normalize every tier spelling used across the codebase (single/duo/trio/all-access,
+    // Free/Medium/All-Access, Core/Elite/Premium) into the hub's internal free|medium|all.
+    function normTier(t) {
+      t = String(t || '').toLowerCase();
+      if (['all', 'allaccess', 'all-access', 'premium'].includes(t)) return 'all';
+      if (['medium', 'elite', 'duo', 'trio'].includes(t))            return 'medium';
+      return 'free';   // single, free, core, none, unknown
+    }
     const DEV_EMAILS = ['jeffreyhuber86@gmail.com'];
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '66';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '67';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -564,14 +572,16 @@
         if (activeId === 'home') loadDashboard();
         return;
       }
-      let planLabel = '—', tier = 'free';
+      let tier = 'free';
       try {
         const snap = await firebase.firestore().collection('users').doc(user.uid).get();
         const data = snap.exists ? snap.data() : {};
-        if (data.billing_bypass === true || data.role === 'developer') { unlockedApps = APPS.map(a => a.id); planLabel = 'Premium'; tier = 'all'; }
-        else if (Array.isArray(data.apps) && data.apps.length) { unlockedApps = data.apps; tier = data.tier || 'all'; planLabel = TIER_LABEL[tier] || 'Custom'; }
-        else { unlockedApps = APPS.map(a => a.id); tier = data.tier || 'free'; planLabel = TIER_LABEL[tier] || 'Core'; }
-      } catch (err) { unlockedApps = APPS.map(a => a.id); tier = 'all'; planLabel = 'Premium'; }
+        if (data.billing_bypass === true || data.role === 'developer') tier = 'all';
+        else tier = normTier(data.tier);
+      } catch (err) { tier = 'all'; }
+      // Unified one-app: every tracker is available to all tiers; tiers are feature/theme levels.
+      unlockedApps = APPS.map(a => a.id);
+      const planLabel = TIER_LABEL[tier] || 'Core';
       currentTier = tier;
       renderUser(user.displayName || user.email, user.email, user.photoURL, planLabel);
       applyTheme();

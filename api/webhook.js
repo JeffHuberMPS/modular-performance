@@ -31,30 +31,34 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 /* ── Tier → Apps mapping ─────────────────────────────────────── */
+// MPS is now ONE unified app: every tier unlocks all five trackers.
+// Tiers (Core / Elite / Premium) differ by features, limits, and theme — not by
+// which trackers you can open.
+const ALL_TRACKERS = ['workout', 'habits', 'sleep', 'expenses', 'journal'];
 const TIER_APPS = {
-  single: ['workout'],
-  duo:    ['workout', 'habits'],
-  trio:   ['workout', 'habits', 'sleep'],
-  all:    ['workout', 'habits', 'sleep', 'expenses', 'journal']
+  core:    ALL_TRACKERS,
+  elite:   ALL_TRACKERS,
+  premium: ALL_TRACKERS
 };
 
 /* ── Price ID → Tier mapping ─────────────────────────────────── */
-// Populate these after creating products in Stripe Dashboard
+// Maps the current test price IDs onto the 3-tier model. (Stripe products will be
+// rebuilt for Core/Elite/Premium when Stripe is wired; keys default to 'core'.)
 const PRICE_TIER_MAP = {
   // Monthly (test)
-  'price_1TaiqfJr8jtgHpa2SJ8RntRZ': 'single',
-  'price_1TaiuXJr8jtgHpa2mWoHzNVE': 'duo',
-  'price_1TaiwWJr8jtgHpa2HFVCbAsh': 'trio',
-  'price_1TaiyeJr8jtgHpa2m5vQyVZE': 'allaccess',
+  'price_1TaiqfJr8jtgHpa2SJ8RntRZ': 'elite',
+  'price_1TaiuXJr8jtgHpa2mWoHzNVE': 'elite',
+  'price_1TaiwWJr8jtgHpa2HFVCbAsh': 'elite',
+  'price_1TaiyeJr8jtgHpa2m5vQyVZE': 'premium',
   // Annual (test)
-  'price_1TailiJr8jtgHpa2FIJYkQAY': 'single',
-  'price_1TaiutJr8jtgHpa2gXVZ88jW': 'duo',
-  'price_1TaiwmJr8jtgHpa2lvxDKbFN': 'trio',
-  'price_1TaiywJr8jtgHpa25aUsmXnP': 'allaccess',
+  'price_1TailiJr8jtgHpa2FIJYkQAY': 'elite',
+  'price_1TaiutJr8jtgHpa2gXVZ88jW': 'elite',
+  'price_1TaiwmJr8jtgHpa2lvxDKbFN': 'elite',
+  'price_1TaiywJr8jtgHpa25aUsmXnP': 'premium',
 };
 
 function tierFromPriceId(priceId) {
-  return PRICE_TIER_MAP[priceId] || 'single';
+  return PRICE_TIER_MAP[priceId] || 'core';
 }
 
 /* ── Webhook Handler ─────────────────────────────────────────── */
@@ -92,7 +96,7 @@ module.exports = async (req, res) => {
         }
 
         // Get the subscription to determine price/tier and trial status
-        let tier        = 'single';
+        let tier        = 'core';
         let trialEnd    = null;
         let trialActive = false;
 
@@ -110,7 +114,7 @@ module.exports = async (req, res) => {
 
         await db.collection('users').doc(uid).update({
           tier:               tier,
-          apps:               TIER_APPS[tier] || ['workout'],
+          apps:               TIER_APPS[tier] || ALL_TRACKERS,
           stripe_customer_id: session.customer,
           payment_failed:     false,
           trial_end:          trialEnd,
@@ -139,8 +143,8 @@ module.exports = async (req, res) => {
 
         const userRef = snap.docs[0].ref;
         await userRef.update({
-          tier:       'none',
-          apps:       [],
+          tier:       'core',          // cancelled → drops to the free Core tier (keeps the app)
+          apps:       ALL_TRACKERS,
           updated_at: admin.firestore.FieldValue.serverTimestamp()
         });
 
@@ -166,7 +170,7 @@ module.exports = async (req, res) => {
         if (!snap.empty) {
           const updateData = {
             tier:       tier,
-            apps:       TIER_APPS[tier] || ['workout'],
+            apps:       TIER_APPS[tier] || ALL_TRACKERS,
             updated_at: admin.firestore.FieldValue.serverTimestamp()
           };
 

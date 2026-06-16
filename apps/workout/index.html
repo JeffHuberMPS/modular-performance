@@ -18,7 +18,7 @@
 <title>MPS Workout Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@900&family=Oswald:wght@700&family=Russo+One&family=Saira+Condensed:wght@900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&family=Orbitron:wght@900&family=Oswald:wght@700&family=Russo+One&family=Saira+Condensed:wght@900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- v2.5 - MPS Light Blue palette -->
 <style>
@@ -109,7 +109,7 @@
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background:
       radial-gradient(ellipse at top, rgba(26, 47, 92, 0.35) 0%, transparent 60%),
       radial-gradient(ellipse at bottom, rgba(26, 47, 92, 0.2) 0%, transparent 50%),
@@ -1773,13 +1773,36 @@ function showSplitPicker() {
   });
   document.getElementById('split-picker-cancel').addEventListener('click', () => { container.innerHTML = ''; });
 }
+function mpsTextPrompt(title, onConfirm) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,sans-serif;';
+  ov.innerHTML = '<div style="background:#141414;border:1px solid #333;border-radius:14px;padding:22px;max-width:360px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,0.6);">'
+    + '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#C9A020;font-weight:700;margin-bottom:14px;">' + title + '</div>'
+    + '<input id="mps-tp-input" type="text" autocomplete="off" style="width:100%;box-sizing:border-box;background:#0d0d0d;border:1px solid #444;border-radius:9px;padding:11px 12px;color:#f5f5f5;font-size:15px;font-family:inherit;outline:none;" />'
+    + '<div style="display:flex;gap:10px;margin-top:16px;">'
+    + '<button id="mps-tp-cancel" style="flex:1;padding:10px;border-radius:9px;border:1px solid #444;background:transparent;color:#bbb;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>'
+    + '<button id="mps-tp-ok" style="flex:1;padding:10px;border-radius:9px;border:none;background:#C9A020;color:#0a0a0a;font-size:13px;font-weight:800;letter-spacing:.04em;cursor:pointer;font-family:inherit;">OK</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  const input = ov.querySelector('#mps-tp-input');
+  const done = (val) => { ov.remove(); onConfirm(val); };
+  ov.querySelector('#mps-tp-cancel').addEventListener('click', () => done(null));
+  ov.querySelector('#mps-tp-ok').addEventListener('click', () => done(input.value));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(input.value); else if (e.key === 'Escape') done(null); });
+  ov.addEventListener('click', (e) => { if (e.target === ov) done(null); });
+  setTimeout(() => input.focus(), 30);
+}
 function confirmAddSplit(name) {
-  let finalName = name;
   if (name === 'Custom') {
-    const custom = prompt('Custom split name:');
-    if (!custom || !custom.trim()) { document.getElementById('split-picker-container').innerHTML = ''; return; }
-    finalName = custom.trim();
+    mpsTextPrompt('Custom split name', (custom) => {
+      if (!custom || !custom.trim()) { document.getElementById('split-picker-container').innerHTML = ''; return; }
+      doAddSplit(custom.trim());
+    });
+    return;
   }
+  doAddSplit(name);
+}
+function doAddSplit(finalName) {
   const dow = getDayOfWeek(state.selectedDate);
   const templateMatch = (weeklyTemplate[dow] || []).find(t => t.name === finalName);
   const exercises = templateMatch
@@ -1856,14 +1879,17 @@ function renderSkillPicker(selectedSkill, selectedSeries) {
   document.getElementById('skill-picker-cancel').addEventListener('click', () => { container.innerHTML = ''; });
 }
 function confirmAddSkill(skillName, seriesName, workoutName) {
-  let finalName = skillName;
   if (skillName === 'Custom') {
-    const custom = prompt('Custom skill name:');
-    if (!custom || !custom.trim()) { document.getElementById('skill-picker-container').innerHTML = ''; return; }
-    finalName = custom.trim();
-  } else if (seriesName && workoutName) {
-    finalName = `${skillName} & ${workoutName}`;
+    mpsTextPrompt('Custom skill name', (custom) => {
+      if (!custom || !custom.trim()) { document.getElementById('skill-picker-container').innerHTML = ''; return; }
+      doAddSkill('Custom', custom.trim(), seriesName, workoutName);
+    });
+    return;
   }
+  const finalName = (seriesName && workoutName) ? `${skillName} & ${workoutName}` : skillName;
+  doAddSkill(skillName, finalName, seriesName, workoutName);
+}
+function doAddSkill(skillName, finalName, seriesName, workoutName) {
   // Build the exercise list for this skill block
   let exercises = [];
   if (seriesName && workoutName) {

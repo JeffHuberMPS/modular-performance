@@ -12,7 +12,7 @@
 <script src="/firebase-config.js"></script>
 <script src="/shared/auth-guard.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Anton&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet">
 <style>
 @keyframes mpsPageIn { from { opacity:0; } to { opacity:1; } }
 body { animation: mpsPageIn 0.28s ease-out both; }
@@ -68,7 +68,7 @@ body.mps-gray .section-title { color: #C9A020 !important; }
 body.mps-gray .mps-logo { background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 35%, #c9c9c9 70%, #8a8a8a 100%) !important; -webkit-background-clip: text; background-clip: text; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Inter', 'Bricolage Grotesque', sans-serif;
   background: var(--mps-bg);
   color: var(--mps-text);
   min-height: 100vh;
@@ -1211,7 +1211,7 @@ document.getElementById('btn-save-paycheck').addEventListener('click',()=>{state
 document.getElementById('btn-save-cap').addEventListener('click',()=>{state.cap=parseFloat(document.getElementById('monthly-cap').value)||0;save(STORE.cap,state.cap);flash('Monthly cap saved');renderAll();});
 document.getElementById('rules-search').addEventListener('input',e=>{rulesFilter=e.target.value;renderRules();});
 document.getElementById('btn-add-rule').addEventListener('click',()=>{state.rules.unshift({k:'New Keyword',c:'Other'});save(STORE.rules,state.rules);renderRules();});
-document.getElementById('btn-reset-rules').addEventListener('click',()=>{if(!confirm('Reset all category rules to defaults?'))return;state.rules=JSON.parse(JSON.stringify(DEFAULT_RULES));save(STORE.rules,state.rules);renderRules();});
+document.getElementById('btn-reset-rules').addEventListener('click',()=>{showOverlay({title:'Reset Rules',body:'Reset all category rules to defaults?',confirmText:'Reset',onConfirm:()=>{state.rules=JSON.parse(JSON.stringify(DEFAULT_RULES));save(STORE.rules,state.rules);renderRules();}});});
 function flash(msg){const d=document.createElement('div');d.textContent=msg;d.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--mps-mint);color:#000;padding:10px 20px;border-radius:8px;font-weight:600;z-index:400;box-shadow:0 0 20px var(--mps-mint-glow);';document.body.appendChild(d);setTimeout(()=>d.remove(),1800);}
 document.getElementById('entry-modal').addEventListener('click',e=>{if(e.target.id==='entry-modal')closeModal();});
 // =================================================================

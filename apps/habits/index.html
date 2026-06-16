@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>MPS Habits</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700;800&family=Saira+Condensed:ital,wght@1,900&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@300;400;500;600;700;800&family=Saira+Condensed:ital,wght@1,900&display=swap" />
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -153,6 +153,7 @@ function HabitTracker() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCal, setShowCal] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const DEFAULT_BLOCKS = {
     MRN: {
@@ -268,7 +269,8 @@ function HabitTracker() {
   const updateHabitEmoji = (bk, hid, v) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, emoji: v } : h) }; saveBlocks(n); };
   const addHabit = (bk) => { const n = { ...blocks }; const id = `h_${Date.now()}`; n[bk] = { ...n[bk], habits: [...n[bk].habits, { id, label: 'New habit', emoji: '✨' }] }; saveBlocks(n); };
   const deleteHabit = (bk, hid) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.filter(h => h.id !== hid) }; saveBlocks(n); };
-  const resetToDefault = () => { if (window.confirm('Reset all habits and block names to defaults? Your check-in data stays.')) saveBlocks(DEFAULT_BLOCKS); };
+  const askConfirm = (message, onYes) => setConfirmDialog({ message, onYes });
+  const resetToDefault = () => askConfirm('Reset all habits and block names to defaults? Your check-in data stays.', () => saveBlocks(DEFAULT_BLOCKS));
 
   const getDayCompletion = (dk, bk) => {
     const dd = habits[dk] || {};
@@ -350,7 +352,18 @@ function HabitTracker() {
   const TEXT = '#e8e8e8';
   const CARD_SHADOW_3D = '0 4px 12px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.04)';
   const CARD_SHADOW_3D_HOVER = '0 6px 18px rgba(150,150,150,0.25), 0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06)';
-  const bodyFont = "'Bricolage Grotesque', system-ui, sans-serif";
+  const bodyFont = "'Inter', system-ui, sans-serif";
+
+  // Header + chart-bar accents: red in colorful (Premium), gold/neutral in gray (Core/Elite).
+  const HDR_GLOW  = __GRAY ? 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(201,160,32,0.14) 0%, rgba(201,160,32,0.05) 45%, transparent 75%)' : 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(230,57,70,0.20) 0%, rgba(230,57,70,0.06) 45%, transparent 75%)';
+  const HDR_LOGO  = __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #ffb3ba 18%, #ff6b78 38%, #e63946 65%, #8a1825 95%, #4a0a13 100%)';
+  const HDR_LINK  = __GRAY ? '#b89a5e' : '#8b0000';
+  const HDR_TITLE = __GRAY ? '#C9A020' : '#e63946';
+  const HDR_DIVID = __GRAY ? 'linear-gradient(90deg, transparent, rgba(201,160,32,0.55) 25%, rgba(192,192,192,0.7) 50%, rgba(201,160,32,0.55) 75%, transparent)' : 'linear-gradient(90deg, transparent, rgba(230,57,70,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(230,57,70,0.6) 75%, transparent)';
+  const BAR_SIDE  = __GRAY ? 'linear-gradient(180deg,#3a3a3a 0%,#1a1a1a 100%)' : 'linear-gradient(180deg,#6b1018 0%,#3a0610 100%)';
+  const BAR_TOP   = __GRAY ? 'linear-gradient(180deg,#e8e8e8 0%,#bdbdbd 100%)' : 'linear-gradient(180deg,#ff9aa3 0%,#ff7a87 100%)';
+  const BAR_FOOT  = __GRAY ? '#2a2a2a' : '#5a0e16';
+  const BAR_FOOT2 = __GRAY ? '#2a2a2a' : '#3a0610';
 
   const dow = selectedDate.getDay();
 
@@ -364,10 +377,21 @@ function HabitTracker() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: TEXT, fontFamily: bodyFont, padding: '16px 8px', paddingBottom: '80px' }}>
+      {confirmDialog && (
+        <div onClick={() => setConfirmDialog(null)} style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#141414', border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '22px', maxWidth: '340px', width: '100%', fontFamily: bodyFont, boxShadow: '0 18px 50px rgba(0,0,0,0.6)' }}>
+            <div style={{ fontSize: '14px', color: TEXT, lineHeight: 1.5, marginBottom: '18px' }}>{confirmDialog.message}</div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setConfirmDialog(null)} style={{ flex: 1, padding: '10px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: 'transparent', color: MUTED, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: bodyFont }}>Cancel</button>
+              <button onClick={() => { const fn = confirmDialog.onYes; setConfirmDialog(null); if (fn) fn(); }} style={{ flex: 1, padding: '10px', borderRadius: '9px', border: 'none', background: PRIMARY_LIGHT, color: '#0a0a0a', fontSize: '13px', fontWeight: 800, letterSpacing: '0.04em', cursor: 'pointer', fontFamily: bodyFont }}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* HERO */}
       <div style={{
         background: '#000000',
-        backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(230,57,70,0.20) 0%, rgba(230,57,70,0.06) 45%, transparent 75%)',
+        backgroundImage: HDR_GLOW,
         border: '3px solid transparent',
         borderRadius: '22px',
         padding: '38px 20px 28px',
@@ -378,18 +402,18 @@ function HabitTracker() {
         backgroundClip: 'padding-box',
         boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(192,192,192,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
       }}>
-        <a href="/hub.html" onClick={(e)=>{e.preventDefault();mpsNavigate('/hub.html');}} style={{ position: 'absolute', top: '16px', left: '16px', color: '#8b0000', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textDecoration: 'none', textTransform: 'uppercase' }}>← Hub</a>
+        <a href="/hub.html" onClick={(e)=>{e.preventDefault();mpsNavigate('/hub.html');}} style={{ position: 'absolute', top: '16px', left: '16px', color: HDR_LINK, fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textDecoration: 'none', textTransform: 'uppercase' }}>← Hub</a>
         <div className="mps-logo-rsp" style={{
           fontFamily: "'Saira Condensed', 'Bricolage Grotesque', system-ui, sans-serif",
           fontWeight: 900, fontStyle: 'italic',
           letterSpacing: '4px', lineHeight: 1,
-          background: 'linear-gradient(180deg, #ffffff 0%, #ffb3ba 18%, #ff6b78 38%, #e63946 65%, #8a1825 95%, #4a0a13 100%)',
+          background: HDR_LOGO,
           WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
           filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
         }}>MPS</div>
-        <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(230,57,70,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(230,57,70,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
+        <div style={{ width: '70%', height: '1px', background: HDR_DIVID, margin: '16px auto 14px' }} />
         <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px' }}>MODULAR PERFORMANCE SYSTEMS</div>
-        <div style={{ fontSize: '20px', letterSpacing: '6px', color: '#e63946', fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px' }}>
+        <div style={{ fontSize: '20px', letterSpacing: '6px', color: HDR_TITLE, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px' }}>
           <span>HABIT</span><span>TRACKER</span>
         </div>
       </div>
@@ -683,7 +707,7 @@ function HabitTracker() {
                             <input type="text" value={h.emoji} onChange={e => updateHabitEmoji(blockKey, h.id, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '46px', 'center', '18px')} />
                             <input type="text" value={h.label} onChange={e => renameHabit(blockKey, h.id, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '1', 'left', '14px')} autoFocus />
                             <button onClick={() => setEditingHabit(null)} style={{ padding: '8px 10px', background: PRIMARY, color: '#fff', border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}>✓</button>
-                            <button onClick={() => { if (window.confirm(`Delete "${h.label}"?`)) { deleteHabit(blockKey, h.id); setEditingHabit(null); } }} style={{ padding: '8px 10px', background: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', cursor: 'pointer' }}>🗑</button>
+                            <button onClick={() => askConfirm(`Delete "${h.label}"?`, () => { deleteHabit(blockKey, h.id); setEditingHabit(null); })} style={{ padding: '8px 10px', background: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', cursor: 'pointer' }}>🗑</button>
                           </div>
                         ) : (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '12px', alignItems: 'center' }}>
@@ -826,12 +850,12 @@ function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap
               <div key={i} onClick={() => { if (onBarTap) onBarTap({ blockKey, isWeek: chartView === 'weekly', dateKey: chartView === 'daily' ? bar.dateKeys[0] : null, dayKeys: chartView === 'weekly' ? bar.dateKeys : null, label: bar.fullLabel, summary: `${bar.value}/${maxY}` }); }} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', cursor: 'pointer', position: 'relative' }}>
                 {hasVal ? (
                   <div style={{ position: 'relative', width: '100%', maxWidth: '36px', height: `${bh}px` }}>
-                    <div style={{ position: 'absolute', top: 0, left: '100%', width: `${DEPTH}px`, height: '100%', background: 'linear-gradient(180deg,#6b1018 0%,#3a0610 100%)', transform: 'skewY(-45deg)', transformOrigin: 'left top' }} />
-                    <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', height: `${DEPTH}px`, background: 'linear-gradient(180deg,#ff9aa3 0%,#ff7a87 100%)', transform: 'skewX(-45deg)', transformOrigin: 'bottom left' }} />
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: `linear-gradient(180deg,${PRIMARY_LIGHT} 0%,${PRIMARY} 65%,#5a0e16 100%)`, borderRadius: '2px 0 0 2px', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 0 10px ${PRIMARY_GLOW}` }} />
+                    <div style={{ position: 'absolute', top: 0, left: '100%', width: `${DEPTH}px`, height: '100%', background: BAR_SIDE, transform: 'skewY(-45deg)', transformOrigin: 'left top' }} />
+                    <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', height: `${DEPTH}px`, background: BAR_TOP, transform: 'skewX(-45deg)', transformOrigin: 'bottom left' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: `linear-gradient(180deg,${PRIMARY_LIGHT} 0%,${PRIMARY} 65%,${BAR_FOOT} 100%)`, borderRadius: '2px 0 0 2px', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 0 10px ${PRIMARY_GLOW}` }} />
                   </div>
                 ) : (
-                  <div style={{ width: '100%', maxWidth: '36px', height: '3px', background: `linear-gradient(180deg,${PRIMARY} 0%,#3a0610 100%)`, borderRadius: '2px', opacity: 0.35 }} />
+                  <div style={{ width: '100%', maxWidth: '36px', height: '3px', background: `linear-gradient(180deg,${PRIMARY} 0%,${BAR_FOOT2} 100%)`, borderRadius: '2px', opacity: 0.35 }} />
                 )}
               </div>
             );
