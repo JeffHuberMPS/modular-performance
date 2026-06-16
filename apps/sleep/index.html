@@ -186,6 +186,7 @@ const { useState, useEffect, useMemo } = React;
 
 /* ── Gray/Gold theme (Free/Medium): purple → white, gold stays gold. __GRAY reads parent tier. ── */
 const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
 const PURPLE = __GRAY ? '#f5f5f5' : '#9b6bc9';
 const GOLD   = __GRAY ? '#C9A020' : '#C9A020';
 const PRGB   = __GRAY ? '150,150,150' : '155,107,201';
@@ -759,7 +760,15 @@ function SleepTracker() {
         {/* ══════════════════════════════════════════
             INSIGHTS TAB
             ══════════════════════════════════════════ */}
-        {activeTab === "insights" && (
+        {activeTab === "insights" && __CORE && (
+          <section style={{ padding: "4px 0", textAlign: "center" }}>
+            <div style={{ fontSize: 34, marginBottom: 10 }}>🔒</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#f5f5f5", letterSpacing: 1, marginBottom: 8 }}>INSIGHTS ARE AN ELITE FEATURE</div>
+            <div style={{ fontSize: 13, color: "#9a9a9a", lineHeight: 1.6, marginBottom: 20, maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>Unlock sleep trends, recovery scores, and weekly insights. Logging stays free — upgrade to see the patterns.</div>
+            <a href="/billing.html" target="_top" style={{ display: "inline-block", padding: "12px 26px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 13, letterSpacing: 1, borderRadius: 10, textDecoration: "none" }}>↑ UNLOCK WITH ELITE</a>
+          </section>
+        )}
+        {activeTab === "insights" && !__CORE && (
           <section style={{ padding: "4px 0" }}>
             <div style={styles.eyebrow}>WEEKLY INSIGHTS</div>
             <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#f5f5f5", marginBottom: 20, letterSpacing: "-0.01em" }}>
