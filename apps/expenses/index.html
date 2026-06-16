@@ -52,7 +52,7 @@ body.mps-gray {
   --mps-card-2: #141414;
   --mps-essentials: #b8b8b8;
   --mps-lifestyle: #8f8f8f;
-  --mps-recurring: #d0c69a;
+  --mps-recurring: #C9A020;
   --mps-investment: #C9A020;
   --mps-income: #C9A020;
   --mps-other: #6f6f6f;
@@ -1025,7 +1025,7 @@ function renderCategoryDonut(purchases) {
   purchases.forEach(e=>{if(totals[e.category]!==undefined)totals[e.category]+=Math.abs(Number(e.amount)||0);});
   const total=Object.values(totals).reduce((s,v)=>s+v,0);
   const colors = __GRAY
-    ? {'Essentials':'#bcbcbc','Lifestyle':'#8f8f8f','Recurring':'#d0c69a','Investment':'#C9A020','Other':'#6f6f6f'}
+    ? {'Essentials':'#bcbcbc','Lifestyle':'#8f8f8f','Recurring':'#C9A020','Investment':'#C9A020','Other':'#6f6f6f'}
     : {'Essentials':'#4a90d9','Lifestyle':'#9b6bc9','Recurring':'#e8a5b8','Investment':'#10c248','Other':'#8a9591'};
   const cx=60,cy=60,r=44,sw=16;let segs='';
   if(total>0){let angle=-Math.PI/2;cats.forEach(c=>{const v=totals[c];if(v<=0)return;const frac=v/total;const a2=angle+frac*Math.PI*2;const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);const x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);const large=frac>0.5?1:0;segs+=`<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${colors[c]}" stroke-width="${sw}" stroke-linecap="butt"/>`;angle=a2;});}
