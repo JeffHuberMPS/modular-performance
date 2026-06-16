@@ -770,6 +770,12 @@
   .badge-skill { background: #9b6bc9; color: #fff; }
   .badge-sprint { background: #dc4856; color: #fff; }
   .badge-conditioning { background: #155e75; color: #fff; }
+  /* Gray tiers (Core/Elite): neutralize the colored type badges → dark grey + gold. */
+  body.mps-gray .hist-badge-run,
+  body.mps-gray .hist-badge-sprint,
+  body.mps-gray .badge-skill,
+  body.mps-gray .badge-sprint,
+  body.mps-gray .badge-conditioning { background: #2a2a2a; color: #C9A020; border-color: #3a3a3a; }
   .end-btn {
     width: 100%; padding: 14px; font-size: 14px; margin-top: 12px;
     background: var(--mps-accent); border: none; color: #1a1a1a;
@@ -896,17 +902,9 @@ const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window 
 const ACR = __GRAY ? '150,150,150' : '74, 179, 244';   // accent rgb for canvas fills
 const AC  = __GRAY ? '#cfcfcf' : '#4ab3f4';             // solid accent for canvas (lines/points)
 const AC2 = __GRAY ? '#f5f5f5' : '#7ac8ff';            // light accent for canvas
-// Surface real errors on-screen (browser hides them as "Script error.")
+// Log errors silently — never show end users a stack-trace banner.
 function showErrorBanner(msg) {
-  const banner = document.getElementById('error-banner') || (() => {
-    const b = document.createElement('div');
-    b.id = 'error-banner';
-    b.style.cssText = 'position:fixed; bottom:0; left:0; right:0; background:#dc4856; color:#fff; padding:8px 12px; font-size:11px; font-family:monospace; z-index:99999; max-height:40vh; overflow:auto; white-space:pre-wrap; word-break:break-all;';
-    b.addEventListener('click', () => b.remove());
-    document.body.appendChild(b);
-    return b;
-  })();
-  banner.textContent = `⚠ ${msg}\n(tap to dismiss)`;
+  try { console.error('[MPS Workout]', msg); } catch (e) {}
 }
 window.addEventListener('error', (e) => {
   let msg = e.message || 'Unknown error';
