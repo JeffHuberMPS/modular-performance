@@ -226,7 +226,7 @@
     function Tabs({ tab, setTab }) {
       return (
         <div style={{ display:'flex', borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.9)', position:'sticky', top:0, zIndex:90 }}>
-          {['WRITE','HISTORY','INSIGHTS'].map(t => (
+          {['WRITE','HISTORY','INSIGHTS','CHECK-IN'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               flex:1, padding:'11px 4px', background:'none', border:'none',
               borderBottom: tab===t ? `2px solid ${NAVY}` : '2px solid transparent',
@@ -739,6 +739,144 @@
               <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ UNLOCK WITH ELITE</a>
             </div>
           ) : <InsightsView entries={entries} />)}
+          {tab==='CHECK-IN' && (__PREMIUM ? <CheckInView /> : (
+            <div style={{ textAlign:'center', padding:'48px 22px', background:C1, border:`1px solid ${BR}`, borderRadius:14, margin:'16px 20px' }}>
+              <div style={{ fontSize:34, marginBottom:10, color:NAVYL }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#f5f5f5', letterSpacing:1, marginBottom:8 }}>CHECK-IN IS A PREMIUM FEATURE</div>
+              <div style={{ fontSize:13, color:'#9a9a9a', lineHeight:1.6, marginBottom:20, maxWidth:300, marginLeft:'auto', marginRight:'auto' }}>Weekly &amp; monthly check-ins that auto-pull your habits, workouts, spending and sleep.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ Unlock with Premium</a>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ═══ CHECK-IN: auto-pull from the other 4 trackers (Premium) ═══
+    const CI_BLOCKS = {
+      MRN: ['h_wake','h_gymtr','h_breath','h_read','h_cold'],
+      WRK: ['h_mind','h_course','h_outr','h_chess','h_auto'],
+      NGT: ['h_journ','h_pray','h_bible','h_guit','h_sleep'],
+    };
+    const ciP = (v) => { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch(e){ return null; } };
+    const ciLS = (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } };
+    // Reads the cloud backups (users/{uid}/settings/<app>_backup) the trackers write, with
+    // localStorage as the fresher fallback. Returns raw data; aggregation happens per period.
+    async function loadTrackerData(){
+      const out = { habits:{}, blocks:null, expenses:[], workout:[], sleep:{} };
+      let H={}, E={}, W={}, S={};
+      try {
+        const db = firebase.firestore();
+        const uid = (window.currentUser && window.currentUser.uid) || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+        if (uid){
+          const base = db.collection('users').doc(uid).collection('settings');
+          const snaps = await Promise.all([
+            base.doc('habits_backup').get().catch(()=>null),
+            base.doc('expenses_backup').get().catch(()=>null),
+            base.doc('workout_backup').get().catch(()=>null),
+            base.doc('sleep_backup').get().catch(()=>null),
+          ]);
+          const dataOf = (s) => (s && s.exists && s.data() && s.data().data) ? s.data().data : {};
+          H=dataOf(snaps[0]); E=dataOf(snaps[1]); W=dataOf(snaps[2]); S=dataOf(snaps[3]);
+        }
+      } catch(e){}
+      out.habits   = ciLS('habits_v4')            || ciP(H['habits_v4'])            || {};
+      out.blocks   = ciLS('blocks_v4')            || ciP(H['blocks_v4'])            || null;
+      out.expenses = ciLS('mps_expense:entries')  || ciP(E['mps_expense:entries'])  || [];
+      out.workout  = ciLS('mps_v3_history')       || ciP(W['mps_v3_history'])       || [];
+      const sleep = {};
+      Object.keys(S).forEach(k => { if (k.indexOf('rr_sleep:')===0){ const v=ciP(S[k]); if(v) sleep[k.slice(9)]=v; } });
+      try { for (let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if (k && k.indexOf('rr_sleep:')===0){ const v=ciLS(k); if(v) sleep[k.slice(9)]=v; } } } catch(e){}
+      out.sleep = sleep;
+      return out;
+    }
+    function ciFmt(d){ const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
+    function ciWeekKeys(offset){ const now=new Date(); now.setHours(0,0,0,0); const dow=(now.getDay()+6)%7; const mon=new Date(now); mon.setDate(now.getDate()-dow+offset*7); const keys=[]; for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); keys.push(ciFmt(d)); } return keys; }
+    function ciHmToMin(t){ if(!t || String(t).indexOf(':')<0) return null; const p=String(t).split(':'); const h=+p[0], m=+p[1]; if(isNaN(h)) return null; return h*60+(m||0); }
+    function ciAvgTime(arr){ if(!arr.length) return '—'; const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); const h=Math.floor(avg/60), m=avg%60; const ap=h>=12?'PM':'AM'; const h12=((h+11)%12)+1; return h12+':'+String(m).padStart(2,'0')+' '+ap; }
+    function ciMoney(n){ const v=Math.round(Number(n)||0); return '$'+v.toLocaleString(); }
+    function ciRange(a,b){ const A=a.split('-'), B=b.split('-'); return MONTHS[+A[1]-1]+' '+(+A[2])+' – '+MONTHS[+B[1]-1]+' '+(+B[2]); }
+    function ciAggregate(data, dateKeys){
+      const bl = (data.blocks && data.blocks.MRN && data.blocks.MRN.habits) ? {
+        MRN:(data.blocks.MRN.habits||[]).map(h=>h.id), WRK:(data.blocks.WRK.habits||[]).map(h=>h.id), NGT:(data.blocks.NGT.habits||[]).map(h=>h.id)
+      } : CI_BLOCKS;
+      let mrn=0,wrk=0,ngt=0;
+      dateKeys.forEach(dk=>{ const dd=data.habits[dk]||{}; mrn+=bl.MRN.filter(id=>dd[id]).length; wrk+=bl.WRK.filter(id=>dd[id]).length; ngt+=bl.NGT.filter(id=>dd[id]).length; });
+      const dayTotal=mrn+wrk+ngt;
+      const inR=(d)=> d && dateKeys.indexOf(String(d).slice(0,10))>=0;
+      const purch=(data.expenses||[]).filter(e=>e && e.item==='Purchase' && inR(e.date));
+      const spending=purch.reduce((s,e)=>s+Math.abs(Number(e.amount)||0),0);
+      const income=(data.expenses||[]).filter(e=>e && (e.item==='Income'||e.item==='Paycheck') && inR(e.date)).reduce((s,e)=>s+Math.abs(Number(e.amount)||0),0);
+      const workouts=(data.workout||[]).filter(w=>w && inR(w.date)).length;
+      const wake=[],slp=[];
+      dateKeys.forEach(dk=>{ const s=data.sleep[dk]; if(s){ const wm=ciHmToMin(s.wakeTime); const sm=ciHmToMin(s.sleepTime); if(wm!=null) wake.push(wm); if(sm!=null) slp.push(sm); } });
+      const today=todayStr();
+      const elapsed=Math.max(1, dateKeys.filter(dk=>dk<=today).length || dateKeys.length);
+      return { mrn,wrk,ngt,dayTotal, mrnAvg:Math.round(mrn/elapsed), wrkAvg:Math.round(wrk/elapsed), ngtAvg:Math.round(ngt/elapsed), dayAvg:Math.round(dayTotal/elapsed), spending, income, net:income-spending, workouts, avgWake:ciAvgTime(wake), avgSleep:ciAvgTime(slp) };
+    }
+    function CheckInView(){
+      const [data,setData]=useState(null); const [loading,setLoading]=useState(true); const [offset,setOffset]=useState(0);
+      useEffect(()=>{ let on=true; loadTrackerData().then(d=>{ if(on){ setData(d); setLoading(false); } }).catch(()=>{ if(on) setLoading(false); }); return ()=>{on=false;}; },[]);
+      const keys=ciWeekKeys(offset); const A=data?ciAggregate(data,keys):null;
+      const box={ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 16px', marginBottom:12 };
+      const lbl={ fontSize:10, letterSpacing:'0.14em', color:NAVYL, textTransform:'uppercase', marginBottom:8 };
+      const navBtn={ background:'transparent', color:NAVYL, border:`1px solid ${BR}`, borderRadius:8, padding:'2px 12px', fontSize:18, cursor:'pointer', lineHeight:1.4 };
+      const Stat=({label,value,sub})=>(
+        <div style={{ flex:1, textAlign:'center' }}>
+          <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{value}</div>
+          <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div>
+          {sub && <div style={{ fontSize:9, color:NAVYL, marginTop:2 }}>{sub}</div>}
+        </div>
+      );
+      return (
+        <div style={{ padding:'18px 20px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+            <div>
+              <div style={{ fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'0.04em' }}>WEEKLY CHECK-IN</div>
+              <div style={{ fontSize:11, color:NAVYL, marginTop:2 }}>{ciRange(keys[0],keys[6])}</div>
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              <button onClick={()=>setOffset(offset-1)} style={navBtn}>‹</button>
+              <button onClick={()=>setOffset(Math.min(0,offset+1))} disabled={offset>=0} style={{ ...navBtn, opacity:offset>=0?0.4:1, cursor:offset>=0?'default':'pointer' }}>›</button>
+            </div>
+          </div>
+          {loading ? (
+            <div style={{ textAlign:'center', padding:'40px 0', color:NAVYL, fontSize:13 }}>Pulling your data…</div>
+          ) : (
+            <>
+              <div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
+              <div style={box}>
+                <div style={lbl}>Habits</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="MRN" value={A.mrn+'/35'} sub={'avg '+A.mrnAvg+'/5'} />
+                  <Stat label="WRK" value={A.wrk+'/35'} sub={'avg '+A.wrkAvg+'/5'} />
+                  <Stat label="NGT" value={A.ngt+'/35'} sub={'avg '+A.ngtAvg+'/5'} />
+                  <Stat label="DAY" value={A.dayTotal+'/105'} sub={'avg '+A.dayAvg+'/15'} />
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:12, marginBottom:12 }}>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Spending</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{ciMoney(A.spending)}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>Income {ciMoney(A.income)} · Net {ciMoney(A.net)}</div>
+                </div>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Physical</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{A.workouts}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>workouts this week</div>
+                </div>
+              </div>
+              <div style={box}>
+                <div style={lbl}>Sleep</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Avg Wake" value={A.avgWake} />
+                  <Stat label="Avg Sleep" value={A.avgSleep} />
+                </div>
+              </div>
+              <div style={{ marginTop:16, padding:'14px 16px', background:'rgba(201,160,32,0.06)', border:`1px dashed ${BR}`, borderRadius:12, fontSize:11, color:'#8a9591', lineHeight:1.6 }}>
+                <b style={{ color:GOLD }}>Coming next:</b> jobs, accomplishments, focus &amp; adjustments — your written reflections, saved with each check-in. Then the monthly view.
+              </div>
+            </>
+          )}
         </div>
       );
     }
