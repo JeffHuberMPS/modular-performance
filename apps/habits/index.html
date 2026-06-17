@@ -674,17 +674,17 @@ function HabitTracker() {
       )}
 
       {/* ═══ INSIGHTS ═══ */}
-      {view === 'insights' && __CORE && (
-        <div style={{ textAlign: 'center', padding: '48px 22px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', marginTop: '8px' }}>
-          <div style={{ fontSize: '34px', marginBottom: '10px' }}>🔒</div>
-          <div style={{ fontSize: '16px', fontWeight: 800, color: '#f5f5f5', letterSpacing: '1px', marginBottom: '8px' }}>INSIGHTS ARE AN ELITE FEATURE</div>
-          <div style={{ fontSize: '13px', color: MUTED, lineHeight: 1.6, marginBottom: '20px', maxWidth: '300px', marginLeft: 'auto', marginRight: 'auto' }}>Unlock strength %, streak analytics, and per-habit insights. Your data is already being tracked — upgrade to see it.</div>
-          <a href="/billing.html" target="_top" style={{ display: 'inline-block', padding: '12px 26px', background: '#C9A020', color: '#0a0a0a', fontWeight: 800, fontSize: '13px', letterSpacing: '1px', borderRadius: '10px', textDecoration: 'none' }}>↑ UNLOCK WITH ELITE</a>
-        </div>
-      )}
-      {view === 'insights' && !__CORE && (
+      {view === 'insights' && (
         <>
-          <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '14px' }}>STRENGTH · STREAKS · EDIT</div>
+          {__CORE ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', marginBottom: '14px', background: 'rgba(201,160,32,0.06)', border: `1px dashed ${BORDER}`, borderRadius: '12px' }}>
+              <span style={{ fontSize: '18px' }}>🔒</span>
+              <div style={{ flex: 1, fontSize: '12px', color: MUTED, lineHeight: 1.5 }}>Edit your habits freely. <b style={{ color: '#C9A020' }}>Strength % & streak metrics unlock with Elite.</b></div>
+              <a href="/billing.html" target="_top" style={{ fontSize: '11px', fontWeight: 800, color: '#0a0a0a', background: '#C9A020', padding: '7px 12px', borderRadius: '8px', textDecoration: 'none', whiteSpace: 'nowrap' }}>UPGRADE</a>
+            </div>
+          ) : (
+            <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '14px' }}>STRENGTH · STREAKS · EDIT</div>
+          )}
           {Object.entries(blocks).map(([blockKey, block]) => {
             const isEditingThisBlock = editingBlock === blockKey;
             return (
@@ -703,7 +703,7 @@ function HabitTracker() {
                       <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>AVG</div>
-                          <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{blockStats.find(b => b.key === blockKey)?.pct || 0}%</div>
+                          <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{__CORE ? '🔒' : (blockStats.find(b => b.key === blockKey)?.pct || 0) + '%'}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>TARGET</div>
@@ -732,11 +732,11 @@ function HabitTracker() {
                             <div style={{ fontSize: '14px', color: TEXT, fontWeight: 500 }}>{h.label}</div>
                             <div style={{ textAlign: 'right', minWidth: '54px' }}>
                               <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>STRENGTH</div>
-                              <div style={{ fontSize: '15px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{habitMetrics.find(x => x.id === h.id)?.strength || 0}%</div>
+                              <div style={{ fontSize: '15px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{__CORE ? '🔒' : (habitMetrics.find(x => x.id === h.id)?.strength || 0) + '%'}</div>
                             </div>
                             <div style={{ textAlign: 'right', minWidth: '40px' }}>
                               <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>STREAK</div>
-                              <div style={{ fontSize: '15px', color: ACCENT, fontWeight: 700 }}>{m?.streak || 0}</div>
+                              <div style={{ fontSize: '15px', color: ACCENT, fontWeight: 700 }}>{__CORE ? '🔒' : (m?.streak || 0)}</div>
                             </div>
                             <button onClick={() => setEditingHabit(h.id)} style={{ padding: '4px 6px', background: 'transparent', color: MUTED, border: 'none', cursor: 'pointer', fontSize: '13px' }}>✎</button>
                           </div>
@@ -744,7 +744,11 @@ function HabitTracker() {
                       </div>
                     );
                   })}
-                  <button onClick={() => addHabit(blockKey)} style={{ padding: '10px', background: 'transparent', color: PRIMARY_LIGHT, border: `1px dashed ${PRIMARY}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer' }}>+ ADD HABIT TO {blockKey}</button>
+                  {__CORE ? (
+                    <div onClick={() => { try { window.top.location.href = '/billing.html'; } catch(e) {} }} style={{ padding: '10px', textAlign: 'center', background: 'rgba(201,160,32,0.05)', color: '#C9A020', border: `1px dashed ${BORDER}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '1px', fontWeight: 700, cursor: 'pointer' }}>🔒 Core holds 3 habits — unlock 5 with Elite</div>
+                  ) : (
+                    <button onClick={() => addHabit(blockKey)} style={{ padding: '10px', background: 'transparent', color: PRIMARY_LIGHT, border: `1px dashed ${PRIMARY}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer' }}>+ ADD HABIT TO {blockKey}</button>
+                  )}
                 </div>
               </div>
             );
