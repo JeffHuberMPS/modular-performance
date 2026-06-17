@@ -33,7 +33,7 @@
     }
     .loading-pulse {
       font-family: 'Bebas Neue', sans-serif; font-size: 52px;
-      color: #4a6fa5; letter-spacing: 0.12em;
+      color: #999999; letter-spacing: 0.12em;
       animation: pulse 1.6s ease-in-out infinite;
     }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
@@ -654,6 +654,18 @@
         </div>
       );
 
+      if (__CORE) return (
+        <div style={{ background:BG, minHeight:'100vh' }}>
+          <Nav />
+          <div style={{ textAlign:'center', padding:'80px 24px', maxWidth:'420px', margin:'0 auto' }}>
+            <div style={{ fontSize:'46px', marginBottom:'14px' }}>🔒</div>
+            <div style={{ fontSize:'20px', fontWeight:800, color:'#f5f5f5', letterSpacing:'1px', marginBottom:'12px' }}>JOURNAL IS A PREMIUM FEATURE</div>
+            <div style={{ fontSize:'14px', color:'#9a9a9a', lineHeight:1.6, marginBottom:'26px' }}>Private daily journaling, guided prompts, mood tracking, and full history — unlock the Journal with Elite or Premium.</div>
+            <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'14px 30px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:'14px', letterSpacing:'1px', borderRadius:'12px', textDecoration:'none' }}>↑ UNLOCK JOURNAL</a>
+          </div>
+        </div>
+      );
+
       return (
         <div style={{ background:BG, minHeight:'100vh' }}>
           <Nav />
@@ -677,7 +689,7 @@
                 fontFamily: "'Saira Condensed', 'Arial Black', sans-serif",
                 fontWeight: 900, fontStyle: 'italic',
                 letterSpacing: '4px', lineHeight: 1,
-                background: 'linear-gradient(180deg, #ffffff 0%, #c8d8f0 18%, #6b8fc5 38%, #3a5a8a 65%, #1a3060 95%, #0a1830 100%)',
+                background: __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #c8d8f0 18%, #6b8fc5 38%, #3a5a8a 65%, #1a3060 95%, #0a1830 100%)',
                 WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
               }}>MPS</div>

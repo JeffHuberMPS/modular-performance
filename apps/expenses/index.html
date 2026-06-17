@@ -421,6 +421,11 @@ body.mps-gray .cat-investment, body.mps-gray .cat-income { background: rgba(150,
 .rules-cell { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; }
 .rules-cell input, .rules-cell select { width: 100%; background: var(--mps-card-2); border: 1px solid var(--mps-mint-border-soft); color: var(--mps-text); padding: 6px 8px; border-radius: 6px; font-family: inherit; font-size: 12px; }
 .rules-cell button { background: rgba(239,68,68,0.1); color: var(--mps-danger); border: 1px solid rgba(239,68,68,0.2); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-family: inherit; }
+/* Gray tiers: neutralize hardcoded danger-red backgrounds/borders/glows (text stays via --mps-danger). */
+body.mps-gray .progress-fill.over { box-shadow: 0 0 8px rgba(176,140,90,0.4) !important; }
+body.mps-gray .pill.danger { background: rgba(150,150,150,0.15) !important; border-color: rgba(150,150,150,0.3) !important; }
+body.mps-gray .btn.danger { border-color: rgba(150,150,150,0.3) !important; }
+body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important; border-color: rgba(150,150,150,0.25) !important; }
 /* ============ INSIGHTS ============ */
 .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .insight-card { padding: 16px; }
