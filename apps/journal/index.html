@@ -791,6 +791,8 @@
     }
     function ciFmt(d){ const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
     function ciWeekKeys(offset){ const now=new Date(); now.setHours(0,0,0,0); const dow=(now.getDay()+6)%7; const mon=new Date(now); mon.setDate(now.getDate()-dow+offset*7); const keys=[]; for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); keys.push(ciFmt(d)); } return keys; }
+    function ciMonthKeys(offset){ const now=new Date(); now.setHours(0,0,0,0); const base=new Date(now.getFullYear(), now.getMonth()+offset, 1); const dim=new Date(base.getFullYear(), base.getMonth()+1, 0).getDate(); const keys=[]; for(let i=1;i<=dim;i++) keys.push(ciFmt(new Date(base.getFullYear(), base.getMonth(), i))); return keys; }
+    function ciMonthLabel(offset){ const now=new Date(); const base=new Date(now.getFullYear(), now.getMonth()+offset, 1); return MONTHS[base.getMonth()]+' '+base.getFullYear(); }
     function ciHmToMin(t){ if(!t || String(t).indexOf(':')<0) return null; const p=String(t).split(':'); const h=+p[0], m=+p[1]; if(isNaN(h)) return null; return h*60+(m||0); }
     function ciAvgTime(arr){ if(!arr.length) return '—'; const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); const h=Math.floor(avg/60), m=avg%60; const ap=h>=12?'PM':'AM'; const h12=((h+11)%12)+1; return h12+':'+String(m).padStart(2,'0')+' '+ap; }
     function ciMoney(n){ const v=Math.round(Number(n)||0); return '$'+v.toLocaleString(); }
@@ -814,9 +816,16 @@
       return { mrn,wrk,ngt,dayTotal, mrnAvg:Math.round(mrn/elapsed), wrkAvg:Math.round(wrk/elapsed), ngtAvg:Math.round(ngt/elapsed), dayAvg:Math.round(dayTotal/elapsed), spending, income, net:income-spending, workouts, avgWake:ciAvgTime(wake), avgSleep:ciAvgTime(slp) };
     }
     function CheckInView(){
-      const [data,setData]=useState(null); const [loading,setLoading]=useState(true); const [offset,setOffset]=useState(0);
+      const [data,setData]=useState(null); const [loading,setLoading]=useState(true);
+      const [period,setPeriod]=useState('week'); const [wOff,setWOff]=useState(0); const [mOff,setMOff]=useState(0);
       useEffect(()=>{ let on=true; loadTrackerData().then(d=>{ if(on){ setData(d); setLoading(false); } }).catch(()=>{ if(on) setLoading(false); }); return ()=>{on=false;}; },[]);
-      const keys=ciWeekKeys(offset); const A=data?ciAggregate(data,keys):null;
+      const isMonth=period==='month'; const offset=isMonth?mOff:wOff;
+      const setOff=(v)=>{ const nv=Math.min(0,v); if(isMonth) setMOff(nv); else setWOff(nv); };
+      const keys=isMonth?ciMonthKeys(mOff):ciWeekKeys(wOff);
+      const A=data?ciAggregate(data,keys):null;
+      const title=isMonth?(ciMonthLabel(mOff).toUpperCase()+' CHECK-IN'):'WEEKLY CHECK-IN';
+      const rangeLbl=isMonth?(keys.length+' days'):ciRange(keys[0],keys[6]);
+      const pctOf=(a,b)=> b>0?Math.round(a/b*100):0;
       const box={ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 16px', marginBottom:12 };
       const lbl={ fontSize:10, letterSpacing:'0.14em', color:NAVYL, textTransform:'uppercase', marginBottom:8 };
       const navBtn={ background:'transparent', color:NAVYL, border:`1px solid ${BR}`, borderRadius:8, padding:'2px 12px', fontSize:18, cursor:'pointer', lineHeight:1.4 };
@@ -827,23 +836,63 @@
           {sub && <div style={{ fontSize:9, color:NAVYL, marginTop:2 }}>{sub}</div>}
         </div>
       );
+      const note=(<div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>);
+      const coming=(<div style={{ marginTop:16, padding:'14px 16px', background:'rgba(201,160,32,0.06)', border:`1px dashed ${BR}`, borderRadius:12, fontSize:11, color:'#8a9591', lineHeight:1.6 }}><b style={{ color:GOLD }}>Coming next:</b> jobs, accomplishments, focus &amp; adjustments — your written reflections, saved with each check-in.</div>);
       return (
         <div style={{ padding:'18px 20px' }}>
+          <div style={{ display:'flex', gap:6, marginBottom:14, background:C2, border:`1px solid ${BR}`, borderRadius:10, padding:4 }}>
+            {[['week','WEEKLY'],['month','MONTHLY']].map(pr=>(
+              <button key={pr[0]} onClick={()=>setPeriod(pr[0])} style={{ flex:1, padding:'9px', background:period===pr[0]?NAVY:'transparent', color:period===pr[0]?(__GRAY?'#0a0a0a':'#fff'):NAVYL, border:'none', borderRadius:7, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:11, letterSpacing:'0.12em', fontWeight:700, cursor:'pointer' }}>{pr[1]}</button>
+            ))}
+          </div>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
             <div>
-              <div style={{ fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'0.04em' }}>WEEKLY CHECK-IN</div>
-              <div style={{ fontSize:11, color:NAVYL, marginTop:2 }}>{ciRange(keys[0],keys[6])}</div>
+              <div style={{ fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'0.04em' }}>{title}</div>
+              <div style={{ fontSize:11, color:NAVYL, marginTop:2 }}>{rangeLbl}</div>
             </div>
             <div style={{ display:'flex', gap:6 }}>
-              <button onClick={()=>setOffset(offset-1)} style={navBtn}>‹</button>
-              <button onClick={()=>setOffset(Math.min(0,offset+1))} disabled={offset>=0} style={{ ...navBtn, opacity:offset>=0?0.4:1, cursor:offset>=0?'default':'pointer' }}>›</button>
+              <button onClick={()=>setOff(offset-1)} style={navBtn}>‹</button>
+              <button onClick={()=>setOff(offset+1)} disabled={offset>=0} style={{ ...navBtn, opacity:offset>=0?0.4:1, cursor:offset>=0?'default':'pointer' }}>›</button>
             </div>
           </div>
           {loading ? (
             <div style={{ textAlign:'center', padding:'40px 0', color:NAVYL, fontSize:13 }}>Pulling your data…</div>
+          ) : isMonth ? (
+            <>
+              {note}
+              <div style={box}>
+                <div style={lbl}>Financial Summary</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Income" value={ciMoney(A.income)} />
+                  <Stat label="Spent" value={ciMoney(A.spending)} sub={A.income>0?pctOf(A.spending,A.income)+'% of inc':null} />
+                  <Stat label="Net" value={ciMoney(A.net)} sub={A.income>0?pctOf(A.net,A.income)+'%':null} />
+                </div>
+              </div>
+              <div style={box}>
+                <div style={lbl}>Routines</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Total Done" value={A.dayTotal+'/'+(keys.length*15)} />
+                  <Stat label="Avg / Day" value={A.dayAvg+'/15'} />
+                  <Stat label="Completion" value={pctOf(A.dayTotal, keys.length*15)+'%'} />
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:12, marginBottom:12 }}>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Physical</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{A.workouts}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>workouts this month</div>
+                </div>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Sleep</div>
+                  <div style={{ fontSize:13, color:'#fff', marginTop:4 }}>Wake · {A.avgWake}</div>
+                  <div style={{ fontSize:13, color:'#fff', marginTop:3 }}>Sleep · {A.avgSleep}</div>
+                </div>
+              </div>
+              {coming}
+            </>
           ) : (
             <>
-              <div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
+              {note}
               <div style={box}>
                 <div style={lbl}>Habits</div>
                 <div style={{ display:'flex', gap:6 }}>
@@ -872,9 +921,7 @@
                   <Stat label="Avg Sleep" value={A.avgSleep} />
                 </div>
               </div>
-              <div style={{ marginTop:16, padding:'14px 16px', background:'rgba(201,160,32,0.06)', border:`1px dashed ${BR}`, borderRadius:12, fontSize:11, color:'#8a9591', lineHeight:1.6 }}>
-                <b style={{ color:GOLD }}>Coming next:</b> jobs, accomplishments, focus &amp; adjustments — your written reflections, saved with each check-in. Then the monthly view.
-              </div>
+              {coming}
             </>
           )}
         </div>
