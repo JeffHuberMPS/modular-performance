@@ -483,7 +483,7 @@ function HabitTracker() {
 
       {/* Persistent tab bar (matches the other trackers) */}
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: view === 'log' ? '12px' : '20px' }}>
-        {[['dashboard','DASHBOARD'],['log','TRACK'],['insights','INSIGHTS']].map(([v,lbl]) => (
+        {[['dashboard','DASHBOARD'],['log','TRACK'],['insights','INSIGHTS'],['compound','COMPOUND']].map(([v,lbl]) => (
           <button key={v} onClick={() => setView(v)} style={{
             flex: 1, padding: '11px 4px', background: 'none', border: 'none',
             borderBottom: view === v ? `2px solid ${PRIMARY_LIGHT}` : '2px solid transparent',
@@ -770,6 +770,80 @@ function HabitTracker() {
           })}
           <button onClick={resetToDefault} style={{ width: '100%', padding: '14px', marginTop: '8px', background: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', cursor: 'pointer' }}>RESET TO DEFAULTS</button>
         </>
+      )}
+
+      {/* ═══ COMPOUND (Premium) ═══ */}
+      {view === 'compound' && (
+        <div>
+          {!__PREMIUM ? (
+            <div style={{ textAlign: 'center', padding: '48px 22px' }}>
+              <div style={{ marginBottom: '12px', color: PRIMARY_LIGHT }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#f5f5f5', letterSpacing: '1px', marginBottom: '8px' }}>COMPOUND IS A PREMIUM FEATURE</div>
+              <div style={{ fontSize: '13px', color: '#9a9a9a', lineHeight: 1.6, maxWidth: '300px', margin: '0 auto 20px' }}>Your full-year habit heatmap, streaks, and per-habit consistency — see it all compound over time.</div>
+              <a href="/billing.html" target="_top" style={{ display: 'inline-block', padding: '12px 26px', background: '#C9A020', color: '#0a0a0a', fontWeight: 800, fontSize: '13px', letterSpacing: '1px', borderRadius: '10px', textDecoration: 'none' }}>↑ Unlock with Premium</a>
+            </div>
+          ) : (() => {
+            const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const start = new Date(end); start.setDate(start.getDate() - 363); start.setDate(start.getDate() - start.getDay());
+            const weeks = []; let cur = new Date(start);
+            while (cur <= end) { const wk = []; for (let i = 0; i < 7; i++) { wk.push(new Date(cur)); cur.setDate(cur.getDate() + 1); } weeks.push(wk); }
+            const activeOn = (d) => getDayCompletionAll(fmtKey(d)) > 0;
+            let curStreak = 0; const ds = new Date(end); if (!activeOn(ds)) ds.setDate(ds.getDate() - 1);
+            while (activeOn(ds)) { curStreak++; ds.setDate(ds.getDate() - 1); }
+            let longest = 0, run = 0, activeDays = 0; const it = new Date(start);
+            while (it <= end) { if (activeOn(it)) { run++; if (run > longest) longest = run; activeDays++; } else run = 0; it.setDate(it.getDate() + 1); }
+            const habitCounts = ALL_HABITS.map(h => { let cnt = 0; const p = new Date(start); while (p <= end) { const dd = habits[fmtKey(p)]; if (dd && dd[h.id]) cnt++; p.setDate(p.getDate() + 1); } return { ...h, cnt }; }).sort((a, b) => b.cnt - a.cnt);
+            const maxCnt = Math.max(1, ...habitCounts.map(h => h.cnt));
+            const cellColor = (d) => { if (d > end) return 'transparent'; const c = getDayCompletionAll(fmtKey(d)); if (c <= 0) return '#161616'; const r = TOTAL_HABITS > 0 ? c / TOTAL_HABITS : 0; const op = r >= 1 ? 1 : r >= 0.66 ? 0.78 : r >= 0.34 ? 0.52 : 0.3; return `rgba(${PL_RGB},${op})`; };
+            const cardSty = { background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D };
+            return (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <StatCard label="STREAK" value={curStreak} sub="days in a row" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+                  <StatCard label="LONGEST" value={longest} sub="best run" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+                  <StatCard label="ACTIVE DAYS" value={activeDays} sub="last 12 months" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+                </div>
+                <div style={cardSty}>
+                  <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '12px' }}>LAST 12 MONTHS</div>
+                  <div style={{ overflowX: 'auto', paddingBottom: '6px' }}>
+                    <div style={{ display: 'flex', gap: '3px' }}>
+                      {weeks.map((wk, wi) => (
+                        <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {wk.map((d, di) => (<div key={di} title={fmtKey(d)} style={{ width: '11px', height: '11px', borderRadius: '2px', background: cellColor(d) }} />))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '12px', fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>
+                    <span>LESS</span>
+                    {[0.3, 0.52, 0.78, 1].map((op, i) => (<div key={i} style={{ width: '11px', height: '11px', borderRadius: '2px', background: `rgba(${PL_RGB},${op})` }} />))}
+                    <span>MORE</span>
+                  </div>
+                </div>
+                <div style={cardSty}>
+                  <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '14px' }}>HABIT CONSISTENCY · 12 MO</div>
+                  {habitCounts.map(h => {
+                    const pct = Math.round(h.cnt / maxCnt * 100);
+                    return (
+                      <div key={h.id} style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: TEXT }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '6px', background: `rgba(${PL_RGB},0.15)`, border: `1px solid rgba(${PL_RGB},0.35)`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><HabitIcon id={h.id} color={PRIMARY_LIGHT} size={13} /></span>
+                            {h.label}
+                          </span>
+                          <span style={{ fontSize: '12px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{h.cnt} days</span>
+                        </div>
+                        <div style={{ height: '6px', background: '#0a0a0a', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: `rgba(${PL_RGB},0.85)` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
+        </div>
       )}
     </div>
   );
