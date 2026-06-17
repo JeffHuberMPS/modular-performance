@@ -619,25 +619,22 @@ function SleepTracker() {
             {entries[0]?.date ? fmtDate(entries[0].date) : "today"}
           </div>
 
-          {/* Action Buttons */}
-          <div style={styles.actionRow}>
-            {activeTab === "dashboard" ? (
-              <>
-                <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
-                  <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
-                </button>
-                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("insights")}>
-                  INSIGHTS
-                </button>
-                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("log")}>
-                  LOG
-                </button>
-              </>
-            ) : (
-              <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("dashboard")}>
-                ← DASHBOARD
-              </button>
-            )}
+          {/* Persistent tab bar (matches the other trackers) */}
+          <div style={{ display: "flex", borderBottom: "1px solid rgba(150,150,150,0.15)" }}>
+            {[["dashboard","DASHBOARD"],["insights","INSIGHTS"],["log","LOG"]].map(([t,lbl]) => (
+              <button key={t} onClick={() => setActiveTab(t)} style={{
+                flex: 1, padding: "11px 4px", background: "none", border: "none",
+                borderBottom: activeTab === t ? `2px solid ${PURPLE}` : "2px solid transparent",
+                color: activeTab === t ? LBL : "#6b7280",
+                fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 12, letterSpacing: "0.08em", fontWeight: 600, cursor: "pointer"
+              }}>{lbl}</button>
+            ))}
+          </div>
+          {/* Log-entry action */}
+          <div style={{ marginTop: 14 }}>
+            <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
+              <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
+            </button>
           </div>
         </header>
 

@@ -225,7 +225,7 @@
 
     function Tabs({ tab, setTab }) {
       return (
-        <div style={{ display:'flex', borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.9)', position:'sticky', top:47, zIndex:90 }}>
+        <div style={{ display:'flex', borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.9)', position:'sticky', top:0, zIndex:90 }}>
           {['WRITE','HISTORY','INSIGHTS'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               flex:1, padding:'11px 4px', background:'none', border:'none',

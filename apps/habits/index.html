@@ -479,19 +479,21 @@ function HabitTracker() {
         </div>
       )}
 
-      {/* Nav tabs */}
-      {view === 'dashboard' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '6px', marginBottom: '24px' }}>
-          <button onClick={() => setView('log')} style={tabStyle(false, PRIMARY, bodyFont, '#fff')}>TRACK</button>
-          <button onClick={() => setView('insights')} style={tabStyle(false, ACCENT, bodyFont, '#000')}>INSIGHTS</button>
-        </div>
-      ) : view === 'log' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '21px' }}>
-          <button onClick={() => setView('dashboard')} style={blockTabStyle(false, PRIMARY, BORDER, bodyFont, TEXT)}>← DASHBOARD</button>
+      {/* Persistent tab bar (matches the other trackers) */}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: view === 'log' ? '12px' : '20px' }}>
+        {[['dashboard','DASHBOARD'],['log','TRACK'],['insights','INSIGHTS']].map(([v,lbl]) => (
+          <button key={v} onClick={() => setView(v)} style={{
+            flex: 1, padding: '11px 4px', background: 'none', border: 'none',
+            borderBottom: view === v ? `2px solid ${PRIMARY_LIGHT}` : '2px solid transparent',
+            color: view === v ? PRIMARY_LIGHT : '#6b6b6b',
+            fontFamily: bodyFont, fontSize: '12px', letterSpacing: '0.08em', fontWeight: 600, cursor: 'pointer'
+          }}>{lbl}</button>
+        ))}
+      </div>
+      {view === 'log' && (
+        <div style={{ marginBottom: '12px' }}>
           <button onClick={() => setShowCal(!showCal)} style={blockTabStyle(false, PRIMARY, BORDER, bodyFont, TEXT)}>PICK DATE</button>
         </div>
-      ) : (
-        <button onClick={() => setView('dashboard')} style={{ padding: '10px 16px', background: 'transparent', color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer', marginBottom: '20px', display: 'inline-block' }}>← DASHBOARD</button>
       )}
 
       {/* ═══ DASHBOARD ═══ */}
