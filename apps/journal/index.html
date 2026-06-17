@@ -32,7 +32,7 @@
       display: flex; align-items: center; justify-content: center; z-index: 9999;
     }
     .loading-pulse {
-      font-family: 'Bebas Neue', sans-serif; font-size: 52px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 52px;
       color: #999999; letter-spacing: 0.12em;
       animation: pulse 1.6s ease-in-out infinite;
     }
@@ -215,7 +215,7 @@
           position:'sticky', top:0, zIndex:100, backdropFilter:'blur(14px)'
         }}>
           <a href="/hub.html" style={{ color:NAVY, fontSize:10, fontWeight:700, letterSpacing:'0.12em', textDecoration:'none', textTransform:'uppercase' }}>← Hub</a>
-          <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:17, color:NAVYL, letterSpacing:'0.1em', flex:1, textAlign:'center' }}>
+          <span style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:17, color:NAVYL, letterSpacing:'0.1em', flex:1, textAlign:'center' }}>
             MPS JOURNAL
           </span>
           <span style={{ width:48 }} />
@@ -231,7 +231,7 @@
               flex:1, padding:'11px 4px', background:'none', border:'none',
               borderBottom: tab===t ? `2px solid ${NAVY}` : '2px solid transparent',
               color: tab===t ? NAVYL : '#374151',
-              fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:'0.08em', cursor:'pointer'
+              fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:12, letterSpacing:'0.08em', cursor:'pointer'
             }}>{t}</button>
           ))}
         </div>
@@ -295,7 +295,7 @@
           {/* Date header */}
           <div style={{ marginBottom:18, display:'flex', alignItems:'baseline', gap:10 }}>
             <div>
-              <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:42, color:'#fff', lineHeight:1 }}>{d.toUpperCase()}</div>
+              <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:42, color:'#fff', lineHeight:1 }}>{d.toUpperCase()}</div>
               <div style={{ color:'#374151', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600 }}>{mo} {dayNum}, {yr}</div>
             </div>
             {existing.updatedAt && (
@@ -336,7 +336,7 @@
                 background:'none', border:'none', color:'#374151', fontSize:10, cursor:'pointer', letterSpacing:'0.06em', fontWeight:600, textTransform:'uppercase'
               }}>↻</button>
             </div>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontStyle:'italic', color:CREAM, fontSize:13, lineHeight:1.6, opacity:0.75 }}>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontStyle:'italic', color:CREAM, fontSize:13, lineHeight:1.6, opacity:0.75 }}>
               "{prompt}"
             </div>
           </div>
@@ -401,7 +401,7 @@
             background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,#2a4a80,${NAVY})` : C1,
             border: saved ? `1px solid ${NAVY}` : 'none',
             borderRadius:10, color: saved ? NAVYL : '#fff',
-            fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em',
+            fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em',
             cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
           }}>
             {saved ? '✓ SAVED' : saving ? 'SAVING...' : 'SAVE ENTRY'}
@@ -471,7 +471,7 @@
                         border:`1px solid ${BR}`, display:'flex', flexDirection:'column',
                         alignItems:'center', justifyContent:'center', flexShrink:0
                       }}>
-                        <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:18, color:NAVYL, lineHeight:1 }}>{dd}</div>
+                        <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:18, color:NAVYL, lineHeight:1 }}>{dd}</div>
                         <div style={{ fontSize:8, color:'#374151', fontWeight:600, letterSpacing:'0.06em' }}>{MONTHS[+mo-1].toUpperCase()}</div>
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
@@ -517,7 +517,7 @@
                           <div style={{
                             background:`rgba(201,160,32,0.06)`, border:`1px solid ${BRG}`,
                             borderRadius:8, padding:'10px 12px',
-                            fontFamily:"'Playfair Display',serif", fontStyle:'italic', color:CREAM, fontSize:12, lineHeight:1.6
+                            fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontStyle:'italic', color:CREAM, fontSize:12, lineHeight:1.6
                           }}>
                             📖 {e.scripture}
                           </div>
@@ -589,12 +589,12 @@
           }}>
             <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'rgba(150,150,150,0.05)' }} />
             <div style={{ color:'#374151', fontSize:9, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:8 }}>Current Streak</div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:72, color:'#fff', lineHeight:1 }}>{streak}</div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:16, color:NAVYL, letterSpacing:'0.1em', marginTop:2 }}>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:72, color:'#fff', lineHeight:1 }}>{streak}</div>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, color:NAVYL, letterSpacing:'0.1em', marginTop:2 }}>
               {streak === 1 ? 'DAY' : 'DAYS'}
             </div>
             {streak > 0 && (
-              <div style={{ marginTop:10, color:GOLD, fontSize:11, fontStyle:'italic', fontFamily:"'Playfair Display',serif" }}>
+              <div style={{ marginTop:10, color:GOLD, fontSize:11, fontStyle:'italic', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
                 {streak >= 30 ? '"Consistency is the currency of mastery."' : streak >= 7 ? '"One week in. Keep going."' : '"Every day counts."'}
               </div>
             )}
@@ -610,7 +610,7 @@
             ].map(s => (
               <div key={s.lbl} style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:'12px 13px' }}>
                 <Label style={{ marginBottom:4 }}>{s.lbl}</Label>
-                <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:22, color:NAVYL }}>{s.val}</div>
+                <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:22, color:NAVYL }}>{s.val}</div>
               </div>
             ))}
           </div>
@@ -677,7 +677,7 @@
 
       if (!ready) return (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
-          <div style={{ color:NAVY, fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:'0.1em' }}>LOADING...</div>
+          <div style={{ color:NAVY, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em' }}>LOADING...</div>
         </div>
       );
 
@@ -713,7 +713,7 @@
               boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(150,150,150,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
             }}>
               <div className="mps-logo-rsp" style={{
-                fontFamily: "'Saira Condensed', 'Arial Black', sans-serif",
+                fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
                 fontWeight: 900, fontStyle: 'italic',
                 letterSpacing: '4px', lineHeight: 1,
                 background: __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #c8d8f0 18%, #6b8fc5 38%, #3a5a8a 65%, #1a3060 95%, #0a1830 100%)',
@@ -721,8 +721,8 @@
                 filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
               }}>MPS</div>
               <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(150,150,150,0.6) 25%, rgba(201,160,32,0.8) 50%, rgba(150,150,150,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
-              <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px', fontFamily:"'Bebas Neue',sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
-              <div style={{ fontSize: '20px', letterSpacing: '6px', color: GOLD, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px', fontFamily:"'Bebas Neue',sans-serif" }}>
+              <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
+              <div style={{ fontSize: '20px', letterSpacing: '6px', color: GOLD, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
                 <span>MPS</span><span>JOURNAL</span>
               </div>
             </div>

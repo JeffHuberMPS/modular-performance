@@ -68,7 +68,7 @@ body.mps-gray .section-title { color: #C9A020 !important; }
 body.mps-gray .mps-logo { background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 35%, #c9c9c9 70%, #8a8a8a 100%) !important; -webkit-background-clip: text; background-clip: text; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Inter', 'Bricolage Grotesque', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background: var(--mps-bg);
   color: var(--mps-text);
   min-height: 100vh;
@@ -102,7 +102,7 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 16px;
   color: var(--mps-income);
   letter-spacing: 0.1em;
@@ -125,7 +125,7 @@ body {
 }
 .mps-header::before { display: none; }
 .mps-logo {
-  font-family: 'Saira Condensed', 'Arial Black', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 96px;
   font-weight: 900;
   font-style: italic;
@@ -220,7 +220,7 @@ body {
   text-align: center;
 }
 .stat-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 26px;
   font-weight: 600;
   line-height: 1;
@@ -296,7 +296,7 @@ body {
   margin-bottom: 8px;
 }
 .cat-card-label { font-size: 14px; font-weight: 500; color: var(--mps-text); }
-.cat-card-amount { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; letter-spacing: -0.3px; color: var(--mps-text); font-variant-numeric: tabular-nums; }
+.cat-card-amount { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.3px; color: var(--mps-text); font-variant-numeric: tabular-nums; }
 .cat-card-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
 .cat-card-fill { height: 100%; border-radius: 2px; background: var(--mps-mint); transition: width 0.4s; }
 /* ============ STATUS PILLS ============ */
@@ -321,19 +321,19 @@ body {
   margin-bottom: 14px;
   gap: 12px;
 }
-.month-display { font-family: 'Anton', sans-serif; font-size: 36px; letter-spacing: 4px; color: var(--mps-text); }
+.month-display { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 36px; letter-spacing: 4px; color: var(--mps-text); }
 .month-select { background: var(--mps-card); border: 1px solid var(--mps-mint-border-soft); color: var(--mps-text); font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; letter-spacing: 1px; }
 .dash-section-title { font-size: 11px; letter-spacing: 3px; color: var(--mps-mint); font-weight: 700; margin: 20px 0 10px; text-transform: uppercase; }
 /* ============ DAILY BURN CHART ============ */
 .burn-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 16px; }
 .burn-label { font-size: 10px; letter-spacing: 2.5px; color: var(--mps-text-dim); font-weight: 700; margin-bottom: 4px; }
-.burn-amount { font-family: 'Anton', sans-serif; font-size: 38px; letter-spacing: 1px; line-height: 1; color: var(--mps-mint); text-shadow: 0 0 14px rgba(var(--mps-mint-rgb),0.5); margin-bottom: 4px; }
+.burn-amount { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 38px; letter-spacing: 1px; line-height: 1; color: var(--mps-mint); text-shadow: 0 0 14px rgba(var(--mps-mint-rgb),0.5); margin-bottom: 4px; }
 .burn-sub { font-size: 11px; color: var(--mps-text-dim); }
 .burn-sub .delta-up { color: var(--mps-danger); font-weight: 700; }
 .burn-sub .delta-down { color: var(--mps-mint); font-weight: 700; }
 .burn-side { text-align: right; }
 .burn-side-label { font-size: 9px; letter-spacing: 2px; color: var(--mps-text-dim); font-weight: 700; margin-bottom: 2px; }
-.burn-side-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: var(--mps-text); line-height: 1; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+.burn-side-val { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 18px; font-weight: 600; color: var(--mps-text); line-height: 1; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
 .burn-chart { width: 100%; height: 120px; margin: 4px 0 6px; }
 .burn-chart svg { width: 100%; height: 100%; display: block; }
 .burn-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--mps-text-mute); letter-spacing: 1px; padding: 0 2px; }
@@ -371,7 +371,7 @@ body {
 .log-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
 .log-table tbody tr:hover { background: rgba(var(--mps-mint-rgb),0.03); }
 .log-table td { padding: 10px 8px; vertical-align: middle; }
-.log-amount { font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.3px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.log-amount { font-weight: 600; font-family: 'Inter', system-ui, -apple-system, sans-serif; letter-spacing: -0.3px; font-size: 14px; font-variant-numeric: tabular-nums; }
 .log-amount.expense { color: var(--mps-danger); }
 .log-amount.income { color: var(--mps-investment); }
 .cat-tag { display: inline-block; padding: 3px 8px; font-size: 10px; letter-spacing: 1px; font-weight: 700; border-radius: 4px; text-transform: uppercase; }
@@ -386,7 +386,7 @@ body.mps-gray .cat-investment, body.mps-gray .cat-income { background: rgba(150,
 .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 300; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
 .modal-backdrop.show { display: flex; }
 .modal { background: var(--mps-card); border: 1px solid var(--mps-mint-border); border-radius: 16px; padding: 24px; width: 100%; max-width: 480px; margin: 20px auto; box-shadow: 0 0 40px rgba(var(--mps-mint-rgb),0.15); }
-.modal h2 { font-family: 'Anton', sans-serif; letter-spacing: 3px; color: var(--mps-text); font-size: 22px; margin-bottom: 18px; }
+.modal h2 { font-family: 'Inter', system-ui, -apple-system, sans-serif; letter-spacing: 3px; color: var(--mps-text); font-size: 22px; margin-bottom: 18px; }
 .form-row { margin-bottom: 14px; }
 .form-label { display: block; font-size: 10px; letter-spacing: 2px; color: var(--mps-text-dim); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
 .form-input, .form-select { width: 100%; background: var(--mps-card-2); border: 1px solid var(--mps-mint-border-soft); color: var(--mps-text); padding: 10px 12px; border-radius: 8px; font-family: inherit; font-size: 14px; }
@@ -406,9 +406,9 @@ body.mps-gray .cat-investment, body.mps-gray .cat-income { background: rgba(150,
 .pen-icon svg { width: 12px; height: 12px; }
 .budget-card-input-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
 .budget-card-input-label { display: block; font-size: 8px; letter-spacing: 1.5px; color: var(--mps-text-mute); margin-bottom: 3px; font-weight: 700; text-align: center; text-transform: uppercase; }
-.budget-card-value { width: 100%; padding: 6px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; letter-spacing: -0.3px; text-align: center; font-variant-numeric: tabular-nums; color: var(--mps-text); cursor: pointer; transition: background 0.15s; }
+.budget-card-value { width: 100%; padding: 6px 8px; border-radius: 6px; font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.3px; text-align: center; font-variant-numeric: tabular-nums; color: var(--mps-text); cursor: pointer; transition: background 0.15s; }
 .budget-card-value:hover { background: rgba(var(--mps-mint-rgb),0.08); }
-.budget-card-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--mps-mint); color: var(--mps-text); padding: 5px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; letter-spacing: -0.3px; text-align: center; font-variant-numeric: tabular-nums; }
+.budget-card-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--mps-mint); color: var(--mps-text); padding: 5px 8px; border-radius: 6px; font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.3px; text-align: center; font-variant-numeric: tabular-nums; }
 .budget-card-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(var(--mps-mint-rgb),0.25); }
 .budget-summary { margin-top: 18px; padding: 18px; background: linear-gradient(180deg, #0d1411 0%, #08100c 100%); border: 1px solid var(--mps-mint-border); border-radius: 14px; box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 -1px 0 rgba(0,0,0,0.6) inset, 0 4px 16px rgba(0,0,0,0.5), 0 0 20px rgba(var(--mps-mint-rgb),0.06); }
 .budget-summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
@@ -430,7 +430,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
 .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .insight-card { padding: 16px; }
 .insight-title { font-size: 11px; letter-spacing: 2px; color: var(--mps-text-mute); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
-.insight-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; color: var(--mps-text); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.insight-value { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; color: var(--mps-text); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
 .insight-note { font-size: 11px; color: var(--mps-text-dim); }
 /* ============ EMPTY STATE ============ */
 .empty { text-align: center; padding: 40px 20px; color: var(--mps-text-mute); }
@@ -728,7 +728,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
         <button class="btn" id="btn-refresh-sync">Refresh Now</button>
         <button class="btn ghost" id="btn-test-sync">Test Connection</button>
       </div>
-      <div id="sync-log" style="margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; font-family: monospace; font-size: 11px; color: var(--mps-text-dim); max-height: 200px; overflow-y: auto; display: none;"></div>
+      <div id="sync-log" style="margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; color: var(--mps-text-dim); max-height: 200px; overflow-y: auto; display: none;"></div>
     </div>
     <div class="card" style="margin-top: 14px;">
       <div class="dash-section-title">How Sync Works</div>
@@ -736,7 +736,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
         <div style="margin-bottom: 12px;">This tracker pulls data from your Google Sheet through a Make.com scenario you build once.</div>
         <div style="color: var(--mps-text); font-weight: 600; margin-bottom: 6px;">Flow:</div>
         <div style="padding: 12px; background: var(--mps-card-2); border-radius: 8px; border-left: 3px solid var(--mps-mint); margin-bottom: 12px;">
-          <div style="color: var(--mps-mint); font-family: monospace; font-size: 12px; line-height: 1.8;">
+          <div style="color: var(--mps-mint); font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 12px; line-height: 1.8;">
             Tracker opens<br>&nbsp;&nbsp;↓<br>Hits Make webhook URL<br>&nbsp;&nbsp;↓<br>Make reads Log + Budget + Rules tabs<br>&nbsp;&nbsp;↓<br>Make returns JSON<br>&nbsp;&nbsp;↓<br>Dashboard renders fresh data
           </div>
         </div>
@@ -1039,7 +1039,7 @@ function renderCategoryDonut(purchases) {
   const cx=60,cy=60,r=44,sw=16;let segs='';
   if(total>0){let angle=-Math.PI/2;cats.forEach(c=>{const v=totals[c];if(v<=0)return;const frac=v/total;const a2=angle+frac*Math.PI*2;const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);const x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);const large=frac>0.5?1:0;segs+=`<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${colors[c]}" stroke-width="${sw}" stroke-linecap="butt"/>`;angle=a2;});}
   else{segs=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="${sw}"/>`;}
-  const svg=`<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${segs}<text x="60" y="56" text-anchor="middle" fill="var(--mps-text-dim)" font-size="8" letter-spacing="1.5" font-weight="700">TOTAL</text><text x="60" y="72" text-anchor="middle" fill="var(--mps-mint)" font-family="JetBrains Mono, monospace" font-size="16" font-weight="600" letter-spacing="-0.5">${fmt$short(total)}</text></svg>`;
+  const svg=`<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${segs}<text x="60" y="56" text-anchor="middle" fill="var(--mps-text-dim)" font-size="8" letter-spacing="1.5" font-weight="700">TOTAL</text><text x="60" y="72" text-anchor="middle" fill="var(--mps-mint)" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" letter-spacing="-0.5">${fmt$short(total)}</text></svg>`;
   document.getElementById('cat-donut').innerHTML=svg;
   const legend=document.getElementById('cat-donut-legend');
   legend.innerHTML=cats.map(c=>{const v=totals[c];const pct=total>0?(v/total*100).toFixed(0):0;return`<div class="donut-legend-row"><div class="donut-swatch" style="background:${colors[c]};box-shadow:0 0 4px ${colors[c]};"></div><div class="donut-legend-label">${c}</div><div class="donut-legend-val">${pct}% · ${fmt$short(v)}</div></div>`;}).join('');
