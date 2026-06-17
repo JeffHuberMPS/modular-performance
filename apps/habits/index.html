@@ -193,6 +193,10 @@ function HabitTracker() {
   // habits (the edit/insights view is locked), so capping the display data is safe — no data is lost.
   const __isCore = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
   const blocks = __isCore ? Object.fromEntries(Object.entries(blocksRaw).map(([k, b]) => [k, { ...b, habits: (b.habits || []).slice(0, 3) }])) : blocksRaw;
+  // Premium = full history; Core/Elite can only browse back ~60 days. __capMin = oldest selectable date.
+  const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+  const __capMin = (()=>{ const d = new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); return d; })();
+  const __monthFullyBeforeCap = (dt) => { const monthEnd = new Date(dt.getFullYear(), dt.getMonth()+1, 0, 23, 59, 59); return monthEnd < __capMin; };
 
   useEffect(() => {
     (async () => {
@@ -446,7 +450,7 @@ function HabitTracker() {
       {showCal && (
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '14px', marginBottom: '20px', boxShadow: CARD_SHADOW_3D }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <button onClick={() => { const d = new Date(selectedDate); d.setMonth(d.getMonth()-1); setSelectedDate(d); }} style={{ background: 'transparent', color: PRIMARY_LIGHT, border: 'none', fontSize: '20px', cursor: 'pointer' }}>‹</button>
+            <button disabled={!__PREMIUM && __monthFullyBeforeCap(new Date(selectedDate.getFullYear(), selectedDate.getMonth()-1, 1))} onClick={() => { const d = new Date(selectedDate); d.setMonth(d.getMonth()-1); if (!__PREMIUM && __monthFullyBeforeCap(d)) return; setSelectedDate(d); }} style={{ background: 'transparent', color: (!__PREMIUM && __monthFullyBeforeCap(new Date(selectedDate.getFullYear(), selectedDate.getMonth()-1, 1))) ? 'rgba(150,150,150,0.3)' : PRIMARY_LIGHT, border: 'none', fontSize: '20px', cursor: (!__PREMIUM && __monthFullyBeforeCap(new Date(selectedDate.getFullYear(), selectedDate.getMonth()-1, 1))) ? 'not-allowed' : 'pointer' }}>‹</button>
             <div style={{ color: PRIMARY_LIGHT, letterSpacing: '3px', fontSize: '13px', fontWeight: 600 }}>{monthName.toUpperCase()} {year}</div>
             <button onClick={() => { const d = new Date(selectedDate); d.setMonth(d.getMonth()+1); setSelectedDate(d); }} style={{ background: 'transparent', color: PRIMARY_LIGHT, border: 'none', fontSize: '20px', cursor: 'pointer' }}>›</button>
           </div>
@@ -466,6 +470,11 @@ function HabitTracker() {
               );
             })}
           </div>
+          {!__PREMIUM && (
+            <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '10px', color: MUTED, letterSpacing: '0.5px', lineHeight: 1.5 }}>
+              History is limited to the last 60 days. <a href="/billing.html" target="_top" style={{ color: '#C9A020', fontWeight: 700, textDecoration: 'none' }}>Upgrade to Premium</a> for your full history.
+            </div>
+          )}
           <button onClick={() => { setSelectedDate(new Date()); setShowCal(false); }} style={{ marginTop: '12px', width: '100%', padding: '10px', background: 'transparent', color: PRIMARY_LIGHT, border: `1px solid ${PRIMARY}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', cursor: 'pointer' }}>JUMP TO TODAY</button>
         </div>
       )}
@@ -473,8 +482,8 @@ function HabitTracker() {
       {/* Nav tabs */}
       {view === 'dashboard' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '6px', marginBottom: '24px' }}>
-          <button onClick={() => setView('log')} style={tabStyle(false, PRIMARY, bodyFont, '#fff')}>+ LOG</button>
-          <button onClick={() => setView('insights')} style={tabStyle(false, ACCENT, bodyFont, '#000')}>HABITS</button>
+          <button onClick={() => setView('log')} style={tabStyle(false, PRIMARY, bodyFont, '#fff')}>✓ TRACK</button>
+          <button onClick={() => setView('insights')} style={tabStyle(false, ACCENT, bodyFont, '#000')}>INSIGHTS</button>
         </div>
       ) : view === 'log' ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '21px' }}>

@@ -211,11 +211,11 @@
     const NAV = [{ id: 'home', label: 'Home', accent: '#C9A020' }].concat(APPS);
 
     const TIER_FEATURES = {
-      workout:  { free:'Log freely · PRs & stats locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
-      habits:   { free:'Log all habits free · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
-      sleep:    { free:'Log freely · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
-      expenses: { free:'Log freely · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' },
-      journal:  { free:'Write freely · insights locked', medium:'Everything unlocked · gray theme', all:'Everything + colorful theme + toggle' }
+      workout:  { free:'Log freely · PRs & stats locked', medium:'Everything unlocked · last 60 days of history', all:'Everything + full history + colorful theme' },
+      habits:   { free:'Log all habits free · insights locked', medium:'Everything unlocked · last 60 days of history', all:'Everything + full history + colorful theme' },
+      sleep:    { free:'Log freely · insights locked', medium:'Everything unlocked · last 60 days of history', all:'Everything + full history + colorful theme' },
+      expenses: { free:'Log freely · insights locked', medium:'Everything unlocked · last 60 days of history', all:'Everything + full history + colorful theme' },
+      journal:  { free:'Write freely · insights locked', medium:'Everything unlocked · last 60 days of history', all:'Everything + full history + colorful theme' }
     };
     const TIER_LABEL = { free: 'Core', medium: 'Elite', all: 'Premium' };
     // Normalize every tier spelling used across the codebase (single/duo/trio/all-access,
@@ -235,7 +235,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '90';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '91';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -249,6 +249,7 @@
       const mono = (currentTier !== 'all') || (themePref === 'mono');
       document.body.classList.toggle('tier-mono', mono);
       document.body.classList.toggle('tier-core', currentTier === 'free');   // Core-only feature locks
+      document.body.classList.toggle('tier-premium', currentTier === 'all');  // Premium-only: full history (apps cap others to 60 days). Independent of the gray theme toggle.
       const tg = document.getElementById('theme-toggle');
       tg.style.display = (currentTier === 'all') ? 'inline-flex' : 'none';
       document.getElementById('theme-toggle-label').textContent = (themePref === 'mono') ? 'Dark/Gray' : 'Colorful';
@@ -258,6 +259,7 @@
     function applyFrameThemes() {
       const gray = document.body.classList.contains('tier-mono');
       const core = document.body.classList.contains('tier-core');
+      const prem = document.body.classList.contains('tier-premium');
       // Vanilla apps (Workout, Expenses): instant theme class; reload only when the Core flag
       // flips (so Core feature-locks re-read at load). Core flips are rare (dev tester only).
       ['workout', 'expenses'].forEach(id => {
@@ -270,7 +272,7 @@
           if (f && f.src) {
             // Reload on gray OR core change so the app's load-time __GRAY flag re-evaluates
             // (its JS bakes gray/blue accents at load; a class toggle alone won't update them).
-            const want = (gray ? '1' : '0') + (core ? 'C' : 'N'), have = f.getAttribute('data-core');
+            const want = (gray ? '1' : '0') + (core ? 'C' : 'N') + (prem ? 'P' : 'F'), have = f.getAttribute('data-core');
             if (have == null) f.setAttribute('data-core', want);
             else if (have !== want) { f.setAttribute('data-core', want); f.src = f.src; }
           }
@@ -280,7 +282,7 @@
       ['habits', 'journal', 'sleep'].forEach(id => {
         const f = document.getElementById('frame-' + id);
         if (!f || !f.src) return;
-        const want = (gray ? '1' : '0') + (core ? 'C' : 'N'), have = f.getAttribute('data-gray');
+        const want = (gray ? '1' : '0') + (core ? 'C' : 'N') + (prem ? 'P' : 'F'), have = f.getAttribute('data-gray');
         if (have == null) f.setAttribute('data-gray', want);
         else if (have !== want) { f.setAttribute('data-gray', want); f.src = f.src; }
       });

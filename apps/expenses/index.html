@@ -583,6 +583,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
       <button class="btn primary" id="btn-refresh-log">Refresh from Sheet</button>
       <button class="btn ghost" id="btn-export">Export CSV</button>
     </div>
+    <div id="log-cap-note"></div>
     <div class="card">
       <div class="log-table-wrap">
         <table class="log-table">
@@ -795,6 +796,9 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
 <script>
 // Gray/Gold theme (Free/Medium): SVG/JS colors can't read CSS vars — resolve here.
 const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+// Premium = full history. Core/Elite see only the last 60 days of the log (insights/totals are unaffected).
+const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+function historyCapCutoff(){ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
 const MINT = __GRAY ? '#cfcfcf' : '#10c248';
 // Auth guard — must be signed in and have expenses access
 window.addEventListener('load', function() {
@@ -1082,9 +1086,14 @@ function renderPayPeriods(year,month,purchases) {
 // =================================================================
 function renderLog() {
   const body=document.getElementById('log-body');const empty=document.getElementById('log-empty');body.innerHTML='';
-  if(state.entries.length===0){empty.style.display='block';return;}
+  const note=document.getElementById('log-cap-note');
+  // 60-day history cap for Core/Elite (Premium sees everything).
+  let visible=state.entries;let capHidden=0;
+  if(!__PREMIUM){const cut=historyCapCutoff();const before=state.entries.length;visible=state.entries.filter(e=>(e.date||'')>=cut);capHidden=before-visible.length;}
+  if(note)note.innerHTML=(capHidden>0)?'<div style="text-align:center;padding:14px 18px;margin-bottom:14px;background:rgba(201,160,32,0.08);border:1px solid rgba(201,160,32,0.35);border-radius:12px;"><div style="font-size:12px;font-weight:700;color:#C9A020;letter-spacing:0.5px;">Showing your last 60 days</div><div style="font-size:11px;color:var(--mps-text-dim);margin-top:4px;line-height:1.5;">Upgrade to <b style="color:#C9A020;">Premium</b> to see your full expense history.</div><a href="/billing.html" target="_top" style="display:inline-block;margin-top:8px;padding:7px 18px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:11px;letter-spacing:0.5px;border-radius:8px;text-decoration:none;">↑ Unlock full history</a></div>':'';
+  if(visible.length===0){empty.style.display='block';return;}
   empty.style.display='none';
-  const sorted=[...state.entries].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const sorted=[...visible].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   sorted.forEach(e=>{
     const tr=document.createElement('tr');const isIncome=e.item==='Income'||e.item==='Paycheck'||e.category==='Income';
     const catKey=(e.category||'Other').toLowerCase().replace(/\s+/g,'');
@@ -1210,7 +1219,8 @@ document.getElementById('btn-save').addEventListener('click',()=>{
 document.getElementById('btn-delete').addEventListener('click',()=>{if(!state.editingId)return;state.entries=state.entries.filter(e=>e.id!==state.editingId);save(STORE.entries,state.entries);closeModal();renderAll();});
 document.getElementById('btn-export').addEventListener('click',()=>{
   const headers=['Date','Item','Merchant','Amount','Category','Source'];
-  const rows=state.entries.map(e=>[fmtDate(e.date),e.item,e.merchant,e.amount,e.category,e.source]);
+  const exportEntries=__PREMIUM?state.entries:state.entries.filter(e=>(e.date||'')>=historyCapCutoff());
+  const rows=exportEntries.map(e=>[fmtDate(e.date),e.item,e.merchant,e.amount,e.category,e.source]);
   const csv=[headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`mps_expenses_${todayISO()}.csv`;a.click();URL.revokeObjectURL(url);
 });

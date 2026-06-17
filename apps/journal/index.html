@@ -132,6 +132,9 @@
     // ── THEME ─────────────────────────────────────────────────────
     const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
     const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
+    // Premium = full history. Elite sees only the last 60 days of entries (Core has Journal locked entirely).
+    const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+    const HISTORY_CAP_CUTOFF = (()=>{ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
     const NAVY   = __GRAY ? '#f5f5f5' : '#4a6fa5';
     const NAVYL  = __GRAY ? '#C9A020' : '#6b8fc5';
     const GOLD   = '#C9A020';
@@ -414,7 +417,10 @@
       const [selMonth, setSelMonth] = useState(curM);
       const [expanded, setExpanded] = useState(null);
 
-      const allDates   = Object.keys(entries).sort((a,b) => b.localeCompare(a));
+      const __allDatesRaw = Object.keys(entries).sort((a,b) => b.localeCompare(a));
+      // 60-day history cap for Elite (Premium sees all; Core has Journal locked entirely).
+      const allDates   = __PREMIUM ? __allDatesRaw : __allDatesRaw.filter(d => d >= HISTORY_CAP_CUTOFF);
+      const capHidden  = __allDatesRaw.length - allDates.length;
       const allMonths  = [...new Set(allDates.map(d => monthKey(d)))].sort((a,b) => b.localeCompare(a));
       const monthDates = allDates.filter(d => monthKey(d) === selMonth);
 
@@ -433,6 +439,14 @@
               }}>{monthLbl(m)}</button>
             ))}
           </div>
+
+          {capHidden > 0 && (
+            <div style={{ textAlign:'center', padding:'14px 18px', marginBottom:16, background:'rgba(201,160,32,0.08)', border:'1px solid rgba(201,160,32,0.35)', borderRadius:12 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'#C9A020', letterSpacing:'0.04em' }}>Showing your last 60 days</div>
+              <div style={{ fontSize:11, color:'#9a9a9a', marginTop:4, lineHeight:1.5 }}>Upgrade to <b style={{ color:'#C9A020' }}>Premium</b> to revisit your full journal.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', marginTop:8, padding:'7px 18px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:11, letterSpacing:'0.04em', borderRadius:8, textDecoration:'none' }}>↑ Unlock full history</a>
+            </div>
+          )}
 
           {monthDates.length === 0
             ? <div style={{ color:'#374151', fontSize:13, textAlign:'center', padding:'32px 0' }}>No entries this month</div>
