@@ -158,6 +158,19 @@
       { id:'grateful', label:'Grateful',   emoji:'🙏', color:GOLD },
     ];
     const getMood = id => MOODS.find(m=>m.id===id) || MOODS[2];
+    // Thin-line wireframe mood icons (match the Habits icon style; gold in gray so no color leak).
+    const MoodIcon = ({ id, color, size = 22 }) => {
+      const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+      switch (id) {
+        case 'locked':   return <svg {...p}><path d="M12 2c.6 3 3 4 3 7a3 3 0 0 1-6 0c0-1.2.5-2 1-2.8C9 8 9 5.5 12 2z"/></svg>;
+        case 'grinding': return <svg {...p}><polyline points="13 2 4 14 12 14 11 22 20 10 12 10 13 2"/></svg>;
+        case 'neutral':  return <svg {...p}><circle cx="12" cy="12" r="9"/><line x1="8.5" y1="15" x2="15.5" y2="15"/></svg>;
+        case 'offday':   return <svg {...p}><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>;
+        case 'grateful': return <svg {...p}><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>;
+        default: return null;
+      }
+    };
+    const moodColor = m => (__GRAY ? '#C9A020' : (m.color || '#C9A020'));
 
     const PROMPTS = [
       "What are you grateful for today?",
@@ -299,7 +312,7 @@
                   border:`1px solid ${mood===m.id ? NAVY : BR}`, borderRadius:10,
                   display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', transition:'all 0.15s'
                 }}>
-                  <span style={{ fontSize:18 }}>{m.emoji}</span>
+                  <MoodIcon id={m.id} color={moodColor(m)} size={22} />
                   <span style={{ fontSize:8, color: mood===m.id ? NAVYL : '#374151', fontWeight:600, letterSpacing:'0.04em', textAlign:'center', lineHeight:1.2 }}>
                     {m.label}
                   </span>
@@ -453,7 +466,7 @@
                           {e.entry ? e.entry.slice(0, 60) + (e.entry.length > 60 ? '…' : '') : 'No entry text'}
                         </div>
                       </div>
-                      {e.mood && <span style={{ fontSize:18 }}>{mood.emoji}</span>}
+                      {e.mood && <MoodIcon id={mood.id} color={moodColor(mood)} size={18} />}
                       <span style={{ color:'#374151', fontSize:12 }}>{isOpen?'▲':'▼'}</span>
                     </button>
 
@@ -464,7 +477,7 @@
                       }}>
                         {e.mood && (
                           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
-                            <span style={{ fontSize:16 }}>{mood.emoji}</span>
+                            <MoodIcon id={mood.id} color={moodColor(mood)} size={16} />
                             <span style={{ color:NAVYL, fontSize:11, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase' }}>{mood.label}</span>
                           </div>
                         )}
@@ -579,7 +592,7 @@
               { lbl:'Total Entries',    val:total },
               { lbl:'Longest Streak',   val:longest + (longest===1?' Day':' Days') },
               { lbl:'This Month',       val:`${thisMonthCount} / ${daysSoFar}` },
-              { lbl:'Top Mood',         val:topMood ? getMood(topMood[0]).emoji + ' ' + getMood(topMood[0]).label : '—' },
+              { lbl:'Top Mood',         val:topMood ? getMood(topMood[0]).label : '—' },
             ].map(s => (
               <div key={s.lbl} style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:'12px 13px' }}>
                 <Label style={{ marginBottom:4 }}>{s.lbl}</Label>
@@ -617,7 +630,7 @@
                     <div key={m.id}>
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-                          <span style={{ fontSize:14 }}>{m.emoji}</span>
+                          <MoodIcon id={m.id} color={moodColor(m)} size={14} />
                           <span style={{ color:'#d1d5db', fontSize:12, fontWeight:500 }}>{m.label}</span>
                         </div>
                         <span style={{ color:'#6b7280', fontSize:11 }}>{count}x · {pct.toFixed(0)}%</span>
