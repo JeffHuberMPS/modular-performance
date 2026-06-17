@@ -508,6 +508,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
         <span id="burn-x-end">31</span>
       </div>
     </div>
+    <div class="card" id="budget-alerts" style="display:none; margin-bottom:14px;"></div>
     <div class="card highlight" style="margin-bottom:14px;">
       <div class="month-picker-row">
         <div class="month-display" id="dash-month">MAY</div>
@@ -708,6 +709,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
         </div>
       </div>
     </div>
+    <div id="advanced-reports" style="margin-top:14px;"></div>
   </div>
   <!-- ============ SETTINGS ============ -->
   <div class="view" id="view-settings">
@@ -979,6 +981,7 @@ function renderDashboard() {
   else if(pct>=80){statusEl.className='pill warn';statusEl.textContent='Warning';}
   else{statusEl.className='pill ok';statusEl.textContent='On Track';}
   renderCategoryBreakdown(purchases);
+  renderBudgetAlerts(year,month,purchases,spent,daysLeft,daysInMonth,daysPassed);
   renderBurnChart(year,month,purchases);
   renderCategoryDonut(purchases);
   renderWeeklyPace(year,month,purchases);
@@ -1196,6 +1199,88 @@ function renderInsights() {
   const ytdIncome=ytdAll.filter(e=>e.item==='Income'||e.item==='Paycheck').reduce((s,e)=>s+Math.abs(Number(e.amount)||0),0);
   document.getElementById('ytd-spent').textContent=fmt$short(ytdSpent);document.getElementById('ytd-income').textContent=fmt$short(ytdIncome);document.getElementById('ytd-net').textContent=fmt$short(ytdIncome-ytdSpent);
   document.getElementById('ytd-net').style.color=(ytdIncome-ytdSpent)>=0?'var(--mps-text)':'var(--mps-danger)';
+  renderAdvancedReports(year,month);
+}
+// PREMIUM-only Budget Alerts (Dashboard): status, $ left, projected end-of-month at
+// current pace, and the top category mover vs last month. Non-Premium sees a nudge.
+function renderBudgetAlerts(year,month,purchases,spent,daysLeft,daysInMonth,daysPassed){
+  const el=document.getElementById('budget-alerts'); if(!el) return;
+  if(!__PREMIUM){
+    el.style.display='block';
+    el.innerHTML='<div class="dash-section-title">Budget Alerts</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px;">'
+      +'<div style="font-size:12px;color:var(--mps-text-dim);line-height:1.5;flex:1;min-width:170px;">Over-budget warnings and end-of-month projections are a <b style="color:#C9A020;">Premium</b> feature.</div>'
+      +'<a href="/billing.html" target="_top" style="padding:8px 18px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:11px;letter-spacing:0.5px;border-radius:8px;text-decoration:none;white-space:nowrap;">↑ Unlock with Premium</a>'
+      +'</div>';
+    return;
+  }
+  const cap=Number(state.cap)||0;
+  if(cap<=0){ el.style.display='none'; return; }
+  el.style.display='block';
+  const pct=spent/cap*100, remaining=cap-spent;
+  const projected=daysPassed>0?(spent/daysPassed)*daysInMonth:spent;
+  var pill,pillTxt;
+  if(pct>=100){pill='danger';pillTxt='Over Budget';}
+  else if(pct>=80){pill='warn';pillTxt='Warning';}
+  else{pill='ok';pillTxt='On Track';}
+  var paceMsg;
+  if(projected>cap*1.02){ paceMsg='On pace for <b style="color:var(--mps-danger);">'+fmt$short(projected)+'</b> — about '+fmt$short(projected-cap)+' over budget.'; }
+  else if(pct>=80){ paceMsg='You’ve used '+pct.toFixed(0)+'% of your budget with '+daysLeft+' day'+(daysLeft===1?'':'s')+' left.'; }
+  else{ paceMsg='On pace for '+fmt$short(projected)+' — within your '+fmt$short(cap)+' budget.'; }
+  const prevMonth=month===0?11:month-1, prevYear=month===0?year-1:year;
+  const prevPurch=monthEntries(prevYear,prevMonth).filter(function(e){return e.item==='Purchase';});
+  const curCat={},prevCat={};
+  purchases.forEach(function(e){curCat[e.category]=(curCat[e.category]||0)+Math.abs(Number(e.amount)||0);});
+  prevPurch.forEach(function(e){prevCat[e.category]=(prevCat[e.category]||0)+Math.abs(Number(e.amount)||0);});
+  var bestCat='',bestDelta=0;
+  Object.keys(curCat).forEach(function(c){var d=curCat[c]-(prevCat[c]||0); if(d>bestDelta){bestDelta=d;bestCat=c;}});
+  var moverTxt='';
+  if(bestCat&&bestDelta>0){ var base=prevCat[bestCat]||0; var pctUp=base>0?' ('+Math.round(bestDelta/base*100)+'%)':''; moverTxt='<div style="margin-top:8px;font-size:11px;color:var(--mps-text-dim);">'+bestCat+' up '+fmt$short(bestDelta)+pctUp+' vs last month.</div>'; }
+  el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+      +'<div class="dash-section-title" style="margin:0;">Budget Alerts</div><span class="pill '+pill+'">'+pillTxt+'</span></div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:10px;text-align:center;">'
+      +'<div style="flex:1;"><div style="font-size:18px;font-weight:800;color:'+(remaining>=0?'var(--mps-mint)':'var(--mps-danger)')+';">'+fmt$short(remaining)+'</div><div class="stat-label">Left of '+fmt$short(cap)+'</div></div>'
+      +'<div style="flex:1;"><div style="font-size:18px;font-weight:800;color:'+(projected>cap?'var(--mps-danger)':'var(--mps-text)')+';">'+fmt$short(projected)+'</div><div class="stat-label">Projected</div></div>'
+      +'<div style="flex:1;"><div style="font-size:18px;font-weight:800;color:var(--mps-text);">'+daysLeft+'</div><div class="stat-label">Days Left</div></div>'
+    +'</div>'
+    +'<div style="font-size:12px;line-height:1.5;color:var(--mps-text);">'+paceMsg+'</div>'+moverTxt;
+}
+// PREMIUM-only Advanced Reports (Insights): month-over-month total, category movers,
+// and a 6-month spend trend. Non-Premium (Elite) sees a nudge.
+function renderAdvancedReports(year,month){
+  const el=document.getElementById('advanced-reports'); if(!el) return;
+  if(!__PREMIUM){
+    el.innerHTML='<div class="card"><div class="dash-section-title">Advanced Reports</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px;">'
+      +'<div style="font-size:12px;color:var(--mps-text-dim);line-height:1.5;flex:1;min-width:170px;">Month-over-month trends, category movers, and 6-month history are a <b style="color:#C9A020;">Premium</b> feature.</div>'
+      +'<a href="/billing.html" target="_top" style="padding:8px 18px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:11px;letter-spacing:0.5px;border-radius:8px;text-decoration:none;white-space:nowrap;">↑ Unlock with Premium</a>'
+      +'</div></div>';
+    return;
+  }
+  const spendOf=function(y,m){ return monthEntries(y,m).filter(function(e){return e.item==='Purchase';}).reduce(function(s,e){return s+Math.abs(Number(e.amount)||0);},0); };
+  const cur=spendOf(year,month);
+  const pm=month===0?11:month-1, py=month===0?year-1:year;
+  const prev=spendOf(py,pm);
+  const delta=cur-prev, deltaPct=prev>0?Math.round(delta/prev*100):(cur>0?100:0);
+  const catCur={},catPrev={};
+  monthEntries(year,month).filter(function(e){return e.item==='Purchase';}).forEach(function(e){catCur[e.category]=(catCur[e.category]||0)+Math.abs(Number(e.amount)||0);});
+  monthEntries(py,pm).filter(function(e){return e.item==='Purchase';}).forEach(function(e){catPrev[e.category]=(catPrev[e.category]||0)+Math.abs(Number(e.amount)||0);});
+  const cats=Object.keys(catCur).concat(Object.keys(catPrev)).filter(function(v,i,a){return a.indexOf(v)===i;});
+  const movers=cats.map(function(c){return {c:c,cur:catCur[c]||0,prev:catPrev[c]||0,d:(catCur[c]||0)-(catPrev[c]||0)};}).filter(function(x){return x.cur>0||x.prev>0;}).sort(function(a,b){return Math.abs(b.d)-Math.abs(a.d);}).slice(0,5);
+  const moverRows=movers.map(function(m){ var up=m.d>=0; var col=up?'var(--mps-danger)':'var(--mps-mint)'; var arr=up?'▲':'▼'; var pctTxt=m.prev>0?Math.round(Math.abs(m.d)/m.prev*100)+'%':(m.cur>0?'new':'—'); return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;"><span style="color:var(--mps-text);">'+m.c+'</span><span style="color:var(--mps-text-dim);">'+fmt$short(m.cur)+' <span style="color:'+col+';font-weight:700;">'+arr+' '+pctTxt+'</span></span></div>'; }).join('');
+  var months=[],yy=year,mm=month;
+  for(var i=0;i<6;i++){ months.unshift({y:yy,m:mm}); mm--; if(mm<0){mm=11;yy--;} }
+  const trend=months.map(function(o){ return {label:MONTHS[o.m].slice(0,3),val:spendOf(o.y,o.m)}; });
+  const maxV=Math.max.apply(null,trend.map(function(t){return t.val;}).concat([1]));
+  const bars=trend.map(function(t){ var h=Math.max(3,Math.round(t.val/maxV*70)); return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;"><div style="font-size:9px;color:var(--mps-text-dim);">'+(t.val>0?fmt$short(t.val):'')+'</div><div style="width:62%;height:'+h+'px;background:var(--mps-mint);border-radius:3px 3px 0 0;"></div><div style="font-size:9px;color:var(--mps-text-dim);">'+t.label+'</div></div>'; }).join('');
+  const dCol=delta>=0?'var(--mps-danger)':'var(--mps-mint)';
+  el.innerHTML='<div class="card"><div class="dash-section-title">Advanced Reports</div>'
+    +'<div style="display:flex;align-items:baseline;gap:8px;margin:8px 0 16px;flex-wrap:wrap;"><span style="font-size:24px;font-weight:800;color:var(--mps-text);">'+fmt$short(cur)+'</span><span style="font-size:12px;color:'+dCol+';font-weight:700;">'+(delta>=0?'+':'')+fmt$short(delta)+' ('+(deltaPct>=0?'+':'')+deltaPct+'%)</span><span style="font-size:11px;color:var(--mps-text-dim);">vs last month</span></div>'
+    +'<div class="dash-section-title" style="font-size:10px;">Category Movers</div>'
+    +(moverRows||'<div style="font-size:12px;color:var(--mps-text-dim);padding:8px 0;">Not enough data yet.</div>')
+    +'<div class="dash-section-title" style="font-size:10px;margin-top:16px;">6-Month Spend</div>'
+    +'<div style="display:flex;align-items:flex-end;gap:6px;margin-top:10px;height:110px;">'+bars+'</div>'
+    +'</div>';
 }
 // =================================================================
 // MODAL
