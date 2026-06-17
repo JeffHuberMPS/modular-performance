@@ -817,6 +817,18 @@
 </style>
 </head>
 <body>
+<script>
+/* Apply the tier theme class to our own body BEFORE the app renders, so var()-based
+   colors (e.g. the chart-toggle pills) compute correctly from the first paint. The hub
+   also sets these, but later (on frame load) — too late for vanilla render → blue flash. */
+try {
+  if (window.parent && window.parent !== window) {
+    var _pb = window.parent.document.body;
+    if (_pb.classList.contains('tier-mono')) document.body.classList.add('mps-gray');
+    if (_pb.classList.contains('tier-core')) document.body.classList.add('mps-core');
+  }
+} catch(e) {}
+</script>
 
 <!-- ── Nav fade overlay ────────────────────────────────── -->
 <div id="mps-nav-fade"></div>
