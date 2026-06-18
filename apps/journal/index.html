@@ -336,7 +336,7 @@
 
           <button onClick={handleSave} disabled={!hasContent||saving} style={{
             width:'100%', padding:'14px', marginTop:8,
-            background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,#2a4a80,${NAVY})` : C1,
+            background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#2a4a80'},${NAVY})` : C1,
             border: saved ? `1px solid ${NAVY}` : 'none', borderRadius:10, color: saved ? NAVYL : '#fff',
             fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em',
             cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
@@ -414,7 +414,7 @@
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ color:'#d1d5db', fontSize:13, fontWeight:500 }}>{lbl}</div>
                         <div style={{ color:'#4b5563', fontSize:11, marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                          {e.entry ? e.entry.slice(0, 60) + (e.entry.length > 60 ? '…' : '') : 'No entry text'}
+                          {(() => { const g=Array.isArray(e.gratitude)?e.gratitude.filter(Boolean)[0]:(typeof e.gratitude==='string'?e.gratitude:''); const p=e.workout||g||e.emotion||e.entry||''; return p ? (p.slice(0,60)+(p.length>60?'…':'')) : 'Tap to view'; })()}
                         </div>
                       </div>
                       {e.mood && <MoodIcon id={mood.id} color={moodColor(mood)} size={18} />}
@@ -422,43 +422,31 @@
                     </button>
 
                     {isOpen && (
-                      <div style={{
-                        background:'rgba(8,8,8,0.8)', border:`1px solid ${BRB}`,
-                        borderTop:'none', borderRadius:'0 0 12px 12px', padding:'16px 15px'
-                      }}>
-                        {e.mood && (
-                          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
-                            <MoodIcon id={mood.id} color={moodColor(mood)} size={16} />
-                            <span style={{ color:NAVYL, fontSize:11, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase' }}>{mood.label}</span>
-                          </div>
-                        )}
-                        {e.entry && (
-                          <div style={{ marginBottom:12 }}>
-                            <Label>Entry</Label>
-                            <div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.7, whiteSpace:'pre-wrap' }}>{e.entry}</div>
-                          </div>
-                        )}
-                        {e.wins && (
-                          <div style={{ marginBottom:12 }}>
-                            <Label>Win</Label>
-                            <div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6 }}>{e.wins}</div>
-                          </div>
-                        )}
-                        {e.gratitude && (
-                          <div style={{ marginBottom:12 }}>
-                            <Label>Gratitude</Label>
-                            <div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6 }}>{e.gratitude}</div>
-                          </div>
-                        )}
-                        {e.scripture && (
-                          <div style={{
-                            background:`rgba(201,160,32,0.06)`, border:`1px solid ${BRG}`,
-                            borderRadius:8, padding:'10px 12px',
-                            fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontStyle:'italic', color:CREAM, fontSize:12, lineHeight:1.6
-                          }}>
-                            {e.scripture}
-                          </div>
-                        )}
+                      <div style={{ background:'rgba(8,8,8,0.8)', border:`1px solid ${BRB}`, borderTop:'none', borderRadius:'0 0 12px 12px', padding:'16px 15px' }}>
+                        {(() => {
+                          const g = Array.isArray(e.gratitude) ? e.gratitude.filter(Boolean) : (typeof e.gratitude==='string' && e.gratitude ? [e.gratitude] : []);
+                          const acc = Array.isArray(e.accomplishment) ? e.accomplishment.filter(Boolean) : [];
+                          const aff = [e.affBecoming, e.affLearning, e.affIHave].some(Boolean);
+                          const text = (label, val) => val ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label><div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{val}</div></div>) : null;
+                          const list = (label, items) => items.length ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label>{items.map((x,i)=>(<div key={i} style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{i+1}</span>{x}</div>))}</div>) : null;
+                          const affLine = (k,v) => v ? (<div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }} key={k}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{k}</span>{v}</div>) : null;
+                          const anyNew = e.workout||g.length||acc.length||aff||e.anticipation||e.emotion||e.wastedTime;
+                          const anyOld = e.entry||e.wins||e.scripture||e.mood;
+                          return (<>
+                            {e.mood && (<div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:14 }}><MoodIcon id={mood.id} color={moodColor(mood)} size={16} /><span style={{ color:NAVYL, fontSize:11, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase' }}>{mood.label}</span></div>)}
+                            {text('Workout', e.workout)}
+                            {list('Gratitude', g)}
+                            {list('Accomplishments', acc)}
+                            {aff && (<div style={{ marginBottom:14 }}><Label>Affirmation</Label>{affLine('Becoming', e.affBecoming)}{affLine('Learning', e.affLearning)}{affLine('I Have', e.affIHave)}</div>)}
+                            {text('Anticipation', e.anticipation)}
+                            {text('Emotion', e.emotion)}
+                            {text('Wasted Time', e.wastedTime)}
+                            {text('Entry', e.entry)}
+                            {text('Win', e.wins)}
+                            {text('Scripture', e.scripture)}
+                            {!anyNew && !anyOld && (<div style={{ color:'#6b7280', fontSize:12 }}>No details saved for this day.</div>)}
+                          </>);
+                        })()}
                       </div>
                     )}
                   </div>
@@ -500,6 +488,10 @@
       const moodCount = {};
       allDates.forEach(d => { const m=entries[d].mood; if(m) moodCount[m]=(moodCount[m]||0)+1; });
       const topMood = Object.entries(moodCount).sort((a,b)=>b[1]-a[1])[0];
+      const emoCount = {};
+      allDates.forEach(d => { const em=(entries[d].emotion||'').trim(); if(em) emoCount[em.toLowerCase()]=(emoCount[em.toLowerCase()]||0)+1; });
+      const topEmo = Object.entries(emoCount).sort((a,b)=>b[1]-a[1])[0];
+      const topFeeling = topMood ? getMood(topMood[0]).label : (topEmo ? (topEmo[0].charAt(0).toUpperCase()+topEmo[0].slice(1)) : '—');
 
       // This month
       const now  = new Date();
@@ -543,7 +535,7 @@
               { lbl:'Total Entries',    val:total },
               { lbl:'Longest Streak',   val:longest + (longest===1?' Day':' Days') },
               { lbl:'This Month',       val:`${thisMonthCount} / ${daysSoFar}` },
-              { lbl:'Top Mood',         val:topMood ? getMood(topMood[0]).label : '—' },
+              { lbl:'Top Feeling',      val:topFeeling },
             ].map(s => (
               <div key={s.lbl} style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:'12px 13px' }}>
                 <Label style={{ marginBottom:4 }}>{s.lbl}</Label>
@@ -559,7 +551,7 @@
               {last30.map(({ key, has, day }) => (
                 <div key={key} title={key} style={{
                   width:28, height:28, borderRadius:5,
-                  background: has ? `linear-gradient(135deg,#2a4a80,${NAVY})` : '#0e0e0e',
+                  background: has ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#2a4a80'},${NAVY})` : '#0e0e0e',
                   border:`1px solid ${has ? NAVY : '#1a1a1a'}`,
                   display:'flex', alignItems:'center', justifyContent:'center'
                 }}>
