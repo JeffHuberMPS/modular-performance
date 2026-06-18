@@ -274,7 +274,7 @@
 
       const dt = new Date();
       const dayName = DAYS[dt.getDay()], moName = MONTHS[dt.getMonth()], yr = dt.getFullYear(), dayNum = dt.getDate();
-      const inp = { width:'100%', background:C2, border:`1px solid ${BR}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const inp = { width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(107,143,197,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
       const ta = { ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
       const stat = (label, v) => (<div style={{ flex:1, textAlign:'center', minWidth:0 }}><div style={{ fontSize:17, fontWeight:800, color:'#fff', whiteSpace:'nowrap' }}>{v}</div><div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div></div>);
       const field = (label, key, multi) => (
@@ -778,7 +778,7 @@
         </div>
       );
       const note=(<div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>);
-      const inp={ width:'100%', background:C2, border:`1px solid ${BR}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const inp={ width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(107,143,197,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
       const ta={ ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
       const upd=(k,v)=>setDraft(p=>({...p,[k]:v}));
       const updArr=(k,i,v)=>setDraft(p=>{ const a=Array.isArray(p[k])?p[k].slice():[]; a[i]=v; return {...p,[k]:a}; });
