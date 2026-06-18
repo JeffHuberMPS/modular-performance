@@ -242,169 +242,106 @@
     function WriteView({ entries, onSave }) {
       const today = todayStr();
       const existing = entries[today] || {};
+      const arr3 = (v) => Array.isArray(v) ? [v[0]||'', v[1]||'', v[2]||''] : ['','',''];
+      const [draft, setDraft] = useState(() => ({
+        workout: existing.workout || '',
+        gratitude: arr3(existing.gratitude),
+        accomplishment: arr3(existing.accomplishment),
+        affBecoming: existing.affBecoming || '',
+        affLearning: existing.affLearning || '',
+        affIHave: existing.affIHave || '',
+        anticipation: existing.anticipation || '',
+        emotion: existing.emotion || '',
+        wastedTime: existing.wastedTime || '',
+      }));
+      const [saving, setSaving] = useState(false);
+      const [saved, setSaved] = useState(false);
+      const [td, setTd] = useState(null);
+      useEffect(() => { let on=true; loadTrackerData().then(d=>{ if(on) setTd(d); }).catch(()=>{}); return ()=>{on=false;}; }, []);
+      const A = td ? ciAggregate(td, [today]) : null;
 
-      const [mood,       setMood]       = useState(existing.mood || '');
-      const [entry,      setEntry]      = useState(existing.entry || '');
-      const [scripture,  setScripture]  = useState(existing.scripture || '');
-      const [wins,       setWins]       = useState(existing.wins || '');
-      const [gratitude,  setGratitude]  = useState(existing.gratitude || '');
-      const [saving,     setSaving]     = useState(false);
-      const [saved,      setSaved]      = useState(false);
-      const [prompt,     setPrompt]     = useState(() => PROMPTS[new Date().getDay() % PROMPTS.length]);
-
-      const hasContent = mood || entry.trim() || scripture.trim() || wins.trim() || gratitude.trim();
+      const upd = (k, v) => setDraft(p => ({ ...p, [k]: v }));
+      const updArr = (k, i, v) => setDraft(p => { const a = Array.isArray(p[k]) ? p[k].slice() : ['','','']; a[i]=v; return { ...p, [k]: a }; });
+      const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.wastedTime||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x);
 
       const handleSave = async () => {
         if (!hasContent) return;
         setSaving(true);
-        const updated = {
-          ...entries,
-          [today]: {
-            date: today,
-            mood,
-            entry: entry.trim(),
-            scripture: scripture.trim(),
-            wins: wins.trim(),
-            gratitude: gratitude.trim(),
-            updatedAt: new Date().toISOString(),
-            createdAt: existing.createdAt || new Date().toISOString(),
-          }
-        };
+        const updated = { ...entries, [today]: { ...existing, date:today, ...draft, updatedAt:new Date().toISOString(), createdAt: existing.createdAt || new Date().toISOString() } };
         await onSave(updated);
-        setSaving(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        setSaving(false); setSaved(true); setTimeout(()=>setSaved(false), 2000);
       };
 
-      const [d, mo, yr] = (() => {
-        const dt = new Date();
-        return [DAYS[dt.getDay()], MONTHS[dt.getMonth()], dt.getFullYear()];
-      })();
-      const dayNum = new Date().getDate();
-
-      const textarea = {
-        width:'100%', background:C2, border:`1px solid ${BR}`, borderRadius:10,
-        padding:'12px 14px', color:'#e5e7eb', fontSize:13, outline:'none',
-        fontFamily:"'Inter',sans-serif", lineHeight:1.7, minHeight:100,
-        caretColor: NAVYL
-      };
+      const dt = new Date();
+      const dayName = DAYS[dt.getDay()], moName = MONTHS[dt.getMonth()], yr = dt.getFullYear(), dayNum = dt.getDate();
+      const inp = { width:'100%', background:C2, border:`1px solid ${BR}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const ta = { ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
+      const stat = (label, v) => (<div style={{ flex:1, textAlign:'center', minWidth:0 }}><div style={{ fontSize:17, fontWeight:800, color:'#fff', whiteSpace:'nowrap' }}>{v}</div><div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div></div>);
+      const field = (label, key, multi) => (
+        <div style={{ marginBottom:13 }} key={key}>
+          <Label>{label}</Label>
+          {multi
+            ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={ta} />
+            : <input value={draft[key]||''} onChange={e=>upd(key,e.target.value)} style={inp} />}
+        </div>
+      );
+      const numRow = (key, i) => (
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={key+i}>
+          <span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span>
+          <input value={(draft[key]||[])[i]||''} onChange={e=>updArr(key,i,e.target.value)} style={{ ...inp, flex:1 }} />
+        </div>
+      );
 
       return (
         <div style={{ padding:'18px 20px' }}>
-
           {/* Date header */}
-          <div style={{ marginBottom:18, display:'flex', alignItems:'baseline', gap:10 }}>
-            <div>
-              <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:42, color:'#fff', lineHeight:1 }}>{d.toUpperCase()}</div>
-              <div style={{ color:'#374151', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600 }}>{mo} {dayNum}, {yr}</div>
-            </div>
-            {existing.updatedAt && (
-              <div style={{ marginLeft:'auto', color:'#1f2d1f', fontSize:9, letterSpacing:'0.08em', textAlign:'right' }}>
-                Saved<br/>{new Date(existing.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
-              </div>
-            )}
-          </div>
-
-          {/* Mood selector */}
-          <div style={{ marginBottom:16 }}>
-            <Label>Mood</Label>
-            <div style={{ display:'flex', gap:8 }}>
-              {MOODS.map(m => (
-                <button key={m.id} onClick={() => setMood(mood===m.id?'':m.id)} style={{
-                  flex:1, padding:'10px 4px', background: mood===m.id ? 'rgba(150,150,150,0.12)' : C2,
-                  border:`1px solid ${mood===m.id ? NAVY : BR}`, borderRadius:10,
-                  display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', transition:'all 0.15s'
-                }}>
-                  <MoodIcon id={m.id} color={moodColor(m)} size={22} />
-                  <span style={{ fontSize:8, color: mood===m.id ? NAVYL : '#374151', fontWeight:600, letterSpacing:'0.04em', textAlign:'center', lineHeight:1.2 }}>
-                    {m.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prompt card */}
-          <div style={{
-            background:`linear-gradient(135deg,${C1},#0d0c10)`,
-            border:`1px solid ${BRB}`, borderRadius:12, padding:'14px 16px', marginBottom:16,
-            position:'relative'
-          }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
-              <Label style={{ marginBottom:0 }}>Today's Prompt</Label>
-              <button onClick={() => setPrompt(PROMPTS[Math.floor(Math.random()*PROMPTS.length)])} style={{
-                background:'none', border:'none', color:'#374151', fontSize:10, cursor:'pointer', letterSpacing:'0.06em', fontWeight:600, textTransform:'uppercase'
-              }}>↻</button>
-            </div>
-            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontStyle:'italic', color:CREAM, fontSize:13, lineHeight:1.6, opacity:0.75 }}>
-              "{prompt}"
-            </div>
-          </div>
-
-          {/* Main entry */}
           <div style={{ marginBottom:14 }}>
-            <Label>Journal Entry</Label>
-            <textarea
-              value={entry}
-              onChange={e => setEntry(e.target.value)}
-              placeholder="Write freely. No one's watching..."
-              rows={6}
-              style={textarea}
-            />
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:32, fontWeight:800, color:'#fff', lineHeight:1.05 }}>{dayName.toUpperCase()}</div>
+            <div style={{ color:'#6b7280', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600, marginTop:3 }}>{moName} {dayNum}, {yr}</div>
           </div>
 
-          {/* Wins */}
-          <div style={{ marginBottom:14 }}>
-            <Label>Today's Win(s)</Label>
-            <textarea
-              value={wins}
-              onChange={e => setWins(e.target.value)}
-              placeholder="One win — big or small..."
-              rows={2}
-              style={{ ...textarea, minHeight:60 }}
-            />
+          {/* Auto-pulled day stats */}
+          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:18 }}>
+            <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
+            <div style={{ display:'flex', gap:6, marginBottom:10 }}>
+              {stat('MRN', A?A.mrn+'/5':'—')}{stat('WRK', A?A.wrk+'/5':'—')}{stat('NGT', A?A.ngt+'/5':'—')}{stat('DAY', A?A.dayTotal+'/15':'—')}
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              {stat('Wake', A?A.avgWake:'—')}{stat('Sleep', A?A.avgSleep:'—')}{stat('Spent', A?ciMoney(A.spending):'—')}
+            </div>
           </div>
 
-          {/* Gratitude */}
-          <div style={{ marginBottom:14 }}>
+          {field('Workout', 'workout')}
+
+          <div style={{ marginBottom:13 }}>
             <Label>Gratitude</Label>
-            <textarea
-              value={gratitude}
-              onChange={e => setGratitude(e.target.value)}
-              placeholder="What are you thankful for?"
-              rows={2}
-              style={{ ...textarea, minHeight:60 }}
-            />
+            {numRow('gratitude',0)}{numRow('gratitude',1)}{numRow('gratitude',2)}
           </div>
 
-          {/* Scripture */}
-          <div style={{ marginBottom:22 }}>
-            <Label>Scripture / Verse</Label>
-            <div style={{
-              background:C2, border:`1px solid ${BRG}`, borderRadius:10, padding:'12px 14px',
-              display:'flex', alignItems:'flex-start', gap:10
-            }}>
-              <span style={{ fontSize:16, marginTop:1 }}></span>
-              <input
-                type="text"
-                value={scripture}
-                onChange={e => setScripture(e.target.value)}
-                placeholder='e.g. "I can do all things" — Phil 4:13'
-                style={{ flex:1, background:'none', border:'none', outline:'none', color:CREAM, fontSize:13, fontFamily:"'Inter',sans-serif" }}
-              />
-            </div>
+          <div style={{ marginBottom:13 }}>
+            <Label>Accomplishments</Label>
+            {numRow('accomplishment',0)}{numRow('accomplishment',1)}{numRow('accomplishment',2)}
           </div>
 
-          {/* Save */}
+          <div style={{ marginBottom:13 }}>
+            <Label>Affirmation</Label>
+            <div style={{ marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={inp} /></div>
+            <div style={{ marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={inp} /></div>
+            <div><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={inp} /></div>
+          </div>
+
+          {field('Anticipation', 'anticipation', true)}
+          {field('Emotion', 'emotion')}
+          {field('Wasted Time', 'wastedTime', true)}
+
           <button onClick={handleSave} disabled={!hasContent||saving} style={{
-            width:'100%', padding:'14px',
+            width:'100%', padding:'14px', marginTop:8,
             background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,#2a4a80,${NAVY})` : C1,
-            border: saved ? `1px solid ${NAVY}` : 'none',
-            borderRadius:10, color: saved ? NAVYL : '#fff',
+            border: saved ? `1px solid ${NAVY}` : 'none', borderRadius:10, color: saved ? NAVYL : '#fff',
             fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em',
             cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
           }}>
-            {saved ? 'SAVED' : saving ? 'SAVING...' : 'SAVE ENTRY'}
+            {saved ? 'SAVED ✓' : saving ? 'SAVING...' : 'SAVE ENTRY'}
           </button>
         </div>
       );
