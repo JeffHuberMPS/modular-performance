@@ -755,11 +755,15 @@
     function CheckInView(){
       const [data,setData]=useState(null); const [loading,setLoading]=useState(true);
       const [period,setPeriod]=useState('week'); const [wOff,setWOff]=useState(0); const [mOff,setMOff]=useState(0);
+      const [refl,setRefl]=useState({}); const [draft,setDraft]=useState({}); const [savedFlash,setSavedFlash]=useState(false);
       useEffect(()=>{ let on=true; loadTrackerData().then(d=>{ if(on){ setData(d); setLoading(false); } }).catch(()=>{ if(on) setLoading(false); }); return ()=>{on=false;}; },[]);
+      useEffect(()=>{ (async()=>{ try{ const v=await window.storage.get('checkin_reflections'); if(v&&typeof v==='object') setRefl(v); }catch(e){} })(); },[]);
       const isMonth=period==='month'; const offset=isMonth?mOff:wOff;
       const setOff=(v)=>{ const nv=Math.min(0,v); if(isMonth) setMOff(nv); else setWOff(nv); };
       const keys=isMonth?ciMonthKeys(mOff):ciWeekKeys(wOff);
       const A=data?ciAggregate(data,keys):null;
+      const rKey = isMonth ? ('m_'+keys[0].slice(0,7)) : ('w_'+keys[0]);
+      useEffect(()=>{ setDraft(refl[rKey]||{}); },[rKey, refl]);
       const title=isMonth?(ciMonthLabel(mOff).toUpperCase()+' CHECK-IN'):'WEEKLY CHECK-IN';
       const rangeLbl=isMonth?(keys.length+' days'):ciRange(keys[0],keys[6]);
       const pctOf=(a,b)=> b>0?Math.round(a/b*100):0;
@@ -774,7 +778,15 @@
         </div>
       );
       const note=(<div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>);
-      const coming=(<div style={{ marginTop:16, padding:'14px 16px', background:'rgba(201,160,32,0.06)', border:`1px dashed ${BR}`, borderRadius:12, fontSize:11, color:'#8a9591', lineHeight:1.6 }}><b style={{ color:GOLD }}>Coming next:</b> jobs, accomplishments, focus &amp; adjustments — your written reflections, saved with each check-in.</div>);
+      const inp={ width:'100%', background:C2, border:`1px solid ${BR}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const ta={ ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
+      const upd=(k,v)=>setDraft(p=>({...p,[k]:v}));
+      const updArr=(k,i,v)=>setDraft(p=>{ const a=Array.isArray(p[k])?p[k].slice():[]; a[i]=v; return {...p,[k]:a}; });
+      const rfield=(label,k,multi)=>(<div style={{ marginBottom:11 }} key={k}><div style={lbl}>{label}</div>{multi?<textarea value={draft[k]||''} onChange={e=>upd(k,e.target.value)} rows={2} style={ta}/>:<input value={draft[k]||''} onChange={e=>upd(k,e.target.value)} style={inp}/>}</div>);
+      const rnum=(k,i)=>(<div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={k+i}><span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span><input value={(draft[k]||[])[i]||''} onChange={e=>updArr(k,i,e.target.value)} style={{ ...inp, flex:1 }}/></div>);
+      const twoCol=(a,b)=>(<div style={{ display:'flex', gap:10 }}><div style={{ flex:1 }}>{a}</div><div style={{ flex:1 }}>{b}</div></div>);
+      const saveRefl=async()=>{ const next={...refl,[rKey]:draft}; setRefl(next); try{ await window.storage.set('checkin_reflections',next); }catch(e){} setSavedFlash(true); setTimeout(()=>setSavedFlash(false),1500); };
+      const saveBtn=(<button onClick={saveRefl} style={{ width:'100%', padding:'13px', marginTop:14, background:savedFlash?GOLD:'transparent', color:savedFlash?'#0a0a0a':NAVYL, border:`2px solid ${savedFlash?GOLD:NAVY}`, borderRadius:11, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:13, letterSpacing:'2px', fontWeight:700, cursor:'pointer' }}>{savedFlash?'SAVED ✓':'SAVE CHECK-IN'}</button>);
       return (
         <div style={{ padding:'18px 20px' }}>
           <div style={{ display:'flex', gap:6, marginBottom:14, background:C2, border:`1px solid ${BR}`, borderRadius:10, padding:4 }}>
@@ -825,7 +837,12 @@
                   <div style={{ fontSize:13, color:'#fff', marginTop:3 }}>Sleep · {A.avgSleep}</div>
                 </div>
               </div>
-              {coming}
+              <div style={box}><div style={lbl}>Jobs</div>{twoCol(rfield('Tasks','tasks'), rfield('Revenue','revenue'))}</div>
+              <div style={box}><div style={lbl}>Learned</div>{twoCol(rfield('Book','book'), rfield('AI','ai'))}</div>
+              <div style={box}><div style={lbl}>Workflows</div>{twoCol(rfield('Automation','automation'), rfield('Improved','improved'))}</div>
+              <div style={box}><div style={lbl}>Top Accomplishments</div>{rnum('acc',0)}{rnum('acc',1)}{rnum('acc',2)}{rnum('acc',3)}</div>
+              <div style={box}>{rfield('Next Month Target','target',true)}{rfield('Biggest Lesson','lesson',true)}</div>
+              {saveBtn}
             </>
           ) : (
             <>
@@ -858,7 +875,11 @@
                   <Stat label="Avg Sleep" value={A.avgSleep} />
                 </div>
               </div>
-              {coming}
+              <div style={box}><div style={lbl}>Jobs</div>{twoCol(rfield('Tasks','tasks'), rfield('Revenue','revenue'))}</div>
+              <div style={box}><div style={lbl}>Top 3 Accomplishments</div>{rnum('acc',0)}{rnum('acc',1)}{rnum('acc',2)}</div>
+              <div style={box}>{rfield('Next Week Focus','focus',true)}</div>
+              <div style={box}><div style={lbl}>Adjustments</div>{rfield('To Stop','stop')}{rfield('To Start','start')}{rfield('To Continue','continue')}</div>
+              {saveBtn}
             </>
           )}
         </div>
