@@ -154,7 +154,7 @@
     const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const todayStr = () => ciFmt(new Date());
     const monthKey = d => d.slice(0, 7);
     const monthLbl = k => { const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; };
 
@@ -358,7 +358,7 @@
           {monthDates.length === 0
             ? <div style={{ color:'#374151', fontSize:13, textAlign:'center', padding:'32px 0' }}>No entries this month</div>
             : monthDates.map(dateStr => {
-                const e = entries[dateStr];
+                const e = entries[dateStr] || {};
                 const [yr,mo,dd] = dateStr.split('-');
                 const dt = new Date(+yr,+mo-1,+dd);
                 const lbl = DAYS[dt.getDay()]+', '+MONTHS[dt.getMonth()]+' '+dd;
@@ -430,11 +430,10 @@
       const total    = allDates.length;
 
       // Streak calc
-      const today    = todayStr();
       let streak     = 0;
       let d          = new Date();
       while (true) {
-        const key = d.toISOString().slice(0, 10);
+        const key = ciFmt(d);
         if (entries[key]) { streak++; d.setDate(d.getDate()-1); }
         else break;
       }
@@ -455,7 +454,7 @@
 
       // Top feeling (from the emotion field on entries)
       const emoCount = {};
-      allDates.forEach(d => { const em=(entries[d].emotion||'').trim(); if(em) emoCount[em.toLowerCase()]=(emoCount[em.toLowerCase()]||0)+1; });
+      allDates.forEach(d => { const ee=entries[d]||{}; const em=(ee.emotion||'').trim(); if(em) emoCount[em.toLowerCase()]=(emoCount[em.toLowerCase()]||0)+1; });
       const topEmo = Object.entries(emoCount).sort((a,b)=>b[1]-a[1])[0];
       const topFeeling = topEmo ? (topEmo[0].charAt(0).toUpperCase()+topEmo[0].slice(1)) : '—';
 
@@ -469,7 +468,7 @@
       // Last 30 days heatmap
       const last30 = Array.from({length:30},(_,i)=>{
         const dt = new Date(); dt.setDate(dt.getDate()-29+i);
-        const key = dt.toISOString().slice(0,10);
+        const key = ciFmt(dt);
         return { key, has: !!entries[key], day: dt.getDate() };
       });
 
