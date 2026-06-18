@@ -101,7 +101,6 @@
     // sync across devices. Restores on a fresh device. Fire-and-forget.
     var _bDoc = db.doc('users/' + uid + '/settings/habits_backup');
     var _bKeys = ['habits_v4', 'gym_v4', 'blocks_v4'];
-    function _bMatch(k){ return _bKeys.indexOf(k) >= 0; }
     function _bCollect(){ var d={}; _bKeys.forEach(function(k){ try{ var v=localStorage.getItem(k); if(v!==null) d[k]=v; }catch(e){} }); return d; }
     function _bHasLocal(){ for(var i=0;i<_bKeys.length;i++){ try{ if(localStorage.getItem(_bKeys[i])!==null) return true; }catch(e){} } return false; }
     var _bTimer=null,_bBusy=false;

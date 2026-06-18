@@ -15,9 +15,9 @@
   <script src="/firebase-config.js"></script>
   <script src="/shared/auth-guard.js"></script>
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -111,7 +111,12 @@
         var _mounted=false;
         function _go(){ if(_mounted) return; _mounted=true; document.getElementById('loading-screen').style.display='none'; tryMount(); window.journalScheduleBackup(); }
         setTimeout(_go, 3000);   // safety: never stay stuck on the loading screen
-        _bRestoreIfEmpty().then(function(restored){ if(restored){ location.reload(); return; } _go(); });
+        _bRestoreIfEmpty().then(function(restored){
+          var _alreadyRestored = false;
+          try { _alreadyRestored = sessionStorage.getItem('jnl_restored') === '1'; } catch(e){}
+          if(restored && !_alreadyRestored){ try { sessionStorage.setItem('jnl_restored','1'); } catch(e){} location.reload(); return; }
+          _go();
+        });
       });
     });
 
@@ -152,41 +157,6 @@
     const todayStr = () => new Date().toISOString().slice(0, 10);
     const monthKey = d => d.slice(0, 7);
     const monthLbl = k => { const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; };
-
-    const MOODS = [
-      { id:'locked',   label:'Locked In',  emoji:'🔥', color:'#ef4444' },
-      { id:'grinding', label:'Grinding',   emoji:'😤', color:'#C9A020' },
-      { id:'neutral',  label:'Neutral',    emoji:'😐', color:'#6b7280' },
-      { id:'offday',   label:'Off Day',    emoji:'😔', color:'#4b5563' },
-      { id:'grateful', label:'Grateful',   emoji:'🙏', color:GOLD },
-    ];
-    const getMood = id => MOODS.find(m=>m.id===id) || MOODS[2];
-    // Thin-line wireframe mood icons (match the Habits icon style; gold in gray so no color leak).
-    const MoodIcon = ({ id, color, size = 22 }) => {
-      const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
-      switch (id) {
-        case 'locked':   return <svg {...p}><path d="M12 2c.6 3 3 4 3 7a3 3 0 0 1-6 0c0-1.2.5-2 1-2.8C9 8 9 5.5 12 2z"/></svg>;
-        case 'grinding': return <svg {...p}><polyline points="13 2 4 14 12 14 11 22 20 10 12 10 13 2"/></svg>;
-        case 'neutral':  return <svg {...p}><circle cx="12" cy="12" r="9"/><line x1="8.5" y1="15" x2="15.5" y2="15"/></svg>;
-        case 'offday':   return <svg {...p}><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>;
-        case 'grateful': return <svg {...p}><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>;
-        default: return null;
-      }
-    };
-    const moodColor = m => (__GRAY ? '#C9A020' : (m.color || '#C9A020'));
-
-    const PROMPTS = [
-      "What are you grateful for today?",
-      "What's one win from today — no matter how small?",
-      "What challenged you? How did you respond?",
-      "What's one thing you'll do better tomorrow?",
-      "What did you do today that future Jeff would be proud of?",
-      "Who or what are you fighting for?",
-      "What scripture or quote is sitting with you right now?",
-      "What are you building toward?",
-      "Did you show up fully today?",
-      "What needs your attention that you've been avoiding?",
-    ];
 
     // ── STORAGE ───────────────────────────────────────────────────
     const KEY = 'journal_v1';
@@ -389,7 +359,6 @@
             ? <div style={{ color:'#374151', fontSize:13, textAlign:'center', padding:'32px 0' }}>No entries this month</div>
             : monthDates.map(dateStr => {
                 const e = entries[dateStr];
-                const mood = getMood(e.mood);
                 const [yr,mo,dd] = dateStr.split('-');
                 const dt = new Date(+yr,+mo-1,+dd);
                 const lbl = DAYS[dt.getDay()]+', '+MONTHS[dt.getMonth()]+' '+dd;
@@ -417,7 +386,6 @@
                           {(() => { const g=Array.isArray(e.gratitude)?e.gratitude.filter(Boolean)[0]:(typeof e.gratitude==='string'?e.gratitude:''); const p=e.workout||g||e.emotion||e.entry||''; return p ? (p.slice(0,60)+(p.length>60?'…':'')) : 'Tap to view'; })()}
                         </div>
                       </div>
-                      {e.mood && <MoodIcon id={mood.id} color={moodColor(mood)} size={18} />}
                       <span style={{ color:'#374151', fontSize:12 }}>{isOpen?'▲':'▼'}</span>
                     </button>
 
@@ -431,9 +399,8 @@
                           const list = (label, items) => items.length ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label>{items.map((x,i)=>(<div key={i} style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{i+1}</span>{x}</div>))}</div>) : null;
                           const affLine = (k,v) => v ? (<div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }} key={k}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{k}</span>{v}</div>) : null;
                           const anyNew = e.workout||g.length||acc.length||aff||e.anticipation||e.emotion||e.wastedTime;
-                          const anyOld = e.entry||e.wins||e.scripture||e.mood;
+                          const anyOld = e.entry||e.wins||e.scripture;
                           return (<>
-                            {e.mood && (<div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:14 }}><MoodIcon id={mood.id} color={moodColor(mood)} size={16} /><span style={{ color:NAVYL, fontSize:11, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase' }}>{mood.label}</span></div>)}
                             {text('Workout', e.workout)}
                             {list('Gratitude', g)}
                             {list('Accomplishments', acc)}
@@ -476,22 +443,21 @@
       let longest = 0, cur = 0;
       allDates.forEach((dt, i) => {
         if (i === 0) { cur = 1; return; }
-        const prev = new Date(allDates[i-1]);
-        const curr = new Date(dt);
+        const [py,pm,pd] = allDates[i-1].split('-');
+        const [cy,cm,cd] = dt.split('-');
+        const prev = new Date(+py,+pm-1,+pd);
+        const curr = new Date(+cy,+cm-1,+cd);
         const diff = (curr - prev) / 86400000;
         if (diff === 1) { cur++; longest = Math.max(longest, cur); }
         else { cur = 1; }
       });
       longest = Math.max(longest, cur, streak);
 
-      // Mood breakdown
-      const moodCount = {};
-      allDates.forEach(d => { const m=entries[d].mood; if(m) moodCount[m]=(moodCount[m]||0)+1; });
-      const topMood = Object.entries(moodCount).sort((a,b)=>b[1]-a[1])[0];
+      // Top feeling (from the emotion field on entries)
       const emoCount = {};
       allDates.forEach(d => { const em=(entries[d].emotion||'').trim(); if(em) emoCount[em.toLowerCase()]=(emoCount[em.toLowerCase()]||0)+1; });
       const topEmo = Object.entries(emoCount).sort((a,b)=>b[1]-a[1])[0];
-      const topFeeling = topMood ? getMood(topMood[0]).label : (topEmo ? (topEmo[0].charAt(0).toUpperCase()+topEmo[0].slice(1)) : '—');
+      const topFeeling = topEmo ? (topEmo[0].charAt(0).toUpperCase()+topEmo[0].slice(1)) : '—';
 
       // This month
       const now  = new Date();
@@ -561,32 +527,6 @@
             </div>
           </div>
 
-          {/* Mood breakdown */}
-          {Object.keys(moodCount).length > 0 && (
-            <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'15px' }}>
-              <Label>Mood Distribution</Label>
-              <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:9 }}>
-                {MOODS.filter(m=>moodCount[m.id]).map(m => {
-                  const count = moodCount[m.id] || 0;
-                  const pct   = total ? (count / total * 100) : 0;
-                  return (
-                    <div key={m.id}>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-                          <MoodIcon id={m.id} color={moodColor(m)} size={14} />
-                          <span style={{ color:'#d1d5db', fontSize:12, fontWeight:500 }}>{m.label}</span>
-                        </div>
-                        <span style={{ color:'#6b7280', fontSize:11 }}>{count}x · {pct.toFixed(0)}%</span>
-                      </div>
-                      <div style={{ height:3, background:'#161618', borderRadius:2 }}>
-                        <div style={{ height:'100%', width:pct+'%', background:`linear-gradient(90deg,${__GRAY?'#6b5618':'#2a4a80'},${NAVY})`, borderRadius:2, transition:'width 0.4s ease' }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       );
     }
@@ -744,31 +684,34 @@
       const elapsed=Math.max(1, dateKeys.filter(dk=>dk<=today).length || dateKeys.length);
       return { mrn,wrk,ngt,dayTotal, mrnAvg:Math.round(mrn/elapsed), wrkAvg:Math.round(wrk/elapsed), ngtAvg:Math.round(ngt/elapsed), dayAvg:Math.round(dayTotal/elapsed), spending, income, net:income-spending, workouts, avgWake:ciAvgTime(wake), avgSleep:ciAvgTime(slp) };
     }
+    // Hoisted to module scope so it isn't re-created on every CheckInView render.
+    const Stat=({label,value,sub})=>(
+      <div style={{ flex:1, textAlign:'center' }}>
+        <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{value}</div>
+        <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div>
+        {sub && <div style={{ fontSize:9, color:NAVYL, marginTop:2 }}>{sub}</div>}
+      </div>
+    );
     function CheckInView(){
       const [data,setData]=useState(null); const [loading,setLoading]=useState(true);
       const [period,setPeriod]=useState('week'); const [wOff,setWOff]=useState(0); const [mOff,setMOff]=useState(0);
       const [refl,setRefl]=useState({}); const [draft,setDraft]=useState({}); const [savedFlash,setSavedFlash]=useState(false);
       useEffect(()=>{ let on=true; loadTrackerData().then(d=>{ if(on){ setData(d); setLoading(false); } }).catch(()=>{ if(on) setLoading(false); }); return ()=>{on=false;}; },[]);
-      useEffect(()=>{ (async()=>{ try{ const v=await window.storage.get('checkin_reflections'); if(v&&typeof v==='object') setRefl(v); }catch(e){} })(); },[]);
       const isMonth=period==='month'; const offset=isMonth?mOff:wOff;
       const setOff=(v)=>{ const nv=Math.min(0,v); if(isMonth) setMOff(nv); else setWOff(nv); };
       const keys=isMonth?ciMonthKeys(mOff):ciWeekKeys(wOff);
       const A=data?ciAggregate(data,keys):null;
       const rKey = isMonth ? ('m_'+keys[0].slice(0,7)) : ('w_'+keys[0]);
-      useEffect(()=>{ setDraft(refl[rKey]||{}); },[rKey, refl]);
+      useEffect(()=>{ (async()=>{ try{ const v=await window.storage.get('checkin_reflections'); if(v&&typeof v==='object'){ setRefl(v); setDraft(v[rKey]||{}); } }catch(e){} })(); },[]);
+      // Load the saved reflection for the current period when navigating (rKey only — must NOT
+      // depend on `refl`, or every save/async-load would wipe the in-progress draft mid-typing).
+      useEffect(()=>{ setDraft(refl[rKey]||{}); },[rKey]);
       const title=isMonth?(ciMonthLabel(mOff).toUpperCase()+' CHECK-IN'):'WEEKLY CHECK-IN';
       const rangeLbl=isMonth?(keys.length+' days'):ciRange(keys[0],keys[6]);
       const pctOf=(a,b)=> b>0?Math.round(a/b*100):0;
       const box={ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 16px', marginBottom:12 };
       const lbl={ fontSize:10, letterSpacing:'0.14em', color:NAVYL, textTransform:'uppercase', marginBottom:8 };
       const navBtn={ background:'transparent', color:NAVYL, border:`1px solid ${BR}`, borderRadius:8, padding:'2px 12px', fontSize:18, cursor:'pointer', lineHeight:1.4 };
-      const Stat=({label,value,sub})=>(
-        <div style={{ flex:1, textAlign:'center' }}>
-          <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{value}</div>
-          <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div>
-          {sub && <div style={{ fontSize:9, color:NAVYL, marginTop:2 }}>{sub}</div>}
-        </div>
-      );
       const note=(<div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>);
       const inp={ width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(107,143,197,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
       const ta={ ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
