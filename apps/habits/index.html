@@ -23,9 +23,9 @@
   </script>
 
   <!-- React + Babel -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -67,37 +67,31 @@
 
     var uid = user.uid;
     var db = firebase.firestore();
-    var COLL = 'users/' + uid + '/app_storage';
 
     // window.storage — API expected by the React components.
-    // localStorage-first: app_storage is blocked by Firestore rules, so reads/writes
-    // fall back to localStorage (the reliable on-device store). The silent cloud
-    // backup below mirrors that localStorage to an allowed Firestore location.
+    // localStorage-only: the old app_storage Firestore path was blocked by security
+    // rules and every call was caught/discarded, so it has been removed. localStorage is
+    // the on-device source of truth; the silent cloud backup below mirrors it to an
+    // allowed Firestore location (users/{uid}/settings/habits_backup) for cross-device sync.
     window.storage = {
       get: function(key) {
-        return db.doc(COLL + '/' + key).get().then(function(snap) {
-          if (snap.exists) return snap.data();
-          var v = localStorage.getItem(key); return v !== null ? { value: v } : null;
-        }).catch(function() {
-          var v = localStorage.getItem(key); return v !== null ? { value: v } : null;
-        });
+        var v = localStorage.getItem(key);
+        return Promise.resolve(v !== null ? { value: v } : null);
       },
       set: function(key, value) {
         try { localStorage.setItem(key, value); } catch (e) {}
         try { window.habitsScheduleBackup && window.habitsScheduleBackup(); } catch (e) {}
-        return db.doc(COLL + '/' + key).set({ value: value }).then(function() {
-          return true;
-        }).catch(function() { return true; });
+        return Promise.resolve(true);
       },
       delete: function(key) {
         try { localStorage.removeItem(key); } catch (e) {}
         try { window.habitsScheduleBackup && window.habitsScheduleBackup(); } catch (e) {}
-        return db.doc(COLL + '/' + key).delete().catch(function(){});
+        return Promise.resolve(true);
       },
       list: function() {
-        return db.collection(COLL).get().then(function(snap) {
-          return snap.docs.map(function(d) { return d.id; });
-        }).catch(function() { return []; });
+        var keys = [];
+        try { for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch (e) {}
+        return Promise.resolve(keys);
       }
     };
 
@@ -113,13 +107,33 @@
     var _bTimer=null,_bBusy=false;
     window.habitsScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
     function _bNow(){ if(_bBusy) return; _bBusy=true; try{ _bDoc.set({data:_bCollect(),ts:Date.now(),v:1}).then(function(){_bBusy=false;}).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+    // Flush a pending debounced backup immediately (used on tab close so the last change isn't dropped).
+    function _bFlush(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); }
+    window.addEventListener('pagehide', _bFlush);
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') _bFlush(); });
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
 
     // Restore first (download on fresh device), then show app; seed cloud on open.
     var _revealed=false;
-    function _reveal(){ if(_revealed) return; _revealed=true; document.getElementById('auth-loading').style.display='none'; document.getElementById('root').style.display='block'; setTimeout(mountApp, 50); window.habitsScheduleBackup(); }
-    setTimeout(_reveal, 3000);   // safety: never stay stuck on the loading screen
-    _bRestoreIfEmpty().then(function(restored){ if(restored){ location.reload(); return; } _reveal(); });
+    var _safetyTimer=null;
+    function _reveal(){ if(_revealed) return; _revealed=true; if(_safetyTimer){ clearTimeout(_safetyTimer); _safetyTimer=null; } document.getElementById('auth-loading').style.display='none'; document.getElementById('root').style.display='block'; setTimeout(mountApp, 50); window.habitsScheduleBackup(); }
+    _safetyTimer = setTimeout(_reveal, 3000);   // safety: never stay stuck on the loading screen
+    _bRestoreIfEmpty().then(function(restored){
+      // Cancel the safety-reveal first so it can't fire mid-reload and race the restore.
+      if(_safetyTimer){ clearTimeout(_safetyTimer); _safetyTimer=null; }
+      if(restored){
+        // Loop guard: a device where localStorage writes silently fail would restore →
+        // reload → still-empty → restore forever. Reload at most once per session.
+        var _looped=false;
+        try{ _looped = sessionStorage.getItem('habits_restore_reloaded') === '1'; }catch(e){}
+        if(!_looped){
+          try{ sessionStorage.setItem('habits_restore_reloaded','1'); }catch(e){}
+          location.reload();
+          return;
+        }
+      }
+      _reveal();
+    });
   });
 
   function mountApp() {
@@ -272,13 +286,15 @@ function HabitTracker() {
   const toggleHabit = (habitId) => toggleHabitForDate(selKey, habitId);
 
   const toggleGym = () => { const next = { ...gymDone }; next[selKey] = !next[selKey]; if (!next[selKey]) delete next[selKey]; saveGym(next); };
-  const renameBlock = (k, v) => { const n = { ...blocks }; n[k] = { ...n[k], name: v }; saveBlocks(n); };
-  const updateBlockIcon = (k, v) => { const n = { ...blocks }; n[k] = { ...n[k], icon: v }; saveBlocks(n); };
-  const updateBlockTarget = (k, v) => { const n = { ...blocks }; n[k] = { ...n[k], target: parseInt(v) || 0 }; saveBlocks(n); };
-  const renameHabit = (bk, hid, v) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, label: v } : h) }; saveBlocks(n); };
-  const updateHabitEmoji = (bk, hid, v) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, emoji: v } : h) }; saveBlocks(n); };
-  const addHabit = (bk) => { const n = { ...blocks }; const id = `h_${Date.now()}`; n[bk] = { ...n[bk], habits: [...n[bk].habits, { id, label: 'New habit', emoji: '✨' }] }; saveBlocks(n); };
-  const deleteHabit = (bk, hid) => { const n = { ...blocks }; n[bk] = { ...n[bk], habits: n[bk].habits.filter(h => h.id !== hid) }; saveBlocks(n); };
+  // NOTE: block mutators always read from blocksRaw (the full, uncapped data), never the
+  // Core-capped `blocks` view. Mutating `blocks` and persisting it would wipe habits 4–5 in Core.
+  const renameBlock = (k, v) => { const n = { ...blocksRaw }; n[k] = { ...n[k], name: v }; saveBlocks(n); };
+  const updateBlockIcon = (k, v) => { const n = { ...blocksRaw }; n[k] = { ...n[k], icon: v }; saveBlocks(n); };
+  const updateBlockTarget = (k, v) => { const n = { ...blocksRaw }; n[k] = { ...n[k], target: parseInt(v) || 0 }; saveBlocks(n); };
+  const renameHabit = (bk, hid, v) => { const n = { ...blocksRaw }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, label: v } : h) }; saveBlocks(n); };
+  const updateHabitEmoji = (bk, hid, v) => { const n = { ...blocksRaw }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, emoji: v } : h) }; saveBlocks(n); };
+  const addHabit = (bk) => { const n = { ...blocksRaw }; const id = `h_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`; n[bk] = { ...n[bk], habits: [...n[bk].habits, { id, label: 'New habit', emoji: '✨' }] }; saveBlocks(n); };
+  const deleteHabit = (bk, hid) => { const n = { ...blocksRaw }; n[bk] = { ...n[bk], habits: n[bk].habits.filter(h => h.id !== hid) }; saveBlocks(n); };
   const askConfirm = (message, onYes) => setConfirmDialog({ message, onYes });
   const resetToDefault = () => askConfirm('Reset all habits and block names to defaults? Your check-in data stays.', () => saveBlocks(DEFAULT_BLOCKS));
 
@@ -385,8 +401,6 @@ function HabitTracker() {
   const BAR_TOP   = __GRAY ? 'linear-gradient(180deg,#e8e8e8 0%,#bdbdbd 100%)' : 'linear-gradient(180deg,#ff9aa3 0%,#ff7a87 100%)';
   const BAR_FOOT  = __GRAY ? '#2a2a2a' : '#5a0e16';
   const BAR_FOOT2 = __GRAY ? '#2a2a2a' : '#3a0610';
-
-  const dow = selectedDate.getDay();
 
   if (!loaded) {
     return (
@@ -525,8 +539,9 @@ function HabitTracker() {
                 );
               })}
               {(() => {
-                const dayData = habits[selKey] || {};
-                const totalDone = Object.values(dayData).filter(Boolean).length;
+                // Count only currently-defined habits — not stale keys left by deleted habits,
+                // which could otherwise push totalDone past TOTAL_HABITS and break isPerfect.
+                const totalDone = getDayCompletionAll(selKey);
                 const isPerfect = totalDone === TOTAL_HABITS;
                 return (
                   <div style={{ textAlign: 'center', padding: '10px 4px', background: '#0a0a0a', borderRadius: '10px', border: `1px solid ${isPerfect ? PRIMARY : BORDER}`, boxShadow: isPerfect ? `0 0 12px ${PRIMARY_GLOW}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
@@ -860,9 +875,6 @@ function HabitTracker() {
 }
 
 // ─── Style helpers ───
-function tabStyle(active, color, font, activeText = '#fff') {
-  return { padding: '12px 4px', background: active ? color : 'transparent', color: active ? activeText : color, border: `1px solid ${color}`, borderRadius: '8px', fontFamily: font, fontSize: '11px', letterSpacing: '1.5px', fontWeight: 600, cursor: 'pointer' };
-}
 function blockTabStyle(active, primary, border, font, text) {
   return { padding: '6px 4px', background: active ? primary : 'transparent', color: active ? '#fff' : text, border: `1px solid ${active ? primary : border}`, borderRadius: '8px', fontFamily: font, fontSize: '11px', letterSpacing: '2px', fontWeight: 700, cursor: 'pointer' };
 }
@@ -954,7 +966,7 @@ function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap
         <div style={{ padding: '6px 12px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '8px', textAlign: 'center', minWidth: '72px' }}>
           <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1.5px' }}>AVERAGE</div>
           <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700, lineHeight: 1.1 }}>
-            {(() => { const nz = bars.filter(b => b.value > 0); const s = nz.reduce((x,b) => x+b.value, 0); const avg = nz.length > 0 ? s/nz.length : 0; return `${Math.round(avg)} / ${maxY}`; })()}
+            {(() => { const s = bars.reduce((x,b) => x+b.value, 0); const avg = bars.length > 0 ? s/bars.length : 0; return `${Math.round(avg)} / ${maxY}`; })()}
           </div>
         </div>
       </div>

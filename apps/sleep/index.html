@@ -18,13 +18,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@300;500;700&family=Orbitron:wght@400;700;900&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet"/>
 
   <!-- React + ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <!-- Recharts removed: charts are now pure SVG (no CDN needed) -->
   <!-- Lucide React -->
   <script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.js"></script>
   <!-- Babel JSX compiler -->
-  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 
   <!-- Navigation helper (global) -->
   <script>
@@ -165,13 +165,14 @@
     var _bTimer=null,_bBusy=false;
     window.sleepScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
     function _bNow(){ if(_bBusy) return; _bBusy=true; try{ _bDoc.set({data:_bCollect(),ts:Date.now(),v:1}).then(function(){_bBusy=false;}).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
-    function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
+    function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
 
     // Restore first (download on fresh device), then reveal; seed cloud on open.
     var _revealed=false;
     function _reveal(){ if(_revealed) return; _revealed=true; document.getElementById('auth-loading').style.display='none'; document.getElementById('root').style.display='block'; window.sleepScheduleBackup(); }
     setTimeout(_reveal, 3000);   // safety: never stay stuck on the loading screen
-    _bRestoreIfEmpty().then(function(restored){ if(restored){ location.reload(); return; } _reveal(); });
+    var _bDidReload=false; try{ _bDidReload = sessionStorage.getItem('sleep_restored')==='1'; }catch(e){}
+    _bRestoreIfEmpty().then(function(restored){ if(restored && !_bDidReload){ try{ sessionStorage.setItem('sleep_restored','1'); }catch(e){} location.reload(); return; } _reveal(); });
   });
 })();
 </script>
@@ -193,8 +194,6 @@ const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== wind
 const HISTORY_CAP_CUTOFF = (()=>{ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
 const PURPLE = __GRAY ? '#f5f5f5' : '#9b6bc9';
 const GOLD   = __GRAY ? '#C9A020' : '#C9A020';
-const PRGB   = __GRAY ? '150,150,150' : '155,107,201';
-const GRGB   = __GRAY ? '201,160,32' : '201,160,32';
 const LBL    = __GRAY ? '#C9A020' : '#a684cc';   // labels: gold in gray, PURPLE in colorful
 const BRDR   = __GRAY ? '150,150,150' : '155,107,201';   // card borders: neutral in gray, PURPLE in colorful
 const BAR_TOP = __GRAY ? '#C9A020' : '#c9a3eb';   // bar gradient top: gold in gray, lilac in colorful
@@ -243,10 +242,8 @@ const storage = {
   async set(key, value) {
     try {
       localStorage.setItem(LS_PREFIX + key, value);
+      // Single cloud path: the debounced sleep_backup mirror (see sleepScheduleBackup).
       try { window.sleepScheduleBackup && window.sleepScheduleBackup(); } catch (e) {}
-      if (typeof window !== "undefined" && window.storage?.set) {
-        try { await window.storage.set(key, value); } catch (e) {}
-      }
       return true;
     } catch (e) {
       return false;
@@ -254,10 +251,8 @@ const storage = {
   },
   async delete(key) {
     try { localStorage.removeItem(LS_PREFIX + key); } catch (e) {}
+    // Single cloud path: the debounced sleep_backup mirror (see sleepScheduleBackup).
     try { window.sleepScheduleBackup && window.sleepScheduleBackup(); } catch (e) {}
-    if (typeof window !== "undefined" && window.storage?.delete) {
-      try { await window.storage.delete(key); } catch (e) {}
-    }
   },
   async list() {
     const keys = [];
@@ -283,9 +278,6 @@ function SleepTracker() {
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [expandedMonths, setExpandedMonths] = useState({});
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [form, setForm] = useState(() => {
     const d = new Date();
     const y = d.getFullYear();
@@ -380,13 +372,9 @@ function SleepTracker() {
     return `${y}-${m}-${day}`;
   };
 
-  const fmt12 = (t) => {
-    if (!t) return "";
-    const [h, m] = t.split(":").map(Number);
-    const period = h >= 12 ? "PM" : "AM";
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m).padStart(2, "0")} ${period}`;
-  };
+  // Single 12-hour time formatter — delegates to the module-level _fmt12.
+  // (Callers always guard for empty values, so _fmt12's "—" fallback is never hit here.)
+  const fmt12 = _fmt12;
 
   const fmt12Short = (t) => {
     if (!t) return "";
@@ -450,6 +438,7 @@ function SleepTracker() {
     const [wh, wm] = wake.split(":").map(Number);
     let mins = wh * 60 + wm - (sh * 60 + sm);
     if (mins < 0) mins += 24 * 60;
+    if (mins > 16 * 60) return 0;   // >16h is a data-entry slip — treat as invalid
     return +(mins / 60).toFixed(2);
   };
 
@@ -483,12 +472,6 @@ function SleepTracker() {
 
   const last30 = enriched.slice(-30);
   const last7  = enriched.slice(-7);
-
-  const weekdayMap = useMemo(() => {
-    const m = {};
-    enriched.forEach((e) => { m[e.label] = e.weekday; });
-    return m;
-  }, [enriched]);
 
   const avg = (arr, key) => {
     const vals = arr.map((x) => x[key]).filter((v) => v !== undefined && v !== null && !isNaN(v));
@@ -1004,8 +987,12 @@ function _fmt12(t) {
 
 /* StatBlock — 7-day summary stat */
 const StatBlock = ({ label, value, sub, trend, good }) => {
-  const arrow = trend === "up" ? (good ? "↑" : "↓") : trend === "down" ? (good ? "↓" : "↑") : "—";
-  const arrowColor = (trend === "up" && good) || (trend === "down" && !good) ? UP_CLR : trend === "flat" ? "#5a5264" : DOWN_CLR;
+  // `good` names which DIRECTION is desirable ("up" or "down"). Color the arrow
+  // green when the trend moves the desired way, red when it moves against it.
+  const goodDir = good === "down" ? "down" : "up";   // default: rising is good
+  const arrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "—";
+  const isGood = trend === goodDir;
+  const arrowColor = trend === "flat" ? "#5a5264" : (isGood ? UP_CLR : DOWN_CLR);
   return (
     <div style={{
       flex: "1 1 calc(50% - 6px)", minWidth: 120,
@@ -1085,12 +1072,13 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
-    {/* Row 2: Recovery · Energy · Soreness · Clarity */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12.48 }}>
+    {/* Row 2: Recovery · Energy · Soreness · Clarity · Restlessness */}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12.48 }}>
       <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
+      <LogBlock label="Restless" value={e.restlessness != null ? `${e.restlessness}/10` : "—"} />
     </div>
     {(e.restingHR || e.hrv || e.weight) && (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginTop: 12.48 }}>
@@ -1102,32 +1090,6 @@ const LogCard = ({ e, onEdit, onDelete }) => (
   </div>
 );
 
-/* Isometric3DBar — custom bar shape */
-const Isometric3DBar = (props) => {
-  const { x, y, width, height } = props;
-  if (!height || height <= 0) return null;
-  const d = 4;
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} fill={props.fill || PURPLE} />
-      <polygon points={`${x},${y} ${x+d},${y-d} ${x+width+d},${y-d} ${x+width},${y}`} fill="rgba(255,255,255,0.15)" />
-      <polygon points={`${x+width},${y} ${x+width+d},${y-d} ${x+width+d},${y+height-d} ${x+width},${y+height}`} fill="rgba(0,0,0,0.25)" />
-    </g>
-  );
-};
-
-/* DateTick — custom XAxis tick */
-const DateTick = ({ x, y, payload, weekdayMap }) => {
-  if (!payload?.value) return null;
-  const wd = weekdayMap?.[payload.value];
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={14} textAnchor="middle" fill="#6a6a6a" fontSize={14} fontFamily="'Inter', system-ui, -apple-system, sans-serif">
-        {wd ? wd.slice(0, 1) : payload.value.slice(-2)}
-      </text>
-    </g>
-  );
-};
 
 /* ── Pure SVG chart components — no external library, always renders ── */
 const SvgChart = (() => {
@@ -1216,20 +1178,6 @@ const ChartCard = ({ title, sub, children }) => (
   </div>
 );
 
-/* CustomTooltip */
-const CustomTooltip = ({ active, payload, label, suffix = "" }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{ background: "#141416", border: "1px solid rgba(150,150,150,0.3)",
-      borderRadius: 6, padding: "8px 12px", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 10 }}>
-      <div style={{ color: LBL, marginBottom: 4 }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color || GOLD }}>{p.name}: {p.value}{suffix}</div>
-      ))}
-    </div>
-  );
-};
-
 /* ══════════════════════════════════════════════════════════
    STYLES
    ══════════════════════════════════════════════════════════ */
@@ -1240,27 +1188,10 @@ const styles = {
 
   /* Header / brand block */
   header:      { marginBottom: 20 },
-  mpsLogoWrap: { background: "rgba(201,160,32,0.05)", border: "1px solid rgba(201,160,32,0.2)",
-    borderRadius: 12, padding: "18px 20px 14px", textAlign: "center", marginBottom: 10 },
-  mpsLogo:     { fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontStyle: "italic",
-    fontWeight: 900, fontSize: 52, letterSpacing: 6, lineHeight: 1,
-    background: "linear-gradient(160deg, #ffffff 0%, #fff8e0 30%, #C9A020 60%, #7a5020 100%)",
-    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-    filter: "drop-shadow(0 0 14px rgba(201,160,32,0.5))", display: "inline-block" },
-  mpsDivider:  { height: 1, background: "linear-gradient(90deg, transparent, rgba(201,160,32,0.5), transparent)", margin: "8px 0 6px" },
-  mpsTagline:  { fontSize: 9, letterSpacing: "0.32em", color: "rgba(201,160,32,0.6)",
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif", textTransform: "uppercase", marginBottom: 4 },
-  appName:     { fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 20,
-    letterSpacing: 4, color: "#e8d5b0" },
   subtitle:    { fontSize: 10, color: "#4a4255", fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" },
-  actionRow:   { display: "flex", gap: 8, flexWrap: "wrap" },
   btnPrimary:  { flex: 1, background: "rgba(201,160,32,0.12)", border: "1px solid rgba(201,160,32,0.4)",
     color: GOLD, borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.1em", cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
-  btnPurple:   { flex: 1, background: "rgba(150,150,150,0.1)", border: "1px solid rgba(150,150,150,0.3)",
-    color: PURPLE, borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
     fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.1em", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
 
@@ -1288,20 +1219,7 @@ const styles = {
   /* Charts grid */
   chartsGrid:  { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 12px" },
 
-  /* Insights */
-  insightsCard: { background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.15)",
-    borderRadius: 12, padding: "16px", marginBottom: 12 },
-
   /* Log tab */
-  logRow:      { display: "flex", alignItems: "center", gap: 10, padding: "12px 0",
-    borderBottom: "1px solid rgba(150,150,150,0.08)" },
-  logLeft:     { flex: 1 },
-  logDate:     { fontSize: 13, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#e8d5b0" },
-  logSub:      { fontSize: 10, color: "#4a4255", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", marginTop: 2 },
-  logStats:    { display: "flex", gap: 8, fontSize: 11, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" },
-  iconBtn:     { background: "transparent", border: "1px solid rgba(150,150,150,0.2)",
-    borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: LBL,
-    display: "flex", alignItems: "center" },
   empty:       { fontSize: 11, color: "#4a4255", fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     textAlign: "center", padding: "24px 0", letterSpacing: "0.1em" },
 };

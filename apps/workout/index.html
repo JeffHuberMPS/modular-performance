@@ -1181,27 +1181,21 @@ const SPLIT_EXERCISE_LIBRARY = {
 };
 // Exercise library per skill block (for skills that have flat preset drill lists)
 // Series-based skills (Kickboxing, Sprints) load their drills via SKILL_CATALOG.subDrills
-const SKILL_EXERCISE_LIBRARY = {};
-const DEFAULT_SCHEDULE = {
-  0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []
-};
 const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 // Storage version - bump to clear old data
 const STORAGE_VERSION = 'v3';
 const K_STATE = `mps_${STORAGE_VERSION}_state`;
 const K_HISTORY = `mps_${STORAGE_VERSION}_history`;
 const K_PRS = `mps_${STORAGE_VERSION}_prs`;
-const K_TEMPLATE = `mps_${STORAGE_VERSION}_template`;
 const K_LAST_BACKUP = `mps_${STORAGE_VERSION}_last_backup`;
 const K_BACKUP_COUNT = `mps_${STORAGE_VERSION}_backup_count`;
 // ============ STATE ============
 let state = { selectedDate: getTodayStr(), days: {}, targetRounds: 3 };
 let history = [];
 let prs = {};
-let weeklyTemplate = deepCopy(DEFAULT_SCHEDULE);
 let lastSessionCache = {};
 function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
-function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+function getTodayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function getDayOfWeek(dateStr) { return new Date(dateStr + 'T00:00:00').getDay(); }
 // ============ STORAGE (with localStorage fallback) ============
 // Tries window.storage first (Claude artifact env), falls back to localStorage (standalone browser)
@@ -1227,7 +1221,7 @@ async function safeGet(key) {
 }
 async function safeSet(key, val) {
   if (useLocalStorage) {
-    try { localStorage.setItem(key, val); } catch (e) { console.error('localStorage save fail', e); }
+    try { localStorage.setItem(key, val); } catch (e) { console.error('localStorage save fail', e); try { toast('Save failed — storage full.'); } catch (e2) {} }
     try { scheduleCloudBackup(); } catch (e) {}
     return;
   }
@@ -1236,7 +1230,7 @@ async function safeSet(key, val) {
   } catch (e) {
     // window.storage failed, switch to localStorage and retry
     useLocalStorage = true;
-    try { localStorage.setItem(key, val); } catch (e2) { console.error('localStorage save fail', e2); }
+    try { localStorage.setItem(key, val); } catch (e2) { console.error('localStorage save fail', e2); try { toast('Save failed — storage full.'); } catch (e3) {} }
   }
   try { scheduleCloudBackup(); } catch (e) {}
 }
@@ -1261,11 +1255,14 @@ function _cloudDB()  { try { return (window.parent && window.parent.firebase) ? 
 function _cloudUID() { try { return window.parent.firebase.auth().currentUser.uid; } catch (e) { return null; } }
 function _cloudDoc() { const db = _cloudDB(), uid = _cloudUID(); return (db && uid) ? db.doc('users/' + uid + '/settings/workout_backup') : null; }
 function _collectLocal() {
+  // Build the backup payload from the in-memory data (the same objects safeSet
+  // persists) rather than reading localStorage — saves go through window.storage,
+  // so localStorage may be empty and a localStorage-only read could back up nothing.
   const data = {};
-  [K_STATE, K_HISTORY, K_PRS, K_TEMPLATE, (typeof K_CONDITIONING !== 'undefined' ? K_CONDITIONING : null)].forEach(k => {
-    if (!k) return;
-    try { const v = localStorage.getItem(k); if (v !== null) data[k] = v; } catch (e) {}
-  });
+  try { data[K_STATE] = JSON.stringify(state); } catch (e) {}
+  try { data[K_HISTORY] = JSON.stringify(history); } catch (e) {}
+  try { data[K_PRS] = JSON.stringify(prs); } catch (e) {}
+  try { if (typeof K_CONDITIONING !== 'undefined' && typeof conditioningLogs !== 'undefined') data[K_CONDITIONING] = JSON.stringify(conditioningLogs); } catch (e) {}
   return data;
 }
 let _cloudTimer = null, _cloudBusy = false;
@@ -1289,7 +1286,10 @@ async function cloudBackupNow() {
     return true;
   } catch (e) { _cloudBusy = false; return false; }
 }
+const K_RESTORE_FLAG = 'mps_restore_attempted';
 async function cloudRestoreIfEmpty() {
+  // Guard against an infinite reload loop: only attempt a restore once per session.
+  try { if (sessionStorage.getItem(K_RESTORE_FLAG)) return false; } catch (e) {}
   const doc = _cloudDoc();
   if (!doc) return false;
   let hasLocal = false;
@@ -1321,8 +1321,6 @@ async function loadAll() {
   if (h) { try { history = JSON.parse(h.value); } catch (e) {} }
   const p = await safeGet(K_PRS);
   if (p) { try { prs = JSON.parse(p.value); } catch (e) {} }
-  const w = await safeGet(K_TEMPLATE);
-  if (w) { try { weeklyTemplate = JSON.parse(w.value); } catch (e) {} }
   // Load conditioning logs
   await loadConditioning();
   // ONE-TIME MIGRATION: fix legacy history records where round count = total sets
@@ -1421,7 +1419,6 @@ async function saveHistory() {
   }
 }
 async function savePRs() { await safeSet(K_PRS, JSON.stringify(prs)); }
-async function saveTemplate() { await safeSet(K_TEMPLATE, JSON.stringify(weeklyTemplate)); }
 // ============ DAY INIT ============
 function ensureDay(dateStr) {
   if (!state.days[dateStr]) {
@@ -1638,7 +1635,7 @@ function renderBlocks(type, blocks) {
       <button class="icon-btn" title="Remove">✕</button>
     `;
     const nameInput = header.querySelector('.split-name');
-    nameInput.addEventListener('change', () => { block.name = nameInput.value; saveState(); persistTemplate(type); });
+    nameInput.addEventListener('change', () => { block.name = nameInput.value; saveState(); });
     header.querySelector('.icon-btn').addEventListener('click', () => removeBlock(type, blockIdx));
     card.appendChild(header);
     const exContainer = document.createElement('div');
@@ -1673,7 +1670,7 @@ function renderBlocks(type, blocks) {
     };
     const library = type === 'splits'
       ? (SPLIT_EXERCISE_LIBRARY[block.name] || [])
-      : (SKILL_EXERCISE_LIBRARY[block.name] || []);
+      : [];
     const existingNames = new Set(block.exercises.map(e => e.name));
     const available = library.filter(name => !existingNames.has(name));
     if (available.length > 0) {
@@ -1744,7 +1741,7 @@ function renderExercises(type, blockIdx, exercises, container, blockName) {
       <button class="icon-btn" title="Remove">✕</button>
     `;
     head.querySelector('input').addEventListener('change', (e) => {
-      ex.name = e.target.value; saveState(); persistTemplate(type);
+      ex.name = e.target.value; saveState();
     });
     head.querySelector('button').addEventListener('click', () => removeExercise(type, blockIdx, exIdx));
     div.appendChild(head);
@@ -1822,10 +1819,6 @@ function renderExercises(type, blockIdx, exercises, container, blockName) {
   });
 }
 // ============ MUTATIONS ============
-function persistTemplate(type) {
-  // No-op: templates removed in favor of Copy from... feature.
-  // Days start blank. User explicitly copies past workouts.
-}
 function showSplitPicker() {
   const container = document.getElementById('split-picker-container');
   if (container.querySelector('.split-picker')) { container.innerHTML = ''; return; } // toggle
@@ -1877,16 +1870,10 @@ function confirmAddSplit(name) {
   doAddSplit(name);
 }
 function doAddSplit(finalName) {
-  const dow = getDayOfWeek(state.selectedDate);
-  const templateMatch = (weeklyTemplate[dow] || []).find(t => t.name === finalName);
-  const exercises = templateMatch
-    ? (templateMatch.exercises || []).map(ex => buildFreshExercise(ex.name, ex.targetSets || 3, ex.targetReps || ''))
-    : [];
   getCurrentDay().splits.push({
-    id: Date.now() + Math.random(), name: finalName, type: 'split', exercises
+    id: Date.now() + Math.random(), name: finalName, type: 'split', exercises: []
   });
   saveState();
-  persistTemplate('splits');
   document.getElementById('split-picker-container').innerHTML = '';
   render();
   toast(`Added ${finalName}`);
@@ -2003,18 +1990,18 @@ function buildRoundsExercise(label, defaultRounds) {
 }
 function removeBlock(type, blockIdx) {
   getBlocks(type).splice(blockIdx, 1);
-  saveState(); if (type === 'splits') persistTemplate('splits'); render();
+  saveState(); render();
 }
 function addExercise(type, blockIdx, name, targetSets, targetReps) {
   if (!name) return;
   const ts = Math.max(1, Math.min(10, targetSets || 3));
   getBlocks(type)[blockIdx].exercises.push(buildFreshExercise(name, ts, targetReps));
-  saveState(); if (type === 'splits') persistTemplate('splits'); render();
+  saveState(); render();
   toast(`Added ${name}`);
 }
 function removeExercise(type, blockIdx, exIdx) {
   getBlocks(type)[blockIdx].exercises.splice(exIdx, 1);
-  saveState(); if (type === 'splits') persistTemplate('splits'); render();
+  saveState(); render();
 }
 function toggleSet(type, blockIdx, exIdx, setIdx) {
   const ex = getBlocks(type)[blockIdx].exercises[exIdx];
@@ -2156,7 +2143,7 @@ async function endWorkout() {
         totalVol += w * r;
         if (w > 0) {
           const existing = prs[e.name];
-          const existingWeight = (typeof existing === 'object' && existing !== null) ? existing.weight : existing;
+          const existingWeight = parseFloat((typeof existing === 'object' && existing !== null) ? existing.weight : existing) || 0;
           if (!existing || w > existingWeight) {
             prs[e.name] = { weight: w, date: state.selectedDate };
           }
@@ -2542,9 +2529,8 @@ async function resetAll() {
     await safeDelete(K_STATE);
     await safeDelete(K_HISTORY);
     await safeDelete(K_PRS);
-    await safeDelete(K_TEMPLATE);
     state = { selectedDate: getTodayStr(), days: {}, targetRounds: 3 };
-    history = []; prs = {}; weeklyTemplate = deepCopy(DEFAULT_SCHEDULE);
+    history = []; prs = {};
     lastSessionCache = {};
     overlay.remove();
     render();
@@ -2798,13 +2784,15 @@ function renderHistory() {
   c.querySelectorAll('.history-card[data-cond-idx]').forEach(card => {
     card.addEventListener('click', () => {
       const idx = parseInt(card.dataset.condIdx, 10);
-      if (isNaN(idx) || !conditioningLogs[idx]) return;
-      showConditioningDeleteOverlay(idx);
+      const entry = (!isNaN(idx)) ? conditioningLogs[idx] : null;
+      if (!entry) return;
+      showConditioningDeleteOverlay(entry);
     });
   });
 }
-function showConditioningDeleteOverlay(idx) {
-  const c = conditioningLogs[idx];
+function showConditioningDeleteOverlay(c) {
+  // Accepts the conditioning entry object (stable identity) so the right entry is
+  // deleted even if the array order/length changed since render.
   if (!c) return;
   const existing = document.getElementById('cond-delete-overlay');
   if (existing) existing.remove();
@@ -2841,7 +2829,8 @@ function showConditioningDeleteOverlay(idx) {
   document.body.appendChild(overlay);
   document.getElementById('cond-del-cancel').addEventListener('click', () => overlay.remove());
   document.getElementById('cond-del-confirm').addEventListener('click', async () => {
-    conditioningLogs.splice(idx, 1);
+    const idx = conditioningLogs.indexOf(c);
+    if (idx !== -1) conditioningLogs.splice(idx, 1);
     await saveConditioning();
     overlay.remove();
     toast('Entry deleted');
@@ -3238,6 +3227,17 @@ function renderPRs() {
 // Week 1 starts Sunday, May 3, 2026
 const PROGRAM_START_DATE = '2026-05-03';
 const PROGRAM_WEEKS = 6;
+// Rolling 6-week chart window: the Sunday that starts the 6-week window ending with
+// THIS week (so today always lands in week 6 / the last bucket). Replaces the old
+// hardcoded program-start anchor so the charts never go stale after the program.
+function sixWeekWindowStart() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const thisWeekStart = new Date(today);
+  thisWeekStart.setDate(today.getDate() - today.getDay()); // back up to Sunday
+  thisWeekStart.setDate(thisWeekStart.getDate() - 5 * 7);  // 5 weeks earlier → 6-week span
+  thisWeekStart.setHours(0, 0, 0, 0);
+  return thisWeekStart;
+}
 // Day of week → lifting split mapping
 const DAY_TO_LIFT_SPLIT = {
   0: null,                          // Sun = Church / rest
@@ -3408,8 +3408,9 @@ function _renderDashboard() {
         if (!s || !s.done) return;
         const w = parseFloat(s.weight) || 0;
         const r = parseFloat(s.reps) || 0;
-        if (w <= 0 && r <= 0) return;
-        allTimeVolume += w * r;
+        if (w <= 0 && r <= 0 && !BW_MULTIPLIERS[ex.name]) return;
+        const effW = effectiveWeight(ex.name, w);
+        allTimeVolume += effW * r;
         allTimeSets += 1;
       });
     });
@@ -3574,7 +3575,6 @@ async function runAutoBackup(reason) {
       state: state,
       history: history,
       prs: prs,
-      weeklyTemplate: weeklyTemplate,
       conditioning: (typeof conditioningLogs !== 'undefined') ? conditioningLogs : []
     };
     // Skip auto-backup if there's literally nothing to save (avoid spamming Downloads with empty files)
@@ -3639,7 +3639,10 @@ async function checkAutoBackupOnOpen() {
   await new Promise(r => setTimeout(r, 800));   // let the parent's Firebase auth settle
   try {
     const restored = await cloudRestoreIfEmpty();
-    if (restored) { location.reload(); return; }   // fresh device pulled cloud data → re-render with it
+    if (restored) {
+      try { sessionStorage.setItem(K_RESTORE_FLAG, '1'); } catch (e) {}   // prevent reload loop if restored data still reads as empty
+      location.reload(); return;   // fresh device pulled cloud data → re-render with it
+    }
   } catch (e) {}
   cloudBackupNow();                                // fire-and-forget backup on open
 }
@@ -3673,7 +3676,6 @@ function wireBackupButtons() {
         state: state,
         history: history,
         prs: prs,
-        weeklyTemplate: weeklyTemplate,
         conditioning: (typeof conditioningLogs !== 'undefined') ? conditioningLogs : []
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -3729,7 +3731,6 @@ function wireBackupButtons() {
           }
           if (Array.isArray(data.history)) history = data.history;
           if (data.prs && typeof data.prs === 'object') prs = data.prs;
-          if (data.weeklyTemplate && typeof data.weeklyTemplate === 'object') weeklyTemplate = data.weeklyTemplate;
           if (Array.isArray(data.conditioning) && typeof conditioningLogs !== 'undefined') {
             conditioningLogs = data.conditioning;
             if (typeof saveConditioning === 'function') await saveConditioning();
@@ -3737,7 +3738,6 @@ function wireBackupButtons() {
           await saveState();
           await saveHistory();
           await savePRs();
-          await saveTemplate();
           buildLastSessionCache();
           overlay.remove();
           render();
@@ -4183,20 +4183,24 @@ function renderConditioningRecent() {
         label = (SPRINT_LABELS[c.conditioning_subtype] || c.conditioning_subtype) + ' Sprints';
         value = `${c.conditioning_value} sets`;
       }
-      const globalIdx = conditioningLogs.indexOf(c);
       return `<div class="cond-recent-item">
         <span class="cond-recent-label">${escapeHtml(label)}</span>
         <span style="display:flex; align-items:center; gap:8px;">
           <span class="cond-recent-value">${escapeHtml(value)}</span>
-          <button class="cond-recent-x" data-cond-del="${globalIdx}" title="Delete">×</button>
+          <button class="cond-recent-x" data-cond-del="${idx}" title="Delete">×</button>
         </span>
       </div>`;
     }).join('')}
   `;
   box.querySelectorAll('[data-cond-del]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const i = parseInt(btn.dataset.condDel, 10);
-      conditioningLogs.splice(i, 1);
+      // Resolve the entry object (stable identity) from the filtered list, then
+      // remove it by matching the object — not by a possibly-stale array index.
+      const r = parseInt(btn.dataset.condDel, 10);
+      const entry = (!isNaN(r)) ? recent[r] : null;
+      if (!entry) return;
+      const gi = conditioningLogs.indexOf(entry);
+      if (gi !== -1) conditioningLogs.splice(gi, 1);
       await saveConditioning();
       renderConditioningRecent();
     });
@@ -4403,49 +4407,10 @@ function roundTo5(n) {
   return Math.round(n / 5) * 5;
 }
 // Chart 1: Training Frequency (May 1 → today, max 4 workouts/day)
-function renderChartTrainingFreq() {
-  destroyChart('trainingFreq');
-  const ctx = document.getElementById('chart-training-freq');
-  if (!ctx) return;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const start = new Date(today.getFullYear(), 4, 1); // May 1 (month is 0-indexed)
-  const dates = [];
-  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
-    dates.push(new Date(d));
-  }
-  const counts = dates.map(d => {
-    const ymd = ymdLocal(d);
-    return Math.min(history.filter(h => h.date === ymd).length, 4);
-  });
-  chartInstances.trainingFreq = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: dates.map(shortDayLabel),
-      datasets: [{
-        data: counts,
-        backgroundColor: `rgba(${ACR}, 0.75)`,
-        borderColor: AC,
-        borderWidth: 1,
-      }]
-    },
-    options: {
-      ...CHART_BASE_OPTS,
-      plugins: { ...CHART_BASE_OPTS.plugins, legend: { display: false } },
-      scales: {
-        ...CHART_BASE_OPTS.scales,
-        y: {
-          ...CHART_BASE_OPTS.scales.y,
-          max: 4,
-          ticks: { ...CHART_BASE_OPTS.scales.y.ticks, stepSize: 1 }
-        }
-      }
-    }
-  });
-}
 // Chart 2: Total Rounds (May 1 → today)
 // Total Rounds chart state
 let totalRoundsView = 'sixweek';      // 'sixweek' or 'weekly'
-let totalRoundsSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let totalRoundsSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 function renderChartTotalRounds() {
   destroyChart('totalRounds');
   const ctx = document.getElementById('chart-total-rounds');
@@ -4454,7 +4419,7 @@ function renderChartTotalRounds() {
   const weekPicker = document.getElementById('totalrounds-week-picker');
   const weekSelect = document.getElementById('totalrounds-week-select');
   if (!ctx) return;
-  const sixWeeksAgo = new Date(2026, 4, 3);
+  const sixWeeksAgo = sixWeekWindowStart();
   sixWeeksAgo.setHours(0,0,0,0);
   document.querySelectorAll('#totalrounds-toggle-row .pill').forEach(p => {
     p.classList.toggle('active', p.dataset.roundsView === totalRoundsView);
@@ -4673,8 +4638,8 @@ function renderChartTotalRounds() {
 // Week 1 starts May 3, 2026 (program start date). Weeks run Sun-Sat.
 function buildDailyLiftingData() {
   const today = new Date(); today.setHours(0,0,0,0);
-  // Anchor week 1 to May 3, 2026 (program start, Sunday)
-  const sixWeeksAgo = new Date(2026, 4, 3); // month 4 = May (0-indexed)
+  // Rolling 6-week window: week 6 always ends with the current week (Sunday-aligned).
+  const sixWeeksAgo = sixWeekWindowStart();
   sixWeeksAgo.setHours(0,0,0,0);
   const dailyData = {}; // ymd → { weight, reps, sets, rounds, exercises, volume, score }
   history.forEach(h => {
@@ -4906,11 +4871,11 @@ function renderChartStrengthTrend() {
 // Strength Score chart state + renderer (separate so toggle can re-render without recomputing data)
 let strengthChartData = null;
 let strengthChartView = 'weekly'; // 'daily' | 'weekly' | '6weeks'
-let strengthSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let strengthSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 // Avg Weight chart state
 let avgWeightChartData = null;
 let avgWeightView = 'weekly';      // 'sixweek' or 'weekly'
-let avgWeightSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let avgWeightSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 function renderAvgWeightChart() {
   try {
     _renderAvgWeightChart();
@@ -5151,7 +5116,7 @@ function _renderAvgWeightChart() {
 // Avg Reps chart state
 let avgRepsChartData = null;
 let avgRepsView = 'weekly';      // 'sixweek' or 'weekly'
-let avgRepsSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let avgRepsSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 function renderAvgRepsChart() {
   try {
     _renderAvgRepsChart();
@@ -5411,7 +5376,7 @@ function _renderStrengthScoreChart() {
     p.classList.toggle('active', p.dataset.strengthView === strengthChartView);
   });
   const { dailyData, weeks } = strengthChartData;
-  const sixWeeksAgo = new Date(2026, 4, 3);
+  const sixWeeksAgo = sixWeekWindowStart();
   sixWeeksAgo.setHours(0,0,0,0);
   const weekRangeLabel = (wIdx) => {
     const start = new Date(sixWeeksAgo);
@@ -5775,88 +5740,6 @@ function _renderStrengthScoreChart() {
       }
     });
   }
-}
-// Chart 4: Skill vs Lift Volume (last 4 weeks, stacked)
-function renderChartSkillVsLift() {
-  destroyChart('skillVsLift');
-  const ctx = document.getElementById('chart-skill-lift');
-  if (!ctx) return;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const weekData = [{lift:0,skill:0},{lift:0,skill:0},{lift:0,skill:0},{lift:0,skill:0}];
-  history.forEach(h => {
-    const hDate = new Date(h.date + 'T00:00:00');
-    const daysAgo = Math.floor((today - hDate) / (24*60*60*1000));
-    if (daysAgo < 0 || daysAgo >= 28) return;
-    const wIdx = 3 - Math.floor(daysAgo / 7); // newest week = idx 3
-    weekData[wIdx].lift += h.liftRounds || 0;
-    weekData[wIdx].skill += h.skillRounds || 0;
-  });
-  chartInstances.skillVsLift = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Wk 1','Wk 2','Wk 3','Wk 4'],
-      datasets: [
-        { label: 'Lift',  data: weekData.map(w=>w.lift),  backgroundColor: `rgba(${ACR}, 0.85)` },
-        { label: 'Skill', data: weekData.map(w=>w.skill), backgroundColor: SKILL_BG_STRONG }
-      ]
-    },
-    options: {
-      ...CHART_BASE_OPTS,
-      plugins: { ...CHART_BASE_OPTS.plugins, legend: { display: true, position: 'top', labels: { color: '#ccc', font: { size: 10 }, boxWidth: 12 } } },
-      scales: {
-        ...CHART_BASE_OPTS.scales,
-        x: { ...CHART_BASE_OPTS.scales.x, stacked: true },
-        y: { ...CHART_BASE_OPTS.scales.y, stacked: true }
-      }
-    }
-  });
-}
-// Chart 5: Split Frequency (last 30 days, per lifting split)
-function renderChartSplitFreq() {
-  destroyChart('splitFreq');
-  const ctx = document.getElementById('chart-split-freq');
-  if (!ctx) return;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const splitCounts = {};
-  history.forEach(h => {
-    const hDate = new Date(h.date + 'T00:00:00');
-    const daysAgo = Math.floor((today - hDate) / (24*60*60*1000));
-    if (daysAgo < 0 || daysAgo >= 30) return;
-    (h.splits || []).forEach(s => {
-      if (!s) return;
-      splitCounts[s] = (splitCounts[s] || 0) + 1;
-    });
-  });
-  const labels = Object.keys(splitCounts);
-  const values = labels.map(l => splitCounts[l]);
-  // Shorten labels for display
-  const shortLabels = labels.map(l => l
-    .replace('Chest + Triceps', 'Chest+Tri')
-    .replace('Biceps + Shoulders', 'Bi+Shldr')
-    .replace('Glutes + Quads (Leg Day)', 'Legs')
-    .replace('Lats + Traps (Back)', 'Lats+Back')
-    .replace('Calisthenics', 'Cali')
-  );
-  chartInstances.splitFreq = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: shortLabels,
-      datasets: [{
-        data: values,
-        backgroundColor: `rgba(${ACR}, 0.75)`,
-        borderColor: AC,
-        borderWidth: 1,
-      }]
-    },
-    options: {
-      ...CHART_BASE_OPTS,
-      plugins: { ...CHART_BASE_OPTS.plugins, legend: { display: false } },
-      scales: {
-        ...CHART_BASE_OPTS.scales,
-        y: { ...CHART_BASE_OPTS.scales.y, ticks: { ...CHART_BASE_OPTS.scales.y.ticks, stepSize: 1 } }
-      }
-    }
-  });
 }
 // Chart 6: Conditioning (toggle between distance / sprint subtypes)
 let condChartState = { cat: 'all', sub: '' };

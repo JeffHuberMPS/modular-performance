@@ -12,7 +12,7 @@
 <script src="/firebase-config.js"></script>
 <script src="/shared/auth-guard.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Anton&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 @keyframes mpsPageIn { from { opacity:0; } to { opacity:1; } }
 body { animation: mpsPageIn 0.28s ease-out both; }
@@ -755,52 +755,6 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
   </div>
 </div>
 
-<!-- ENTRY MODAL -->
-<div class="modal-backdrop" id="entry-modal">
-  <div class="modal">
-    <h2 id="modal-title">ADD ENTRY</h2>
-    <div class="form-row-2">
-      <div class="form-row">
-        <label class="form-label">Date</label>
-        <input type="date" class="form-input" id="f-date">
-      </div>
-      <div class="form-row">
-        <label class="form-label">Type</label>
-        <select class="form-select" id="f-item">
-          <option>Purchase</option><option>Income</option><option>Paycheck</option><option>Transfer</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <label class="form-label">Merchant</label>
-      <input type="text" class="form-input" id="f-merchant" placeholder="HY-VEE F&F JOHNSTON">
-    </div>
-    <div class="form-row-2">
-      <div class="form-row">
-        <label class="form-label">Amount</label>
-        <input type="number" class="form-input" id="f-amount" step="any" placeholder="0.00">
-      </div>
-      <div class="form-row">
-        <label class="form-label">Category</label>
-        <select class="form-select" id="f-category">
-          <option>Essentials</option><option>Lifestyle</option><option>Recurring</option><option>Investment</option><option>Income</option><option>Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <label class="form-label">Source</label>
-      <select class="form-select" id="f-source">
-        <option>Wells Fargo</option><option>Cash</option><option>Direct Deposit</option><option>Transfer</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" id="btn-cancel">Cancel</button>
-      <button class="btn danger" id="btn-delete" style="display:none;">Delete</button>
-      <button class="btn primary" id="btn-save">Save</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // Gray/Gold theme (Free/Medium): SVG/JS colors can't read CSS vars — resolve here.
 const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
@@ -881,13 +835,16 @@ let state = {
   paycheck: load(STORE.paycheck, 3000),
   selectedMonth: load(STORE.selectedMonth, new Date().getMonth()),
   selectedYear: new Date().getFullYear(),
-  editingId: null,
   sync: load(STORE.sync, { webhook: '' }),
   syncMeta: load(STORE.syncMeta, { lastSync: null, status: 'never' })
 };
 // Webhook is user-supplied via Settings — never hardcode a personal endpoint here.
 function load(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
-function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); try { window.expenseScheduleBackup && window.expenseScheduleBackup(); } catch (e) {} }
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch (e) { try { flash('Could not save — storage full'); } catch (e2) {} console.error('localStorage.setItem failed', e); return; }
+  try { window.expenseScheduleBackup && window.expenseScheduleBackup(); } catch (e) {}
+}
 
 // ===== SILENT CLOUD BACKUP (expenses) =====
 // Mirrors localStorage (mps_expense:*) to users/{uid}/settings/expenses_backup
@@ -902,7 +859,7 @@ function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); try { 
   function _hasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_match(localStorage.key(i))) return true; } }catch(e){} return false; }
   var _t=null,_busy=false;
   window.expenseScheduleBackup=function(){ if(_t) clearTimeout(_t); _t=setTimeout(_now,1800); };
-  function _now(){ var doc=_doc(); if(!doc||_busy) return; _busy=true; try{ doc.set({data:_collect(),ts:Date.now(),v:1}).then(function(){_busy=false;}).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
+  function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); try{ var size=0; try{ size=new Blob([JSON.stringify(data)]).size; }catch(e){ size=JSON.stringify(data).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return; } }catch(e){} _busy=true; try{ doc.set({data:data,ts:Date.now(),v:1}).then(function(){_busy=false;}).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
   function _restoreIfEmpty(){ var doc=_doc(); if(!doc) return Promise.resolve(false); if(_hasLocal()) return Promise.resolve(false); return doc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
   try {
     firebase.auth().onAuthStateChanged(function(u){
@@ -916,13 +873,6 @@ function fmt$(n) { const v = Number(n)||0; const sign = v<0?'-':''; return sign+
 function fmt$short(n) { const v = Number(n)||0; if(Math.abs(v)>=1000) return '$'+(v/1000).toFixed(1)+'k'; return '$'+Math.round(v).toLocaleString(); }
 function fmtDate(iso) { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${m}/${d}/${y}`; }
 function todayISO() { return new Date().toISOString().slice(0,10); }
-function autoCategory(merchant) {
-  if (!merchant) return 'Other';
-  const m = merchant.toLowerCase();
-  const sorted = [...state.rules].sort((a,b)=>b.k.length-a.k.length);
-  for (const rule of sorted) { if (m.includes(rule.k.toLowerCase())) return rule.c; }
-  return 'Other';
-}
 // =================================================================
 // TABS
 // =================================================================
@@ -1106,7 +1056,7 @@ function renderLog() {
   empty.style.display='none';
   const sorted=[...visible].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   sorted.forEach(e=>{
-    const tr=document.createElement('tr');const isIncome=e.item==='Income'||e.item==='Paycheck'||e.category==='Income';
+    const tr=document.createElement('tr');const isIncome=e.item==='Income'||e.item==='Paycheck';
     const catKey=(e.category||'Other').toLowerCase().replace(/\s+/g,'');
     tr.innerHTML=`<td>${fmtDate(e.date)}</td><td>${escapeHtml(e.merchant||'')}</td><td><span class="log-amount ${isIncome?'income':'expense'}">${isIncome?'+':'-'}${fmt$(Math.abs(Number(e.amount)||0))}</span></td><td><span class="cat-tag cat-${catKey}">${e.category||'Other'}</span></td><td style="color:var(--mps-text-dim);">${escapeHtml(e.source||'')}</td>`;
     body.appendChild(tr);
@@ -1141,8 +1091,8 @@ function renderBudget() {
       else if(pen.dataset.role==='delete') confirmDeleteBill(i,state.budget[i].bill);
     });
   });
-  document.getElementById('paycheck-amount').value=state.paycheck||3000;
-  document.getElementById('monthly-cap').value=state.cap;
+  document.getElementById('paycheck-amount').value=state.paycheck ?? '';
+  document.getElementById('monthly-cap').value=state.cap ?? '';
   renderBudgetSummary();
 }
 function activateValueEdit(valEl) {
@@ -1291,25 +1241,10 @@ function renderAdvancedReports(year,month){
     +'</div>';
 }
 // =================================================================
-// MODAL
+// HANDLERS
 // =================================================================
-function openModal(id) {
-  state.editingId=id||null;document.getElementById('modal-title').textContent=id?'EDIT ENTRY':'ADD ENTRY';document.getElementById('btn-delete').style.display=id?'inline-block':'none';
-  if(id){const e=state.entries.find(x=>x.id===id);if(e){document.getElementById('f-date').value=e.date;document.getElementById('f-item').value=e.item||'Purchase';document.getElementById('f-merchant').value=e.merchant||'';document.getElementById('f-amount').value=Math.abs(Number(e.amount)||0);document.getElementById('f-category').value=e.category||'Other';document.getElementById('f-source').value=e.source||'Wells Fargo';}}
-  else{document.getElementById('f-date').value=todayISO();document.getElementById('f-item').value='Purchase';document.getElementById('f-merchant').value='';document.getElementById('f-amount').value='';document.getElementById('f-category').value='Other';document.getElementById('f-source').value='Wells Fargo';}
-  document.getElementById('entry-modal').classList.add('show');
-}
-function closeModal(){document.getElementById('entry-modal').classList.remove('show');state.editingId=null;}
+// Log is mirror-mode (edit in the sheet) — no add/edit/delete modal.
 document.getElementById('btn-refresh-log')?.addEventListener('click',async()=>{await syncFromSheet();});
-document.getElementById('btn-cancel').addEventListener('click',closeModal);
-document.getElementById('btn-save').addEventListener('click',()=>{
-  const merchant=document.getElementById('f-merchant').value.trim();const amount=parseFloat(document.getElementById('f-amount').value);if(!merchant||isNaN(amount))return;
-  let cat=document.getElementById('f-category').value;if(!state.editingId&&cat==='Other'){const detected=autoCategory(merchant);if(detected!=='Other')cat=detected;}
-  const entry={id:state.editingId||uid(),date:document.getElementById('f-date').value,item:document.getElementById('f-item').value,merchant,amount,category:cat,source:document.getElementById('f-source').value};
-  if(state.editingId){const i=state.entries.findIndex(e=>e.id===state.editingId);if(i>=0)state.entries[i]=entry;}else{state.entries.push(entry);}
-  save(STORE.entries,state.entries);closeModal();renderAll();
-});
-document.getElementById('btn-delete').addEventListener('click',()=>{if(!state.editingId)return;state.entries=state.entries.filter(e=>e.id!==state.editingId);save(STORE.entries,state.entries);closeModal();renderAll();});
 document.getElementById('btn-export').addEventListener('click',()=>{
   const headers=['Date','Item','Merchant','Amount','Category','Source'];
   const exportEntries=__PREMIUM?state.entries:state.entries.filter(e=>(e.date||'')>=historyCapCutoff());
@@ -1325,7 +1260,6 @@ document.getElementById('rules-search').addEventListener('input',e=>{rulesFilter
 document.getElementById('btn-add-rule').addEventListener('click',()=>{state.rules.unshift({k:'New Keyword',c:'Other'});save(STORE.rules,state.rules);renderRules();});
 document.getElementById('btn-reset-rules').addEventListener('click',()=>{showOverlay({title:'Reset Rules',body:'Reset all category rules to defaults?',confirmText:'Reset',onConfirm:()=>{state.rules=JSON.parse(JSON.stringify(DEFAULT_RULES));save(STORE.rules,state.rules);renderRules();}});});
 function flash(msg){const d=document.createElement('div');d.textContent=msg;d.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--mps-mint);color:#000;padding:10px 20px;border-radius:8px;font-weight:600;z-index:400;box-shadow:0 0 20px var(--mps-mint-glow);';document.body.appendChild(d);setTimeout(()=>d.remove(),1800);}
-document.getElementById('entry-modal').addEventListener('click',e=>{if(e.target.id==='entry-modal')closeModal();});
 // =================================================================
 // MAKE.COM SYNC
 // =================================================================
@@ -1337,7 +1271,7 @@ async function syncFromSheet(){
   document.getElementById('sync-log').innerHTML='';syncLog('Calling Make webhook...');updateSyncStatus('syncing','Syncing...');
   let logCount=0,ruleCount=0,budgetCount=0;
   try{
-    const res=await fetch(webhook,{method:'GET'});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();syncLog('Response received');
+    const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);let res;try{res=await fetch(webhook,{method:'GET',signal:ctrl.signal});}catch(err){if(err.name==='AbortError')throw new Error('Timed out after 15s');throw err;}finally{clearTimeout(timer);}if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();syncLog('Response received');
     if(data.log&&Array.isArray(data.log)&&data.log.length>=2){
       const headers=data.log[0].map(h=>String(h).trim().toLowerCase());
       const idx={date:headers.findIndex(h=>h.includes('date')),item:headers.findIndex(h=>h.includes('item')),merchant:headers.findIndex(h=>h.includes('merchant')),amount:headers.findIndex(h=>h.includes('amount')),category:headers.findIndex(h=>h.includes('category')),source:headers.findIndex(h=>h.includes('source')),uniqueId:headers.findIndex(h=>h.includes('unique')||h.includes('id'))};
@@ -1365,7 +1299,7 @@ document.getElementById('btn-refresh-sync')?.addEventListener('click',async()=>{
 document.getElementById('btn-test-sync')?.addEventListener('click',async()=>{
   const webhook=document.getElementById('set-webhook').value.trim();if(!webhook){flash('Enter webhook URL first');return;}
   document.getElementById('sync-log').innerHTML='';syncLog('Testing webhook...');
-  try{const res=await fetch(webhook,{method:'GET'});if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();syncLog('Connected. Response keys: '+Object.keys(data).join(', '));if(data.log)syncLog(`Log rows: ${data.log.length}`);if(data.budget)syncLog(`Budget rows: ${data.budget.length}`);if(data.rules)syncLog(`Rules rows: ${data.rules.length}`);}
+  try{const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);let res;try{res=await fetch(webhook,{method:'GET',signal:ctrl.signal});}catch(err){if(err.name==='AbortError')throw new Error('Timed out after 15s');throw err;}finally{clearTimeout(timer);}if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();syncLog('Connected. Response keys: '+Object.keys(data).join(', '));if(data.log)syncLog(`Log rows: ${data.log.length}`);if(data.budget)syncLog(`Budget rows: ${data.budget.length}`);if(data.rules)syncLog(`Rules rows: ${data.rules.length}`);}
   catch(e){syncLog(`FAILED: ${e.message}`,true);}
 });
 // =================================================================
