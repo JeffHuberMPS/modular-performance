@@ -380,8 +380,14 @@ body {
 .cat-recurring { background: rgba(232,165,184,0.2); color: var(--mps-recurring); }
 .cat-investment { background: rgba(110,192,122,0.2); color: var(--mps-investment); }
 .cat-income { background: rgba(110,192,122,0.2); color: var(--mps-income); }
-body.mps-gray .cat-investment, body.mps-gray .cat-income { background: rgba(150,150,150,0.15); }
 .cat-other { background: rgba(138,149,145,0.2); color: var(--mps-other); }
+/* Gray tiers: neutralize all category tag backgrounds (blue/purple/pink/green) → neutral dark grey; text already gold/grey via --mps-* vars. */
+body.mps-gray .cat-essentials { background: rgba(255,255,255,0.08); }
+body.mps-gray .cat-lifestyle { background: rgba(255,255,255,0.06); }
+body.mps-gray .cat-recurring { background: rgba(201,160,32,0.15); }
+body.mps-gray .cat-investment { background: rgba(201,160,32,0.15); }
+body.mps-gray .cat-income { background: rgba(201,160,32,0.15); }
+body.mps-gray .cat-other { background: rgba(150,150,150,0.12); }
 /* ============ FORM / MODAL ============ */
 .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 300; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
 .modal-backdrop.show { display: flex; }
@@ -1034,7 +1040,8 @@ function renderBurnChart(year,month,purchases) {
 function renderCategoryDonut(purchases) {
   const cats=['Essentials','Lifestyle','Recurring','Investment','Other'];
   const totals={};cats.forEach(c=>totals[c]=0);
-  purchases.forEach(e=>{if(totals[e.category]!==undefined)totals[e.category]+=Math.abs(Number(e.amount)||0);});
+  // Bucket every purchase; unrecognized categories (e.g. a Purchase tagged 'Income') fall into Other so the donut total reconciles with the dashboard "Spent" headline.
+  purchases.forEach(e=>{const k=totals[e.category]!==undefined?e.category:'Other';totals[k]+=Math.abs(Number(e.amount)||0);});
   const total=Object.values(totals).reduce((s,v)=>s+v,0);
   const colors = __GRAY
     ? {'Essentials':'#bcbcbc','Lifestyle':'#8f8f8f','Recurring':'#C9A020','Investment':'#C9A020','Other':'#6f6f6f'}
@@ -1050,7 +1057,8 @@ function renderCategoryDonut(purchases) {
 function renderCategoryBreakdown(purchases) {
   const cats=['Essentials','Lifestyle','Recurring','Investment','Other'];
   const totals={};cats.forEach(c=>totals[c]=0);
-  purchases.forEach(e=>{if(totals[e.category]!==undefined)totals[e.category]+=Math.abs(Number(e.amount)||0);});
+  // Same bucketing as the donut: unrecognized categories fall into Other so the breakdown reconciles with "Spent".
+  purchases.forEach(e=>{const k=totals[e.category]!==undefined?e.category:'Other';totals[k]+=Math.abs(Number(e.amount)||0);});
   const max=Math.max(...Object.values(totals),1);
   const container=document.getElementById('cat-breakdown');container.innerHTML='';
   cats.forEach(c=>{const v=totals[c];const w=(v/max)*100;const color=`var(--mps-${c.toLowerCase()})`;const card=document.createElement('div');card.className='cat-card';card.innerHTML=`<div class="cat-card-head"><span class="cat-card-label">${c}</span><span class="cat-card-amount">${fmt$(v)}</span></div><div class="cat-card-bar"><div class="cat-card-fill" style="width:${w}%;background:${color};box-shadow:0 0 8px ${color};"></div></div>`;container.appendChild(card);});
@@ -1311,7 +1319,7 @@ document.getElementById('btn-export').addEventListener('click',()=>{
 });
 document.getElementById('month-select').addEventListener('change',e=>{state.selectedMonth=parseInt(e.target.value,10);save(STORE.selectedMonth,state.selectedMonth);renderAll();});
 document.getElementById('btn-add-bill').addEventListener('click',()=>{state.budget.push({bill:'New Bill',m:0,w:0});saveBudgetLocal();renderBudget();setTimeout(()=>{const cards=document.querySelectorAll('.budget-card');const newCard=cards[cards.length-1];if(newCard){const i=state.budget.length-1;activateLabelEdit(newCard,i);}},50);});
-document.getElementById('btn-save-paycheck').addEventListener('click',()=>{state.paycheck=parseFloat(document.getElementById('paycheck-amount').value)||0;save(STORE.paycheck,state.paycheck);flash('Paycheck saved');renderAll();});
+document.getElementById('btn-save-paycheck').addEventListener('click',()=>{state.paycheck=parseFloat(document.getElementById('paycheck-amount').value)||0;save(STORE.paycheck,state.paycheck);flash('Income saved');renderAll();});
 document.getElementById('btn-save-cap').addEventListener('click',()=>{state.cap=parseFloat(document.getElementById('monthly-cap').value)||0;save(STORE.cap,state.cap);flash('Monthly cap saved');renderAll();});
 document.getElementById('rules-search').addEventListener('input',e=>{rulesFilter=e.target.value;renderRules();});
 document.getElementById('btn-add-rule').addEventListener('click',()=>{state.rules.unshift({k:'New Keyword',c:'Other'});save(STORE.rules,state.rules);renderRules();});

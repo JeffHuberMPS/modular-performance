@@ -78,7 +78,14 @@
   body.mps-gray .pr-item,
   body.mps-gray .strength-pill,
   body.mps-gray .hist-detail-panel { background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%) !important; }
-  body.mps-gray .plan-day-card { border-color: #2a2a2a !important; }
+  body.mps-gray .card,
+  body.mps-gray .exercise,
+  body.mps-gray .history-card,
+  body.mps-gray .plan-day-card,
+  body.mps-gray .pr-group-card,
+  body.mps-gray .pr-item,
+  body.mps-gray .strength-pill,
+  body.mps-gray .hist-detail-panel { border-color: #2a2a2a !important; }
   body.mps-gray .plan-day-card.today { background: linear-gradient(180deg, #1c1c1c 0%, #111111 100%) !important; }
   body.mps-gray .pill-row .pill,
   body.mps-gray .pill { border: 1px solid #3a3a3a !important; color: #b0b0b0 !important; background: transparent !important; }
@@ -793,6 +800,38 @@
   body.mps-gray .badge-skill,
   body.mps-gray .badge-sprint,
   body.mps-gray .badge-conditioning { background: #2a2a2a; color: #C9A020; border-color: #3a3a3a; }
+  /* Gray: neutralize the white-on-white split badge → dark bg + gold, matching siblings. */
+  body.mps-gray .badge-split { background: #2a2a2a; color: #C9A020; border: 1px solid #3a3a3a; }
+  /* Gray: delete/import confirm modals — strip blue panel gradient + red/purple accents → neutral + gold. */
+  body.mps-gray #cond-delete-overlay > div,
+  body.mps-gray #workout-delete-overlay > div { background: linear-gradient(180deg, #141414 0%, #0a0a0a 100%) !important; border-color: #3a3a3a !important; }
+  body.mps-gray #workout-delete-overlay > div > div:first-child { color: #C9A020 !important; }
+  body.mps-gray #cond-del-confirm,
+  body.mps-gray #workout-del-confirm,
+  body.mps-gray #imp-confirm { background: #C9A020 !important; color: #0a0a0a !important; }
+  body.mps-gray #hist-detail-delete-btn { border-color: #C9A020 !important; color: #C9A020 !important; }
+  body.mps-gray #imp-replace-warn { color: #C9A020 !important; }
+  /* Gray: accent button hover was light-blue (#6cc4ff) → gold hover. */
+  body.mps-gray .btn-accent:hover,
+  body.mps-gray .end-btn:hover { background: #d8b13a !important; }
+  /* Gray: completed-exercise / completed-set "done" state was success-green → gold-tinted neutral. */
+  body.mps-gray .exercise.done {
+    border-color: rgba(201,160,32,0.5) !important;
+    background: linear-gradient(180deg, rgba(201,160,32,0.10) 0%, rgba(201,160,32,0.03) 60%, rgba(201,160,32,0.01) 100%) !important;
+    box-shadow:
+      0 8px 20px rgba(0,0,0,0.85),
+      0 4px 8px rgba(0,0,0,0.65),
+      0 0 18px rgba(201,160,32,0.18),
+      inset 0 1px 0 rgba(201,160,32,0.18),
+      inset 0 2px 4px rgba(201,160,32,0.05),
+      inset 0 -2px 0 rgba(0,0,0,0.55) !important;
+  }
+  body.mps-gray .hist-detail-set.done {
+    background: rgba(201,160,32,0.12) !important;
+    border-color: rgba(201,160,32,0.45) !important;
+    color: #e8e8e8 !important;
+  }
+  body.mps-gray .hist-detail-set.done b { color: #C9A020 !important; }
   .end-btn {
     width: 100%; padding: 14px; font-size: 14px; margin-top: 12px;
     background: var(--mps-accent); border: none; color: #1a1a1a;
@@ -931,6 +970,16 @@ const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window 
 const ACR = __GRAY ? '150,150,150' : '74, 179, 244';   // accent rgb for canvas fills
 const AC  = __GRAY ? '#cfcfcf' : '#4ab3f4';             // solid accent for canvas (lines/points)
 const AC2 = __GRAY ? '#f5f5f5' : '#7ac8ff';            // light accent for canvas
+// Skill-series bar color (purple in colorful → neutral grey in gray, distinct from gold Lift bars)
+const SKILL_BORDER     = __GRAY ? '#8a8a8a' : '#9b6bc9';
+const SKILL_BG         = __GRAY ? 'rgba(138,138,138,0.75)' : 'rgba(155, 107, 201, 0.75)';
+const SKILL_BG_STRONG  = __GRAY ? 'rgba(138,138,138,0.85)' : 'rgba(155, 107, 201, 0.85)';
+// Conditioning-series bar color (forest green in colorful → dark neutral grey in gray)
+const COND_BORDER      = __GRAY ? '#5a5a5a' : '#226633';
+const COND_BG          = __GRAY ? 'rgba(90,90,90,0.85)' : 'rgba(34, 102, 51, 0.85)';
+// Sprint-series bar color (crimson in colorful → gold in gray)
+const SPRINT_BORDER    = __GRAY ? '#C9A020' : '#dc4856';
+const SPRINT_BG        = __GRAY ? 'rgba(201,160,32,0.80)' : 'rgba(220, 72, 86, 0.80)';
 // Log errors silently — never show end users a stack-trace banner.
 function showErrorBanner(msg) {
   try { console.error('[MPS Workout]', msg); } catch (e) {}
@@ -962,12 +1011,12 @@ const SKILL_CATALOG = {
   "Kickboxing": {
     hasSeries: true,
     series: {
-      "ISO": { color: "🔴", workouts: ["ISO-1","ISO-2","ISO-3","ISO-4","ISO-5","ISO-6"] },
-      "SIM": { color: "🟡", workouts: ["SIM-1","SIM-2","SIM-3","SIM-4","SIM-5","SIM-6"] },
-      "CMB": { color: "🔹", workouts: ["CMB-1","CMB-2","CMB-3","CMB-4","CMB-5","CMB-6","CMB-7","CMB-8","CMB-9"] },
-      "HCM": { color: "🩵", workouts: ["HCM-1","HCM-2","HCM-3","HCM-4","HCM-5","HCM-6"] },
-      "HSC": { color: "🔷", workouts: ["HSC-1","HSC-2","HSC-3","HSC-4","HSC-5","HSC-6"] },
-      "HVB": { color: "⚫", workouts: [
+      "ISO": { color: "•", workouts: ["ISO-1","ISO-2","ISO-3","ISO-4","ISO-5","ISO-6"] },
+      "SIM": { color: "•", workouts: ["SIM-1","SIM-2","SIM-3","SIM-4","SIM-5","SIM-6"] },
+      "CMB": { color: "•", workouts: ["CMB-1","CMB-2","CMB-3","CMB-4","CMB-5","CMB-6","CMB-7","CMB-8","CMB-9"] },
+      "HCM": { color: "•", workouts: ["HCM-1","HCM-2","HCM-3","HCM-4","HCM-5","HCM-6"] },
+      "HSC": { color: "•", workouts: ["HSC-1","HSC-2","HSC-3","HSC-4","HSC-5","HSC-6"] },
+      "HVB": { color: "•", workouts: [
         "HVB-1 — Combo Day (Fixed Combo)",
         "HVB-2 — Pyramid Day",
         "HVB-3 — Finish-With Day",
@@ -975,7 +1024,7 @@ const SKILL_CATALOG = {
         "HVB-5 — Skill + Entry Day",
         "HVB-6 — Combo Day (Variable Combo)"
       ] },
-      "SCE": { color: "🟢", workouts: [
+      "SCE": { color: "•", workouts: [
         "C37 — Alactic Conditioning",
         "C38 — Lactic Capacity",
         "C39 — Alactic Intervals",
@@ -990,7 +1039,7 @@ const SKILL_CATALOG = {
         "AUX-5 — Footwork",
         "AUX-6 — Medicine Ball"
       ] },
-      "PLY": { color: "🟣", workouts: ["PLY-1","PLY-2","PLY-3","PLY-4","PLY-5","PLY-6"] }
+      "PLY": { color: "•", workouts: ["PLY-1","PLY-2","PLY-3","PLY-4","PLY-5","PLY-6"] }
     }
   },
   "Muay Thai": { hasSeries: false },
@@ -1025,7 +1074,7 @@ const SKILL_CATALOG = {
         subDrills: { "400's": ["400 yards"] }
       },
       "5 Yard Pyramids": {
-        color: "🔺",
+        color: "•",
         workouts: ["5 Yard Pyramids"],
         subDrills: { "5 Yard Pyramids": ["5yd", "10yd", "15yd", "20yd", "15yd", "10yd", "5yd"] }
       }
@@ -1036,7 +1085,7 @@ const SKILL_CATALOG = {
   "Conditioning": {
     hasSeries: true,
     series: {
-      "CDO": { color: "🟢", workouts: ["CDO-1","CDO-2","CDO-3","CDO-4","CDO-5"] }
+      "CDO": { color: "•", workouts: ["CDO-1","CDO-2","CDO-3","CDO-4","CDO-5"] }
     }
   },
   "Mobility / Yoga": { hasSeries: false },
@@ -3457,7 +3506,7 @@ function _renderDashboard() {
         <button class="pill ${condChartState.cat === 'machine' ? 'active' : ''}" data-chart-cat="machine">Cardio Machine</button>
       </div>
       <div class="pill-row" id="cond-chart-sub-row"></div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,222,128,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-conditioning"></canvas>
         <div id="chart-conditioning-empty" class="chart-empty" style="display:none;">No runs logged yet</div>
       </div>
@@ -3661,7 +3710,7 @@ function wireBackupButtons() {
           <div style="font-size:12px; color:var(--text-dim); margin-bottom:14px; line-height:1.5;">
             Exported: <b style="color:#fff;">${escapeHtml(exportedAt)}</b><br>
             Contains: <b style="color:var(--mps-accent);">${histCount}</b> workouts, <b style="color:var(--mps-accent);">${prCount}</b> PRs<br><br>
-            This will <b style="color:#9b6bc9;">replace all current data</b>. Cannot be undone.
+            This will <b id="imp-replace-warn" style="color:#9b6bc9;">replace all current data</b>. Cannot be undone.
           </div>
           <div style="display:flex; gap:8px;">
             <button id="imp-cancel" style="flex:1; padding:12px; background:transparent; border:1px solid var(--border); color:var(--text-dim); border-radius:7px; font-weight:600; font-size:14px;">Cancel</button>
@@ -4236,6 +4285,9 @@ const Isometric3DBarPlugin = {
   themeMap: {
     '#4ab3f4': { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') }, // blue
     '#9b6bc9': { top: '#c9a3eb', side: '#4a2470' }, // purple
+    '#8a8a8a': { top: '#b0b0b0', side: '#3a3a3a' }, // gray-theme skill (neutral grey)
+    '#5a5a5a': { top: '#7a7a7a', side: '#2a2a2a' }, // gray-theme conditioning (dark grey)
+    '#c9a020': { top: '#d8b13a', side: '#5a4410' }, // gray-theme sprint (gold)
     '#4ade80': { top: '#86efac', side: '#166534' }, // bright green (legacy)
     '#226633': { top: '#3d9658', side: '#0d2818' }, // forest green
     '#dc4856': { top: '#ef5a68', side: '#7a1f28' }   // crimson (sprints)
@@ -4503,8 +4555,8 @@ function renderChartTotalRounds() {
         labels: ['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6'],
         datasets: [
           { label: 'Lift', data: liftPerWeek, backgroundColor: `rgba(${ACR}, 0.75)`, borderColor: AC, borderWidth: 1, stack: 'rounds' },
-          { label: 'Skill', data: skillPerWeek, backgroundColor: 'rgba(155, 107, 201, 0.75)', borderColor: '#9b6bc9', borderWidth: 1, stack: 'rounds' },
-          { label: 'Conditioning', data: condPerWeek, backgroundColor: 'rgba(34, 102, 51, 0.85)', borderColor: '#226633', borderWidth: 1, stack: 'rounds' }
+          { label: 'Skill', data: skillPerWeek, backgroundColor: SKILL_BG, borderColor: SKILL_BORDER, borderWidth: 1, stack: 'rounds' },
+          { label: 'Conditioning', data: condPerWeek, backgroundColor: COND_BG, borderColor: COND_BORDER, borderWidth: 1, stack: 'rounds' }
         ]
       },
       options: {
@@ -4573,8 +4625,8 @@ function renderChartTotalRounds() {
         labels: dayLabels,
         datasets: [
           { label: 'Lift', data: liftDay, backgroundColor: `rgba(${ACR}, 0.75)`, borderColor: AC, borderWidth: 1, stack: 'rounds' },
-          { label: 'Skill', data: skillDay, backgroundColor: 'rgba(155, 107, 201, 0.75)', borderColor: '#9b6bc9', borderWidth: 1, stack: 'rounds' },
-          { label: 'Conditioning', data: condDay, backgroundColor: 'rgba(34, 102, 51, 0.85)', borderColor: '#226633', borderWidth: 1, stack: 'rounds' }
+          { label: 'Skill', data: skillDay, backgroundColor: SKILL_BG, borderColor: SKILL_BORDER, borderWidth: 1, stack: 'rounds' },
+          { label: 'Conditioning', data: condDay, backgroundColor: COND_BG, borderColor: COND_BORDER, borderWidth: 1, stack: 'rounds' }
         ]
       },
       options: {
@@ -5558,7 +5610,7 @@ function _renderStrengthScoreChart() {
       ...baseDataset,
       pointRadius: dayData.map(v => v == null ? 4 : 6),
       pointHoverRadius: dayData.map(v => v == null ? 5 : 8),
-      pointBackgroundColor: dayData.map(v => v == null ? `rgba(${ACR}, 0.15)` : '#4ab3f4'),
+      pointBackgroundColor: dayData.map(v => v == null ? `rgba(${ACR}, 0.15)` : AC),
       pointBorderColor: dayData.map(v => v == null ? `rgba(${ACR}, 0.5)` : '#fff'),
       pointBorderWidth: dayData.map(v => v == null ? 1 : 1.5),
       // Replace nulls with 0 so dots render across the whole week
@@ -5745,7 +5797,7 @@ function renderChartSkillVsLift() {
       labels: ['Wk 1','Wk 2','Wk 3','Wk 4'],
       datasets: [
         { label: 'Lift',  data: weekData.map(w=>w.lift),  backgroundColor: `rgba(${ACR}, 0.85)` },
-        { label: 'Skill', data: weekData.map(w=>w.skill), backgroundColor: 'rgba(155, 107, 201, 0.85)' }
+        { label: 'Skill', data: weekData.map(w=>w.skill), backgroundColor: SKILL_BG_STRONG }
       ]
     },
     options: {
@@ -5915,7 +5967,7 @@ function renderChartConditioning() {
             label: 'chronological',
             type: 'line',
             data: points.map(p => ({ x: p.miles, y: p.seconds / 60 })),
-            borderColor: 'rgba(34, 102, 51, 0.55)',
+            borderColor: __GRAY ? 'rgba(90,90,90,0.55)' : 'rgba(34, 102, 51, 0.55)',
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 0,
@@ -5928,7 +5980,7 @@ function renderChartConditioning() {
             label: 'Runs',
             type: 'scatter',
             data: points.map(p => ({ x: p.miles, y: p.seconds / 60 })),
-            backgroundColor: '#226633',
+            backgroundColor: COND_BORDER,
             borderColor: '#fff',
             borderWidth: 1.5,
             pointRadius: 6,
@@ -6010,7 +6062,11 @@ function renderChartConditioning() {
     const today = new Date(); today.setHours(0,0,0,0);
     const ninetyDaysAgo = new Date(today);
     ninetyDaysAgo.setDate(today.getDate() - 90);
-    const machineColors = {
+    const machineColors = __GRAY ? {
+      treadmill: '#C9A020',
+      bike:      '#9a9a9a',
+      rower:     '#5a5a5a'
+    } : {
       treadmill: '#4ab3f4',
       bike:      '#9b6bc9',
       rower:     '#4ade80'
@@ -6267,12 +6323,20 @@ function renderChartConditioning() {
     }
     ctx.style.display = 'block';
     emptyEl.style.display = 'none';
-    const COLORS = {
+    const COLORS = __GRAY ? {
+      running: { bg: 'rgba(120,120,120,0.85)', border: '#787878' },  // neutral grey
+      sprint:  { bg: 'rgba(201,160,32,0.80)',  border: '#C9A020' },  // gold
+      machine: { bg: `rgba(${ACR}, 0.80)`, border: AC }
+    } : {
       running: { bg: 'rgba(34, 102, 51, 0.85)',  border: '#226633' },   // forest green
       sprint:  { bg: 'rgba(220, 72, 86, 0.80)',  border: '#dc4856' },   // crimson red
       machine: { bg: `rgba(${ACR}, 0.80)`, border: AC }    // MPS blue
     };
-    const THEMES_3D = {
+    const THEMES_3D = __GRAY ? {
+      running: { top: '#9a9a9a', side: '#2a2a2a' },  // neutral grey
+      sprint:  { top: '#d8b13a', side: '#5a4410' },  // gold
+      machine: { top: AC2, side: '#3a3a3a' }
+    } : {
       running: { top: '#3d9658', side: '#0d2818' },  // forest green
       sprint:  { top: '#ef5a68', side: '#7a1f28' },  // crimson red
       machine: { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') }   // blue
@@ -6584,8 +6648,8 @@ function renderChartConditioning() {
         labels,
         datasets: [{
           data: values,
-          backgroundColor: 'rgba(220, 72, 86, 0.80)',
-          borderColor: '#dc4856',
+          backgroundColor: SPRINT_BG,
+          borderColor: SPRINT_BORDER,
           borderWidth: 1
         }]
       },
