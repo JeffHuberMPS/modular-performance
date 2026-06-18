@@ -278,7 +278,7 @@
       const ta = { ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
       const stat = (label, v) => (<div style={{ flex:1, textAlign:'center', minWidth:0 }}><div style={{ fontSize:17, fontWeight:800, color:'#fff', whiteSpace:'nowrap' }}>{v}</div><div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div></div>);
       const field = (label, key, multi) => (
-        <div style={{ marginBottom:26 }} key={key}>
+        <div style={{ marginBottom:38 }} key={key}>
           <Label>{label}</Label>
           {multi
             ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={ta} />
@@ -301,7 +301,7 @@
           </div>
 
           {/* Auto-pulled day stats */}
-          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:26 }}>
+          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:34 }}>
             <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
             <div style={{ display:'flex', gap:6, marginBottom:10 }}>
               {stat('MRN', A?A.mrn+'/5':'—')}{stat('WRK', A?A.wrk+'/5':'—')}{stat('NGT', A?A.ngt+'/5':'—')}{stat('DAY', A?A.dayTotal+'/15':'—')}
@@ -313,17 +313,17 @@
 
           {field('Workout', 'workout')}
 
-          <div style={{ marginBottom:26 }}>
+          <div style={{ marginBottom:38 }}>
             <Label>Gratitude</Label>
             {numRow('gratitude',0)}{numRow('gratitude',1)}{numRow('gratitude',2)}
           </div>
 
-          <div style={{ marginBottom:26 }}>
+          <div style={{ marginBottom:38 }}>
             <Label>Accomplishments</Label>
             {numRow('accomplishment',0)}{numRow('accomplishment',1)}{numRow('accomplishment',2)}
           </div>
 
-          <div style={{ marginBottom:26 }}>
+          <div style={{ marginBottom:38 }}>
             <Label>Affirmation</Label>
             <div style={{ marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={inp} /></div>
             <div style={{ marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={inp} /></div>
