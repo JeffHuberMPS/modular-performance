@@ -794,6 +794,7 @@ function SleepTracker() {
               </ChartCard>
 
             </section>
+            {__PREMIUM && <DevicesCard />}
           </>
         )}
 
@@ -928,6 +929,39 @@ const Field = ({ label, children }) => (
     {children}
   </div>
 );
+
+/* DevicesCard — Premium "connect a wearable" UI. Integration-ready: the pairing
+   options are present and the flow is glitch-free, but it does NOT fake a sync.
+   Live providers (Oura/Fitbit/etc.) wire into a real OAuth backend in Phase 2;
+   for now "Notify me" registers interest so the user can opt in seamlessly. */
+const WEARABLES = [
+  { id:"apple",  name:"Apple Health / Watch", note:"Needs the MPS iPhone app (in development)" },
+  { id:"oura",   name:"Oura Ring",            note:"HRV · sleep · readiness" },
+  { id:"fitbit", name:"Fitbit",               note:"Sleep · heart rate · steps" },
+  { id:"garmin", name:"Garmin",               note:"Sleep · HRV · training" },
+  { id:"whoop",  name:"Whoop",                note:"Recovery · strain · sleep" },
+];
+const DevicesCard = () => {
+  const [interest, setInterest] = useState({});
+  useEffect(() => { try { const raw = localStorage.getItem("rr_sleep:wearable_interest"); if (raw) setInterest(JSON.parse(raw)); } catch (e) {} }, []);
+  const toggle = (id) => { const next = { ...interest, [id]: !interest[id] }; setInterest(next); try { localStorage.setItem("rr_sleep:wearable_interest", JSON.stringify(next)); } catch (e) {} try { if (window.storage && window.storage.set) window.storage.set("wearable_interest", JSON.stringify(next)); } catch (e) {} };
+  const FONT = "'Inter', system-ui, -apple-system, sans-serif";
+  return (
+    <section style={{ background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.15)", borderRadius: 14, padding: "16px 18px", marginTop: 14 }}>
+      <div style={{ fontSize: 10, fontFamily: FONT, letterSpacing: "0.18em", color: LBL, textTransform: "uppercase", marginBottom: 8 }}>Devices &amp; Wearables</div>
+      <div style={{ fontSize: 12, fontFamily: FONT, color: "#8a8f99", lineHeight: 1.5, marginBottom: 6 }}>Auto-fill your biometrics from a device. Live sync is in development — tap <b style={{ color: GOLD }}>Notify me</b> and we'll let you know the moment your device connects.</div>
+      {WEARABLES.map((wv, i) => (
+        <div key={wv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 0", borderTop: i === 0 ? "none" : "1px solid rgba(150,150,150,0.12)" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontFamily: FONT, color: "#f5f5f5", fontWeight: 600 }}>{wv.name}</div>
+            <div style={{ fontSize: 11, fontFamily: FONT, color: "#6b7280", marginTop: 2 }}>{wv.note}</div>
+          </div>
+          <button onClick={() => toggle(wv.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 8, fontFamily: FONT, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer", whiteSpace: "nowrap", border: `1px solid ${interest[wv.id] ? GOLD : (__GRAY ? "rgba(255,255,255,0.22)" : "rgba(155,107,201,0.55)")}`, background: interest[wv.id] ? GOLD : "transparent", color: interest[wv.id] ? "#0a0a0a" : LBL }}>{interest[wv.id] ? "✓ Notify on" : "Notify me"}</button>
+        </div>
+      ))}
+    </section>
+  );
+};
 
 /* TodayStat — stat card in the Today snapshot grid */
 const TodayStat = ({ icon, label, value, accent }) => (
