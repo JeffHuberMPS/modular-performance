@@ -13,7 +13,7 @@
  * @param {string} interval - 'monthly' | 'onetime'
  */
 async function startStripeCheckout(planId, interval = 'monthly') {
-  const stripe = getStripe();
+  const stripe = (window.STRIPE_CONFIG && STRIPE_CONFIG.getStripe) ? STRIPE_CONFIG.getStripe() : null;
   if (!stripe) {
     showBillingError('Payment system unavailable. Try again later.');
     return;
