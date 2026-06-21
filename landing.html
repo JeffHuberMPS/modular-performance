@@ -1114,8 +1114,8 @@
   <nav class="landing-nav">
     <a href="/" class="nav-logo">M<span>P</span>S</a>
     <div style="display:flex;gap:10px;align-items:center;">
-      <a href="/hub.html" class="nav-cta" id="nav-open-app" style="display:none;background:transparent;border:1px solid rgba(212,175,55,0.5);color:var(--gold);">Open App</a>
-      <a href="/auth.html" class="nav-cta" id="nav-trial-btn">Start Free Trial</a>
+      <a href="https://modular-performance-git-unified-app-jeffhubermps-projects.vercel.app/hub.html" class="nav-cta" id="nav-open-app" style="display:none;background:transparent;border:1px solid rgba(212,175,55,0.5);color:var(--gold);">Open App</a>
+      <a href="#pricing" class="nav-cta" id="nav-trial-btn">Start Free Trial</a>
     </div>
   </nav>
 
@@ -1135,7 +1135,7 @@
       </p>
 
       <div class="hero-ctas">
-        <a href="/auth.html" class="hero-btn-primary">Lock Your 90-Day Streak</a>
+        <a href="#pricing" class="hero-btn-primary">Lock Your 90-Day Streak</a>
         <a href="#suite" class="hero-btn-ghost">See the systems</a>
       </div>
 
@@ -1230,8 +1230,7 @@
         </div>
         <div class="tile-pill">Every dollar logged. See exactly where money goes. Find the leaks. Build leverage.</div>
       </div>
-      <div class="suite-tile suite-tile--locked" data-app="journal">
-        <div class="tile-coming-soon">🔒 COMING SOON</div>
+      <div class="suite-tile" data-app="journal">
         <div class="tile-header">
           <div class="tile-mps">MPS</div>
           <div class="tile-divider"></div>
@@ -1471,7 +1470,7 @@
     <div class="section-label" style="margin-bottom:var(--space-md);">No more excuses. No more resets.</div>
     <h2 class="final-cta__headline">The man you're building<br/>starts <span>today.</span></h2>
     <div style="margin-bottom: var(--space-xl);">
-      <a href="/auth.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Lock In Your 90-Day Streak</a>
+      <a href="#pricing" class="hero-btn-primary">Lock In Your 90-Day Streak</a>
     </div>
     <div class="final-cta__fine">14 days free. From $5.99/mo after. Cancel anytime.</div>
     <div style="margin-top:var(--space-md);">
@@ -1502,9 +1501,11 @@
     // Track auth state for smart buy redirects
     let _mpsAuthUser = null;
 
-    // goToBuy(): signed-in users go straight to hub (Page 2); guests go to auth first
+    // goToBuy(): send everyone to the NEW unified app (different domain → its own Firebase sign-in).
+    // ROLLBACK: to point back at the old North Star, restore the commented line below.
     function goToBuy() {
-      window.location.href = _mpsAuthUser ? '/hub.html' : '/auth.html';
+      window.location.href = 'https://modular-performance-git-unified-app-jeffhubermps-projects.vercel.app/auth.html';
+      // OLD North Star: window.location.href = _mpsAuthUser ? '/hub.html' : '/auth.html';
     }
 
     try {
