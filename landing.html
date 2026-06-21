@@ -14,8 +14,10 @@
   <link rel="stylesheet" href="/shared/styles.css" />
 
   <style>
-    html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: 0; }
-    .hero, .section, .final-cta { min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; justify-content: center; }
+    html { scroll-behavior: smooth; scroll-snap-type: y proximity; scroll-padding-top: 0; }
+    /* Gentle snap: assists alignment near a section, but never traps scroll or hides content.
+       min-height lets short sections fill a screen; tall sections (founder/pricing) grow so nothing is cut off. */
+    .hero, .section, .diff-section, .founder-section, .final-cta { min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }
 
     body {
       background: var(--ns-black);
