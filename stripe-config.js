@@ -21,7 +21,7 @@ window.STRIPE_CONFIG = (function() {
     test: {
       elite_monthly:   'price_1TaiqfJr8jtgHpa2SJ8RntRZ',
       premium_monthly: 'price_1TaiyeJr8jtgHpa2m5vQyVZE',
-      // ⚠️ One-time ($65 Elite / $159 Premium) prices must be created in Stripe as mode:payment — placeholders until then.
+      // ⚠️ One-time ($49 Elite / $99 Premium) prices must be created in Stripe as mode:payment — placeholders until then.
       elite_onetime:   'price_elite_onetime_test',
       premium_onetime: 'price_premium_onetime_test'
     },
@@ -47,7 +47,7 @@ window.STRIPE_CONFIG = (function() {
       name:          'MPS Elite',
       tagline:       'Everything unlimited — full history, stats & insights.',
       monthly_price: 5.99,
-      onetime_price: 65,
+      onetime_price: 49,
       monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_monthly  : PRICE_IDS.live.elite_monthly,
       onetime_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_onetime  : PRICE_IDS.live.elite_onetime
     },
@@ -55,7 +55,7 @@ window.STRIPE_CONFIG = (function() {
       name:          'MPS Premium',
       tagline:       'Elite, plus the colorful theme, priority insights & every future release.',
       monthly_price: 14.99,
-      onetime_price: 159,
+      onetime_price: 99,
       monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.premium_monthly : PRICE_IDS.live.premium_monthly,
       onetime_id:    IS_TEST_MODE ? PRICE_IDS.test.premium_onetime : PRICE_IDS.live.premium_onetime
     }
