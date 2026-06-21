@@ -14,11 +14,17 @@
   <link rel="stylesheet" href="/shared/styles.css" />
 
   <style>
-    html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: 72px; }
+    html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: 64px; font-size: 87.5%; }
+    /* GLOBAL ~75-80% SCALE — shrink the entire spacing system + base font at once so the page
+       reads like 80% zoom and each section fits one screen (instead of piecemeal element tweaks). */
+    :root {
+      --space-xs: 3px;  --space-sm: 6px;  --space-md: 9px;  --space-lg: 12px;
+      --space-xl: 18px; --space-2xl: 24px; --space-3xl: 34px; --space-4xl: 46px;
+    }
     /* Hard auto-snap. scroll-padding-top clears the fixed nav so each section's top label is never hidden.
        min-height = screen minus nav, and content is centered so the WHOLE section shows in one snap.
        (If a section is still taller than the screen, the browser relaxes the snap so you can scroll through it — nothing is ever clipped.) */
-    .hero, .section, .diff-section, .final-cta { min-height: calc(100vh - 72px); box-sizing: border-box; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }
+    .hero, .section, .diff-section, .final-cta { min-height: calc(100vh - 64px); box-sizing: border-box; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }
     /* Founder story is long on purpose — left as a free, manual-scroll snap area. */
     .founder-section { box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: normal; }
 
@@ -792,7 +798,7 @@
 
     /* ── DIFFERENTIATION SECTION ─────────────────────────────── */
     .diff-section {
-      padding: var(--space-3xl) var(--space-lg);
+      padding: var(--space-lg) var(--space-lg);
       max-width: 1000px;
       margin: 0 auto;
     }
@@ -803,7 +809,7 @@
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
       overflow: hidden;
-      margin-top: var(--space-xl);
+      margin-top: var(--space-sm);
     }
     @media (max-width: 600px) {
       .diff-grid { grid-template-columns: 1fr; }
@@ -1027,7 +1033,7 @@
       flex-direction: column;
       gap: 0;
       max-width: 600px;
-      margin: var(--space-xl) auto 0;
+      margin: var(--space-md) auto 0;
     }
     .upsell-rung {
       display: flex;
