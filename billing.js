@@ -10,7 +10,7 @@
 /**
  * Opens Stripe Checkout for the selected plan.
  * @param {string} planId   - 'single' | 'duo' | 'trio' | 'all'
- * @param {string} interval - 'monthly' | 'annual'
+ * @param {string} interval - 'monthly' | 'onetime'
  */
 async function startStripeCheckout(planId, interval = 'monthly') {
   const stripe = getStripe();

@@ -279,8 +279,8 @@
     <div class="billing-section-title">Change Plan</div>
 
     <div class="billing-interval-toggle">
-      <button class="interval-btn active" id="btn-monthly" onclick="setBillingInterval('monthly')">Monthly</button>
-      <button class="interval-btn"        id="btn-annual"  onclick="setBillingInterval('annual')">Annual (Save up to 18%)</button>
+      <button class="interval-btn active" id="btn-onetime" onclick="setBillingInterval('onetime')">One-Time</button>
+      <button class="interval-btn"        id="btn-monthly" onclick="setBillingInterval('monthly')">Monthly</button>
     </div>
 
     <div class="plan-options" id="plan-options">
@@ -335,7 +335,7 @@
 
   <script>
     /* ── Billing Page Logic ──────────────────────────────── */
-    let selectedInterval = 'monthly';
+    let selectedInterval = 'onetime';
     let selectedPlan     = null;
 
     const PLANS = (window.STRIPE_CONFIG && STRIPE_CONFIG.plans) || {};
@@ -347,8 +347,10 @@
     };
     function normTier(t) { return TIER_ALIAS[String(t || '').toLowerCase()] || 'core'; }
     function planPriceStr(plan) {
-      const p = selectedInterval === 'annual' ? plan.annual_price : plan.monthly_price;
-      return selectedInterval === 'annual' ? `$${p}/yr` : `$${p}/mo`;
+      if (selectedInterval === 'onetime') {
+        return plan.onetime_price ? `$${plan.onetime_price} once` : 'Free';
+      }
+      return plan.monthly_price ? `$${plan.monthly_price}/mo` : 'Free';
     }
 
     // Auth via Firebase (same as the hub) — no external auth.js dependency.
@@ -376,8 +378,8 @@
 
     function setBillingInterval(interval) {
       selectedInterval = interval;
+      document.getElementById('btn-onetime').classList.toggle('active', interval === 'onetime');
       document.getElementById('btn-monthly').classList.toggle('active', interval === 'monthly');
-      document.getElementById('btn-annual').classList.toggle('active',  interval === 'annual');
       renderPlanOptions(window.__MPS_USER);
     }
 

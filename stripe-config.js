@@ -21,14 +21,15 @@ window.STRIPE_CONFIG = (function() {
     test: {
       elite_monthly:   'price_1TaiqfJr8jtgHpa2SJ8RntRZ',
       premium_monthly: 'price_1TaiyeJr8jtgHpa2m5vQyVZE',
-      elite_annual:    'price_1TailiJr8jtgHpa2FIJYkQAY',
-      premium_annual:  'price_1TaiywJr8jtgHpa25aUsmXnP'
+      // ⚠️ One-time ($65 Elite / $159 Premium) prices must be created in Stripe as mode:payment — placeholders until then.
+      elite_onetime:   'price_elite_onetime_test',
+      premium_onetime: 'price_premium_onetime_test'
     },
     live: {
       elite_monthly:   'price_elite_monthly_live',
       premium_monthly: 'price_premium_monthly_live',
-      elite_annual:    'price_elite_annual_live',
-      premium_annual:  'price_premium_annual_live'
+      elite_onetime:   'price_elite_onetime_live',
+      premium_onetime: 'price_premium_onetime_live'
     }
   };
 
@@ -38,25 +39,25 @@ window.STRIPE_CONFIG = (function() {
       name:          'MPS Core',
       tagline:       'All five trackers, free — with sensible daily limits.',
       monthly_price: 0,
-      annual_price:  0,
+      onetime_price: 0,
       monthly_id:    null,
-      annual_id:     null
+      onetime_id:    null
     },
     elite: {
       name:          'MPS Elite',
       tagline:       'Everything unlimited — full history, stats & insights.',
       monthly_price: 5.99,
-      annual_price:  59,
-      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_monthly : PRICE_IDS.live.elite_monthly,
-      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.elite_annual  : PRICE_IDS.live.elite_annual
+      onetime_price: 65,
+      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_monthly  : PRICE_IDS.live.elite_monthly,
+      onetime_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_onetime  : PRICE_IDS.live.elite_onetime
     },
     premium: {
       name:          'MPS Premium',
       tagline:       'Elite, plus the colorful theme, priority insights & every future release.',
       monthly_price: 14.99,
-      annual_price:  149,
+      onetime_price: 159,
       monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.premium_monthly : PRICE_IDS.live.premium_monthly,
-      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.premium_annual  : PRICE_IDS.live.premium_annual
+      onetime_id:    IS_TEST_MODE ? PRICE_IDS.test.premium_onetime : PRICE_IDS.live.premium_onetime
     }
   };
 
