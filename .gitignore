@@ -36,6 +36,5 @@ npm-debug.log*
 # Build artifacts
 dist/
 build/
-package.json 
 .vercel
 .env*
