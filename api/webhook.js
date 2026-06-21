@@ -58,16 +58,12 @@ const TIER_APPS = {
 // Maps the current test price IDs onto the 3-tier model. (Stripe products will be
 // rebuilt for Core/Elite/Premium when Stripe is wired; keys default to 'core'.)
 const PRICE_TIER_MAP = {
-  // Monthly (test)
-  'price_1TaiqfJr8jtgHpa2SJ8RntRZ': 'elite',
-  'price_1TaiuXJr8jtgHpa2mWoHzNVE': 'elite',
-  'price_1TaiwWJr8jtgHpa2HFVCbAsh': 'elite',
-  'price_1TaiyeJr8jtgHpa2m5vQyVZE': 'premium',
-  // Annual (test)
-  'price_1TailiJr8jtgHpa2FIJYkQAY': 'elite',
-  'price_1TaiutJr8jtgHpa2gXVZ88jW': 'elite',
-  'price_1TaiwmJr8jtgHpa2lvxDKbFN': 'elite',
-  'price_1TaiywJr8jtgHpa25aUsmXnP': 'premium',
+  // Elite (test)
+  'price_1TkspjJr8jtgHpa2rOuM2N3D': 'elite',    // monthly $5.99
+  'price_1TksrAJr8jtgHpa24nsz1lRM': 'elite',    // one-time $49
+  // Premium (test)
+  'price_1TkssoJr8jtgHpa2vOUnv9Um': 'premium',  // monthly $14.99
+  'price_1TkstIJr8jtgHpa2N2LL5KSR': 'premium',  // one-time $99
 };
 
 function tierFromPriceId(priceId) {

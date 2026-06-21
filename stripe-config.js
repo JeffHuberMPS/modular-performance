@@ -19,11 +19,10 @@ window.STRIPE_CONFIG = (function() {
   // Reuses the existing test products until Stripe is rebuilt for the 3-tier model.
   const PRICE_IDS = {
     test: {
-      elite_monthly:   'price_1TaiqfJr8jtgHpa2SJ8RntRZ',
-      premium_monthly: 'price_1TaiyeJr8jtgHpa2m5vQyVZE',
-      // ⚠️ One-time ($49 Elite / $99 Premium) prices must be created in Stripe as mode:payment — placeholders until then.
-      elite_onetime:   'price_elite_onetime_test',
-      premium_onetime: 'price_premium_onetime_test'
+      elite_monthly:   'price_1TkspjJr8jtgHpa2rOuM2N3D',   // $5.99/mo
+      premium_monthly: 'price_1TkssoJr8jtgHpa2vOUnv9Um',   // $14.99/mo
+      elite_onetime:   'price_1TksrAJr8jtgHpa24nsz1lRM',   // $49 once
+      premium_onetime: 'price_1TkstIJr8jtgHpa2N2LL5KSR'    // $99 once
     },
     live: {
       elite_monthly:   'price_elite_monthly_live',
