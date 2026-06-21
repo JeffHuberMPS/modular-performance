@@ -720,16 +720,16 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
   <!-- ============ SETTINGS ============ -->
   <div class="view" id="view-settings">
     <div class="card">
-      <div class="dash-section-title">Make.com Sync</div>
+      <div class="dash-section-title">Connect Your Sheet</div>
       <div id="sync-status" style="padding: 12px 14px; border-radius: 10px; background: var(--mps-card-2); margin-bottom: 16px; font-size: 13px;">
         <div style="color: var(--mps-text-dim); font-size: 11px; letter-spacing: 1.5px; margin-bottom: 4px;">STATUS</div>
         <div id="sync-status-text" style="color: var(--mps-text);">Not connected</div>
         <div id="sync-last" style="color: var(--mps-text-mute); font-size: 11px; margin-top: 4px;"></div>
       </div>
       <div class="form-row">
-        <label class="form-label">Make.com Webhook URL</label>
-        <input type="text" class="form-input" id="set-webhook" placeholder="https://hook.us2.make.com/...">
-        <div style="color: var(--mps-text-mute); font-size: 11px; margin-top: 4px;">From your Make scenario's Custom Webhook trigger</div>
+        <label class="form-label">Google Sheet link</label>
+        <input type="text" class="form-input" id="set-webhook" placeholder="Paste your published Log CSV link (…/pub?…output=csv)">
+        <div style="color: var(--mps-text-mute); font-size: 11px; margin-top: 4px;">Paste your sheet link (or a Make webhook). Save &amp; Connect pulls your Log in.</div>
       </div>
       <div style="display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
         <button class="btn primary" id="btn-save-sync">Save & Connect</button>
@@ -741,15 +741,15 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
     <div class="card" style="margin-top: 14px;">
       <div class="dash-section-title">How Sync Works</div>
       <div style="font-size: 13px; line-height: 1.7; color: var(--mps-text-dim);">
-        <div style="margin-bottom: 12px;">This tracker pulls data from your Google Sheet through a Make.com scenario you build once.</div>
+        <div style="margin-bottom: 12px;">This tracker reads your Google Sheet's <b>Log</b> tab and rebuilds your dashboard from it — a second view of the same data.</div>
         <div style="color: var(--mps-text); font-weight: 600; margin-bottom: 6px;">Flow:</div>
         <div style="padding: 12px; background: var(--mps-card-2); border-radius: 8px; border-left: 3px solid var(--mps-mint); margin-bottom: 12px;">
           <div style="color: var(--mps-mint); font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 12px; line-height: 1.8;">
-            Tracker opens<br>&nbsp;&nbsp;↓<br>Hits Make webhook URL<br>&nbsp;&nbsp;↓<br>Make reads Log + Budget + Rules tabs<br>&nbsp;&nbsp;↓<br>Make returns JSON<br>&nbsp;&nbsp;↓<br>Dashboard renders fresh data
+            Tracker opens<br>&nbsp;&nbsp;↓<br>Reads your published Log (CSV)<br>&nbsp;&nbsp;↓<br>Builds entries from Date / Merchant / Amount / Category<br>&nbsp;&nbsp;↓<br>Dashboard renders fresh data
           </div>
         </div>
-        <div>Your existing expense automation scenario is untouched. This is a separate read-only scenario.</div>
-        <div style="color: var(--mps-text-mute); font-size: 11px; margin-top: 8px;">See the chat for full Make.com setup steps.</div>
+        <div>Your Wells&nbsp;Fargo&nbsp;→&nbsp;Make&nbsp;→&nbsp;Sheet automation is untouched. This just reads the result.</div>
+        <div style="color: var(--mps-text-mute); font-size: 11px; margin-top: 8px;">Setup: Sheet → File → Share → Publish to web → Log tab → CSV → paste that link above.</div>
       </div>
     </div>
   </div>
@@ -1268,12 +1268,30 @@ function flash(msg){const d=document.createElement('div');d.textContent=msg;d.st
 function syncLog(msg,isError){const el=document.getElementById('sync-log');if(!el)return;el.style.display='block';const ts=new Date().toLocaleTimeString();const color=isError?'var(--mps-danger)':'var(--mps-mint)';el.innerHTML+=`<div style="color:${color};">[${ts}] ${msg}</div>`;el.scrollTop=el.scrollHeight;}
 function parseSheetDate(s){if(!s)return '';s=String(s).trim();const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(m){let[,mo,d,y]=m;if(y.length===2)y='20'+y;return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;}if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;return '';}
 function parseSheetAmount(s){if(!s)return 0;const cleaned=String(s).replace(/[$,()\s]/g,'');return Math.abs(parseFloat(cleaned))||0;}
+// ── CSV parser + direct Google-Sheet read (no Make.com needed) ───
+function parseCSV(text){const rows=[];let row=[],field='',inQ=false;for(let i=0;i<text.length;i++){const c=text[i];if(inQ){if(c==='"'){if(text[i+1]==='"'){field+='"';i++;}else inQ=false;}else field+=c;}else{if(c==='"')inQ=true;else if(c===','){row.push(field);field='';}else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}else if(c!=='\r')field+=c;}}if(field.length||row.length){row.push(field);rows.push(row);}return rows;}
+function sheetIdFromUrl(u){const m=String(u).match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);return m?m[1]:null;}
+// Returns {log,...} from either a Google-Sheet (published/CSV) URL or a Make webhook (JSON).
+async function fetchSyncData(src){
+  const isSheet=/docs\.google\.com\/spreadsheets|output=csv|format=csv|gviz\/tq|\/pub\b/i.test(src);
+  if(isSheet){
+    let url=src;
+    if(/\/spreadsheets\/d\//i.test(src)&&!/output=csv|format=csv|gviz|\/pub/i.test(src)){const id=sheetIdFromUrl(src);url=`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=Log`;}
+    const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),15000);let res;
+    try{res=await fetch(url,{signal:ctrl.signal});}catch(err){throw new Error('Could not read the sheet — make sure it is shared or published so the link works.');}finally{clearTimeout(t);}
+    if(!res.ok)throw new Error('HTTP '+res.status+' — check the sheet share/publish settings.');
+    return {log:parseCSV(await res.text())};
+  }
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);let res;
+  try{res=await fetch(src,{method:'GET',signal:ctrl.signal});}catch(err){if(err.name==='AbortError')throw new Error('Timed out after 15s');throw err;}finally{clearTimeout(timer);}
+  if(!res.ok)throw new Error(`HTTP ${res.status}`);return await res.json();
+}
 async function syncFromSheet(){
-  const webhook=state.sync.webhook;if(!webhook){syncLog('No webhook URL set',true);updateSyncStatus('error','Not configured');return false;}
-  document.getElementById('sync-log').innerHTML='';syncLog('Calling Make webhook...');updateSyncStatus('syncing','Syncing...');
+  const webhook=state.sync.webhook;if(!webhook){syncLog('No source set',true);updateSyncStatus('error','Not configured');return false;}
+  document.getElementById('sync-log').innerHTML='';syncLog('Syncing...');updateSyncStatus('syncing','Syncing...');
   let logCount=0,ruleCount=0,budgetCount=0;
   try{
-    const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);let res;try{res=await fetch(webhook,{method:'GET',signal:ctrl.signal});}catch(err){if(err.name==='AbortError')throw new Error('Timed out after 15s');throw err;}finally{clearTimeout(timer);}if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();syncLog('Response received');
+    const data=await fetchSyncData(webhook);syncLog('Data received');
     if(data.log&&Array.isArray(data.log)&&data.log.length>=2){
       const headers=data.log[0].map(h=>String(h).trim().toLowerCase());
       const idx={date:headers.findIndex(h=>h.includes('date')),item:headers.findIndex(h=>h.includes('item')),merchant:headers.findIndex(h=>h.includes('merchant')),amount:headers.findIndex(h=>h.includes('amount')),category:headers.findIndex(h=>h.includes('category')),source:headers.findIndex(h=>h.includes('source')),uniqueId:headers.findIndex(h=>h.includes('unique')||h.includes('id'))};
@@ -1299,9 +1317,9 @@ function loadSyncSettings(){const el=document.getElementById('set-webhook');if(e
 document.getElementById('btn-save-sync')?.addEventListener('click',async()=>{state.sync={webhook:document.getElementById('set-webhook').value.trim()};save(STORE.sync,state.sync);flash('Saved');await syncFromSheet();});
 document.getElementById('btn-refresh-sync')?.addEventListener('click',async()=>{await syncFromSheet();});
 document.getElementById('btn-test-sync')?.addEventListener('click',async()=>{
-  const webhook=document.getElementById('set-webhook').value.trim();if(!webhook){flash('Enter webhook URL first');return;}
-  document.getElementById('sync-log').innerHTML='';syncLog('Testing webhook...');
-  try{const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);let res;try{res=await fetch(webhook,{method:'GET',signal:ctrl.signal});}catch(err){if(err.name==='AbortError')throw new Error('Timed out after 15s');throw err;}finally{clearTimeout(timer);}if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();syncLog('Connected. Response keys: '+Object.keys(data).join(', '));if(data.log)syncLog(`Log rows: ${data.log.length}`);if(data.budget)syncLog(`Budget rows: ${data.budget.length}`);if(data.rules)syncLog(`Rules rows: ${data.rules.length}`);}
+  const webhook=document.getElementById('set-webhook').value.trim();if(!webhook){flash('Paste your sheet link first');return;}
+  document.getElementById('sync-log').innerHTML='';syncLog('Testing connection...');
+  try{const data=await fetchSyncData(webhook);syncLog('Connected. Keys: '+Object.keys(data).join(', '));if(data.log)syncLog(`Log rows: ${data.log.length}`);if(data.budget)syncLog(`Budget rows: ${data.budget.length}`);if(data.rules)syncLog(`Rules rows: ${data.rules.length}`);}
   catch(e){syncLog(`FAILED: ${e.message}`,true);}
 });
 // =================================================================
