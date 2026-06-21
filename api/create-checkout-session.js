@@ -17,33 +17,38 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
-  const { priceId, uid, email, stripeCustomerId, successUrl, cancelUrl } = req.body;
+  const { priceId, uid, email, tier, mode, stripeCustomerId, successUrl, cancelUrl } = req.body;
 
   if (!priceId || !uid) {
     return res.status(400).json({ error: 'Missing priceId or uid' });
   }
 
+  // One-time ('payment') vs recurring ('subscription'). Default to subscription.
+  const checkoutMode = mode === 'payment' ? 'payment' : 'subscription';
+
   try {
     const sessionParams = {
-      mode:                 'subscription',
+      mode:                 checkoutMode,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url:          successUrl || `${process.env.APP_URL}/hub.html?upgrade=success`,
       cancel_url:           cancelUrl  || `${process.env.APP_URL}/hub.html?upgrade=cancelled`,
-      metadata: { uid },
-      subscription_data: {
-        metadata: { uid },
-        // 14-day free trial for all new subscriptions (matches the landing page).
-        // Only applies to first-time subscribers — Stripe skips the trial
-        // if the customer already has or had a subscription.
-        trial_period_days: 14
-      },
-      // No card required to start the trial (matches "No card required" on the landing page).
-      payment_method_collection: 'if_required'
+      // tier rides in metadata so the webhook can set it directly (works for one-time AND subscription)
+      metadata: { uid, tier: tier || '' }
     };
 
-    // Attach existing Stripe customer if we have one.
-    // If the customer has already used a trial, Stripe will not grant another.
+    if (checkoutMode === 'subscription') {
+      // Monthly plan — 14-day free trial, no card required up front (matches the landing page).
+      // Stripe skips the trial if the customer already has/had a subscription.
+      sessionParams.subscription_data = {
+        metadata: { uid, tier: tier || '' },
+        trial_period_days: 14
+      };
+      sessionParams.payment_method_collection = 'if_required';
+    }
+    // One-time 'payment' mode: charge now, no trial, lifetime access — nothing extra needed.
+
+    // Attach existing Stripe customer if we have one, else prefill email.
     if (stripeCustomerId) {
       sessionParams.customer = stripeCustomerId;
     } else if (email) {

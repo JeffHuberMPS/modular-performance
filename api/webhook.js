@@ -102,27 +102,37 @@ module.exports = async (req, res) => {
       /* ── Successful checkout → unlock apps ──────────────── */
       case 'checkout.session.completed': {
         const session = event.data.object;
-        const uid     = session.metadata.uid;
+        const uid     = session.metadata?.uid;
 
         if (!uid) {
           console.warn('[Webhook] No UID in checkout session metadata');
           break;
         }
 
-        // Get the subscription to determine price/tier and trial status
-        let tier        = 'core';
+        // tier from metadata is the source of truth (set when the session was created);
+        // fall back to the price→tier map only if it's missing.
+        let tier        = session.metadata?.tier || 'core';
         let trialEnd    = null;
         let trialActive = false;
+        let lifetime    = false;
 
-        if (session.subscription) {
+        if (session.mode === 'subscription' && session.subscription) {
+          // Monthly plan
           const sub     = await stripe.subscriptions.retrieve(session.subscription);
           const priceId = sub.items.data[0]?.price?.id;
-          tier          = tierFromPriceId(priceId);
-
-          // Store trial end date if subscription is in a trial period
+          if (!session.metadata?.tier) tier = tierFromPriceId(priceId);
           if (sub.trial_end) {
             trialEnd    = admin.firestore.Timestamp.fromMillis(sub.trial_end * 1000);
             trialActive = sub.trial_end > Math.floor(Date.now() / 1000);
+          }
+        } else if (session.mode === 'payment') {
+          // One-time purchase → lifetime access, no recurring billing.
+          lifetime = true;
+          if (!session.metadata?.tier) {
+            try {
+              const items = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
+              tier = tierFromPriceId(items.data[0]?.price?.id);
+            } catch (e) { /* keep metadata/core */ }
           }
         }
 
@@ -131,13 +141,14 @@ module.exports = async (req, res) => {
           apps:               TIER_APPS[tier] || ALL_TRACKERS,
           stripe_customer_id: session.customer,
           payment_failed:     false,
+          lifetime:           lifetime,
           trial_end:          trialEnd,
           trial_active:       trialActive,
           trial_ending_soon:  false,
           updated_at:         admin.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log(`[Webhook] Upgraded user ${uid} to ${tier}${trialActive ? ' (trial active)' : ''}`);
+        console.log(`[Webhook] Upgraded user ${uid} to ${tier}${lifetime ? ' (lifetime)' : trialActive ? ' (trial)' : ''}`);
         break;
       }
 
@@ -152,6 +163,12 @@ module.exports = async (req, res) => {
 
         if (snap.empty) {
           console.warn('[Webhook] No user found for customer:', customer);
+          break;
+        }
+
+        // Lifetime (one-time) buyers keep their tier even if an old subscription is cancelled.
+        if (snap.docs[0].data().lifetime === true) {
+          console.log('[Webhook] Sub cancelled but user has lifetime access — keeping tier for:', customer);
           break;
         }
 

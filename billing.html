@@ -361,7 +361,9 @@
         const snap = await firebase.firestore().collection('users').doc(user.uid).get();
         userDoc = snap.exists ? snap.data() : null;
       } catch (e) { /* fall through to default below */ }
-      if (!userDoc) userDoc = { tier: 'single', email: user.email };
+      if (!userDoc) userDoc = { tier: 'core', email: user.email };
+      userDoc.uid   = user.uid;                       // billing.js needs this for checkout
+      userDoc.email = userDoc.email || user.email;
       window.__MPS_USER = userDoc;
       renderCurrentPlan(userDoc);
       renderPlanOptions(userDoc);
@@ -412,8 +414,16 @@
     }
 
     // Stripe isn't wired yet — show a friendly notice instead of a dead button.
-    function changePlan()         { showBillingError('Payments are coming soon — plan changes aren\'t available here yet.'); }
-    function openCustomerPortal() { showBillingError('The billing portal is coming soon.'); }
+    function changePlan() {
+      if (!selectedPlan || selectedPlan === normTier(window.__MPS_USER && window.__MPS_USER.tier)) return;
+      if (selectedPlan === 'core') { openCustomerPortal(); return; }   // downgrade to free = cancel via portal
+      if (window.MPS_Billing) MPS_Billing.startStripeCheckout(selectedPlan, selectedInterval);
+      else showBillingError('Billing not loaded. Refresh and try again.');
+    }
+    function openCustomerPortal() {
+      if (window.MPS_Billing) MPS_Billing.openCustomerPortal();
+      else showBillingError('Billing not loaded. Refresh and try again.');
+    }
 
     function loadInvoices() {
       document.getElementById('invoice-body').innerHTML =

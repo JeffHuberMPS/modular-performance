@@ -19,25 +19,32 @@ async function startStripeCheckout(planId, interval = 'monthly') {
     return;
   }
 
-  const user = window.__MPS_USER || MPS_Auth.getUserDoc();
-  if (!user) {
+  const user = window.__MPS_USER || (window.MPS_Auth && MPS_Auth.getUserDoc && MPS_Auth.getUserDoc());
+  if (!user || !user.uid) {
     window.location.href = '/auth.html';
     return;
   }
 
-  // Pick price ID (test vs live)
-  const prefix    = STRIPE_CONFIG.isTestMode ? 'test_' : '';
-  const priceKey  = `${prefix}${planId}_${interval}`;
-  const priceId   = STRIPE_CONFIG.prices[priceKey];
+  // Resolve the plan + the right price for the chosen interval.
+  const plan = (STRIPE_CONFIG.plans || {})[planId];
+  if (!plan) { showBillingError('Unknown plan.'); return; }
 
-  if (!priceId || priceId.includes('REPLACE')) {
-    showBillingError('Price not configured yet. Set up in stripe-config.js.');
+  const onetime = interval === 'onetime';
+  const priceId = onetime ? plan.onetime_id : plan.monthly_id;
+  const mode    = onetime ? 'payment' : 'subscription';
+
+  // Guard against placeholder/unset IDs (the one-time prices are placeholders
+  // until they're created in Stripe — see stripe-config.js).
+  const idStr = String(priceId || '');
+  if (!priceId || idStr.includes('REPLACE') || idStr.includes('placeholder') || idStr.includes('_onetime_test') || idStr.includes('_onetime_live')) {
+    showBillingError('This price isn’t set up in Stripe yet.');
     return;
   }
 
   setBillingLoading(true);
 
   try {
+    const origin = window.location.origin;
     // Create checkout session via backend (Vercel serverless function)
     // The /api/create-checkout-session endpoint is in /api/create-checkout-session.js
     const res = await fetch('/api/create-checkout-session', {
@@ -47,9 +54,11 @@ async function startStripeCheckout(planId, interval = 'monthly') {
         priceId,
         uid:               user.uid,
         email:             user.email,
+        tier:              planId,
+        mode:              mode,
         stripeCustomerId:  user.stripe_customer_id || null,
-        successUrl:        STRIPE_CONFIG.successUrl,
-        cancelUrl:         STRIPE_CONFIG.cancelUrl
+        successUrl:        `${origin}/hub.html?upgrade=success`,
+        cancelUrl:         `${origin}/billing.html?upgrade=cancelled`
       })
     });
 
