@@ -14,8 +14,8 @@
   <link rel="stylesheet" href="/shared/styles.css" />
 
   <style>
-    html { scroll-behavior: smooth; scroll-snap-type: y proximity; scroll-padding-top: 64px; }
-    .hero, .section, .final-cta { scroll-snap-align: start; }
+    html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: 0; }
+    .hero, .section, .final-cta { min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; justify-content: center; }
 
     body {
       background: var(--ns-black);
