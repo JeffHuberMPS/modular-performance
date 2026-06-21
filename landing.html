@@ -14,10 +14,13 @@
   <link rel="stylesheet" href="/shared/styles.css" />
 
   <style>
-    html { scroll-behavior: smooth; scroll-snap-type: y proximity; scroll-padding-top: 0; }
-    /* Gentle snap: assists alignment near a section, but never traps scroll or hides content.
-       min-height lets short sections fill a screen; tall sections (founder/pricing) grow so nothing is cut off. */
-    .hero, .section, .diff-section, .founder-section, .final-cta { min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }
+    html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: 72px; }
+    /* Hard auto-snap. scroll-padding-top clears the fixed nav so each section's top label is never hidden.
+       min-height = screen minus nav, and content is centered so the WHOLE section shows in one snap.
+       (If a section is still taller than the screen, the browser relaxes the snap so you can scroll through it — nothing is ever clipped.) */
+    .hero, .section, .diff-section, .final-cta { min-height: calc(100vh - 72px); box-sizing: border-box; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }
+    /* Founder story is long on purpose — left as a free, manual-scroll snap area. */
+    .founder-section { box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: normal; }
 
     body {
       background: var(--ns-black);
@@ -208,7 +211,7 @@
 
     /* ── SECTIONS SHARED ─────────────────────────────────────── */
     .section {
-      padding: var(--space-3xl) var(--space-lg);
+      padding: var(--space-lg) var(--space-lg);
       max-width: 1000px;
       margin: 0 auto;
     }
@@ -230,7 +233,7 @@
       line-height: 1.1;
       letter-spacing: 0.04em;
       text-align: center;
-      margin-bottom: var(--space-xl);
+      margin-bottom: var(--space-md);
     }
     .section-title span {
       background: linear-gradient(160deg, #FFE066 0%, #D4AF37 30%, #8B6600 60%, #D4AF37 80%, #FFE066 100%);
@@ -244,7 +247,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: var(--space-lg);
-      margin-top: var(--space-xl);
+      margin-top: var(--space-md);
     }
     .problem-card {
       background: var(--card-bg);
