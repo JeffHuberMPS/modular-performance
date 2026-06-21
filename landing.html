@@ -1410,7 +1410,7 @@
         </div>
       </div>
       <div style="text-align:center; margin-top:var(--space-xl);">
-        <a href="/auth.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Get Lifetime Access</a>
+        <a href="/agreement.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Get Lifetime Access</a>
         <div style="margin-top:22px; font-size:0.72rem; color:var(--text-faint);">
           Pay once. Use forever. No card on file after purchase.
         </div>
@@ -1456,7 +1456,7 @@
         </div>
       </div>
       <div style="text-align:center; margin-top:var(--space-xl);">
-        <a href="/auth.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Start Free — 14 Days on Us</a>
+        <a href="/agreement.html" onclick="goToBuy(); return false;" class="hero-btn-primary">Start Free — 14 Days on Us</a>
         <div style="margin-top:22px; font-size:0.72rem; color:var(--text-faint);">
           Pick your plan after the trial. No card required to start.
         </div>
@@ -1505,7 +1505,7 @@
     // goToBuy(): send everyone to the NEW unified app (different domain → its own Firebase sign-in).
     // The unified app now lives on this same domain (replaced the old North Star).
     function goToBuy() {
-      window.location.href = _mpsAuthUser ? '/hub.html' : '/auth.html';
+      window.location.href = _mpsAuthUser ? '/hub.html' : '/agreement.html';
     }
 
     try {

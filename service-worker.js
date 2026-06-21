@@ -1,5 +1,5 @@
 // MPS Service Worker — offline support + update notification
-const CACHE_VERSION = 'mps-v135';
+const CACHE_VERSION = 'mps-v136';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const FONT_CACHE    = CACHE_VERSION + '-fonts';
 
@@ -9,6 +9,7 @@ const STATIC_ASSETS = [
   '/landing.html',
   '/hub.html',
   '/auth.html',
+  '/agreement.html',
   '/billing.html',
   '/manifest.json',
   '/firebase-config.js',

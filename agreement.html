@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>MPS — User Agreement</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="/shared/styles.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --gold: #C9A020; --gold-soft: rgba(201,160,32,0.5); }
+    html, body { background: radial-gradient(130% 80% at 50% -10%, #15130c 0%, #0b0b0b 50%, #070707 100%); min-height: 100vh; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #e8e8e8; padding: 40px 18px 64px; line-height: 1.5; }
+
+    .ag-wrap { max-width: 760px; margin: 0 auto; }
+
+    /* Header */
+    .ag-logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 0.06em; color: #fff; text-align: center; }
+    .ag-logo span { color: var(--gold); }
+    .ag-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; letter-spacing: 0.04em; color: #fff; text-align: center; margin-top: 14px; }
+    .ag-sub { text-align: center; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: #8a8472; margin-top: 6px; }
+    .ag-intro { text-align: center; color: #b8b8b8; font-size: 0.9rem; max-width: 560px; margin: 18px auto 30px; }
+    .ag-divider { width: 56px; height: 2px; background: var(--gold); margin: 16px auto 0; border-radius: 2px; box-shadow: 0 0 12px rgba(201,160,32,0.5); }
+
+    /* Section card */
+    .ag-card { position: relative; overflow: hidden; background: linear-gradient(180deg, rgba(28,28,28,0.7) 0%, rgba(13,13,13,0.7) 100%); border: 1px solid rgba(201,160,32,0.22); border-radius: 14px; margin-bottom: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 22px rgba(0,0,0,0.45); }
+    .ag-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--gold); box-shadow: 0 0 12px var(--gold); opacity: 0.5; transition: opacity 0.2s; }
+    .ag-card.checked::before { opacity: 1; }
+
+    /* Section header (checkbox row) */
+    .ag-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px; cursor: pointer; }
+    .ag-head:hover { background: rgba(255,255,255,0.02); }
+    .ag-check { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 22px; height: 22px; border: 2px solid rgba(201,160,32,0.55); border-radius: 6px; background: transparent; cursor: pointer; position: relative; transition: all 0.15s; }
+    .ag-check:checked { background: var(--gold); border-color: var(--gold); }
+    .ag-check:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px; border: solid #0a0a0a; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+    .ag-head__txt { flex: 1; }
+    .ag-head__statement { font-size: 0.96rem; font-weight: 600; color: #fff; }
+    .ag-head__sectitle { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 3px; }
+    .ag-chev { flex-shrink: 0; color: #8a8a8a; font-size: 0.8rem; transition: transform 0.2s; user-select: none; }
+    .ag-card.open .ag-chev { transform: rotate(180deg); }
+
+    /* Subsections */
+    .ag-subs { display: none; border-top: 1px solid rgba(255,255,255,0.07); }
+    .ag-card.open .ag-subs { display: block; }
+    .ag-sub-row { border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .ag-sub-row:last-child { border-bottom: 0; }
+    .ag-sub-head { display: flex; align-items: center; gap: 10px; padding: 12px 20px 12px 30px; cursor: pointer; }
+    .ag-sub-head:hover { background: rgba(255,255,255,0.02); }
+    .ag-sub-chev { color: #6a6a6a; font-size: 0.7rem; transition: transform 0.2s; }
+    .ag-sub-row.open .ag-sub-chev { transform: rotate(180deg); }
+    .ag-sub-title { font-size: 0.85rem; font-weight: 500; color: #d8d8d8; }
+    .ag-sub-title b { color: var(--gold); font-weight: 700; margin-right: 4px; }
+    .ag-sub-body { display: none; padding: 4px 22px 20px 30px; font-size: 0.82rem; color: #a8a8a8; white-space: pre-wrap; line-height: 1.65; }
+    .ag-sub-row.open .ag-sub-body { display: block; }
+
+    /* Agree footer */
+    .ag-agreeline { text-align: center; color: #b8b8b8; font-size: 0.88rem; margin: 26px 0 16px; }
+    .ag-btn { display: block; width: 100%; max-width: 420px; margin: 0 auto; padding: 16px; border: none; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .ag-btn.on { background: linear-gradient(105deg, #5C4000 0%, #C9A020 25%, #F5E060 50%, #C9A020 75%, #5C4000 100%); background-size: 200% auto; color: #0a0a0a; }
+    .ag-btn.on:hover { box-shadow: 0 0 28px rgba(201,160,32,0.5); transform: translateY(-1px); }
+    .ag-btn.off { background: #1c1c1c; color: #5a5a5a; cursor: not-allowed; border: 1px solid rgba(255,255,255,0.08); }
+    .ag-hint { text-align: center; font-size: 0.72rem; color: #6a6a6a; margin-top: 10px; }
+    .ag-foot { text-align: center; font-size: 0.68rem; color: #5a5a5a; margin-top: 30px; }
+    .ag-foot a { color: #8a8472; }
+  </style>
+</head>
+<body>
+  <div class="ag-wrap">
+    <div class="ag-logo">M<span>P</span>S</div>
+    <div class="ag-title">User Agreement</div>
+    <div class="ag-sub">Effective Jan 1, 2026 · Governed by the laws of Iowa</div>
+    <div class="ag-divider"></div>
+    <p class="ag-intro">Before you create your account, review and accept the three agreements below. Tap any section to read the full terms.</p>
+
+    <div id="ag-sections"></div>
+
+    <p class="ag-agreeline">By creating an account, you agree to the MPS User Agreement.</p>
+    <button id="ag-btn" class="ag-btn off" disabled onclick="agContinue()">Check all three to continue</button>
+    <div class="ag-hint" id="ag-hint">All three boxes must be checked.</div>
+
+    <div class="ag-foot">© 2026 Modular Performance Systems, LLC. All Rights Reserved. · Questions? <a href="mailto:support@modular-performance.com">support@modular-performance.com</a></div>
+  </div>
+
+  <script>
+  /* If already accepted on this device, skip straight to sign-in (no re-nag). */
+  (function(){ try { if (localStorage.getItem('mps_agreed_v1')) { location.replace(new URLSearchParams(location.search).get('next') || '/auth.html'); } } catch(e){} })();
+  /* ── Legal content (contact emails on the MPS domain) ───────────── */
+  const SECTIONS = {
+    terms: {
+      sectitle: 'Section 1',
+      statement: 'I agree to the MPS Terms of Service.',
+      subs: {
+        '1.1': { title: 'User Agreement', body: `This User Agreement and Terms of Service (collectively, "Agreement") is entered into between Modular Performance Systems, LLC, a business operated in the State of Iowa ("MPS," "we," "us," "our," or "Company"), and the individual or entity creating an account and accessing MPS services ("you," "your," or "User").
+
+By creating an account, accessing the MPS platform (including all websites, mobile applications, APIs, and services operated by MPS), using any MPS product or service, or making any purchase from MPS, you acknowledge that you have read, understood, and agree to be legally bound by this Agreement in its entirety, including the Privacy Policy.
+
+If you do not agree with any provision of this Agreement, you must not create an account or use MPS services.
+
+This Agreement applies to all Users regardless of jurisdiction, with the understanding that certain consumer protection laws may require modifications to specific provisions. To the extent any provision is found unenforceable, that provision shall be modified to the minimum extent necessary to make it enforceable, and all other provisions shall remain in full force and effect.
+
+MPS reserves the right to modify, update, or replace this Agreement at any time, at its sole discretion. Continued use of MPS services following any modification constitutes your acceptance. We will notify Users of material changes via email or in-platform notification at least thirty (30) days prior to the change taking effect. Your continued access after such notification constitutes acceptance.` },
+        '1.2': { title: 'Account Responsibilities', body: `You agree to provide accurate, current, and complete information when creating an account. You are solely responsible for maintaining the confidentiality of your account credentials, including your password, and for all activity that occurs under your account. You agree to notify MPS immediately of any unauthorized use of your account or any other breach of security.
+
+You are responsible for all transactions, activities, and communications conducted through your account, whether or not you personally authorized them. MPS is not liable for any unauthorized use of your account, provided that the unauthorized use was not caused by MPS's negligence or security failure.
+
+You grant MPS the right to send electronic communications to the email address and phone number associated with your account for transactional, account, promotional, and administrative purposes. You can opt out of non-transactional communications through your account settings, but you cannot opt out of transactional communications related to your account or purchases.
+
+You agree to comply with all applicable laws, regulations, and this Agreement when using MPS services. If you are under the age of 18, you represent that you have obtained parental or guardian consent prior to using MPS services, and your parent or guardian agrees to be bound by this Agreement.` },
+        '1.3': { title: 'Acceptable Use', body: `You agree not to:
+
+(a) Use MPS services for any illegal purpose or in violation of any applicable law, regulation, or third-party right;
+(b) Reverse engineer, decompile, disassemble, or attempt to derive the source code, algorithms, or proprietary information of MPS services;
+(c) Use any automated system, bot, script, scraper, or spider to access or collect data from MPS services without express written permission;
+(d) Engage in harassment, abuse, threats, defamation, or discrimination;
+(e) Transmit viruses, malware, ransomware, or other malicious code;
+(f) Attempt unauthorized access to MPS systems through hacking, phishing, credential stuffing, or fraud;
+(g) Sell, transfer, assign, or sublicense your account or access credentials;
+(h) Remove, obscure, or alter intellectual property notices or proprietary marks;
+(i) Use MPS services to develop competing products or gather competitive intelligence;
+(j) Make false or misleading claims regarding your identity or relationship with MPS;
+(k) Violate intellectual property rights, privacy rights, or other rights of any person;
+(l) Spam, flood, or overwhelm MPS services or systems;
+(m) Use MPS services as a free tier indefinitely with intent to avoid payment;
+(n) Claim ownership of or misrepresent the source of User-Generated Content;
+(o) Use MPS services in any manner that could damage, disable, impair, or overburden the platform.
+
+Violation of any provision may result in immediate account suspension or termination without notice or refund, at MPS's sole discretion.` },
+        '1.4': { title: 'Intellectual Property', body: `MPS Content: All content, materials, software, code, designs, layouts, text, graphics, images, videos, audio, trademarks, logos, and other intellectual property contained within MPS services ("MPS Content") is owned by or licensed to MPS and is protected by copyright, trademark, patent, and other laws.
+
+You are granted a limited, non-exclusive, non-transferable, non-sublicensable license to access and view MPS Content for personal, non-commercial use only. This license does not authorize you to download, copy, reproduce, distribute, transmit, display, perform, create derivative works, use for commercial purposes, use as training data for AI systems without explicit written permission, reverse engineer, or modify MPS Content.
+
+All rights not expressly granted are reserved by MPS. Unauthorized use violates intellectual property laws and may result in civil and criminal liability.
+
+User-Generated Content: You retain all intellectual property rights to any content you create and upload to MPS ("User-Generated Content"), provided that you grant MPS a non-exclusive, worldwide, royalty-free, perpetual, irrevocable, sublicensable license to use, reproduce, distribute, modify, and display User-Generated Content solely for the purpose of: (a) operating and improving MPS services; (b) providing services to you and other Users; (c) demonstrating features and functionality; (d) aggregating and analyzing data for service improvement; (e) marketing and promotional purposes.
+
+MPS shall not use User-Generated Content for training commercial AI models sold or licensed to third parties without your explicit consent, or for selling your content as a standalone product.` },
+        '1.5': { title: 'Account Suspension & Termination', body: `MPS may suspend, restrict, or terminate your account, access to services, or specific features at any time, at its sole discretion, for any reason or no reason, including but not limited to: (a) violation of this Agreement; (b) violation of applicable law; (c) non-payment of subscription fees or other charges; (d) suspected fraudulent activity or unauthorized access; (e) refusal to accept updated terms or policies; (f) extended period of inactivity (more than 24 months); (g) conduct harmful to other Users or the platform; (h) your request.
+
+If your account is suspended or terminated for violation of this Agreement, MPS will attempt to provide notice via email, but is not obligated to do so. Your right to any remaining subscription benefits, prepaid balances, or other credits will immediately cease upon suspension or termination.
+
+You may request account termination at any time through your account settings. Upon termination, your access will cease immediately. MPS may permanently delete your account data and User-Generated Content after termination or upon expiration of required retention periods. Once deleted, this data cannot be recovered.` },
+        '1.6': { title: 'Limitation of Liability', body: `TO THE MAXIMUM EXTENT PERMITTED BY LAW, MPS AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, AND SUPPLIERS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE, OR EXEMPLARY DAMAGES, INCLUDING LOSS OF PROFITS, REVENUE, DATA, BUSINESS INTERRUPTION, OR PERSONAL INJURY, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY OTHER LEGAL THEORY, EVEN IF MPS HAS BEEN ADVISED OF SUCH DAMAGES.
+
+YOUR SOLE AND EXCLUSIVE REMEDY FOR ANY CLAIM AGAINST MPS SHALL BE LIMITED TO THE AMOUNT YOU PAID TO MPS IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR $50.00, WHICHEVER IS GREATER.
+
+Nothing in this section limits liability for fraud, gross negligence, willful misconduct, or violations of law.` },
+        '1.7': { title: 'Arbitration', body: `THIS SECTION CONTAINS A BINDING ARBITRATION CLAUSE. BY ACCEPTING THIS AGREEMENT, YOU AGREE TO RESOLVE ALL DISPUTES THROUGH BINDING ARBITRATION RATHER THAN IN COURT, EXCEPT AS PROVIDED BELOW.
+
+Any dispute, claim, or controversy arising out of or relating to this Agreement, MPS services, your account, or any transaction shall be resolved by binding arbitration before a single neutral arbitrator administered by JAMS or, if JAMS is unable, by the American Arbitration Association (AAA) under its Commercial Arbitration Rules.
+
+Exceptions: (a) you or MPS may bring a claim in small claims court if the dispute qualifies; (b) either party may seek injunctive or equitable relief in court to prevent irreparable harm, misappropriation of trade secrets, or infringement of intellectual property rights; (c) this clause does not prevent you from filing a complaint with regulatory agencies; (d) nothing waives rights that cannot be waived under consumer protection law.
+
+Procedures: the seeking party must first send written notice describing the dispute; the parties shall attempt good-faith negotiation for thirty (30) days; if unresolved, the seeking party may file a demand for arbitration; arbitration shall take place in Story County, Iowa, or a location convenient to the respondent; MPS shall pay arbitration fees in excess of court filing fees if you prevail and applicable law requires such payment. Arbitration proceedings shall be kept confidential, except as necessary to enforce an award or comply with law.` },
+        '1.8': { title: 'Class Action Waiver', body: `YOU AGREE THAT ANY ARBITRATION OR COURT PROCEEDING SHALL BE CONDUCTED ON AN INDIVIDUAL BASIS AND NOT AS A CLASS ACTION, COLLECTIVE ACTION, REPRESENTATIVE ACTION, OR PRIVATE ATTORNEY GENERAL ACTION.
+
+If any court or arbitrator determines that the class action waiver is unenforceable as to you, then your claims shall be severed from any class action and arbitrated individually.` },
+        '1.9': { title: 'Governing Law', body: `This Agreement shall be governed by and construed in accordance with the laws of the State of Iowa, without regard to its conflict of law principles. The application of the United Nations Convention on Contracts for the International Sale of Goods is excluded.` }
+      }
+    },
+    purchases: {
+      sectitle: 'Section 2',
+      statement: 'I understand that all purchases are final and non-refundable.',
+      subs: {
+        '2.1': { title: 'Digital Delivery', body: `MPS provides all products and services in digital form, including software applications, digital content, courses, guides, trackers, AI-generated recommendations, access to platforms, and electronic subscriptions.
+
+Digital products are delivered immediately upon purchase via email or account dashboard. You are responsible for maintaining access credentials and not sharing them with unauthorized third parties.
+
+Consumption Rule: Once you download, stream, access, or view digital content, you have "consumed" the product. Consumed digital products cannot be refunded, as MPS cannot ensure the content was not copied, distributed, or misused.
+
+Technical Support vs. Refund: If you encounter technical difficulty accessing a product due to your own technical configuration, internet connectivity, device compatibility, or failure to follow access instructions, MPS may provide technical support, but this does not entitle you to a refund.` },
+        '2.2': { title: 'All Sales Final', body: `DIGITAL PRODUCTS ARE GENERALLY NON-REFUNDABLE ONCE ACCESSED. However, refunds will be considered under limited circumstances defined in Section 2.3.
+
+By purchasing any MPS product or service, you acknowledge that you are making an informed decision and accept the product "as-is," except for the limited refund circumstances defined in Section 2.3.
+
+Refunds will NOT be issued for: (a) change of mind or dissatisfaction with product quality or content; (b) failure to achieve expected results or outcomes; (c) incompatibility with your device or software not caused by MPS; (d) third-party tool or service incompatibility; (e) misuse, misunderstanding, or failure to follow instructions; (f) partial consumption or access to the product; (g) products purchased during promotional periods; (h) change in personal circumstances or preferences.` },
+        '2.3': { title: 'Refund Policy', body: `Refunds will be considered only under the following circumstances: (a) Product Not Delivered: MPS failed to deliver or make a product accessible within three (3) business days of purchase, with evidence of non-delivery; (b) Material Defect: a material defect (broken links, corrupted files, non-functional software) prevents normal use, not caused by your device or internet, you attempted technical support, and provide detailed evidence; (c) Unauthorized Transaction: made without your authorization, reported within thirty (30) days, with evidence; (d) Duplicate Charge: charged multiple times in error, with evidence; (e) Statutory Refund Right: your state or country law provides a mandatory right that overrides this policy.
+
+Process: submit a refund request within thirty (30) days of purchase via support@modular-performance.com with your order number, detailed reason, and supporting documentation; provide a description of the issue (screenshots, errors, logs); MPS responds within fourteen (14) business days; if approved, funds return to your original payment method within thirty (30) days.` },
+        '2.4': { title: 'Chargebacks', body: `If you believe you have been overcharged, charged in error, or charged without authorization, you MUST first: (a) contact MPS at support@modular-performance.com with order number, payment date, amount, and description; (b) provide evidence; (c) allow MPS ten (10) business days to investigate and respond; (d) work in good faith toward resolution; (e) escalate to disputes@modular-performance.com if unsatisfied.
+
+If you initiate a chargeback without following this process, you acknowledge: (a) you are in breach of this Agreement; (b) MPS may suspend or terminate your account; (c) MPS may pursue legal action to recover the chargeback amount, fees, and costs; (d) MPS may report the chargeback to payment processors and fraud databases; (e) this may impact your ability to use payment services with other merchants; (f) you may be permanently banned from MPS.
+
+Legitimate disputes are protected: nothing here prevents you from filing a legitimate dispute if you genuinely did not authorize a transaction, reported it to MPS and MPS unreasonably refused to address it, or followed the proper process and MPS failed to respond.` },
+        '2.5': { title: 'Subscription Cancellation', body: `If you have an active subscription, you may cancel at any time: (a) through your account settings under "Subscriptions" or "Billing"; (b) by emailing support@modular-performance.com; (c) cancellation takes effect at the end of your current billing cycle; (d) no refund or credit is issued for the remaining portion of your current billing cycle, except as required by law; (e) you lose access to subscription-only features at the end of your billing cycle; (f) you may reactivate at any time.
+
+Auto-Renewal: if your subscription auto-renews, you authorize MPS to charge your payment method on the renewal date unless you cancel prior. It is your responsibility to cancel before the renewal date.
+
+No Refund for Current Cycle: subscription charges are non-refundable once the billing period has begun, except if MPS fails to provide access or if you cancel within forty-eight (48) hours of purchase and have not accessed the benefits.` },
+        '2.6': { title: 'No Guarantee of Results', body: `MPS provides educational information, tools, recommendations, and guidance related to fitness, productivity, habit formation, wellness, and personal development.
+
+MPS MAKES NO GUARANTEE, PROMISE, OR REPRESENTATION THAT USE OF MPS SERVICES WILL RESULT IN ANY SPECIFIC OUTCOME, INCLUDING: weight loss or gain; muscle gain or development; improved fitness, strength, or conditioning; habit formation or behavior change; increased productivity; financial gain or business success; improved health or medical outcomes; or any other specific result.
+
+Results vary widely based on genetics, age, effort, consistency, diet, sleep, stress, medical conditions, medications, and numerous other variables beyond MPS's control.
+
+Testimonials and case studies represent the results of specific individuals under specific circumstances and do not constitute a guarantee of your results. They may not be representative of average or typical results.` },
+        '2.7': { title: 'Educational Purposes Only', body: `MPS services are provided for educational and informational purposes only. MPS does not provide medical advice, professional training advice, legal advice, financial advice, or any other form of professional consultation. The information provided is general in nature and may not be appropriate for your specific circumstances.
+
+You assume all responsibility for evaluating the accuracy, completeness, and usefulness of any information. Before implementing any recommendations, consult with appropriate qualified professionals, including physicians, certified trainers, financial advisors, attorneys, or other relevant experts.` }
+      }
+    },
+    data: {
+      sectitle: 'Section 3',
+      statement: 'I am responsible for my account security, data backups, and use of the MPS platform.',
+      subs: {
+        '3.1': { title: 'Data Responsibility', body: `You are solely responsible for any data, information, files, or content you provide to MPS, including personal information, health data, financial information, photos, videos, behavioral data, and other information.
+
+You warrant that: (a) you own or have the right to provide all data you submit; (b) providing such data does not violate any third-party rights; (c) the data is accurate and truthful; (d) you have obtained any necessary consents from other individuals whose data you provide.
+
+MPS will use your data in accordance with the MPS Privacy Policy. By providing data to MPS, you consent to such use, including use for AI training and personalization as described in the Privacy Policy.` },
+        '3.2': { title: 'User Backups', body: `MPS automatically backs up your data to secure cloud storage on an ongoing basis. However, YOU ARE ALSO ENCOURAGED TO MAINTAIN INDEPENDENT BACKUPS OF ANY DATA YOU STORE ON MPS SERVICES via the download and export functionality provided, including downloaded content, User-Generated Content, health and fitness records, financial data, and account information.
+
+Failure to maintain independent backups does not relieve MPS of responsibility for data loss caused by MPS's negligence, but it is prudent to maintain backups regardless.` },
+        '3.3': { title: 'Account Security', body: `You are responsible for maintaining the confidentiality and security of your account credentials. You agree to: (a) create a strong, unique password; (b) not share your password or login credentials; (c) not reuse the same password across platforms; (d) immediately notify MPS if you believe your account has been compromised; (e) log out when using shared or public devices; (f) not store credentials in plain text or unsecured locations.
+
+MPS is not responsible for unauthorized account access caused by your failure to maintain account security, sharing of credentials, weak passwords, or phishing attacks. MPS implements reasonable security measures including encryption, secure servers, and access controls. However, no security system is perfect, and MPS cannot guarantee absolute security.` },
+        '3.4': { title: 'Platform Availability', body: `MPS strives to maintain continuous access to services but does not guarantee 100% uptime or availability. Services may be temporarily unavailable due to scheduled maintenance, technical issues, security incidents, cloud service provider outages, internet infrastructure failures, or force majeure events.
+
+MPS shall not be liable for any damage, loss, or inconvenience caused by service unavailability, downtime, or interruption, regardless of cause, except as may be required by law.` },
+        '3.5': { title: 'Data Loss Disclaimer', body: `While MPS maintains automatic cloud backups, MPS DOES NOT GUARANTEE THAT YOUR DATA WILL NEVER BE LOST, CORRUPTED, OR DELETED. Potential causes include server failures, hardware failures, accidental or intentional deletion, cybersecurity incidents, human error, cloud service provider failures, account termination, malware, natural disasters, or data corruption.
+
+EXCEPT FOR LOSS CAUSED BY MPS'S GROSS NEGLIGENCE OR WILLFUL MISCONDUCT, MPS SHALL NOT BE LIABLE FOR ANY DATA LOSS. Maintaining your own export/backup is a prudent additional safeguard.` },
+        '3.6': { title: 'Third-Party Services', body: `MPS integrates with or relies upon third-party services, including cloud hosting providers, payment processors, email platforms, analytics services, APIs, AI providers, and data centers.
+
+MPS is not responsible for the performance, reliability, security, or conduct of third-party services. If a third-party service fails or becomes unavailable, MPS services may be affected, and MPS shall not be liable for any resulting damage. Your use of third-party services is governed by their terms, not by this Agreement.` },
+        '3.7': { title: 'AI Disclaimer', body: `By using MPS services, you acknowledge that: (a) MPS may analyze your data to generate personalized recommendations and content; (b) MPS may use de-identified, aggregated, and anonymized data to train and improve machine learning models — your personal identifying information will not be used for training without explicit consent; (c) AI-generated content is owned by MPS or the AI system provider; you retain rights to your inputs and underlying User-Generated Content; (d) AI systems are imperfect and may produce inaccurate, misleading, or harmful information; (e) you should independently verify any important information before relying on it; (f) MPS does not warrant the accuracy, completeness, or usefulness of AI-generated content.
+
+YOU AGREE NOT TO TREAT AI-GENERATED CONTENT AS PROFESSIONAL ADVICE, MEDICAL ADVICE, FINANCIAL ADVICE, OR LEGAL ADVICE. Your use of AI features is at your own risk. You may opt out of your data being used to train AI models through your account privacy settings.` },
+        '3.8': { title: 'Fitness Disclaimer', body: `MPS PROVIDES EDUCATIONAL INFORMATION AND TOOLS RELATED TO FITNESS, EXERCISE, AND CONDITIONING. MPS DOES NOT PROVIDE PERSONAL TRAINING SERVICES, MEDICAL ADVICE, PHYSICAL THERAPY, OR PROFESSIONAL COACHING.
+
+BEFORE BEGINNING ANY NEW EXERCISE PROGRAM, YOU MUST CONSULT WITH YOUR PHYSICIAN to ensure that the program is appropriate for your health status, medical history, physical condition, and current medications.
+
+Exercise carries inherent risks including muscle strain, sprains, tears, joint injuries, fractures, cardiovascular stress, heat stroke, dehydration, dizziness, fainting, long-term joint and spinal damage, and death (in rare cases).
+
+YOU ASSUME ALL RISK ASSOCIATED WITH PHYSICAL EXERCISE, INCLUDING FOLLOWING RECOMMENDATIONS FROM MPS SERVICES. If you experience chest pain, severe shortness of breath, dizziness, fainting, severe pain, nausea, vomiting, visual disturbances, abnormal heartbeat, or any other concerning symptoms during exercise, STOP IMMEDIATELY and seek medical attention.` },
+        '3.9': { title: 'Supplement Disclaimer', body: `MPS MAY PROVIDE INFORMATION ABOUT DIETARY SUPPLEMENTS AND NUTRITIONAL PRODUCTS FOR EDUCATIONAL PURPOSES ONLY. Such information does not constitute medical advice, dietary advice, or a recommendation to use any specific product.
+
+Dietary supplements are NOT evaluated, approved, licensed, or regulated by the FDA in the same manner as pharmaceutical drugs. Supplements may not be effective, may contain harmful or contaminated ingredients, may interact with medications, may cause adverse effects, and quality may vary.
+
+BEFORE TAKING ANY SUPPLEMENT, YOU MUST CONSULT WITH YOUR PHYSICIAN OR REGISTERED DIETITIAN, especially if you take medications, have health conditions, are pregnant or breastfeeding, have a history of allergic reactions, are under age 18, or are considering supplements for treating a medical condition. MPS does not recommend, endorse, or guarantee the efficacy, safety, or quality of any specific supplement.` },
+        '3.10': { title: 'Assumption of Risk', body: `By accessing and using MPS services, you assume all risk associated with such use, including: (a) personal injury or death from physical exercise; (b) adverse reactions from supplements or nutritional products; (c) financial loss from following financial or business recommendations; (d) psychological or emotional harm; (e) data loss, corruption, or unauthorized access; (f) service interruption or unavailability; (g) reliance on inaccurate, incomplete, or outdated information; (h) AI-generated content being inappropriate for your situation; (i) misuse of your data or privacy violations; (j) results not matching expectations or marketing claims.
+
+YOU EXPRESSLY WAIVE ANY CLAIM AGAINST MPS ARISING FROM THESE RISKS EXCEPT FOR CLAIMS ARISING FROM MPS'S GROSS NEGLIGENCE, WILLFUL MISCONDUCT, OR VIOLATION OF APPLICABLE LAW.` },
+        '3.11': { title: 'Indemnification', body: `YOU AGREE TO INDEMNIFY, DEFEND, AND HOLD HARMLESS MPS AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, AND SERVICE PROVIDERS FROM AND AGAINST ANY AND ALL CLAIMS, DAMAGES, LOSSES, COSTS, AND EXPENSES (INCLUDING REASONABLE ATTORNEYS' FEES) ARISING OUT OF OR RELATED TO: (a) your use or misuse of MPS services; (b) your violation of this Agreement or applicable law; (c) your violation of any third-party rights; (d) your User-Generated Content or data; (e) injury, death, or property damage caused by you following recommendations from MPS; (f) financial loss caused by you acting on financial or investment information; (g) any claim by a third party related to your conduct; (h) your account being compromised or used by an unauthorized person; (i) your failure to maintain account security.` },
+        '3.12': { title: 'User-Generated Content', body: `Any content you upload, create, post, or submit to MPS ("User-Generated Content") must comply with this Agreement and all applicable laws. You warrant that you own all rights to your User-Generated Content or have obtained necessary permissions.
+
+Prohibited content includes: (a) content that violates any law; (b) content that infringes intellectual property rights; (c) defamatory, libelous, or slanderous content; (d) personally identifiable information of others without consent; (e) sexually explicit, obscene, or exploitative content; (f) content promoting violence, hatred, discrimination, or illegal activity; (g) spam, advertising, or commercial promotion; (h) harassing, abusive, or threatening content.
+
+By uploading content, you grant MPS a non-exclusive, worldwide, royalty-free, perpetual, irrevocable, sublicensable license to use, reproduce, distribute, modify, adapt, translate, and display it for operating MPS services, providing services, demonstrating features, marketing, and aggregating and analyzing data. MPS may remove violating content at any time without notice. For DMCA notices, contact copyright@modular-performance.com.` },
+        '3.13': { title: 'Modification of Services', body: `MPS reserves the right to modify, update, discontinue, or add features at any time, at its sole discretion, without notice. Such modifications may include adding or removing features, changing pricing or billing terms, changing access or availability, changing functionality, discontinuing services, implementing usage restrictions, or changing data retention policies.
+
+YOUR CONTINUED USE OF MPS SERVICES AFTER ANY MODIFICATION CONSTITUTES YOUR ACCEPTANCE OF THE MODIFIED SERVICES. If you do not accept a material modification, your remedy is to terminate your account.` },
+        '3.14': { title: 'Electronic Consent', body: `By creating an account, you consent to receiving electronic communications, including account notifications, service updates, marketing emails, transactional emails, legal notices, and SMS or push notifications.
+
+You may opt out of non-transactional communications through your account settings, but you cannot opt out of transactional communications necessary for account operation and legal compliance.` },
+        '3.15': { title: 'Age Requirement', body: `MPS services are intended for individuals age 18 and older. If you are under age 18, you may only use MPS services with explicit written consent of your parent or legal guardian, who must agree to be bound by this Agreement.
+
+MPS does not knowingly collect data from individuals under age 13. If MPS becomes aware of such collection, it will delete the data.` },
+        '3.16': { title: 'No Medical Advice', body: `MPS DOES NOT PROVIDE MEDICAL ADVICE, DIAGNOSIS, TREATMENT, OR PROFESSIONAL MEDICAL SERVICES. Any health or fitness information provided is educational and should not be treated as medical advice.
+
+If you have health concerns, medical symptoms, or are taking medications, you must consult with a qualified physician or healthcare provider before using MPS services or following any recommendations.
+
+In emergency situations, call emergency services (911 in the United States) or go to the nearest emergency room. Do not rely on MPS services for emergency medical guidance.` }
+      }
+    }
+  };
+
+  const ORDER = ['terms', 'purchases', 'data'];
+  const checked = { terms: false, purchases: false, data: false };
+
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function render() {
+    const root = document.getElementById('ag-sections');
+    root.innerHTML = ORDER.map(key => {
+      const sec = SECTIONS[key];
+      const subs = Object.entries(sec.subs).map(([id, sub]) => `
+        <div class="ag-sub-row" data-sub="${key}-${id}">
+          <div class="ag-sub-head" onclick="toggleSub('${key}-${id}')">
+            <span class="ag-sub-chev">▾</span>
+            <span class="ag-sub-title"><b>${id}</b>${esc(sub.title)}</span>
+          </div>
+          <div class="ag-sub-body">${esc(sub.body)}</div>
+        </div>`).join('');
+      return `
+        <div class="ag-card" id="card-${key}">
+          <div class="ag-head">
+            <input type="checkbox" class="ag-check" id="chk-${key}" onclick="event.stopPropagation()" onchange="onCheck('${key}')" />
+            <div class="ag-head__txt" onclick="toggleCard('${key}')">
+              <div class="ag-head__sectitle">${sec.sectitle}</div>
+              <div class="ag-head__statement">${esc(sec.statement)}</div>
+            </div>
+            <span class="ag-chev" onclick="toggleCard('${key}')">▾</span>
+          </div>
+          <div class="ag-subs">${subs}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function toggleCard(key){ document.getElementById('card-'+key).classList.toggle('open'); }
+  function toggleSub(id){ const el = document.querySelector('[data-sub="'+id+'"]'); if(el) el.classList.toggle('open'); }
+  function onCheck(key){
+    checked[key] = document.getElementById('chk-'+key).checked;
+    document.getElementById('card-'+key).classList.toggle('checked', checked[key]);
+    const all = ORDER.every(k => checked[k]);
+    const btn = document.getElementById('ag-btn');
+    btn.disabled = !all;
+    btn.classList.toggle('on', all);
+    btn.classList.toggle('off', !all);
+    btn.textContent = all ? 'I Agree — Create Account' : 'Check all three to continue';
+    document.getElementById('ag-hint').textContent = all ? 'You’re all set.' : 'All three boxes must be checked.';
+  }
+  function agContinue(){
+    if (!ORDER.every(k => checked[k])) return;
+    try { localStorage.setItem('mps_agreed_v1', new Date ? Date.now().toString() : '1'); } catch(e){}
+    const next = new URLSearchParams(location.search).get('next') || '/auth.html';
+    window.location.href = next;
+  }
+
+  render();
+  </script>
+</body>
+</html>
