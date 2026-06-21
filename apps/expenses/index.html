@@ -870,7 +870,7 @@ function save(key, val) {
 })();
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function fmt$(n) { const v = Number(n)||0; const sign = v<0?'-':''; return sign+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmt$short(n) { const v = Number(n)||0; if(Math.abs(v)>=1000) return '$'+(v/1000).toFixed(1)+'k'; return '$'+Math.round(v).toLocaleString(); }
+function fmt$short(n) { return fmt$(n); }  /* exact $X,XXX.XX everywhere — no rounding (every dollar accountable) */
 function fmtDate(iso) { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${m}/${d}/${y}`; }
 function todayISO() { return new Date().toISOString().slice(0,10); }
 // =================================================================
