@@ -15,7 +15,7 @@ window.MPS_UI = (function() {
       document.body.appendChild(el);
     }
     el.textContent = msg;
-    el.style.borderLeftColor = type === 'error' ? '#dc2626' : type === 'success' ? '#16a34a' : '#FFC107';
+    el.style.borderLeftColor = type === 'error' ? '#dc2626' : type === 'success' ? '#16a34a' : '#C9A020';
     el.classList.add('show');
     if (_toastTimeout) clearTimeout(_toastTimeout);
     _toastTimeout = setTimeout(() => el.classList.remove('show'), 3000);

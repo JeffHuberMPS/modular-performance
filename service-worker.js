@@ -1,5 +1,5 @@
 // MPS Service Worker — offline support + update notification
-const CACHE_VERSION = 'mps-v15';
+const CACHE_VERSION = 'mps-v133';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const FONT_CACHE    = CACHE_VERSION + '-fonts';
 
@@ -13,15 +13,13 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/firebase-config.js',
   '/stripe-config.js',
-  '/auth.js',
   '/billing.js',
   '/shared/styles.css',
   '/shared/firebase.js',
+  '/demo-data.js',
   '/shared/auth-guard.js',
   '/shared/components.js',
-  '/apps/workout/index.html',
-  '/apps/workout/workout.css',
-  '/apps/workout/workout.js'
+  '/apps/workout/index.html'
 ];
 
 // ── Install: cache static assets ───────────────────────────────

@@ -1114,7 +1114,7 @@
   <nav class="landing-nav">
     <a href="/" class="nav-logo">M<span>P</span>S</a>
     <div style="display:flex;gap:10px;align-items:center;">
-      <a href="https://modular-performance-git-unified-app-jeffhubermps-projects.vercel.app/hub.html" class="nav-cta" id="nav-open-app" style="display:none;background:transparent;border:1px solid rgba(212,175,55,0.5);color:var(--gold);">Open App</a>
+      <a href="/hub.html" class="nav-cta" id="nav-open-app" style="display:none;background:transparent;border:1px solid rgba(212,175,55,0.5);color:var(--gold);">Open App</a>
       <a href="#pricing" class="nav-cta" id="nav-trial-btn">Start Free Trial</a>
     </div>
   </nav>
@@ -1502,10 +1502,9 @@
     let _mpsAuthUser = null;
 
     // goToBuy(): send everyone to the NEW unified app (different domain → its own Firebase sign-in).
-    // ROLLBACK: to point back at the old North Star, restore the commented line below.
+    // The unified app now lives on this same domain (replaced the old North Star).
     function goToBuy() {
-      window.location.href = 'https://modular-performance-git-unified-app-jeffhubermps-projects.vercel.app/auth.html';
-      // OLD North Star: window.location.href = _mpsAuthUser ? '/hub.html' : '/auth.html';
+      window.location.href = _mpsAuthUser ? '/hub.html' : '/auth.html';
     }
 
     try {

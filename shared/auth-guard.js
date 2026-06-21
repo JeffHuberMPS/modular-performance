@@ -87,7 +87,7 @@ window.MPS_GUARD = (function() {
         'display:flex','align-items:center','justify-content:center',
         'z-index:9999','transition:opacity 0.3s ease'
       ].join(';');
-      el.innerHTML = '<div style="width:32px;height:32px;border:2px solid rgba(255,255,255,0.1);border-top-color:#FFC107;border-radius:50%;animation:mps-spin 0.7s linear infinite"></div>';
+      el.innerHTML = '<div style="width:32px;height:32px;border:2px solid rgba(255,255,255,0.1);border-top-color:#C9A020;border-radius:50%;animation:mps-spin 0.7s linear infinite"></div>';
       const style = document.createElement('style');
       style.textContent = '@keyframes mps-spin{to{transform:rotate(360deg)}}';
       document.head.appendChild(style);

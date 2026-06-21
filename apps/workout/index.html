@@ -18,7 +18,7 @@
 <title>MPS Workout Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@900&family=Oswald:wght@700&family=Russo+One&family=Saira+Condensed:wght@900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&family=Orbitron:wght@900&family=Oswald:wght@700&family=Russo+One&family=Saira+Condensed:wght@900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- v2.5 - MPS Light Blue palette -->
 <style>
@@ -27,16 +27,71 @@
     --mps-blue: #1a2f5c;
     --mps-blue-light: #2a4a8c;
     --mps-accent: #4ab3f4;
+    --mps-accent-rgb: 74, 179, 244;
+    --mps-accent-2: #7ac8ff;
+    --mps-accent-2-rgb: 122, 200, 255;
+    --feat-rgb: 122, 200, 255;   /* "featured" stat card (Strength Score) highlight */
     --bg: #000000;
     --bg-2: #050810;
     --card: #0d1428;
     --card-2: #131c38;
     --border: #243160;
     --text: #f5f5f5;
-    --text-dim: #8a95b5;
-    --text-faint: #5a6585;
+    --text-dim: #8d8d8d;
+    --text-faint: #5a5a5a;
     --success: #2d8b4e;
   }
+  /* ── Gray/Gold theme (Free + Medium) — shell adds body.mps-gray ── */
+  body.mps-gray {
+    --mps-accent: #f5f5f5;          /* numbers + accents → white */
+    --mps-accent-rgb: 150, 150, 150; /* glows/shadows → subtle neutral */
+    --mps-accent-2: #f5f5f5;
+    --mps-accent-2-rgb: 150, 150, 150;
+    --feat-rgb: 201, 160, 32;   /* featured card rim = gold in gray mode (was grey, which read blue on black) */
+    --mps-blue: #161616;
+    --mps-blue-light: #242424;
+    --bg-2: #070707;
+    --card: #0f0f0f;
+    --card-2: #161616;
+    --border: #2a2a2a;
+    --text-dim: #9a9a9a;
+    --text-faint: #6a6a6a;
+    --success: #6f8a6f;
+  }
+  body.mps-gray .stat-label,
+  body.mps-gray .target-tag,
+  body.mps-gray .cond-label,
+  body.mps-gray .split-picker-title,
+  body.mps-gray .chart-subtitle,
+  body.mps-gray .section-title { color: #C9A020 !important; }   /* labels → gold */
+  body.mps-gray .tab { color: #9a9a9a !important; }
+  body.mps-gray .tab.active { color: #f5f5f5 !important; }
+  body.mps-gray .brand-h1 { color: #C9A020 !important; }
+  body.mps-gray .brand-mps-display { background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 35%, #c9c9c9 70%, #8a8a8a 100%) !important; -webkit-background-clip: text; background-clip: text; }
+  /* Neutralize hardcoded navy card/body backgrounds in gray mode (Core/Elite) — no blue leaks. */
+  body.mps-gray { background: #080808 !important; }
+  body.mps-gray .card,
+  body.mps-gray .exercise,
+  body.mps-gray .history-card,
+  body.mps-gray .plan-day-card,
+  body.mps-gray .pr-group-card,
+  body.mps-gray .pr-item,
+  body.mps-gray .strength-pill,
+  body.mps-gray .hist-detail-panel { background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%) !important; }
+  body.mps-gray .card,
+  body.mps-gray .exercise,
+  body.mps-gray .history-card,
+  body.mps-gray .plan-day-card,
+  body.mps-gray .pr-group-card,
+  body.mps-gray .pr-item,
+  body.mps-gray .strength-pill,
+  body.mps-gray .hist-detail-panel { border-color: #2a2a2a !important; }
+  body.mps-gray .plan-day-card.today { background: linear-gradient(180deg, #1c1c1c 0%, #111111 100%) !important; }
+  body.mps-gray .pill-row .pill,
+  body.mps-gray .pill { border: 1px solid #3a3a3a !important; color: #b0b0b0 !important; background: transparent !important; }
+  body.mps-gray .pill-row .pill.active,
+  body.mps-gray .pill.active { background: #C9A020 !important; color: #0a0a0a !important; border-color: #C9A020 !important; box-shadow: 0 0 12px rgba(201,160,32,0.4) !important; }
+  body.mps-gray .tab.active { border-bottom-color: #C9A020 !important; }
   /* ── Smooth page transitions ─────────────────────────── */
   @keyframes mpsPageIn { from { opacity: 0; } to { opacity: 1; } }
   body { animation: mpsPageIn 0.28s ease-out both; }
@@ -54,7 +109,7 @@
     align-items: center;
     padding: 0 16px;
     background: rgba(7, 12, 28, 0.96);
-    border-bottom: 1px solid rgba(74, 179, 244, 0.18);
+    border-bottom: 1px solid rgba(var(--mps-accent-rgb), 0.18);
     backdrop-filter: blur(14px);
     z-index: 1000;
   }
@@ -71,14 +126,14 @@
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 16px;
-    color: rgba(74, 179, 244, 0.7);
+    color: rgba(var(--mps-accent-rgb), 0.7);
     letter-spacing: 0.12em;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background:
       radial-gradient(ellipse at top, rgba(26, 47, 92, 0.35) 0%, transparent 60%),
       radial-gradient(ellipse at bottom, rgba(26, 47, 92, 0.2) 0%, transparent 50%),
@@ -89,7 +144,7 @@
   }
   .brand-block {
     background: #000000;
-    background-image: radial-gradient(ellipse 60% 50% at 50% 45%, rgba(74,179,244,0.20) 0%, rgba(74,179,244,0.06) 45%, transparent 75%);
+    background-image: radial-gradient(ellipse 60% 50% at 50% 45%, rgba(var(--mps-accent-rgb),0.20) 0%, rgba(var(--mps-accent-rgb),0.06) 45%, transparent 75%);
     border: 3px solid transparent;
     border-radius: 22px;
     padding: 38px 20px 28px;
@@ -99,7 +154,7 @@
     position: relative;
     overflow: hidden;
     background-clip: padding-box;
-    box-shadow: 0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(74,179,244,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95);
+    box-shadow: 0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(var(--mps-accent-rgb),0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95);
   }
   .brand-block::after { display: none; }
   .brand-block::before { display: none; }
@@ -110,7 +165,7 @@
     padding: 0 14px;
   }
   .brand-mps {
-    font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 64px;
     font-weight: 900;
     letter-spacing: 6px;
@@ -120,8 +175,8 @@
     position: relative;
     display: inline-block;
     text-shadow:
-      0 0 16px rgba(74, 179, 244, 0.65),
-      0 0 28px rgba(74, 179, 244, 0.35),
+      0 0 16px rgba(var(--mps-accent-rgb), 0.65),
+      0 0 28px rgba(var(--mps-accent-rgb), 0.35),
       0 2px 6px rgba(0, 0, 0, 0.9);
   }
   .brand-mps-svg {
@@ -132,12 +187,12 @@
     position: relative;
     z-index: 1;
     filter:
-      drop-shadow(0 0 14px rgba(74, 179, 244, 0.55))
-      drop-shadow(0 0 24px rgba(74, 179, 244, 0.3))
+      drop-shadow(0 0 14px rgba(var(--mps-accent-rgb), 0.55))
+      drop-shadow(0 0 24px rgba(var(--mps-accent-rgb), 0.3))
       drop-shadow(0 3px 6px rgba(0, 0, 0, 0.9));
   }
   .brand-mps-display {
-    font-family: 'Saira Condensed', 'Arial Black', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-style: italic;
     font-weight: 900;
     font-size: 96px;
@@ -157,7 +212,7 @@
     width: 92%;
     height: 1px;
     margin: 16px auto 14px;
-    background: linear-gradient(90deg, transparent, rgba(74,179,244,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(74,179,244,0.6) 75%, transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--mps-accent-rgb),0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(var(--mps-accent-rgb),0.6) 75%, transparent);
   }
   .brand-tagline {
     font-size: 11px;
@@ -209,7 +264,7 @@
   .btn-primary:hover { background: var(--mps-blue-light); }
   .btn-accent {
     background: var(--mps-accent); border-color: var(--mps-accent); color: #1a1a1a;
-    box-shadow: 0 4px 12px rgba(74, 179, 244, 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
+    box-shadow: 0 4px 12px rgba(var(--mps-accent-rgb), 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
   }
   .btn-accent:hover { background: #6cc4ff; }
   .btn-ghost { background: transparent; box-shadow: none; }
@@ -225,11 +280,11 @@
   }
   .day-btn.today {
     border-color: var(--mps-accent); color: var(--mps-accent);
-    box-shadow: 0 4px 12px rgba(74, 179, 244, 0.18), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    box-shadow: 0 4px 12px rgba(var(--mps-accent-rgb), 0.18), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
   }
   .day-btn.active {
     background: var(--mps-blue); color: #fff; border-color: var(--mps-blue-light);
-    box-shadow: 0 6px 16px rgba(74, 179, 244, 0.25), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    box-shadow: 0 6px 16px rgba(var(--mps-accent-rgb), 0.25), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
     transform: translateY(-1px);
   }
   .day-btn .day-num { display: block; font-size: 15px; margin-top: 2px; color: inherit; }
@@ -243,7 +298,7 @@
   }
   .split-card.skill {
     border-left-color: var(--mps-accent);
-    box-shadow: 0 6px 16px rgba(74, 179, 244, 0.12), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    box-shadow: 0 6px 16px rgba(var(--mps-accent-rgb), 0.12), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
   }
   .split-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
   .split-name {
@@ -263,7 +318,7 @@
       0 4px 8px rgba(0, 0, 0, 0.65),
       0 1px 2px rgba(0, 0, 0, 0.5),
       inset 0 1px 0 rgba(255, 255, 255, 0.09),
-      inset 0 2px 4px rgba(74, 179, 244, 0.04),
+      inset 0 2px 4px rgba(var(--mps-accent-rgb), 0.04),
       inset 0 -2px 0 rgba(0, 0, 0, 0.55);
   }
   .exercise::before {
@@ -272,7 +327,7 @@
     inset: 0;
     border-radius: 12px;
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(74, 179, 244, 0.07) 0%, transparent 25%, transparent 65%, rgba(0, 0, 0, 0.25) 100%);
+    background: linear-gradient(180deg, rgba(var(--mps-accent-rgb), 0.07) 0%, transparent 25%, transparent 65%, rgba(0, 0, 0, 0.25) 100%);
   }
   .exercise.done {
     border-color: rgba(45, 139, 78, 0.65);
@@ -317,7 +372,7 @@
   }
   .checkbox.checked {
     background: var(--mps-accent); border-color: var(--mps-accent); color: #1a1a1a;
-    box-shadow: 0 4px 10px rgba(74, 179, 244, 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+    box-shadow: 0 4px 10px rgba(var(--mps-accent-rgb), 0.4), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
   }
   .remove-set { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 18px; padding: 0; }
   .remove-set:hover { color: var(--mps-accent); background: none; }
@@ -366,7 +421,7 @@
   .history-card-date {
     font-size: 11px; font-weight: 700; color: var(--mps-accent);
     letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;
-    text-shadow: 0 0 6px rgba(74, 179, 244, 0.3);
+    text-shadow: 0 0 6px rgba(var(--mps-accent-rgb), 0.3);
   }
   .history-card-split {
     font-size: 14px; font-weight: 700; color: #e8e8e8; margin-bottom: 3px;
@@ -398,14 +453,14 @@
   .plan-day-card:last-child { margin-bottom: 0; }
   .plan-day-card.rest { cursor: default; }
   .plan-day-card.today {
-    border-color: rgba(74, 179, 244, 0.5);
-    box-shadow: 0 4px 12px rgba(74, 179, 244, 0.18), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    border-color: rgba(var(--mps-accent-rgb), 0.5);
+    box-shadow: 0 4px 12px rgba(var(--mps-accent-rgb), 0.18), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
     background: linear-gradient(180deg, #14213f 0%, #0d172e 100%);
   }
   .plan-day-card[data-clickable]:active { transform: translateY(1px); }
   .plan-day-arrow {
     color: var(--mps-accent); font-size: 20px; font-weight: 700;
-    flex-shrink: 0; text-shadow: 0 0 8px rgba(74, 179, 244, 0.5);
+    flex-shrink: 0; text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.5);
   }
   .history-card-meta {
     font-size: 11px; color: var(--text-dim);
@@ -416,7 +471,7 @@
     margin-right: 4px; vertical-align: middle;
   }
   .hist-badge-run { background: #226633; color: #fff; border: 1px solid #226633; }
-  .hist-badge-machine { background: #4ab3f4; color: #fff; border: 1px solid #4ab3f4; }
+  .hist-badge-machine { background: var(--mps-accent); color: #1a1a1a; border: 1px solid var(--mps-accent); }
   .hist-badge-sprint { background: #dc4856; color: #fff; border: 1px solid #dc4856; }
   .history-card-right {
     text-align: right; flex-shrink: 0; padding-left: 4px;
@@ -424,7 +479,7 @@
   }
   .history-card-circuits {
     font-size: 24px; font-weight: 800; color: var(--mps-accent); line-height: 1;
-    text-shadow: 0 0 10px rgba(74, 179, 244, 0.5);
+    text-shadow: 0 0 10px rgba(var(--mps-accent-rgb), 0.5);
   }
   .history-card-circuits-label {
     font-size: 9px; font-weight: 700; color: var(--text-dim);
@@ -439,14 +494,14 @@
     box-shadow: 0 10px 24px rgba(0,0,0,0.9), 0 4px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
   }
   .pr-group-header {
-    background: linear-gradient(180deg, rgba(74, 179, 244, 0.08) 0%, rgba(74, 179, 244, 0.02) 100%);
+    background: linear-gradient(180deg, rgba(var(--mps-accent-rgb), 0.08) 0%, rgba(var(--mps-accent-rgb), 0.02) 100%);
     color: var(--mps-accent);
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 3px;
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(74, 179, 244, 0.3);
-    text-shadow: 0 0 10px rgba(74, 179, 244, 0.5);
+    border-bottom: 1px solid rgba(var(--mps-accent-rgb), 0.3);
+    text-shadow: 0 0 10px rgba(var(--mps-accent-rgb), 0.5);
     text-transform: uppercase;
   }
   .pr-group-body {
@@ -465,7 +520,7 @@
   .pr-name { color: #e8e8e8; font-weight: 600; }
   .pr-weight {
     color: var(--mps-accent); font-weight: 800; font-size: 14px;
-    text-shadow: 0 0 8px rgba(74, 179, 244, 0.4);
+    text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.4);
   }
   .empty { text-align: center; color: var(--text-faint); padding: 28px; font-size: 13px; }
   /* ========== DASHBOARD CHARTS ========== */
@@ -478,19 +533,19 @@
   }
   .strength-pill {
     background: linear-gradient(180deg, #131e3d 0%, #0a1124 100%);
-    border: 1px solid rgba(74, 179, 244, 0.25);
+    border: 1px solid rgba(var(--mps-accent-rgb), 0.25);
     border-radius: 10px;
     padding: 10px 4px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .strength-pill-value {
-    font-family: 'Orbitron', 'Saira Condensed', 'Arial Black', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 900;
     font-size: 17px;
     color: var(--mps-accent);
     line-height: 1;
-    text-shadow: 0 0 8px rgba(74, 179, 244, 0.5);
+    text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.5);
     margin-bottom: 4px;
   }
   .strength-pill-label {
@@ -508,7 +563,7 @@
   }
   .chart-card {
     background: #000;
-    border: 1px solid rgba(74, 179, 244, 0.2);
+    border: 1px solid rgba(var(--mps-accent-rgb), 0.2);
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 16px;
@@ -517,7 +572,7 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
   .chart-title {
-    font-family: 'Orbitron', 'Saira Condensed', 'Arial Black', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 900;
     font-style: italic;
     color: #fff;
@@ -566,15 +621,15 @@
     cursor: pointer;
     transition: all 0.15s ease;
     font-family: inherit;
-    border: 1px solid rgba(74, 179, 244, 0.3);
+    border: 1px solid rgba(var(--mps-accent-rgb), 0.3);
     background: transparent;
-    color: rgba(74, 179, 244, 0.7);
+    color: rgba(var(--mps-accent-rgb), 0.7);
   }
   .pill.active {
     background: var(--mps-accent);
     color: #0a1124;
     border-color: var(--mps-accent);
-    box-shadow: 0 0 12px rgba(74, 179, 244, 0.4);
+    box-shadow: 0 0 12px rgba(var(--mps-accent-rgb), 0.4);
   }
   .pill-sub {
     font-size: 10px;
@@ -602,7 +657,7 @@
   .cond-input:focus {
     outline: none;
     border-color: var(--mps-accent);
-    box-shadow: 0 0 0 2px rgba(74, 179, 244, 0.15);
+    box-shadow: 0 0 0 2px rgba(var(--mps-accent-rgb), 0.15);
   }
   .cond-time-inputs {
     display: flex; gap: 6px; align-items: center; flex: 1;
@@ -619,12 +674,12 @@
     letter-spacing: 0.5px;
     cursor: pointer;
     font-family: inherit;
-    box-shadow: 0 0 12px rgba(74, 179, 244, 0.3);
+    box-shadow: 0 0 12px rgba(var(--mps-accent-rgb), 0.3);
   }
   .cond-recent {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(74, 179, 244, 0.15);
+    border-top: 1px solid rgba(var(--mps-accent-rgb), 0.15);
   }
   .cond-recent-item {
     display: flex; justify-content: space-between; align-items: center;
@@ -670,7 +725,7 @@
   }
   .hist-detail-close {
     position: absolute; top: 12px; right: 12px;
-    background: rgba(74,179,244,0.1); border: 1px solid rgba(74,179,244,0.3);
+    background: rgba(var(--mps-accent-rgb),0.1); border: 1px solid rgba(var(--mps-accent-rgb),0.3);
     color: var(--mps-accent); font-size: 18px; font-weight: 700;
     width: 32px; height: 32px; border-radius: 8px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -690,8 +745,8 @@
   .hist-detail-summary b { color: #fff; font-weight: 700; }
   .hist-detail-block {
     margin-top: 14px;
-    background: rgba(74,179,244,0.04);
-    border: 1px solid rgba(74,179,244,0.15);
+    background: rgba(var(--mps-accent-rgb),0.04);
+    border: 1px solid rgba(var(--mps-accent-rgb),0.15);
     border-radius: 10px;
     padding: 12px;
   }
@@ -713,8 +768,8 @@
     grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
   }
   .hist-detail-set {
-    background: rgba(74,179,244,0.08);
-    border: 1px solid rgba(74,179,244,0.2);
+    background: rgba(var(--mps-accent-rgb),0.08);
+    border: 1px solid rgba(var(--mps-accent-rgb),0.2);
     border-radius: 5px;
     padding: 5px 6px;
     text-align: center;
@@ -739,6 +794,44 @@
   .badge-skill { background: #9b6bc9; color: #fff; }
   .badge-sprint { background: #dc4856; color: #fff; }
   .badge-conditioning { background: #155e75; color: #fff; }
+  /* Gray tiers (Core/Elite): neutralize the colored type badges → dark grey + gold. */
+  body.mps-gray .hist-badge-run,
+  body.mps-gray .hist-badge-sprint,
+  body.mps-gray .badge-skill,
+  body.mps-gray .badge-sprint,
+  body.mps-gray .badge-conditioning { background: #2a2a2a; color: #C9A020; border-color: #3a3a3a; }
+  /* Gray: neutralize the white-on-white split badge → dark bg + gold, matching siblings. */
+  body.mps-gray .badge-split { background: #2a2a2a; color: #C9A020; border: 1px solid #3a3a3a; }
+  /* Gray: delete/import confirm modals — strip blue panel gradient + red/purple accents → neutral + gold. */
+  body.mps-gray #cond-delete-overlay > div,
+  body.mps-gray #workout-delete-overlay > div { background: linear-gradient(180deg, #141414 0%, #0a0a0a 100%) !important; border-color: #3a3a3a !important; }
+  body.mps-gray #workout-delete-overlay > div > div:first-child { color: #C9A020 !important; }
+  body.mps-gray #cond-del-confirm,
+  body.mps-gray #workout-del-confirm,
+  body.mps-gray #imp-confirm { background: #C9A020 !important; color: #0a0a0a !important; }
+  body.mps-gray #hist-detail-delete-btn { border-color: #C9A020 !important; color: #C9A020 !important; }
+  body.mps-gray #imp-replace-warn { color: #C9A020 !important; }
+  /* Gray: accent button hover was light-blue (#6cc4ff) → gold hover. */
+  body.mps-gray .btn-accent:hover,
+  body.mps-gray .end-btn:hover { background: #d8b13a !important; }
+  /* Gray: completed-exercise / completed-set "done" state was success-green → gold-tinted neutral. */
+  body.mps-gray .exercise.done {
+    border-color: rgba(201,160,32,0.5) !important;
+    background: linear-gradient(180deg, rgba(201,160,32,0.10) 0%, rgba(201,160,32,0.03) 60%, rgba(201,160,32,0.01) 100%) !important;
+    box-shadow:
+      0 8px 20px rgba(0,0,0,0.85),
+      0 4px 8px rgba(0,0,0,0.65),
+      0 0 18px rgba(201,160,32,0.18),
+      inset 0 1px 0 rgba(201,160,32,0.18),
+      inset 0 2px 4px rgba(201,160,32,0.05),
+      inset 0 -2px 0 rgba(0,0,0,0.55) !important;
+  }
+  body.mps-gray .hist-detail-set.done {
+    background: rgba(201,160,32,0.12) !important;
+    border-color: rgba(201,160,32,0.45) !important;
+    color: #e8e8e8 !important;
+  }
+  body.mps-gray .hist-detail-set.done b { color: #C9A020 !important; }
   .end-btn {
     width: 100%; padding: 14px; font-size: 14px; margin-top: 12px;
     background: var(--mps-accent); border: none; color: #1a1a1a;
@@ -763,6 +856,18 @@
 </style>
 </head>
 <body>
+<script>
+/* Apply the tier theme class to our own body BEFORE the app renders, so var()-based
+   colors (e.g. the chart-toggle pills) compute correctly from the first paint. The hub
+   also sets these, but later (on frame load) — too late for vanilla render → blue flash. */
+try {
+  if (window.parent && window.parent !== window) {
+    var _pb = window.parent.document.body;
+    if (_pb.classList.contains('tier-mono')) document.body.classList.add('mps-gray');
+    if (_pb.classList.contains('tier-core')) document.body.classList.add('mps-core');
+  }
+} catch(e) {}
+</script>
 
 <!-- ── Nav fade overlay ────────────────────────────────── -->
 <div id="mps-nav-fade"></div>
@@ -860,17 +965,24 @@ function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');f.classL
 <div class="toast" id="toast"></div>
 <script>
 'use strict';
-// Surface real errors on-screen (browser hides them as "Script error.")
+// Gray/Gold theme (Free/Medium): charts use canvas (can't read CSS vars), so resolve here.
+const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+const ACR = __GRAY ? '150,150,150' : '74, 179, 244';   // accent rgb for canvas fills
+const AC  = __GRAY ? '#cfcfcf' : '#4ab3f4';             // solid accent for canvas (lines/points)
+const AC2 = __GRAY ? '#f5f5f5' : '#7ac8ff';            // light accent for canvas
+// Skill-series bar color (purple in colorful → neutral grey in gray, distinct from gold Lift bars)
+const SKILL_BORDER     = __GRAY ? '#8a8a8a' : '#9b6bc9';
+const SKILL_BG         = __GRAY ? 'rgba(138,138,138,0.75)' : 'rgba(155, 107, 201, 0.75)';
+const SKILL_BG_STRONG  = __GRAY ? 'rgba(138,138,138,0.85)' : 'rgba(155, 107, 201, 0.85)';
+// Conditioning-series bar color (forest green in colorful → dark neutral grey in gray)
+const COND_BORDER      = __GRAY ? '#5a5a5a' : '#226633';
+const COND_BG          = __GRAY ? 'rgba(90,90,90,0.85)' : 'rgba(34, 102, 51, 0.85)';
+// Sprint-series bar color (crimson in colorful → gold in gray)
+const SPRINT_BORDER    = __GRAY ? '#C9A020' : '#dc4856';
+const SPRINT_BG        = __GRAY ? 'rgba(201,160,32,0.80)' : 'rgba(220, 72, 86, 0.80)';
+// Log errors silently — never show end users a stack-trace banner.
 function showErrorBanner(msg) {
-  const banner = document.getElementById('error-banner') || (() => {
-    const b = document.createElement('div');
-    b.id = 'error-banner';
-    b.style.cssText = 'position:fixed; bottom:0; left:0; right:0; background:#dc4856; color:#fff; padding:8px 12px; font-size:11px; font-family:monospace; z-index:99999; max-height:40vh; overflow:auto; white-space:pre-wrap; word-break:break-all;';
-    b.addEventListener('click', () => b.remove());
-    document.body.appendChild(b);
-    return b;
-  })();
-  banner.textContent = `⚠ ${msg}\n(tap to dismiss)`;
+  try { console.error('[MPS Workout]', msg); } catch (e) {}
 }
 window.addEventListener('error', (e) => {
   let msg = e.message || 'Unknown error';
@@ -899,12 +1011,12 @@ const SKILL_CATALOG = {
   "Kickboxing": {
     hasSeries: true,
     series: {
-      "ISO": { color: "🔴", workouts: ["ISO-1","ISO-2","ISO-3","ISO-4","ISO-5","ISO-6"] },
-      "SIM": { color: "🟡", workouts: ["SIM-1","SIM-2","SIM-3","SIM-4","SIM-5","SIM-6"] },
-      "CMB": { color: "🔹", workouts: ["CMB-1","CMB-2","CMB-3","CMB-4","CMB-5","CMB-6","CMB-7","CMB-8","CMB-9"] },
-      "HCM": { color: "🩵", workouts: ["HCM-1","HCM-2","HCM-3","HCM-4","HCM-5","HCM-6"] },
-      "HSC": { color: "🔷", workouts: ["HSC-1","HSC-2","HSC-3","HSC-4","HSC-5","HSC-6"] },
-      "HVB": { color: "⚫", workouts: [
+      "ISO": { color: "•", workouts: ["ISO-1","ISO-2","ISO-3","ISO-4","ISO-5","ISO-6"] },
+      "SIM": { color: "•", workouts: ["SIM-1","SIM-2","SIM-3","SIM-4","SIM-5","SIM-6"] },
+      "CMB": { color: "•", workouts: ["CMB-1","CMB-2","CMB-3","CMB-4","CMB-5","CMB-6","CMB-7","CMB-8","CMB-9"] },
+      "HCM": { color: "•", workouts: ["HCM-1","HCM-2","HCM-3","HCM-4","HCM-5","HCM-6"] },
+      "HSC": { color: "•", workouts: ["HSC-1","HSC-2","HSC-3","HSC-4","HSC-5","HSC-6"] },
+      "HVB": { color: "•", workouts: [
         "HVB-1 — Combo Day (Fixed Combo)",
         "HVB-2 — Pyramid Day",
         "HVB-3 — Finish-With Day",
@@ -912,7 +1024,7 @@ const SKILL_CATALOG = {
         "HVB-5 — Skill + Entry Day",
         "HVB-6 — Combo Day (Variable Combo)"
       ] },
-      "SCE": { color: "🟢", workouts: [
+      "SCE": { color: "•", workouts: [
         "C37 — Alactic Conditioning",
         "C38 — Lactic Capacity",
         "C39 — Alactic Intervals",
@@ -927,7 +1039,7 @@ const SKILL_CATALOG = {
         "AUX-5 — Footwork",
         "AUX-6 — Medicine Ball"
       ] },
-      "PLY": { color: "🟣", workouts: ["PLY-1","PLY-2","PLY-3","PLY-4","PLY-5","PLY-6"] }
+      "PLY": { color: "•", workouts: ["PLY-1","PLY-2","PLY-3","PLY-4","PLY-5","PLY-6"] }
     }
   },
   "Muay Thai": { hasSeries: false },
@@ -937,32 +1049,32 @@ const SKILL_CATALOG = {
     seriesLabel: "Workout",
     series: {
       "369": {
-        color: "🏃",
+        color: "•",
         workouts: ["369 — Full Cycle"],
         subDrills: { "369 — Full Cycle": ["90 yards", "60 yards", "30 yards"] }
       },
       "50/50": {
-        color: "🏃",
+        color: "•",
         workouts: ["50/50"],
         subDrills: { "50/50": ["50 yards"] }
       },
       "SHS Hill": {
-        color: "⛰️",
+        color: "•",
         workouts: ["SHS Hill"],
         subDrills: { "SHS Hill": ["Hill Sprint"] }
       },
       "27/6 Intervals": {
-        color: "⏱️",
+        color: "•",
         workouts: ["27/6 Intervals"],
         subDrills: { "27/6 Intervals": ["Sprint Interval"] }
       },
       "400's": {
-        color: "🏃",
+        color: "•",
         workouts: ["400's"],
         subDrills: { "400's": ["400 yards"] }
       },
       "5 Yard Pyramids": {
-        color: "🔺",
+        color: "•",
         workouts: ["5 Yard Pyramids"],
         subDrills: { "5 Yard Pyramids": ["5yd", "10yd", "15yd", "20yd", "15yd", "10yd", "5yd"] }
       }
@@ -973,7 +1085,7 @@ const SKILL_CATALOG = {
   "Conditioning": {
     hasSeries: true,
     series: {
-      "CDO": { color: "🟢", workouts: ["CDO-1","CDO-2","CDO-3","CDO-4","CDO-5"] }
+      "CDO": { color: "•", workouts: ["CDO-1","CDO-2","CDO-3","CDO-4","CDO-5"] }
     }
   },
   "Mobility / Yoga": { hasSeries: false },
@@ -1069,27 +1181,21 @@ const SPLIT_EXERCISE_LIBRARY = {
 };
 // Exercise library per skill block (for skills that have flat preset drill lists)
 // Series-based skills (Kickboxing, Sprints) load their drills via SKILL_CATALOG.subDrills
-const SKILL_EXERCISE_LIBRARY = {};
-const DEFAULT_SCHEDULE = {
-  0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []
-};
 const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 // Storage version - bump to clear old data
 const STORAGE_VERSION = 'v3';
 const K_STATE = `mps_${STORAGE_VERSION}_state`;
 const K_HISTORY = `mps_${STORAGE_VERSION}_history`;
 const K_PRS = `mps_${STORAGE_VERSION}_prs`;
-const K_TEMPLATE = `mps_${STORAGE_VERSION}_template`;
 const K_LAST_BACKUP = `mps_${STORAGE_VERSION}_last_backup`;
 const K_BACKUP_COUNT = `mps_${STORAGE_VERSION}_backup_count`;
 // ============ STATE ============
 let state = { selectedDate: getTodayStr(), days: {}, targetRounds: 3 };
 let history = [];
 let prs = {};
-let weeklyTemplate = deepCopy(DEFAULT_SCHEDULE);
 let lastSessionCache = {};
 function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
-function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+function getTodayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function getDayOfWeek(dateStr) { return new Date(dateStr + 'T00:00:00').getDay(); }
 // ============ STORAGE (with localStorage fallback) ============
 // Tries window.storage first (Claude artifact env), falls back to localStorage (standalone browser)
@@ -1115,7 +1221,8 @@ async function safeGet(key) {
 }
 async function safeSet(key, val) {
   if (useLocalStorage) {
-    try { localStorage.setItem(key, val); } catch (e) { console.error('localStorage save fail', e); }
+    try { localStorage.setItem(key, val); } catch (e) { console.error('localStorage save fail', e); try { toast('Save failed — storage full.'); } catch (e2) {} }
+    try { scheduleCloudBackup(); } catch (e) {}
     return;
   }
   try {
@@ -1123,18 +1230,84 @@ async function safeSet(key, val) {
   } catch (e) {
     // window.storage failed, switch to localStorage and retry
     useLocalStorage = true;
-    try { localStorage.setItem(key, val); } catch (e2) { console.error('localStorage save fail', e2); }
+    try { localStorage.setItem(key, val); } catch (e2) { console.error('localStorage save fail', e2); try { toast('Save failed — storage full.'); } catch (e3) {} }
   }
+  try { scheduleCloudBackup(); } catch (e) {}
 }
 async function safeDelete(key) {
   if (useLocalStorage) {
     try { localStorage.removeItem(key); } catch (e) {}
+    try { scheduleCloudBackup(); } catch (e) {}
     return;
   }
   try { await window.storage.delete(key); } catch (e) {
     useLocalStorage = true;
     try { localStorage.removeItem(key); } catch (e2) {}
   }
+  try { scheduleCloudBackup(); } catch (e) {}
+}
+
+// ============ SILENT CLOUD BACKUP ============
+// Reuses the hub's authenticated Firebase (same-origin parent). Backs up the full
+// local snapshot to users/{uid}/settings/workout_backup on open + after every
+// log/delete. Fire-and-forget — never blocks the UI. Auto-restores on a fresh device.
+function _cloudDB()  { try { return (window.parent && window.parent.firebase) ? window.parent.firebase.firestore() : null; } catch (e) { return null; } }
+function _cloudUID() { try { return window.parent.firebase.auth().currentUser.uid; } catch (e) { return null; } }
+function _cloudDoc() { const db = _cloudDB(), uid = _cloudUID(); return (db && uid) ? db.doc('users/' + uid + '/settings/workout_backup') : null; }
+function _collectLocal() {
+  // Build the backup payload from the in-memory data (the same objects safeSet
+  // persists) rather than reading localStorage — saves go through window.storage,
+  // so localStorage may be empty and a localStorage-only read could back up nothing.
+  const data = {};
+  try { data[K_STATE] = JSON.stringify(state); } catch (e) {}
+  try { data[K_HISTORY] = JSON.stringify(history); } catch (e) {}
+  try { data[K_PRS] = JSON.stringify(prs); } catch (e) {}
+  try { if (typeof K_CONDITIONING !== 'undefined' && typeof conditioningLogs !== 'undefined') data[K_CONDITIONING] = JSON.stringify(conditioningLogs); } catch (e) {}
+  return data;
+}
+let _cloudTimer = null, _cloudBusy = false;
+function scheduleCloudBackup() {
+  if (_cloudTimer) clearTimeout(_cloudTimer);
+  _cloudTimer = setTimeout(cloudBackupNow, 1800);   // debounce so rapid saves = one write
+}
+async function cloudBackupNow() {
+  const doc = _cloudDoc();
+  if (!doc || _cloudBusy) return false;
+  _cloudBusy = true;
+  try {
+    // The whole payload must live in the PARENT realm or Firestore rejects it as a
+    // "custom Object". Rebuild it via the parent's JSON.parse so set() accepts it.
+    const PJSON = (window.parent && window.parent.JSON) ? window.parent.JSON : JSON;
+    const payload = PJSON.parse(JSON.stringify({ data: _collectLocal(), ts: Date.now(), v: 1 }));
+    await doc.set(payload);
+    try { localStorage.setItem(K_LAST_BACKUP, new Date().toISOString()); } catch (e) {}
+    try { updateBackupStatus(); } catch (e) {}
+    _cloudBusy = false;
+    return true;
+  } catch (e) { _cloudBusy = false; return false; }
+}
+const K_RESTORE_FLAG = 'mps_restore_attempted';
+async function cloudRestoreIfEmpty() {
+  // Guard against an infinite reload loop: only attempt a restore once per session.
+  try { if (sessionStorage.getItem(K_RESTORE_FLAG)) return false; } catch (e) {}
+  const doc = _cloudDoc();
+  if (!doc) return false;
+  let hasLocal = false;
+  try { const hv = localStorage.getItem(K_HISTORY); hasLocal = !!hv && JSON.parse(hv || '[]').length > 0; } catch (e) {}
+  if (hasLocal) return false;                 // device already has data — never overwrite
+  try {
+    const snap = await doc.get();
+    if (snap.exists && snap.data() && snap.data().data) {
+      const d = snap.data().data;
+      if (!d || typeof d !== 'object') return false;
+      let cloudHasHistory = false;
+      try { cloudHasHistory = !!d[K_HISTORY] && JSON.parse(d[K_HISTORY] || '[]').length > 0; } catch (e) {}
+      if (!cloudHasHistory) return false;     // nothing real to restore (avoids reload loop)
+      Object.keys(d).forEach(k => { try { localStorage.setItem(k, d[k]); } catch (e) {} });
+      return true;
+    }
+  } catch (e) {}
+  return false;
 }
 async function loadAll() {
   const s = await safeGet(K_STATE);
@@ -1148,8 +1321,6 @@ async function loadAll() {
   if (h) { try { history = JSON.parse(h.value); } catch (e) {} }
   const p = await safeGet(K_PRS);
   if (p) { try { prs = JSON.parse(p.value); } catch (e) {} }
-  const w = await safeGet(K_TEMPLATE);
-  if (w) { try { weeklyTemplate = JSON.parse(w.value); } catch (e) {} }
   // Load conditioning logs
   await loadConditioning();
   // ONE-TIME MIGRATION: fix legacy history records where round count = total sets
@@ -1172,7 +1343,6 @@ async function dedupeHistoryByDate() {
   if (seen.size === history.length) return; // no duplicates
   history = [...seen.values()].sort((a, b) => a.date.localeCompare(b.date));
   await saveHistory();
-  console.log('Deduplicated history to', history.length, 'records');
 }
 async function migrateLegacyRounds() {
   if (!history || history.length === 0) return;
@@ -1216,7 +1386,6 @@ async function migrateLegacyRounds() {
   });
   if (changed) {
     await saveHistory();
-    console.log('Migrated legacy round counts');
   }
 }
 function buildLastSessionCache() {
@@ -1250,7 +1419,6 @@ async function saveHistory() {
   }
 }
 async function savePRs() { await safeSet(K_PRS, JSON.stringify(prs)); }
-async function saveTemplate() { await safeSet(K_TEMPLATE, JSON.stringify(weeklyTemplate)); }
 // ============ DAY INIT ============
 function ensureDay(dateStr) {
   if (!state.days[dateStr]) {
@@ -1409,7 +1577,7 @@ function renderAutoFillBanner() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'autofill-banner';
-    banner.style.cssText = 'background:rgba(74, 179, 244, 0.12); border:1px solid rgba(74, 179, 244, 0.4); border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;';
+    banner.style.cssText = 'background:rgba(var(--mps-accent-rgb), 0.12); border:1px solid rgba(var(--mps-accent-rgb), 0.4); border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;';
     const splitsContainer = document.getElementById('splits-container');
     splitsContainer.parentNode.insertBefore(banner, splitsContainer);
   }
@@ -1420,7 +1588,7 @@ function renderAutoFillBanner() {
   const splitNames = [...day.splits, ...day.skills].map(b => b.name).join(' + ');
   banner.innerHTML = `
     <div style="flex:1; min-width:0;">
-      <div style="font-size:12px; font-weight:700; color:var(--mps-accent); margin-bottom:2px;">⚡ Auto-filled from pattern</div>
+      <div style="font-size:12px; font-weight:700; color:var(--mps-accent); margin-bottom:2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Auto-filled from pattern</div>
       <div style="font-size:11px; color:var(--text-dim); line-height:1.4;">${escapeHtml(dayName)} = ${escapeHtml(splitNames)} (matched ${escapeHtml(sources)})</div>
     </div>
     <button id="autofill-undo" style="background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; flex-shrink:0;">Undo</button>
@@ -1467,7 +1635,7 @@ function renderBlocks(type, blocks) {
       <button class="icon-btn" title="Remove">✕</button>
     `;
     const nameInput = header.querySelector('.split-name');
-    nameInput.addEventListener('change', () => { block.name = nameInput.value; saveState(); persistTemplate(type); });
+    nameInput.addEventListener('change', () => { block.name = nameInput.value; saveState(); });
     header.querySelector('.icon-btn').addEventListener('click', () => removeBlock(type, blockIdx));
     card.appendChild(header);
     const exContainer = document.createElement('div');
@@ -1502,7 +1670,7 @@ function renderBlocks(type, blocks) {
     };
     const library = type === 'splits'
       ? (SPLIT_EXERCISE_LIBRARY[block.name] || [])
-      : (SKILL_EXERCISE_LIBRARY[block.name] || []);
+      : [];
     const existingNames = new Set(block.exercises.map(e => e.name));
     const available = library.filter(name => !existingNames.has(name));
     if (available.length > 0) {
@@ -1573,7 +1741,7 @@ function renderExercises(type, blockIdx, exercises, container, blockName) {
       <button class="icon-btn" title="Remove">✕</button>
     `;
     head.querySelector('input').addEventListener('change', (e) => {
-      ex.name = e.target.value; saveState(); persistTemplate(type);
+      ex.name = e.target.value; saveState();
     });
     head.querySelector('button').addEventListener('click', () => removeExercise(type, blockIdx, exIdx));
     div.appendChild(head);
@@ -1651,10 +1819,6 @@ function renderExercises(type, blockIdx, exercises, container, blockName) {
   });
 }
 // ============ MUTATIONS ============
-function persistTemplate(type) {
-  // No-op: templates removed in favor of Copy from... feature.
-  // Days start blank. User explicitly copies past workouts.
-}
 function showSplitPicker() {
   const container = document.getElementById('split-picker-container');
   if (container.querySelector('.split-picker')) { container.innerHTML = ''; return; } // toggle
@@ -1676,23 +1840,40 @@ function showSplitPicker() {
   });
   document.getElementById('split-picker-cancel').addEventListener('click', () => { container.innerHTML = ''; });
 }
+function mpsTextPrompt(title, onConfirm) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,sans-serif;';
+  ov.innerHTML = '<div style="background:#141414;border:1px solid #333;border-radius:14px;padding:22px;max-width:360px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,0.6);">'
+    + '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#C9A020;font-weight:700;margin-bottom:14px;">' + title + '</div>'
+    + '<input id="mps-tp-input" type="text" autocomplete="off" style="width:100%;box-sizing:border-box;background:#0d0d0d;border:1px solid #444;border-radius:9px;padding:11px 12px;color:#f5f5f5;font-size:15px;font-family:inherit;outline:none;" />'
+    + '<div style="display:flex;gap:10px;margin-top:16px;">'
+    + '<button id="mps-tp-cancel" style="flex:1;padding:10px;border-radius:9px;border:1px solid #444;background:transparent;color:#bbb;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>'
+    + '<button id="mps-tp-ok" style="flex:1;padding:10px;border-radius:9px;border:none;background:#C9A020;color:#0a0a0a;font-size:13px;font-weight:800;letter-spacing:.04em;cursor:pointer;font-family:inherit;">OK</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  const input = ov.querySelector('#mps-tp-input');
+  const done = (val) => { ov.remove(); onConfirm(val); };
+  ov.querySelector('#mps-tp-cancel').addEventListener('click', () => done(null));
+  ov.querySelector('#mps-tp-ok').addEventListener('click', () => done(input.value));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(input.value); else if (e.key === 'Escape') done(null); });
+  ov.addEventListener('click', (e) => { if (e.target === ov) done(null); });
+  setTimeout(() => input.focus(), 30);
+}
 function confirmAddSplit(name) {
-  let finalName = name;
   if (name === 'Custom') {
-    const custom = prompt('Custom split name:');
-    if (!custom || !custom.trim()) { document.getElementById('split-picker-container').innerHTML = ''; return; }
-    finalName = custom.trim();
+    mpsTextPrompt('Custom split name', (custom) => {
+      if (!custom || !custom.trim()) { document.getElementById('split-picker-container').innerHTML = ''; return; }
+      doAddSplit(custom.trim());
+    });
+    return;
   }
-  const dow = getDayOfWeek(state.selectedDate);
-  const templateMatch = (weeklyTemplate[dow] || []).find(t => t.name === finalName);
-  const exercises = templateMatch
-    ? (templateMatch.exercises || []).map(ex => buildFreshExercise(ex.name, ex.targetSets || 3, ex.targetReps || ''))
-    : [];
+  doAddSplit(name);
+}
+function doAddSplit(finalName) {
   getCurrentDay().splits.push({
-    id: Date.now() + Math.random(), name: finalName, type: 'split', exercises
+    id: Date.now() + Math.random(), name: finalName, type: 'split', exercises: []
   });
   saveState();
-  persistTemplate('splits');
   document.getElementById('split-picker-container').innerHTML = '';
   render();
   toast(`Added ${finalName}`);
@@ -1759,14 +1940,17 @@ function renderSkillPicker(selectedSkill, selectedSeries) {
   document.getElementById('skill-picker-cancel').addEventListener('click', () => { container.innerHTML = ''; });
 }
 function confirmAddSkill(skillName, seriesName, workoutName) {
-  let finalName = skillName;
   if (skillName === 'Custom') {
-    const custom = prompt('Custom skill name:');
-    if (!custom || !custom.trim()) { document.getElementById('skill-picker-container').innerHTML = ''; return; }
-    finalName = custom.trim();
-  } else if (seriesName && workoutName) {
-    finalName = `${skillName} & ${workoutName}`;
+    mpsTextPrompt('Custom skill name', (custom) => {
+      if (!custom || !custom.trim()) { document.getElementById('skill-picker-container').innerHTML = ''; return; }
+      doAddSkill('Custom', custom.trim(), seriesName, workoutName);
+    });
+    return;
   }
+  const finalName = (seriesName && workoutName) ? `${skillName} & ${workoutName}` : skillName;
+  doAddSkill(skillName, finalName, seriesName, workoutName);
+}
+function doAddSkill(skillName, finalName, seriesName, workoutName) {
   // Build the exercise list for this skill block
   let exercises = [];
   if (seriesName && workoutName) {
@@ -1806,18 +1990,18 @@ function buildRoundsExercise(label, defaultRounds) {
 }
 function removeBlock(type, blockIdx) {
   getBlocks(type).splice(blockIdx, 1);
-  saveState(); if (type === 'splits') persistTemplate('splits'); render();
+  saveState(); render();
 }
 function addExercise(type, blockIdx, name, targetSets, targetReps) {
   if (!name) return;
   const ts = Math.max(1, Math.min(10, targetSets || 3));
   getBlocks(type)[blockIdx].exercises.push(buildFreshExercise(name, ts, targetReps));
-  saveState(); if (type === 'splits') persistTemplate('splits'); render();
+  saveState(); render();
   toast(`Added ${name}`);
 }
 function removeExercise(type, blockIdx, exIdx) {
   getBlocks(type)[blockIdx].exercises.splice(exIdx, 1);
-  saveState(); if (type === 'splits') persistTemplate('splits'); render();
+  saveState(); render();
 }
 function toggleSet(type, blockIdx, exIdx, setIdx) {
   const ex = getBlocks(type)[blockIdx].exercises[exIdx];
@@ -1959,7 +2143,7 @@ async function endWorkout() {
         totalVol += w * r;
         if (w > 0) {
           const existing = prs[e.name];
-          const existingWeight = (typeof existing === 'object' && existing !== null) ? existing.weight : existing;
+          const existingWeight = parseFloat((typeof existing === 'object' && existing !== null) ? existing.weight : existing) || 0;
           if (!existing || w > existingWeight) {
             prs[e.name] = { weight: w, date: state.selectedDate };
           }
@@ -2345,9 +2529,8 @@ async function resetAll() {
     await safeDelete(K_STATE);
     await safeDelete(K_HISTORY);
     await safeDelete(K_PRS);
-    await safeDelete(K_TEMPLATE);
     state = { selectedDate: getTodayStr(), days: {}, targetRounds: 3 };
-    history = []; prs = {}; weeklyTemplate = deepCopy(DEFAULT_SCHEDULE);
+    history = []; prs = {};
     lastSessionCache = {};
     overlay.remove();
     render();
@@ -2385,9 +2568,17 @@ function renderHistory() {
     histIdx: history.indexOf(h),
     payload: h
   }));
-  const allItems = [...liftItems, ...condItems];
+  let allItems = [...liftItems, ...condItems];
+  // 60-day history cap for Core/Elite (Premium sees everything).
+  let __capHidden = 0;
+  if (!isPremium()) {
+    const __cut = historyCapCutoff();
+    const __before = allItems.length;
+    allItems = allItems.filter(it => (it.date || '') >= __cut);
+    __capHidden = __before - allItems.length;
+  }
   if (allItems.length === 0) {
-    c.innerHTML = '<div class="card empty">No workouts logged yet.</div>';
+    c.innerHTML = (__capHidden > 0 ? historyCapNoteHTML() : '') + '<div class="card empty">' + (isPremium() ? 'No workouts logged yet.' : 'No workouts logged in the last 60 days.') + '</div>';
     return;
   }
   // Sort newest first
@@ -2455,11 +2646,11 @@ function renderHistory() {
             <div class="history-card-meta">${metaLine} · tap to delete</div>
           </div>
           <div class="history-card-right">
-            <div class="history-card-circuits" style="color:#7ac8ff;">${rightTop}</div>
+            <div class="history-card-circuits" style="color:var(--mps-accent-2);">${rightTop}</div>
             <div class="history-card-circuits-label">${rightTopLabel}</div>
             ${rightBottom ? `
-            <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(74,179,244,0.2);">
-              <div style="font-size:14px; font-weight:800; color:#7ac8ff; line-height:1; text-shadow:0 0 8px rgba(74,179,244,0.5);">${rightBottom}</div>
+            <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(var(--mps-accent-rgb),0.2);">
+              <div style="font-size:14px; font-weight:800; color:var(--mps-accent-2); line-height:1; text-shadow:0 0 8px rgba(var(--mps-accent-rgb),0.5);">${rightBottom}</div>
               <div style="font-size:8px; font-weight:700; color:var(--text-dim); letter-spacing:1.2px; margin-top:3px;">${rightBottomLabel}</div>
             </div>
             ` : ''}
@@ -2568,8 +2759,8 @@ function renderHistory() {
           <div class="history-card-circuits">${circuits}</div>
           <div class="history-card-circuits-label">CIRCUIT${circuits === 1 ? '' : 'S'}</div>
           ${strengthScore > 0 ? `
-          <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(74,179,244,0.2);">
-            <div style="font-size:18px; font-weight:800; color:#7ac8ff; line-height:1; text-shadow:0 0 8px rgba(74,179,244,0.5);">${scoreDisplay}</div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(var(--mps-accent-rgb),0.2);">
+            <div style="font-size:18px; font-weight:800; color:var(--mps-accent-2); line-height:1; text-shadow:0 0 8px rgba(var(--mps-accent-rgb),0.5);">${scoreDisplay}</div>
             <div style="font-size:8px; font-weight:700; color:var(--text-dim); letter-spacing:1.2px; margin-top:3px;">STRENGTH</div>
           </div>
           ` : ''}
@@ -2581,6 +2772,7 @@ function renderHistory() {
       <div class="pr-group-body">${innerCards}</div>
     </div>`;
   }).join('');
+  if (__capHidden > 0) c.insertAdjacentHTML('afterbegin', historyCapNoteHTML());
   // Wire tap-to-open detail for lift/skill cards
   c.querySelectorAll('.history-card[data-hist-idx]').forEach(card => {
     card.addEventListener('click', () => {
@@ -2592,13 +2784,15 @@ function renderHistory() {
   c.querySelectorAll('.history-card[data-cond-idx]').forEach(card => {
     card.addEventListener('click', () => {
       const idx = parseInt(card.dataset.condIdx, 10);
-      if (isNaN(idx) || !conditioningLogs[idx]) return;
-      showConditioningDeleteOverlay(idx);
+      const entry = (!isNaN(idx)) ? conditioningLogs[idx] : null;
+      if (!entry) return;
+      showConditioningDeleteOverlay(entry);
     });
   });
 }
-function showConditioningDeleteOverlay(idx) {
-  const c = conditioningLogs[idx];
+function showConditioningDeleteOverlay(c) {
+  // Accepts the conditioning entry object (stable identity) so the right entry is
+  // deleted even if the array order/length changed since render.
   if (!c) return;
   const existing = document.getElementById('cond-delete-overlay');
   if (existing) existing.remove();
@@ -2622,8 +2816,8 @@ function showConditioningDeleteOverlay(idx) {
   overlay.id = 'cond-delete-overlay';
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
   overlay.innerHTML = `
-    <div style="background:linear-gradient(180deg, #131e3d 0%, #0a1124 100%); border:1px solid rgba(74,179,244,0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
-      <div style="font-size:18px; font-weight:800; color:#7ac8ff; margin-bottom:10px;">Delete this entry?</div>
+    <div style="background:linear-gradient(180deg, #131e3d 0%, #0a1124 100%); border:1px solid rgba(var(--mps-accent-rgb),0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+      <div style="font-size:18px; font-weight:800; color:var(--mps-accent-2); margin-bottom:10px;">Delete this entry?</div>
       <div style="font-size:13px; color:#9aa; margin-bottom:4px;">${dateLabel}</div>
       <div style="font-size:15px; color:#fff; margin-bottom:20px;">${summary}</div>
       <div style="display:flex; gap:10px;">
@@ -2635,7 +2829,8 @@ function showConditioningDeleteOverlay(idx) {
   document.body.appendChild(overlay);
   document.getElementById('cond-del-cancel').addEventListener('click', () => overlay.remove());
   document.getElementById('cond-del-confirm').addEventListener('click', async () => {
-    conditioningLogs.splice(idx, 1);
+    const idx = conditioningLogs.indexOf(c);
+    if (idx !== -1) conditioningLogs.splice(idx, 1);
     await saveConditioning();
     overlay.remove();
     toast('Entry deleted');
@@ -2745,9 +2940,9 @@ function showHistoryDetail(h) {
   }
   const dayStrength = daySets > 0 ? Math.round(dayVolume / daySets) : 0;
   const strengthBadgeHtml = dayStrength > 0 ? `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, rgba(122,200,255,0.18), rgba(74,179,244,0.06)); border:1px solid rgba(122,200,255,0.5); border-radius:10px; padding:10px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(74,179,244,0.2), inset 0 1px 0 rgba(255,255,255,0.06);">
-      <div style="font-size:10px; font-weight:700; color:#7ac8ff; letter-spacing:1.8px; opacity:0.85;">STRENGTH SCORE</div>
-      <div style="font-size:22px; font-weight:800; color:#7ac8ff; text-shadow:0 0 10px rgba(122,200,255,0.6); line-height:1;">${dayStrength}</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, rgba(var(--mps-accent-2-rgb),0.18), rgba(var(--mps-accent-rgb),0.06)); border:1px solid rgba(var(--mps-accent-2-rgb),0.5); border-radius:10px; padding:10px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(var(--mps-accent-rgb),0.2), inset 0 1px 0 rgba(255,255,255,0.06);">
+      <div style="font-size:10px; font-weight:700; color:var(--mps-accent-2); letter-spacing:1.8px; opacity:0.85;">STRENGTH SCORE</div>
+      <div style="font-size:22px; font-weight:800; color:var(--mps-accent-2); text-shadow:0 0 10px rgba(var(--mps-accent-2-rgb),0.6); line-height:1;">${dayStrength}</div>
     </div>
   ` : '';
   const overlay = document.createElement('div');
@@ -2905,8 +3100,84 @@ function categorizeExercise(name) {
   if (n.includes('squat') || n.includes('lunge') || n.includes('rdl') || n.includes('mornings')) return 'QUADS';
   return 'OTHER';
 }
+function isCore(){ try{ return !!(window.parent && window.parent!==window && window.parent.document.body.classList.contains('tier-core')); }catch(e){ return false; } }
+// Premium = full history. Core/Elite see only the last 60 days of the history list (stats/charts are unaffected).
+function isPremium(){ try{ return !!(window.parent && window.parent!==window && window.parent.document.body.classList.contains('tier-premium')); }catch(e){ return false; } }
+function historyCapCutoff(){ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
+function historyCapNoteHTML(){ return '<div style="text-align:center;padding:14px 18px;margin-bottom:14px;background:rgba(201,160,32,0.08);border:1px solid rgba(201,160,32,0.35);border-radius:12px;"><div style="font-size:12px;font-weight:700;color:#C9A020;letter-spacing:0.5px;">Showing your last 60 days</div><div style="font-size:11px;color:#9a9a9a;margin-top:4px;line-height:1.5;">Upgrade to <b style="color:#C9A020;">Premium</b> to see your full workout history.</div><a href="/billing.html" target="_top" style="display:inline-block;margin-top:8px;padding:7px 18px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:11px;letter-spacing:0.5px;border-radius:8px;text-decoration:none;">↑ Unlock full history</a></div>'; }
+function coreLockHTML(title, desc){ return '<div style="text-align:center;padding:48px 22px;"><div style="font-size:34px;margin-bottom:10px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div style="font-size:16px;font-weight:800;color:#f5f5f5;letter-spacing:1px;margin-bottom:8px;">'+title+' IS AN ELITE FEATURE</div><div style="font-size:13px;color:#9a9a9a;line-height:1.6;margin-bottom:20px;max-width:300px;margin-left:auto;margin-right:auto;">'+desc+'</div><a href="/billing.html" target="_top" style="display:inline-block;padding:12px 26px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:13px;letter-spacing:1px;border-radius:10px;text-decoration:none;">↑ UNLOCK WITH ELITE</a></div>'; }
+// PREMIUM-only Advanced Stats: total volume (tonnage), this-week volume, training
+// frequency, best estimated 1-rep-max (Epley), and muscle-group balance — all from real data.
+function advancedStatsHTML() {
+  if (!isPremium()) {
+    return '<div class="chart-card" style="text-align:center;">'
+      + '<div class="chart-title">Advanced Stats</div>'
+      + '<div class="chart-subtitle">PREMIUM</div>'
+      + '<div style="padding:14px 10px 18px;color:#9a9a9a;font-size:13px;line-height:1.6;max-width:340px;margin:0 auto;">Total volume lifted, estimated 1-rep-max, training frequency, and muscle-group balance.</div>'
+      + '<a href="/billing.html" target="_top" style="display:inline-block;padding:10px 24px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:12px;letter-spacing:0.5px;border-radius:10px;text-decoration:none;">↑ Unlock with Premium</a>'
+      + '</div>';
+  }
+  var d = new Date(); d.setDate(d.getDate()-7); d.setHours(0,0,0,0);
+  var cutoff7 = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var totalVol=0, weekVol=0, bestE=0, bestName='', muscleVol={}, sessions=0, dates=[];
+  (history||[]).forEach(function(h){
+    if (!h || !h.detail || !Array.isArray(h.detail)) return;
+    sessions++;
+    if (h.date) dates.push(h.date);
+    var skills = new Set(h.skills||[]);
+    h.detail.forEach(function(ex){
+      if (!ex || skills.has(ex.blockName) || ex.isSkill) return;
+      (ex.sets||[]).forEach(function(s){
+        if (!s || !s.done) return;
+        var w = parseFloat(s.weight)||0, r = parseInt(s.reps)||0;
+        if (r<=0) return;
+        var eff = (typeof effectiveWeight==='function') ? effectiveWeight(ex.name, w) : w;
+        var vol = eff*r;
+        totalVol += vol;
+        if (h.date && h.date >= cutoff7) weekVol += vol;
+        var e1 = eff*(1 + r/30);
+        if (e1 > bestE) { bestE=e1; bestName=ex.name; }
+        var m = (typeof categorizeExercise==='function') ? categorizeExercise(ex.name) : 'OTHER';
+        muscleVol[m] = (muscleVol[m]||0)+vol;
+      });
+    });
+  });
+  if (totalVol<=0) {
+    return '<div class="chart-card"><div class="chart-title">Advanced Stats</div><div class="chart-subtitle">PREMIUM</div><div style="padding:18px;text-align:center;color:#888;font-size:13px;line-height:1.6;">Log a few lifts to unlock your volume, 1-rep-max and muscle-balance analytics.</div></div>';
+  }
+  var perWeek=0;
+  if (dates.length) {
+    dates.sort();
+    var first=new Date(dates[0]+'T00:00:00'), last=new Date(dates[dates.length-1]+'T00:00:00');
+    var weeks=Math.max(1,(last-first)/(7*24*3600*1000));
+    perWeek = sessions/weeks;
+  }
+  var fmt=function(n){ return n>=1000000 ? (n/1000000).toFixed(1)+'M' : n>=1000 ? Math.round(n/1000)+'k' : Math.round(n); };
+  var mEntries=Object.keys(muscleVol).map(function(k){return [k,muscleVol[k]];}).filter(function(a){return a[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+  var mTotal=mEntries.reduce(function(s,a){return s+a[1];},0)||1;
+  var bars=mEntries.slice(0,5).map(function(a){
+    var pct=Math.round(a[1]/mTotal*100);
+    return '<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:4px;letter-spacing:0.5px;"><span>'+a[0]+'</span><span>'+pct+'%</span></div><div style="height:7px;background:#0a0a0a;border-radius:4px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:var(--mps-accent);box-shadow:0 0 8px rgba(var(--mps-accent-rgb),0.5);"></div></div></div>';
+  }).join('');
+  return '<div class="chart-card">'
+    + '<div class="chart-title">Advanced Stats</div>'
+    + '<div class="chart-subtitle">VOLUME · 1RM · BALANCE</div>'
+    + '<div class="stat-grid" style="margin-bottom:14px;">'
+    +   '<div class="stat"><div class="stat-value">'+fmt(totalVol)+'</div><div class="stat-label">Total Volume (lbs)</div></div>'
+    +   '<div class="stat"><div class="stat-value">'+fmt(weekVol)+'</div><div class="stat-label">This Week (lbs)</div></div>'
+    +   '<div class="stat"><div class="stat-value">'+perWeek.toFixed(1)+'</div><div class="stat-label">Sessions / Week</div></div>'
+    + '</div>'
+    + '<div style="margin-bottom:14px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:9px;display:flex;justify-content:space-between;align-items:center;">'
+    +   '<div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Top Estimated 1-Rep Max</div><div style="font-size:14px;color:#f5f5f5;font-weight:600;margin-top:3px;">'+escapeHtml(bestName||'—')+'</div></div>'
+    +   '<div style="font-size:22px;font-weight:800;color:var(--mps-accent-2);text-shadow:0 0 8px rgba(var(--mps-accent-rgb),0.4);white-space:nowrap;">'+Math.round(bestE)+'<span style="font-size:12px;color:var(--text-dim);font-weight:600;"> lbs</span></div>'
+    + '</div>'
+    + '<div class="chart-subtitle" style="margin-bottom:10px;">VOLUME BY MUSCLE</div>'
+    + bars
+    + '</div>';
+}
 function renderPRs() {
   const c = document.getElementById('pr-list');
+  if (isCore()) { if(c) c.innerHTML = coreLockHTML('PRs &amp; STATS', 'Unlock your personal records and strength stats. Logging workouts stays free; upgrade to track your PRs over time.'); return; }
   const entries = Object.entries(prs);
   if (entries.length === 0) { c.innerHTML = '<div class="empty">No PRs yet. Lift heavy.</div>'; return; }
   // Group by muscle
@@ -2956,6 +3227,17 @@ function renderPRs() {
 // Week 1 starts Sunday, May 3, 2026
 const PROGRAM_START_DATE = '2026-05-03';
 const PROGRAM_WEEKS = 6;
+// Rolling 6-week chart window: the Sunday that starts the 6-week window ending with
+// THIS week (so today always lands in week 6 / the last bucket). Replaces the old
+// hardcoded program-start anchor so the charts never go stale after the program.
+function sixWeekWindowStart() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const thisWeekStart = new Date(today);
+  thisWeekStart.setDate(today.getDate() - today.getDay()); // back up to Sunday
+  thisWeekStart.setDate(thisWeekStart.getDate() - 5 * 7);  // 5 weeks earlier → 6-week span
+  thisWeekStart.setHours(0, 0, 0, 0);
+  return thisWeekStart;
+}
 // Day of week → lifting split mapping
 const DAY_TO_LIFT_SPLIT = {
   0: null,                          // Sun = Church / rest
@@ -3063,6 +3345,7 @@ function formatSlot(slot) {
   return '—';
 }
 function renderDashboard() {
+  if (isCore()) { var lc = document.getElementById('dashboard-container'); if (lc) lc.innerHTML = coreLockHTML('STATS', 'See your streaks, trends and strength charts. Logging stays free — upgrade to Elite to see your progress.'); return; }
   try {
     _renderDashboard();
   } catch (e) {
@@ -3126,8 +3409,9 @@ function _renderDashboard() {
         if (!s || !s.done) return;
         const w = parseFloat(s.weight) || 0;
         const r = parseFloat(s.reps) || 0;
-        if (w <= 0 && r <= 0) return;
-        allTimeVolume += w * r;
+        if (w <= 0 && r <= 0 && !BW_MULTIPLIERS[ex.name]) return;
+        const effW = effectiveWeight(ex.name, w);
+        allTimeVolume += effW * r;
         allTimeSets += 1;
       });
     });
@@ -3160,13 +3444,13 @@ function _renderDashboard() {
     <div class="stat-grid" style="margin-bottom:18px;">
       <div class="stat"><div class="stat-value" style="font-size:18px;">${totalRounds}</div><div class="stat-label">Total Rounds</div></div>
       <div class="stat"><div class="stat-value" style="font-size:18px;">${totalCircuits}</div><div class="stat-label">Circuits Done</div></div>
-      <div class="stat" style="background:linear-gradient(180deg, rgba(122,200,255,0.10) 0%, rgba(74,179,244,0.04) 100%); border:1px solid rgba(122,200,255,0.45); box-shadow:0 4px 14px rgba(74,179,244,0.22), inset 0 1px 0 rgba(255,255,255,0.06);"><div class="stat-value" style="font-size:18px; color:#7ac8ff; text-shadow:0 0 10px rgba(122,200,255,0.6);">${allTimeStrength}</div><div class="stat-label" style="color:#7ac8ff; opacity:0.85;">Strength Score</div></div>
+      <div class="stat" style="background:linear-gradient(180deg, rgba(var(--feat-rgb),0.10) 0%, rgba(var(--feat-rgb),0.04) 100%); border:1px solid rgba(var(--feat-rgb),0.45); box-shadow:0 4px 14px rgba(var(--feat-rgb),0.22), inset 0 1px 0 rgba(255,255,255,0.06);"><div class="stat-value" style="font-size:18px; color:var(--mps-accent-2); text-shadow:0 0 10px rgba(var(--feat-rgb),0.6);">${allTimeStrength}</div><div class="stat-label" style="color:rgb(var(--feat-rgb)); opacity:0.85;">Strength Score</div></div>
     </div>
     <!-- ===== CHARTS ===== -->
     <div class="chart-card">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div class="chart-title" style="margin:0;">Strength Score</div>
-        <div id="strength-score-badge" style="background:linear-gradient(135deg, rgba(74,179,244,0.25), rgba(74,179,244,0.1)); border:1px solid rgba(74,179,244,0.5); color:#7ac8ff; font-weight:700; font-size:14px; padding:4px 12px; border-radius:20px; letter-spacing:0.5px;">—</div>
+        <div id="strength-score-badge" style="background:linear-gradient(135deg, rgba(var(--mps-accent-rgb),0.25), rgba(var(--mps-accent-rgb),0.1)); border:1px solid rgba(var(--mps-accent-rgb),0.5); color:var(--mps-accent-2); font-weight:700; font-size:14px; padding:4px 12px; border-radius:20px; letter-spacing:0.5px;">—</div>
       </div>
       <div class="chart-subtitle" id="chart-strength-subtitle">daily · last 6 weeks</div>
       <div class="pill-row" id="strength-toggle-row" style="margin-top:10px;">
@@ -3177,7 +3461,7 @@ function _renderDashboard() {
       <div id="strength-week-picker" style="display:none; margin-bottom:10px;">
         <select id="strength-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-strength"></canvas>
         <div id="chart-strength-empty" class="chart-empty" style="display:none;">No lifts logged yet</div>
       </div>
@@ -3194,7 +3478,7 @@ function _renderDashboard() {
       <div id="avgweight-week-picker" style="display:none; margin-bottom:10px;">
         <select id="avgweight-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-avg-weight"></canvas>
         <div id="chart-avg-weight-empty" class="chart-empty" style="display:none;">No lifts logged yet</div>
       </div>
@@ -3209,7 +3493,7 @@ function _renderDashboard() {
       <div id="avgreps-week-picker" style="display:none; margin-bottom:10px;">
         <select id="avgreps-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-avg-reps"></canvas>
         <div id="chart-avg-reps-empty" class="chart-empty" style="display:none;">No lifts logged yet</div>
       </div>
@@ -3224,7 +3508,7 @@ function _renderDashboard() {
         <button class="pill ${condChartState.cat === 'machine' ? 'active' : ''}" data-chart-cat="machine">Cardio Machine</button>
       </div>
       <div class="pill-row" id="cond-chart-sub-row"></div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,222,128,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-conditioning"></canvas>
         <div id="chart-conditioning-empty" class="chart-empty" style="display:none;">No runs logged yet</div>
       </div>
@@ -3239,15 +3523,16 @@ function _renderDashboard() {
       <div id="totalrounds-week-picker" style="display:none; margin-bottom:10px;">
         <select id="totalrounds-week-select" class="cond-input" style="width:100%;"></select>
       </div>
-      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(74,179,244,0.4));">
+      <div class="chart-canvas-wrap" style="filter: drop-shadow(0 0 8px rgba(var(--mps-accent-rgb),0.4));">
         <canvas id="chart-total-rounds"></canvas>
         <div id="chart-total-rounds-empty" class="chart-empty" style="display:none;">No rounds logged yet</div>
       </div>
     </div>
+    ${advancedStatsHTML()}
     <div class="chart-card" style="margin-top:12px;">
       <div class="chart-title">Backup &amp; Sync</div>
-      <div class="chart-subtitle">Move your data between devices</div>
-      <div id="backup-status-row" style="margin-top:10px; padding:10px 12px; background:rgba(74,179,244,0.08); border:1px solid rgba(74,179,244,0.25); border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div class="chart-subtitle">Your data backs up to the cloud automatically</div>
+      <div id="backup-status-row" style="margin-top:10px; padding:10px 12px; background:rgba(var(--mps-accent-rgb),0.08); border:1px solid rgba(var(--mps-accent-rgb),0.25); border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
         <div>
           <div style="font-size:10px; color:var(--text-dim); letter-spacing:0.5px;">AUTO-BACKUP STATUS</div>
           <div id="backup-status-text" style="font-size:13px; font-weight:700; color:var(--mps-accent); margin-top:2px;">checking…</div>
@@ -3255,14 +3540,14 @@ function _renderDashboard() {
         <button id="backup-now-btn" style="padding:8px 14px; border-radius:6px; border:1px solid var(--mps-accent); background:transparent; color:var(--mps-accent); font-weight:700; font-size:12px;">Backup now</button>
       </div>
       <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <button id="backup-export-btn" class="end-btn" style="flex:1; min-width:120px; background:#226633; color:#ffffff;">⬇ Export Data</button>
-        <button id="backup-import-btn" class="end-btn" style="flex:1; min-width:120px; background:#9b6bc9; color:#fff;">⬆ Import Data</button>
+        <button id="backup-export-btn" class="end-btn" style="flex:1; min-width:120px; background:transparent; color:var(--mps-accent); border:1px solid var(--mps-accent);">⬇ Export a copy</button>
+        <button id="backup-import-btn" class="end-btn" style="flex:1; min-width:120px; background:transparent; color:var(--text-dim); border:1px solid var(--border);">⬆ Import a file</button>
         <input type="file" id="backup-import-file" accept=".json,application/json" style="display:none;">
       </div>
       <div style="font-size:11px; color:var(--text-dim); margin-top:12px; line-height:1.5;">
-        <strong style="color:var(--mps-accent);">Auto-backup:</strong> Fires after every workout save + on app open if >24h since last backup. Files save to your Downloads folder as <code style="background:#0a1124; padding:1px 4px; border-radius:3px;">mps_autobackup_YYYY-MM-DD_NNN.json</code>.<br>
-        <strong style="color:#3d9658;">Export:</strong> Downloads all your workout data as a JSON file.<br>
-        <strong style="color:#9b6bc9;">Import:</strong> Upload a previously-exported JSON file to restore data on a new device or after clearing browser cache.
+        <strong style="color:var(--mps-accent);">Automatic:</strong> Your data backs up to your account every time you open the app and after every change — silently, nothing to manage.<br>
+        <strong style="color:var(--mps-accent);">Export a copy:</strong> Optional — download a JSON snapshot to keep offline.<br>
+        <strong style="color:var(--mps-accent);">Import a file:</strong> Restore from a JSON snapshot you exported earlier.
       </div>
     </div>
   `;
@@ -3291,7 +3576,6 @@ async function runAutoBackup(reason) {
       state: state,
       history: history,
       prs: prs,
-      weeklyTemplate: weeklyTemplate,
       conditioning: (typeof conditioningLogs !== 'undefined') ? conditioningLogs : []
     };
     // Skip auto-backup if there's literally nothing to save (avoid spamming Downloads with empty files)
@@ -3301,25 +3585,8 @@ async function runAutoBackup(reason) {
       _autoBackupInFlight = false;
       return false;
     }
-    // Get and increment backup counter for versioned filename
-    let count = 1;
-    try {
-      const stored = await safeGet(K_BACKUP_COUNT);
-      if (stored) count = (parseInt(stored, 10) || 0) + 1;
-    } catch (e) {}
-    await safeSet(K_BACKUP_COUNT, String(count));
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const dateStr = new Date().toISOString().split('T')[0];
-    a.href = url;
-    a.download = `mps_autobackup_${dateStr}_${String(count).padStart(3, '0')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    // Record last successful backup time
-    await safeSet(K_LAST_BACKUP, new Date().toISOString());
+    // Silent cloud backup (replaces the old download-to-Downloads behavior).
+    await cloudBackupNow();
     // Update dashboard indicator if visible
     updateBackupStatus();
     _autoBackupInFlight = false;
@@ -3345,10 +3612,11 @@ async function updateBackupStatus() {
   const el = document.getElementById('backup-status-text');
   if (!el) return;
   try {
-    const last = await safeGet(K_LAST_BACKUP);
+    const rec = await safeGet(K_LAST_BACKUP);
+    const last = rec && rec.value;
     if (!last) {
-      el.textContent = 'No backup yet';
-      el.style.color = '#dc4856';
+      el.textContent = 'Cloud backup on — saving automatically';
+      el.style.color = 'var(--text-dim)';
       return;
     }
     const ms = Date.now() - new Date(last).getTime();
@@ -3360,20 +3628,24 @@ async function updateBackupStatus() {
     else if (hours > 0) label = `${hours}h ago`;
     else if (mins > 0) label = `${mins}m ago`;
     else label = 'just now';
-    el.textContent = `Last backup: ${label} ✓`;
-    el.style.color = (ms > 24 * 3600000) ? '#d97706' : '#4ab3f4';
+    el.textContent = `Synced to cloud · ${label}`;
+    el.style.color = 'var(--mps-accent)';
   } catch (e) {
-    el.textContent = 'Backup status unknown';
+    el.textContent = 'Cloud backup on';
+    el.style.color = 'var(--text-dim)';
   }
 }
-// Called once at app boot — fires backup if >24h since last
+// Called once at app boot — restore on a fresh device, then back up current state (silent).
 async function checkAutoBackupOnOpen() {
-  const ms = await msSinceLastBackup();
-  // If never backed up OR >24h ago → auto-backup now
-  if (ms === null || ms > 24 * 3600000) {
-    // Wait 2s after app load so the user sees the dashboard before the download dialog appears
-    setTimeout(() => { runAutoBackup('open'); }, 2000);
-  }
+  await new Promise(r => setTimeout(r, 800));   // let the parent's Firebase auth settle
+  try {
+    const restored = await cloudRestoreIfEmpty();
+    if (restored) {
+      try { sessionStorage.setItem(K_RESTORE_FLAG, '1'); } catch (e) {}   // prevent reload loop if restored data still reads as empty
+      location.reload(); return;   // fresh device pulled cloud data → re-render with it
+    }
+  } catch (e) {}
+  cloudBackupNow();                                // fire-and-forget backup on open
 }
 function wireBackupButtons() {
   const exportBtn = document.getElementById('backup-export-btn');
@@ -3405,7 +3677,6 @@ function wireBackupButtons() {
         state: state,
         history: history,
         prs: prs,
-        weeklyTemplate: weeklyTemplate,
         conditioning: (typeof conditioningLogs !== 'undefined') ? conditioningLogs : []
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -3442,7 +3713,7 @@ function wireBackupButtons() {
           <div style="font-size:12px; color:var(--text-dim); margin-bottom:14px; line-height:1.5;">
             Exported: <b style="color:#fff;">${escapeHtml(exportedAt)}</b><br>
             Contains: <b style="color:var(--mps-accent);">${histCount}</b> workouts, <b style="color:var(--mps-accent);">${prCount}</b> PRs<br><br>
-            This will <b style="color:#9b6bc9;">replace all current data</b>. Cannot be undone.
+            This will <b id="imp-replace-warn" style="color:#9b6bc9;">replace all current data</b>. Cannot be undone.
           </div>
           <div style="display:flex; gap:8px;">
             <button id="imp-cancel" style="flex:1; padding:12px; background:transparent; border:1px solid var(--border); color:var(--text-dim); border-radius:7px; font-weight:600; font-size:14px;">Cancel</button>
@@ -3461,7 +3732,6 @@ function wireBackupButtons() {
           }
           if (Array.isArray(data.history)) history = data.history;
           if (data.prs && typeof data.prs === 'object') prs = data.prs;
-          if (data.weeklyTemplate && typeof data.weeklyTemplate === 'object') weeklyTemplate = data.weeklyTemplate;
           if (Array.isArray(data.conditioning) && typeof conditioningLogs !== 'undefined') {
             conditioningLogs = data.conditioning;
             if (typeof saveConditioning === 'function') await saveConditioning();
@@ -3469,7 +3739,6 @@ function wireBackupButtons() {
           await saveState();
           await saveHistory();
           await savePRs();
-          await saveTemplate();
           buildLastSessionCache();
           overlay.remove();
           render();
@@ -3489,6 +3758,7 @@ function wireBackupButtons() {
   });
 }
 function renderPlan() {
+  if (isCore()) { var pc = document.getElementById('plan-content'); if (pc) pc.innerHTML = coreLockHTML('PLAN', 'Follow the 6-week program day-by-day and auto-load workouts. Logging stays free — upgrade to Elite to unlock your Plan.'); return; }
   const view = document.getElementById('plan-view-select').value;
   const content = document.getElementById('plan-content');
   if (view === 'day') {
@@ -3613,7 +3883,7 @@ function renderWeekCard(weekIdx, highlight) {
     }
   }
   return `
-    <div class="pr-group-card" style="${highlight ? 'border-color: rgba(74, 179, 244, 0.5);' : ''}">
+    <div class="pr-group-card" style="${highlight ? 'border-color: rgba(var(--mps-accent-rgb), 0.5);' : ''}">
       <div class="pr-group-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <span>WEEK ${weekIdx + 1}${highlight ? ' · CURRENT' : ''}</span>
         <span style="font-size:10px; font-weight:600; letter-spacing:1px; color:var(--text-dim); text-shadow:none;">${escapeHtml(startLabel)} – ${escapeHtml(endLabel)}</span>
@@ -3654,7 +3924,7 @@ async function showPlanLoadConfirm(dateStr) {
         ${liftSplit ? `<div style="margin-bottom:4px;"><span style="color:var(--mps-accent); font-weight:700;">LIFT:</span> ${escapeHtml(liftSplit)}</div>` : ''}
         <div><span style="color:var(--mps-accent); font-weight:700;">SKILL:</span> ${escapeHtml(skillStr)}</div>
       </div>
-      ${hasData ? `<div style="font-size:12px; color:var(--mps-accent); margin-bottom:12px; padding:8px; background:rgba(74,179,244,0.1); border-radius:6px; border:1px solid rgba(74,179,244,0.3);">⚠ This day already has data. Loading will replace it.</div>` : ''}
+      ${hasData ? `<div style="font-size:12px; color:var(--mps-accent); margin-bottom:12px; padding:8px; background:rgba(var(--mps-accent-rgb),0.1); border-radius:6px; border:1px solid rgba(var(--mps-accent-rgb),0.3);">⚠ This day already has data. Loading will replace it.</div>` : ''}
       <div style="display:flex; gap:8px;">
         <button id="plan-cancel" style="flex:1; padding:12px; background:transparent; border:1px solid var(--border); color:var(--text-dim); border-radius:7px; font-weight:600; font-size:14px;">Cancel</button>
         <button id="plan-confirm" style="flex:1; padding:12px; background:var(--mps-accent); border:none; color:#1a1a1a; border-radius:7px; font-weight:700; font-size:14px;">Load</button>
@@ -3915,20 +4185,24 @@ function renderConditioningRecent() {
         label = (SPRINT_LABELS[c.conditioning_subtype] || c.conditioning_subtype) + ' Sprints';
         value = `${c.conditioning_value} sets`;
       }
-      const globalIdx = conditioningLogs.indexOf(c);
       return `<div class="cond-recent-item">
         <span class="cond-recent-label">${escapeHtml(label)}</span>
         <span style="display:flex; align-items:center; gap:8px;">
           <span class="cond-recent-value">${escapeHtml(value)}</span>
-          <button class="cond-recent-x" data-cond-del="${globalIdx}" title="Delete">×</button>
+          <button class="cond-recent-x" data-cond-del="${idx}" title="Delete">×</button>
         </span>
       </div>`;
     }).join('')}
   `;
   box.querySelectorAll('[data-cond-del]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const i = parseInt(btn.dataset.condDel, 10);
-      conditioningLogs.splice(i, 1);
+      // Resolve the entry object (stable identity) from the filtered list, then
+      // remove it by matching the object — not by a possibly-stale array index.
+      const r = parseInt(btn.dataset.condDel, 10);
+      const entry = (!isNaN(r)) ? recent[r] : null;
+      if (!entry) return;
+      const gi = conditioningLogs.indexOf(entry);
+      if (gi !== -1) conditioningLogs.splice(gi, 1);
       await saveConditioning();
       renderConditioningRecent();
     });
@@ -4015,8 +4289,11 @@ const Isometric3DBarPlugin = {
   id: 'iso3d',
   // Color theme overrides per accent color
   themeMap: {
-    '#4ab3f4': { top: '#7ac8ff', side: '#1a4570' }, // blue
+    '#4ab3f4': { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') }, // blue
     '#9b6bc9': { top: '#c9a3eb', side: '#4a2470' }, // purple
+    '#8a8a8a': { top: '#b0b0b0', side: '#3a3a3a' }, // gray-theme skill (neutral grey)
+    '#5a5a5a': { top: '#7a7a7a', side: '#2a2a2a' }, // gray-theme conditioning (dark grey)
+    '#c9a020': { top: '#d8b13a', side: '#5a4410' }, // gray-theme sprint (gold)
     '#4ade80': { top: '#86efac', side: '#166534' }, // bright green (legacy)
     '#226633': { top: '#3d9658', side: '#0d2818' }, // forest green
     '#dc4856': { top: '#ef5a68', side: '#7a1f28' }   // crimson (sprints)
@@ -4031,7 +4308,7 @@ const Isometric3DBarPlugin = {
       const rawBorder = dataset.borderColor;
       const borderStr = (typeof rawBorder === 'string') ? rawBorder : '#4ab3f4';
       const defaultAccent = borderStr.toLowerCase();
-      const defaultTheme = this.themeMap[defaultAccent] || { top: '#7ac8ff', side: '#1a4570' };
+      const defaultTheme = this.themeMap[defaultAccent] || { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') };
       const perBarThemes = Array.isArray(dataset.barThemes) ? dataset.barThemes : null;
       meta.data.forEach((bar, barIdx) => {
         if (!bar) return;
@@ -4076,6 +4353,8 @@ const Isometric3DBarPlugin = {
 };
 if (typeof Chart !== 'undefined') {
   Chart.register(Isometric3DBarPlugin);
+  // Inter everywhere — including chart canvas text (axis labels, tooltips, legends).
+  Chart.defaults.font.family = 'Inter, system-ui, -apple-system, sans-serif';
   // Force every bar chart to render sharp 90-degree corners (no rounded tops/sides)
   Chart.defaults.elements = Chart.defaults.elements || {};
   Chart.defaults.elements.bar = Chart.defaults.elements.bar || {};
@@ -4090,21 +4369,21 @@ const CHART_BASE_OPTS = {
     legend: { labels: { color: '#ccc', font: { size: 10 } } },
     tooltip: {
       backgroundColor: '#0a1124',
-      titleColor: '#4ab3f4',
+      titleColor: AC,
       bodyColor: '#fff',
-      borderColor: 'rgba(74, 179, 244, 0.3)',
+      borderColor: `rgba(${ACR}, 0.3)`,
       borderWidth: 1
     }
   },
   scales: {
     x: {
       ticks: { color: '#888', font: { size: 9 } },
-      grid: { color: 'rgba(74, 179, 244, 0.08)' }
+      grid: { color: `rgba(${ACR}, 0.08)` }
     },
     y: {
       beginAtZero: true,
       ticks: { color: '#888', font: { size: 9 } },
-      grid: { color: 'rgba(74, 179, 244, 0.08)' }
+      grid: { color: `rgba(${ACR}, 0.08)` }
     }
   }
 };
@@ -4130,49 +4409,10 @@ function roundTo5(n) {
   return Math.round(n / 5) * 5;
 }
 // Chart 1: Training Frequency (May 1 → today, max 4 workouts/day)
-function renderChartTrainingFreq() {
-  destroyChart('trainingFreq');
-  const ctx = document.getElementById('chart-training-freq');
-  if (!ctx) return;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const start = new Date(today.getFullYear(), 4, 1); // May 1 (month is 0-indexed)
-  const dates = [];
-  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
-    dates.push(new Date(d));
-  }
-  const counts = dates.map(d => {
-    const ymd = ymdLocal(d);
-    return Math.min(history.filter(h => h.date === ymd).length, 4);
-  });
-  chartInstances.trainingFreq = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: dates.map(shortDayLabel),
-      datasets: [{
-        data: counts,
-        backgroundColor: 'rgba(74, 179, 244, 0.75)',
-        borderColor: '#4ab3f4',
-        borderWidth: 1,
-      }]
-    },
-    options: {
-      ...CHART_BASE_OPTS,
-      plugins: { ...CHART_BASE_OPTS.plugins, legend: { display: false } },
-      scales: {
-        ...CHART_BASE_OPTS.scales,
-        y: {
-          ...CHART_BASE_OPTS.scales.y,
-          max: 4,
-          ticks: { ...CHART_BASE_OPTS.scales.y.ticks, stepSize: 1 }
-        }
-      }
-    }
-  });
-}
 // Chart 2: Total Rounds (May 1 → today)
 // Total Rounds chart state
 let totalRoundsView = 'sixweek';      // 'sixweek' or 'weekly'
-let totalRoundsSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let totalRoundsSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 function renderChartTotalRounds() {
   destroyChart('totalRounds');
   const ctx = document.getElementById('chart-total-rounds');
@@ -4181,7 +4421,7 @@ function renderChartTotalRounds() {
   const weekPicker = document.getElementById('totalrounds-week-picker');
   const weekSelect = document.getElementById('totalrounds-week-select');
   if (!ctx) return;
-  const sixWeeksAgo = new Date(2026, 4, 3);
+  const sixWeeksAgo = sixWeekWindowStart();
   sixWeeksAgo.setHours(0,0,0,0);
   document.querySelectorAll('#totalrounds-toggle-row .pill').forEach(p => {
     p.classList.toggle('active', p.dataset.roundsView === totalRoundsView);
@@ -4281,9 +4521,9 @@ function renderChartTotalRounds() {
       data: {
         labels: ['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6'],
         datasets: [
-          { label: 'Lift', data: liftPerWeek, backgroundColor: 'rgba(74, 179, 244, 0.75)', borderColor: '#4ab3f4', borderWidth: 1, stack: 'rounds' },
-          { label: 'Skill', data: skillPerWeek, backgroundColor: 'rgba(155, 107, 201, 0.75)', borderColor: '#9b6bc9', borderWidth: 1, stack: 'rounds' },
-          { label: 'Conditioning', data: condPerWeek, backgroundColor: 'rgba(34, 102, 51, 0.85)', borderColor: '#226633', borderWidth: 1, stack: 'rounds' }
+          { label: 'Lift', data: liftPerWeek, backgroundColor: `rgba(${ACR}, 0.75)`, borderColor: AC, borderWidth: 1, stack: 'rounds' },
+          { label: 'Skill', data: skillPerWeek, backgroundColor: SKILL_BG, borderColor: SKILL_BORDER, borderWidth: 1, stack: 'rounds' },
+          { label: 'Conditioning', data: condPerWeek, backgroundColor: COND_BG, borderColor: COND_BORDER, borderWidth: 1, stack: 'rounds' }
         ]
       },
       options: {
@@ -4351,9 +4591,9 @@ function renderChartTotalRounds() {
       data: {
         labels: dayLabels,
         datasets: [
-          { label: 'Lift', data: liftDay, backgroundColor: 'rgba(74, 179, 244, 0.75)', borderColor: '#4ab3f4', borderWidth: 1, stack: 'rounds' },
-          { label: 'Skill', data: skillDay, backgroundColor: 'rgba(155, 107, 201, 0.75)', borderColor: '#9b6bc9', borderWidth: 1, stack: 'rounds' },
-          { label: 'Conditioning', data: condDay, backgroundColor: 'rgba(34, 102, 51, 0.85)', borderColor: '#226633', borderWidth: 1, stack: 'rounds' }
+          { label: 'Lift', data: liftDay, backgroundColor: `rgba(${ACR}, 0.75)`, borderColor: AC, borderWidth: 1, stack: 'rounds' },
+          { label: 'Skill', data: skillDay, backgroundColor: SKILL_BG, borderColor: SKILL_BORDER, borderWidth: 1, stack: 'rounds' },
+          { label: 'Conditioning', data: condDay, backgroundColor: COND_BG, borderColor: COND_BORDER, borderWidth: 1, stack: 'rounds' }
         ]
       },
       options: {
@@ -4400,8 +4640,8 @@ function renderChartTotalRounds() {
 // Week 1 starts May 3, 2026 (program start date). Weeks run Sun-Sat.
 function buildDailyLiftingData() {
   const today = new Date(); today.setHours(0,0,0,0);
-  // Anchor week 1 to May 3, 2026 (program start, Sunday)
-  const sixWeeksAgo = new Date(2026, 4, 3); // month 4 = May (0-indexed)
+  // Rolling 6-week window: week 6 always ends with the current week (Sunday-aligned).
+  const sixWeeksAgo = sixWeekWindowStart();
   sixWeeksAgo.setHours(0,0,0,0);
   const dailyData = {}; // ymd → { weight, reps, sets, rounds, exercises, volume, score }
   history.forEach(h => {
@@ -4505,20 +4745,20 @@ function renderMetricChart(canvasId, emptyId, instanceKey, weeks, valueFn, toolt
   const dataset = isBar
     ? {
         data: formatted,
-        backgroundColor: 'rgba(74, 179, 244, 0.75)',
-        borderColor: '#4ab3f4',
+        backgroundColor: `rgba(${ACR}, 0.75)`,
+        borderColor: AC,
         borderWidth: 1,
       }
     : {
         data: formatted,
-        borderColor: '#4ab3f4',
-        backgroundColor: 'rgba(74, 179, 244, 0.15)',
+        borderColor: AC,
+        backgroundColor: `rgba(${ACR}, 0.15)`,
         tension: 0.3,
         fill: true,
         spanGaps: true,
         pointRadius: 5,
         pointHoverRadius: 7,
-        pointBackgroundColor: '#4ab3f4',
+        pointBackgroundColor: AC,
         pointBorderColor: '#fff',
         pointBorderWidth: 1.5,
         borderWidth: 2.5
@@ -4633,11 +4873,11 @@ function renderChartStrengthTrend() {
 // Strength Score chart state + renderer (separate so toggle can re-render without recomputing data)
 let strengthChartData = null;
 let strengthChartView = 'weekly'; // 'daily' | 'weekly' | '6weeks'
-let strengthSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let strengthSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 // Avg Weight chart state
 let avgWeightChartData = null;
 let avgWeightView = 'weekly';      // 'sixweek' or 'weekly'
-let avgWeightSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let avgWeightSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 function renderAvgWeightChart() {
   try {
     _renderAvgWeightChart();
@@ -4702,8 +4942,8 @@ function _renderAvgWeightChart() {
         labels,
         datasets: [{
           data,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -4823,8 +5063,8 @@ function _renderAvgWeightChart() {
         labels: dayLabels,
         datasets: [{
           data: dayData,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -4878,7 +5118,7 @@ function _renderAvgWeightChart() {
 // Avg Reps chart state
 let avgRepsChartData = null;
 let avgRepsView = 'weekly';      // 'sixweek' or 'weekly'
-let avgRepsSelectedWeek = (() => { const a = new Date(2026, 4, 3); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
+let avgRepsSelectedWeek = (() => { const a = sixWeekWindowStart(); const t = new Date(); t.setHours(0,0,0,0); const w = Math.floor((t - a) / (7 * 86400000)); return Math.max(0, Math.min(5, w)); })();
 function renderAvgRepsChart() {
   try {
     _renderAvgRepsChart();
@@ -4947,8 +5187,8 @@ function _renderAvgRepsChart() {
         labels,
         datasets: [{
           data,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -5065,8 +5305,8 @@ function _renderAvgRepsChart() {
         labels: dayLabels,
         datasets: [{
           data: dayData,
-          backgroundColor: 'rgba(74, 179, 244, 0.75)',
-          borderColor: '#4ab3f4',
+          backgroundColor: `rgba(${ACR}, 0.75)`,
+          borderColor: AC,
           borderWidth: 1,
         }]
       },
@@ -5138,7 +5378,7 @@ function _renderStrengthScoreChart() {
     p.classList.toggle('active', p.dataset.strengthView === strengthChartView);
   });
   const { dailyData, weeks } = strengthChartData;
-  const sixWeeksAgo = new Date(2026, 4, 3);
+  const sixWeeksAgo = sixWeekWindowStart();
   sixWeeksAgo.setHours(0,0,0,0);
   const weekRangeLabel = (wIdx) => {
     const start = new Date(sixWeeksAgo);
@@ -5200,11 +5440,11 @@ function _renderStrengthScoreChart() {
   // Shared line dataset config
   const lineDataset = (data) => ({
     data,
-    borderColor: '#4ab3f4',
-    backgroundColor: 'rgba(74, 179, 244, 0.15)',
+    borderColor: AC,
+    backgroundColor: `rgba(${ACR}, 0.15)`,
     tension: 0.3, fill: true, spanGaps: true,
     pointRadius: 5, pointHoverRadius: 7,
-    pointBackgroundColor: '#4ab3f4', pointBorderColor: '#fff',
+    pointBackgroundColor: AC, pointBorderColor: '#fff',
     pointBorderWidth: 1.5, borderWidth: 2.5
   });
   if (strengthChartView === '6weeks') {
@@ -5230,8 +5470,8 @@ function _renderStrengthScoreChart() {
           {
             type: 'bar',
             data,
-            backgroundColor: data.map(v => v > 0 ? 'rgba(74, 179, 244, 0.55)' : 'rgba(74, 179, 244, 0.08)'),
-            borderColor: '#4ab3f4',
+            backgroundColor: data.map(v => v > 0 ? `rgba(${ACR}, 0.55)` : `rgba(${ACR}, 0.08)`),
+            borderColor: AC,
             borderWidth: 1.5,
             borderRadius: 0,
             borderSkipped: false,
@@ -5247,7 +5487,7 @@ function _renderStrengthScoreChart() {
             spanGaps: false,
             pointRadius: data.map(v => v > 0 ? 6 : 0),
             pointHoverRadius: data.map(v => v > 0 ? 8 : 0),
-            pointBackgroundColor: '#7ac8ff',
+            pointBackgroundColor: AC2,
             pointBorderColor: '#fff',
             pointBorderWidth: 1.5,
             order: 1
@@ -5337,8 +5577,8 @@ function _renderStrengthScoreChart() {
       ...baseDataset,
       pointRadius: dayData.map(v => v == null ? 4 : 6),
       pointHoverRadius: dayData.map(v => v == null ? 5 : 8),
-      pointBackgroundColor: dayData.map(v => v == null ? 'rgba(74, 179, 244, 0.15)' : '#4ab3f4'),
-      pointBorderColor: dayData.map(v => v == null ? 'rgba(74, 179, 244, 0.5)' : '#fff'),
+      pointBackgroundColor: dayData.map(v => v == null ? `rgba(${ACR}, 0.15)` : AC),
+      pointBorderColor: dayData.map(v => v == null ? `rgba(${ACR}, 0.5)` : '#fff'),
       pointBorderWidth: dayData.map(v => v == null ? 1 : 1.5),
       // Replace nulls with 0 so dots render across the whole week
       data: dayData.map(v => v == null ? 0 : v)
@@ -5503,88 +5743,6 @@ function _renderStrengthScoreChart() {
     });
   }
 }
-// Chart 4: Skill vs Lift Volume (last 4 weeks, stacked)
-function renderChartSkillVsLift() {
-  destroyChart('skillVsLift');
-  const ctx = document.getElementById('chart-skill-lift');
-  if (!ctx) return;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const weekData = [{lift:0,skill:0},{lift:0,skill:0},{lift:0,skill:0},{lift:0,skill:0}];
-  history.forEach(h => {
-    const hDate = new Date(h.date + 'T00:00:00');
-    const daysAgo = Math.floor((today - hDate) / (24*60*60*1000));
-    if (daysAgo < 0 || daysAgo >= 28) return;
-    const wIdx = 3 - Math.floor(daysAgo / 7); // newest week = idx 3
-    weekData[wIdx].lift += h.liftRounds || 0;
-    weekData[wIdx].skill += h.skillRounds || 0;
-  });
-  chartInstances.skillVsLift = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Wk 1','Wk 2','Wk 3','Wk 4'],
-      datasets: [
-        { label: 'Lift',  data: weekData.map(w=>w.lift),  backgroundColor: 'rgba(74, 179, 244, 0.85)' },
-        { label: 'Skill', data: weekData.map(w=>w.skill), backgroundColor: 'rgba(155, 107, 201, 0.85)' }
-      ]
-    },
-    options: {
-      ...CHART_BASE_OPTS,
-      plugins: { ...CHART_BASE_OPTS.plugins, legend: { display: true, position: 'top', labels: { color: '#ccc', font: { size: 10 }, boxWidth: 12 } } },
-      scales: {
-        ...CHART_BASE_OPTS.scales,
-        x: { ...CHART_BASE_OPTS.scales.x, stacked: true },
-        y: { ...CHART_BASE_OPTS.scales.y, stacked: true }
-      }
-    }
-  });
-}
-// Chart 5: Split Frequency (last 30 days, per lifting split)
-function renderChartSplitFreq() {
-  destroyChart('splitFreq');
-  const ctx = document.getElementById('chart-split-freq');
-  if (!ctx) return;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const splitCounts = {};
-  history.forEach(h => {
-    const hDate = new Date(h.date + 'T00:00:00');
-    const daysAgo = Math.floor((today - hDate) / (24*60*60*1000));
-    if (daysAgo < 0 || daysAgo >= 30) return;
-    (h.splits || []).forEach(s => {
-      if (!s) return;
-      splitCounts[s] = (splitCounts[s] || 0) + 1;
-    });
-  });
-  const labels = Object.keys(splitCounts);
-  const values = labels.map(l => splitCounts[l]);
-  // Shorten labels for display
-  const shortLabels = labels.map(l => l
-    .replace('Chest + Triceps', 'Chest+Tri')
-    .replace('Biceps + Shoulders', 'Bi+Shldr')
-    .replace('Glutes + Quads (Leg Day)', 'Legs')
-    .replace('Lats + Traps (Back)', 'Lats+Back')
-    .replace('Calisthenics', 'Cali')
-  );
-  chartInstances.splitFreq = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: shortLabels,
-      datasets: [{
-        data: values,
-        backgroundColor: 'rgba(74, 179, 244, 0.75)',
-        borderColor: '#4ab3f4',
-        borderWidth: 1,
-      }]
-    },
-    options: {
-      ...CHART_BASE_OPTS,
-      plugins: { ...CHART_BASE_OPTS.plugins, legend: { display: false } },
-      scales: {
-        ...CHART_BASE_OPTS.scales,
-        y: { ...CHART_BASE_OPTS.scales.y, ticks: { ...CHART_BASE_OPTS.scales.y.ticks, stepSize: 1 } }
-      }
-    }
-  });
-}
 // Chart 6: Conditioning (toggle between distance / sprint subtypes)
 let condChartState = { cat: 'all', sub: '' };
 function renderChartConditioning() {
@@ -5613,12 +5771,12 @@ function renderChartConditioning() {
     // cells = [{label, value}, ...]
     const badge = document.createElement('div');
     badge.id = 'cond-chart-stats-badge';
-    badge.style.cssText = 'display:grid; gap:6px; background:linear-gradient(135deg, rgba(122,200,255,0.15), rgba(74,179,244,0.04)); border:1px solid rgba(122,200,255,0.4); border-radius:10px; padding:12px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(74,179,244,0.15), inset 0 1px 0 rgba(255,255,255,0.06);';
+    badge.style.cssText = 'display:grid; gap:6px; background:linear-gradient(135deg, rgba(var(--mps-accent-2-rgb),0.15), rgba(var(--mps-accent-rgb),0.04)); border:1px solid rgba(var(--mps-accent-2-rgb),0.4); border-radius:10px; padding:12px 14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(var(--mps-accent-rgb),0.15), inset 0 1px 0 rgba(255,255,255,0.06);';
     badge.style.gridTemplateColumns = `repeat(${cells.length}, 1fr)`;
     badge.innerHTML = cells.map(c => `
       <div style="text-align:center;">
-        <div style="font-size:9px; font-weight:700; color:#7ac8ff; letter-spacing:1.2px; opacity:0.85; margin-bottom:4px;">${c.label}</div>
-        <div style="font-size:16px; font-weight:800; color:#7ac8ff; text-shadow:0 0 8px rgba(122,200,255,0.5); line-height:1; white-space:nowrap;">${c.value}</div>
+        <div style="font-size:9px; font-weight:700; color:var(--mps-accent-2); letter-spacing:1.2px; opacity:0.85; margin-bottom:4px;">${c.label}</div>
+        <div style="font-size:16px; font-weight:800; color:var(--mps-accent-2); text-shadow:0 0 8px rgba(var(--mps-accent-2-rgb),0.5); line-height:1; white-space:nowrap;">${c.value}</div>
       </div>
     `).join('');
     ctx.parentElement.parentElement.insertBefore(badge, ctx.parentElement);
@@ -5694,7 +5852,7 @@ function renderChartConditioning() {
             label: 'chronological',
             type: 'line',
             data: points.map(p => ({ x: p.miles, y: p.seconds / 60 })),
-            borderColor: 'rgba(34, 102, 51, 0.55)',
+            borderColor: __GRAY ? 'rgba(90,90,90,0.55)' : 'rgba(34, 102, 51, 0.55)',
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 0,
@@ -5707,7 +5865,7 @@ function renderChartConditioning() {
             label: 'Runs',
             type: 'scatter',
             data: points.map(p => ({ x: p.miles, y: p.seconds / 60 })),
-            backgroundColor: '#226633',
+            backgroundColor: COND_BORDER,
             borderColor: '#fff',
             borderWidth: 1.5,
             pointRadius: 6,
@@ -5789,7 +5947,11 @@ function renderChartConditioning() {
     const today = new Date(); today.setHours(0,0,0,0);
     const ninetyDaysAgo = new Date(today);
     ninetyDaysAgo.setDate(today.getDate() - 90);
-    const machineColors = {
+    const machineColors = __GRAY ? {
+      treadmill: '#C9A020',
+      bike:      '#9a9a9a',
+      rower:     '#5a5a5a'
+    } : {
       treadmill: '#4ab3f4',
       bike:      '#9b6bc9',
       rower:     '#4ade80'
@@ -5845,7 +6007,7 @@ function renderChartConditioning() {
             label: 'chronological',
             type: 'line',
             data: points.map(p => ({ x: p.miles, y: p.seconds / 60 })),
-            borderColor: 'rgba(74, 179, 244, 0.55)',
+            borderColor: `rgba(${ACR}, 0.55)`,
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 0,
@@ -6046,15 +6208,23 @@ function renderChartConditioning() {
     }
     ctx.style.display = 'block';
     emptyEl.style.display = 'none';
-    const COLORS = {
+    const COLORS = __GRAY ? {
+      running: { bg: 'rgba(120,120,120,0.85)', border: '#787878' },  // neutral grey
+      sprint:  { bg: 'rgba(201,160,32,0.80)',  border: '#C9A020' },  // gold
+      machine: { bg: `rgba(${ACR}, 0.80)`, border: AC }
+    } : {
       running: { bg: 'rgba(34, 102, 51, 0.85)',  border: '#226633' },   // forest green
       sprint:  { bg: 'rgba(220, 72, 86, 0.80)',  border: '#dc4856' },   // crimson red
-      machine: { bg: 'rgba(74, 179, 244, 0.80)', border: '#4ab3f4' }    // MPS blue
+      machine: { bg: `rgba(${ACR}, 0.80)`, border: AC }    // MPS blue
     };
-    const THEMES_3D = {
+    const THEMES_3D = __GRAY ? {
+      running: { top: '#9a9a9a', side: '#2a2a2a' },  // neutral grey
+      sprint:  { top: '#d8b13a', side: '#5a4410' },  // gold
+      machine: { top: AC2, side: '#3a3a3a' }
+    } : {
       running: { top: '#3d9658', side: '#0d2818' },  // forest green
       sprint:  { top: '#ef5a68', side: '#7a1f28' },  // crimson red
-      machine: { top: '#7ac8ff', side: '#1a4570' }   // blue
+      machine: { top: AC2, side: (__GRAY ? '#3a3a3a' : '#1a4570') }   // blue
     };
     // Plugin: draw session label above each bar
     const allLabelPlugin = {
@@ -6363,8 +6533,8 @@ function renderChartConditioning() {
         labels,
         datasets: [{
           data: values,
-          backgroundColor: 'rgba(220, 72, 86, 0.80)',
-          borderColor: '#dc4856',
+          backgroundColor: SPRINT_BG,
+          borderColor: SPRINT_BORDER,
           borderWidth: 1
         }]
       },
@@ -6514,7 +6684,15 @@ wireConditioningCats();
     await loadAll();
     render();
     renderConditioningUI();
-    renderDashboard();
+    if (isCore()) {
+      // Core = log only; Dashboard is locked, so land on the Today (log) tab
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+      var coreTab = document.querySelector('.tab[data-tab="today"]'); if (coreTab) coreTab.classList.add('active');
+      var coreContent = document.getElementById('tab-today'); if (coreContent) coreContent.style.display = 'block';
+    } else {
+      renderDashboard();
+    }
     // Auto-backup check on app open (fires if >24h since last)
     if (typeof checkAutoBackupOnOpen === 'function') {
       checkAutoBackupOnOpen().catch(e => console.error('Auto-backup-on-open failed:', e));

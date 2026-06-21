@@ -1,6 +1,9 @@
 // MPS Stripe Configuration
 // PUBLIC KEY: Get from Stripe Dashboard → Developers → API Keys → Publishable key
 // Then replace STRIPE_PUBLIC_KEY_PLACEHOLDER below with the actual pk_test_... value
+//
+// MPS is one unified app with three tiers: Core (free), Elite, Premium.
+// Tiers differ by features, limits, and theme — not by which trackers you can open.
 
 window.STRIPE_CONFIG = (function() {
 
@@ -8,72 +11,52 @@ window.STRIPE_CONFIG = (function() {
 
   // ── Publishable keys (safe to expose — these are public) ────
   const KEYS = {
-    test: 'pk_test_REPLACE_WITH_YOUR_PUBLISHABLE_KEY',  // TODO: add from Stripe Dashboard
+    test: 'pk_test_51TaiYOJr8jtgHpa2adUHk5InaoBQ4ik29TPAWYtNRABP3LPwdV9AyzYoR4fOrrSTi6W1jnT34xdUv1dxcwR88Ryp00CN408axu',  // MPS test publishable key (public — safe in client code)
     live: 'pk_live_REPLACE_WITH_YOUR_LIVE_KEY'
   };
 
   // ── Price IDs (from Stripe Dashboard → Products) ────────────
-  // ── Real Stripe price IDs (test mode) ───────────────────────
+  // Reuses the existing test products until Stripe is rebuilt for the 3-tier model.
   const PRICE_IDS = {
     test: {
-      single_monthly:     'price_1TaiqfJr8jtgHpa2SJ8RntRZ',
-      duo_monthly:        'price_1TaiuXJr8jtgHpa2mWoHzNVE',
-      trio_monthly:       'price_1TaiwWJr8jtgHpa2HFVCbAsh',
-      allaccess_monthly:  'price_1TaiyeJr8jtgHpa2m5vQyVZE',
-      single_annual:      'price_1TailiJr8jtgHpa2FIJYkQAY',
-      duo_annual:         'price_1TaiutJr8jtgHpa2gXVZ88jW',
-      trio_annual:        'price_1TaiwmJr8jtgHpa2lvxDKbFN',
-      allaccess_annual:   'price_1TaiywJr8jtgHpa25aUsmXnP'
+      elite_monthly:   'price_1TaiqfJr8jtgHpa2SJ8RntRZ',
+      premium_monthly: 'price_1TaiyeJr8jtgHpa2m5vQyVZE',
+      elite_annual:    'price_1TailiJr8jtgHpa2FIJYkQAY',
+      premium_annual:  'price_1TaiywJr8jtgHpa25aUsmXnP'
     },
     live: {
-      single_monthly:     'price_single_monthly_live',
-      duo_monthly:        'price_duo_monthly_live',
-      trio_monthly:       'price_trio_monthly_live',
-      allaccess_monthly:  'price_allaccess_monthly_live',
-      single_annual:      'price_single_annual_live',
-      duo_annual:         'price_duo_annual_live',
-      trio_annual:        'price_trio_annual_live',
-      allaccess_annual:   'price_allaccess_annual_live'
+      elite_monthly:   'price_elite_monthly_live',
+      premium_monthly: 'price_premium_monthly_live',
+      elite_annual:    'price_elite_annual_live',
+      premium_annual:  'price_premium_annual_live'
     }
   };
 
-  // ── Plan definitions ─────────────────────────────────────────
+  // ── Plan definitions (3 tiers) ───────────────────────────────
   const PLANS = {
-    single: {
-      name:          'MPS Single',
-      apps:          1,
+    core: {
+      name:          'MPS Core',
+      tagline:       'All five trackers, free — with sensible daily limits.',
+      monthly_price: 0,
+      annual_price:  0,
+      monthly_id:    null,
+      annual_id:     null
+    },
+    elite: {
+      name:          'MPS Elite',
+      tagline:       'Everything unlimited — full history, stats & insights.',
       monthly_price: 5.99,
       annual_price:  59,
-      annual_saving: 12.88,
-      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.single_monthly : PRICE_IDS.live.single_monthly,
-      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.single_annual  : PRICE_IDS.live.single_annual
+      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_monthly : PRICE_IDS.live.elite_monthly,
+      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.elite_annual  : PRICE_IDS.live.elite_annual
     },
-    duo: {
-      name:          'MPS Duo',
-      apps:          2,
-      monthly_price: 9.99,
-      annual_price:  99,
-      annual_saving: 20.88,
-      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.duo_monthly : PRICE_IDS.live.duo_monthly,
-      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.duo_annual  : PRICE_IDS.live.duo_annual
-    },
-    trio: {
-      name:          'MPS Trio',
-      apps:          3,
+    premium: {
+      name:          'MPS Premium',
+      tagline:       'Elite, plus the colorful theme, priority insights & every future release.',
       monthly_price: 14.99,
       annual_price:  149,
-      annual_saving: 30.88,
-      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.trio_monthly : PRICE_IDS.live.trio_monthly,
-      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.trio_annual  : PRICE_IDS.live.trio_annual
-    },
-    allaccess: {
-      name:          'MPS All-Access',
-      apps:          5,
-      monthly_price: 21.99,
-      annual_price:  215,
-      annual_saving: 48.88,
-      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.allaccess_monthly : PRICE_IDS.live.allaccess_monthly,
-      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.allaccess_annual  : PRICE_IDS.live.allaccess_annual
+      monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.premium_monthly : PRICE_IDS.live.premium_monthly,
+      annual_id:     IS_TEST_MODE ? PRICE_IDS.test.premium_annual  : PRICE_IDS.live.premium_annual
     }
   };
 

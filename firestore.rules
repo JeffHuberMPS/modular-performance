@@ -25,6 +25,23 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == uid;
     }
 
+    // The owner's hardcoded developer account (full access by email).
+    function isDevEmail() {
+      return isAuth() && request.auth.token.email == 'jeffreyhuber86@gmail.com';
+    }
+
+    // On first-write (create), a normal user may ONLY self-provision safe,
+    // non-paying defaults. Prevents anyone creating their own user doc with
+    // billing_bypass:true / a paid tier / extra apps to unlock paid features
+    // for free. Entitlement fields are otherwise written server-side (webhook).
+    function safeNewUser() {
+      let d = request.resource.data;
+      return d.get('billing_bypass', false) == false
+          && d.get('role', 'user') == 'user'
+          && d.get('tier', 'single') == 'single'
+          && d.get('apps', ['workout']) == ['workout'];
+    }
+
     // Is the incoming data only updating allowed fields?
     // Prevents users from escalating their own role or tier.
     function noEscalation() {
@@ -39,8 +56,9 @@ service cloud.firestore {
       // Read: only the owner
       allow read: if isOwner(uid);
 
-      // Create: only the owner, and only on first write (new user)
-      allow create: if isOwner(uid);
+      // Create: only the owner, and only with safe non-paying defaults
+      // (the dev account is exempt). Blocks self-granting paid entitlements.
+      allow create: if isOwner(uid) && (isDevEmail() || safeNewUser());
 
       // Update: owner can update, but CANNOT change role, tier,
       // billing_bypass, stripe_customer_id, or apps.

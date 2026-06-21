@@ -15,16 +15,16 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@300;500;700&family=Orbitron:wght@400;700;900&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@300;500;700&family=Orbitron:wght@400;700;900&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet"/>
 
   <!-- React + ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <!-- Recharts removed: charts are now pure SVG (no CDN needed) -->
   <!-- Lucide React -->
   <script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.js"></script>
   <!-- Babel JSX compiler -->
-  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 
   <!-- Navigation helper (global) -->
   <script>
@@ -52,37 +52,44 @@
       position: fixed; top: 0; left: 0; right: 0; height: 46px;
       display: flex; align-items: center; padding: 0 16px;
       background: rgba(10,10,10,0.96);
-      border-bottom: 1px solid rgba(155,107,201,0.25);
+      border-bottom: 1px solid rgba(150,150,150,0.25);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       z-index: 1000;
     }
     #hub-nav a {
-      color: #9b6bc9; font-size: 11px; font-weight: 700;
+      color: #999999; font-size: 11px; font-weight: 700;
       letter-spacing: 0.12em; text-decoration: none; text-transform: uppercase;
-      font-family: 'JetBrains Mono', monospace; cursor: pointer;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; cursor: pointer;
     }
     #hub-nav .nav-title {
       position: absolute; left: 50%; transform: translateX(-50%);
-      font-family: 'Bebas Neue', sans-serif; font-size: 17px;
-      letter-spacing: 0.15em; color: #9b6bc9; pointer-events: none;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 17px;
+      letter-spacing: 0.15em; color: #999999; pointer-events: none;
     }
 
     /* ── Auth Loading ── */
     #auth-loading {
       min-height: 100vh; background: #0a0a0a;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'JetBrains Mono', monospace;
-      color: #9b6bc9; font-size: 13px; letter-spacing: 4px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #999999; font-size: 13px; letter-spacing: 4px;
     }
 
     /* ── Component styles (hover/interactive states + scrollbars) ── */
     .card { transition: transform 0.2s ease, border-color 0.2s ease; }
-    .card:hover { border-color: #c9a86b !important; }
-    .btn-primary:hover { background: #c9a86b !important; color: #0a0a0a !important; }
+    .card:hover { border-color: #C9A020 !important; }
+    .btn-primary:hover { background: #C9A020 !important; color: #0a0a0a !important; }
     .btn-purple:hover { background: #9b6bc9 !important; color: #0a0a0a !important; }
-    .btn-ghost:hover { color: #c9a86b !important; }
+    .btn-ghost:hover { color: #C9A020 !important; }
+    /* ── Gray/Gold theme (Free + Medium) — shell adds body.mps-gray ── */
+    body.mps-gray #hub-nav a, body.mps-gray #hub-nav .nav-title, body.mps-gray #auth-loading { color: #C9A020 !important; }
+    body.mps-gray .card:hover { border-color: #C9A020 !important; }
+    body.mps-gray .btn-primary:hover { background: #C9A020 !important; }
+    body.mps-gray .btn-purple { background: rgba(150,150,150,0.1) !important; color: #f5f5f5 !important; }
+    body.mps-gray .btn-purple:hover { background: rgba(201,160,32,0.18) !important; color: #C9A020 !important; }
+    body.mps-gray .btn-ghost:hover { color: #C9A020 !important; }
     input[type="number"], input[type="time"], input[type="date"], input[type="range"] {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color-scheme: dark;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -147,9 +154,25 @@
       }
     };
 
-    // Reveal app
-    document.getElementById('auth-loading').style.display = 'none';
-    document.getElementById('root').style.display = 'block';
+    // ===== SILENT CLOUD BACKUP (sleep) =====
+    // Mirrors the app's localStorage (rr_sleep:*) to users/{uid}/settings/sleep_backup
+    // (an allowed Firestore location) so data follows the user across devices.
+    // Restores automatically on a fresh device. Fire-and-forget — never blocks UI.
+    var _bDoc = db.doc('users/' + uid + '/settings/sleep_backup');
+    function _bMatch(k){ return !!k && k.indexOf('rr_sleep:') === 0; }
+    function _bCollect(){ var d={}; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(_bMatch(k)) d[k]=localStorage.getItem(k); } }catch(e){} return d; }
+    function _bHasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_bMatch(localStorage.key(i))) return true; } }catch(e){} return false; }
+    var _bTimer=null,_bBusy=false;
+    window.sleepScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
+    function _bNow(){ if(_bBusy) return; _bBusy=true; try{ _bDoc.set({data:_bCollect(),ts:Date.now(),v:1}).then(function(){_bBusy=false;}).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+    function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
+
+    // Restore first (download on fresh device), then reveal; seed cloud on open.
+    var _revealed=false;
+    function _reveal(){ if(_revealed) return; _revealed=true; document.getElementById('auth-loading').style.display='none'; document.getElementById('root').style.display='block'; window.sleepScheduleBackup(); }
+    setTimeout(_reveal, 3000);   // safety: never stay stuck on the loading screen
+    var _bDidReload=false; try{ _bDidReload = sessionStorage.getItem('sleep_restored')==='1'; }catch(e){}
+    _bRestoreIfEmpty().then(function(restored){ if(restored && !_bDidReload){ try{ sessionStorage.setItem('sleep_restored','1'); }catch(e){} location.reload(); return; } _reveal(); });
   });
 })();
 </script>
@@ -162,6 +185,22 @@
 
 /* ── CDN Globals ── */
 const { useState, useEffect, useMemo } = React;
+
+/* ── Gray/Gold theme (Free/Medium): purple → white, gold stays gold. __GRAY reads parent tier. ── */
+const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
+// Premium = full history. Core/Elite see only the last 60 days of the log list (stats/charts unaffected).
+const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+const HISTORY_CAP_CUTOFF = (()=>{ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
+const PURPLE = __GRAY ? '#f5f5f5' : '#9b6bc9';
+const GOLD   = __GRAY ? '#C9A020' : '#C9A020';
+const LBL    = __GRAY ? '#C9A020' : '#a684cc';   // labels: gold in gray, PURPLE in colorful
+const BRDR   = __GRAY ? '150,150,150' : '155,107,201';   // card borders: neutral in gray, PURPLE in colorful
+const BAR_TOP = __GRAY ? '#C9A020' : '#c9a3eb';   // bar gradient top: gold in gray, lilac in colorful
+const BAR_BOT = __GRAY ? '#8a6a2a' : '#5a3088';   // bar gradient bottom: dark gold in gray, deep purple in colorful
+const TOAST_TXT = __GRAY ? '#f5f5f5' : '#c9a8e8';   // save toast text: white in gray, lilac in colorful
+const UP_CLR  = __GRAY ? '#C9A020' : '#6ac96b';   // trend good: gold in gray, green in colorful
+const DOWN_CLR = __GRAY ? '#999999' : '#c96b6b';   // trend bad: grey in gray, red in colorful
 /* Recharts removed — using pure SVG charts below */
 
 /* Lucide React icons — with emoji fallbacks if CDN fails */
@@ -172,7 +211,7 @@ const Activity    = _lc.Activity    || (({size=16}) => <span style={{fontSize:(s
 const Battery     = _lc.Battery     || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>🔋</span>);
 const Flame       = _lc.Flame       || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>🔥</span>);
 const Plus        = _lc.Plus        || (({size=16}) => <span>＋</span>);
-const Trash2      = _lc.Trash2      || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>🗑</span>);
+const Trash2      = _lc.Trash2      || (({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>);
 const TrendingUp  = _lc.TrendingUp  || (({size=12}) => <span>↑</span>);
 const TrendingDown= _lc.TrendingDown|| (({size=12}) => <span>↓</span>);
 const Minus       = _lc.Minus       || (({size=12}) => <span>−</span>);
@@ -203,20 +242,17 @@ const storage = {
   async set(key, value) {
     try {
       localStorage.setItem(LS_PREFIX + key, value);
-      if (typeof window !== "undefined" && window.storage?.set) {
-        try { await window.storage.set(key, value); } catch (e) {}
-      }
+      // Single cloud path: the debounced sleep_backup mirror (see sleepScheduleBackup).
+      try { window.sleepScheduleBackup && window.sleepScheduleBackup(); } catch (e) {}
       return true;
     } catch (e) {
-      console.error("Save failed:", e);
       return false;
     }
   },
   async delete(key) {
     try { localStorage.removeItem(LS_PREFIX + key); } catch (e) {}
-    if (typeof window !== "undefined" && window.storage?.delete) {
-      try { await window.storage.delete(key); } catch (e) {}
-    }
+    // Single cloud path: the debounced sleep_backup mirror (see sleepScheduleBackup).
+    try { window.sleepScheduleBackup && window.sleepScheduleBackup(); } catch (e) {}
   },
   async list() {
     const keys = [];
@@ -241,10 +277,7 @@ function SleepTracker() {
   const [showForm, setShowForm] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [expandedMonths, setExpandedMonths] = useState({});
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(__CORE ? "log" : "dashboard");
   const [form, setForm] = useState(() => {
     const d = new Date();
     const y = d.getFullYear();
@@ -258,6 +291,9 @@ function SleepTracker() {
       soreness: 3,
       clarity: 7,
       restlessness: 3,
+      restingHR: "",
+      hrv: "",
+      weight: "",
     };
   });
 
@@ -285,7 +321,6 @@ function SleepTracker() {
         loaded.sort((a, b) => a.date.localeCompare(b.date));
         setEntries(loaded);
       } catch (e) {
-        console.error(e);
       } finally {
         setLoading(false);
       }
@@ -321,6 +356,9 @@ function SleepTracker() {
       soreness: entry.soreness ?? 5,
       clarity: entry.clarity ?? 5,
       restlessness: entry.restlessness ?? 3,
+      restingHR: entry.restingHR ?? "",
+      hrv: entry.hrv ?? "",
+      weight: entry.weight ?? "",
     });
     setShowForm(true);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -334,13 +372,9 @@ function SleepTracker() {
     return `${y}-${m}-${day}`;
   };
 
-  const fmt12 = (t) => {
-    if (!t) return "";
-    const [h, m] = t.split(":").map(Number);
-    const period = h >= 12 ? "PM" : "AM";
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m).padStart(2, "0")} ${period}`;
-  };
+  // Single 12-hour time formatter — delegates to the module-level _fmt12.
+  // (Callers always guard for empty values, so _fmt12's "—" fallback is never hit here.)
+  const fmt12 = _fmt12;
 
   const fmt12Short = (t) => {
     if (!t) return "";
@@ -404,6 +438,7 @@ function SleepTracker() {
     const [wh, wm] = wake.split(":").map(Number);
     let mins = wh * 60 + wm - (sh * 60 + sm);
     if (mins < 0) mins += 24 * 60;
+    if (mins > 16 * 60) return 0;   // >16h is a data-entry slip — treat as invalid
     return +(mins / 60).toFixed(2);
   };
 
@@ -437,12 +472,6 @@ function SleepTracker() {
 
   const last30 = enriched.slice(-30);
   const last7  = enriched.slice(-7);
-
-  const weekdayMap = useMemo(() => {
-    const m = {};
-    enriched.forEach((e) => { m[e.label] = e.weekday; });
-    return m;
-  }, [enriched]);
 
   const avg = (arr, key) => {
     const vals = arr.map((x) => x[key]).filter((v) => v !== undefined && v !== null && !isNaN(v));
@@ -521,7 +550,7 @@ function SleepTracker() {
   if (loading) {
     return (
       <div style={styles.loading}>
-        <div style={{ fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.3em", color: "#9b6bc9", fontSize: 12 }}>
+        <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.3em", color: PURPLE, fontSize: 12 }}>
           LOADING
         </div>
       </div>
@@ -535,12 +564,12 @@ function SleepTracker() {
         {/* Save success toast */}
         {saveSuccess && (
           <div style={{
-            background: "rgba(155,107,201,0.15)", border: "1px solid #9b6bc9",
-            color: "#c9a8e8", padding: "12px 16px", marginBottom: 16,
-            fontFamily: "JetBrains Mono, monospace", fontSize: 12,
+            background: "rgba(150,150,150,0.15)", border: `1px solid ${PURPLE}`,
+            color: TOAST_TXT, padding: "12px 16px", marginBottom: 16,
+            fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 12,
             letterSpacing: "0.1em", textAlign: "center"
           }}>
-            ✓ ENTRY SAVED · {entries.length} TOTAL
+            ENTRY SAVED · {entries.length} TOTAL
           </div>
         )}
 
@@ -550,7 +579,7 @@ function SleepTracker() {
           {/* Big Hero Card — gold/sleep theme */}
           <div style={{
             background: '#000000',
-            backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(201,168,107,0.22) 0%, rgba(201,168,107,0.07) 45%, transparent 75%)',
+            backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(201,160,32,0.22) 0%, rgba(201,160,32,0.07) 45%, transparent 75%)',
             border: '3px solid transparent',
             borderRadius: '22px',
             padding: '38px 20px 28px',
@@ -559,22 +588,22 @@ function SleepTracker() {
             position: 'relative',
             overflow: 'hidden',
             backgroundClip: 'padding-box',
-            boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(201,168,107,0.28), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+            boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(201,160,32,0.28), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
           }}>
             <div className="mps-logo-rsp" style={{
-              fontFamily: "'Saira Condensed', 'Arial Black', sans-serif",
+              fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
               fontWeight: 900, fontStyle: 'italic',
               letterSpacing: '4px', lineHeight: 1,
-              background: 'linear-gradient(180deg, #ffffff 0%, #f5e6c0 12%, #e8c87a 28%, #c9a86b 50%, #8a6a2a 72%, #4a3410 90%, #1e1408 100%)',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f5e6c0 12%, #e8c87a 28%, #C9A020 50%, #8a6a2a 72%, #4a3410 90%, #1e1408 100%)',
               WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 6px 20px rgba(201,168,107,0.55))',
+              filter: 'drop-shadow(0 6px 20px rgba(201,160,32,0.55))',
             }}>MPS</div>
-            <div style={{ width: '72%', height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(155,107,201,0.3) 15%, rgba(185,140,230,0.85) 35%, rgba(210,175,255,1) 50%, rgba(185,140,230,0.85) 65%, rgba(155,107,201,0.3) 85%, transparent 100%)', margin: '14px auto 13px', boxShadow: '0 0 6px rgba(155,107,201,0.9), 0 0 18px rgba(155,107,201,0.4)' }} />
-            <div style={{ fontSize: '11px', letterSpacing: '5px', color: '#b09878', fontWeight: 400, marginBottom: '13px', fontFamily: "'Bebas Neue', sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
-            <div style={{ fontSize: '22px', letterSpacing: '5px', fontWeight: 400, fontFamily: "'Bebas Neue', sans-serif" }}>
-              <span style={{ color: '#c9a86b', textShadow: '0 0 14px rgba(201,168,107,0.4)' }}>REST </span>
-              <span style={{ color: '#9b6bc9', textShadow: '0 0 14px rgba(155,107,201,0.6)' }}>&amp;</span>
-              <span style={{ color: '#c9a86b', textShadow: '0 0 14px rgba(201,168,107,0.4)' }}> RECOVERY</span>
+            <div style={{ width: '72%', height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(150,150,150,0.3) 15%, rgba(190,190,190,0.85) 35%, rgba(220,220,220,1) 50%, rgba(190,190,190,0.85) 65%, rgba(150,150,150,0.3) 85%, transparent 100%)', margin: '14px auto 13px', boxShadow: '0 0 6px rgba(150,150,150,0.9), 0 0 18px rgba(150,150,150,0.4)' }} />
+            <div style={{ fontSize: '11px', letterSpacing: '5px', color: '#b09878', fontWeight: 400, marginBottom: '13px', fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
+            <div style={{ fontSize: '22px', letterSpacing: '5px', fontWeight: 400, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,160,32,0.4)' }}>REST </span>
+              <span style={{ color: PURPLE, textShadow: '0 0 14px rgba(150,150,150,0.6)' }}>&amp;</span>
+              <span style={{ color: GOLD, textShadow: '0 0 14px rgba(201,160,32,0.4)' }}> RECOVERY</span>
             </div>
           </div>
 
@@ -584,25 +613,22 @@ function SleepTracker() {
             {entries[0]?.date ? fmtDate(entries[0].date) : "today"}
           </div>
 
-          {/* Action Buttons */}
-          <div style={styles.actionRow}>
-            {activeTab === "dashboard" ? (
-              <>
-                <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
-                  <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
-                </button>
-                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("insights")}>
-                  INSIGHTS
-                </button>
-                <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("log")}>
-                  LOG
-                </button>
-              </>
-            ) : (
-              <button className="btn-purple" style={styles.btnPurple} onClick={() => setActiveTab("dashboard")}>
-                ← DASHBOARD
-              </button>
-            )}
+          {/* Persistent tab bar (matches the other trackers) */}
+          <div style={{ display: "flex", borderBottom: "1px solid rgba(150,150,150,0.15)" }}>
+            {[["dashboard","DASHBOARD"],["insights","INSIGHTS"],["log","LOG"]].map(([t,lbl]) => (
+              <button key={t} onClick={() => setActiveTab(t)} style={{
+                flex: 1, padding: "11px 4px", background: "none", border: "none",
+                borderBottom: activeTab === t ? `2px solid ${PURPLE}` : "2px solid transparent",
+                color: activeTab === t ? LBL : "#6b7280",
+                fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 12, letterSpacing: "0.08em", fontWeight: 600, cursor: "pointer"
+              }}>{lbl}</button>
+            ))}
+          </div>
+          {/* Log-entry action */}
+          <div style={{ marginTop: 14 }}>
+            <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
+              <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
+            </button>
           </div>
         </header>
 
@@ -638,21 +664,49 @@ function SleepTracker() {
               <Field label={`Mental Clarity · ${form.clarity}/10`}>
                 <input type="range" min="1" max="10" value={form.clarity}
                   onChange={(e) => setForm({ ...form, clarity: +e.target.value })}
-                  style={{ ...styles.range, accentColor: "#9b6bc9" }} />
+                  style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
               <Field label={`Restlessness · ${form.restlessness}/10`}>
                 <input type="range" min="1" max="10" value={form.restlessness}
                   onChange={(e) => setForm({ ...form, restlessness: +e.target.value })}
-                  style={{ ...styles.range, accentColor: "#9b6bc9" }} />
+                  style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
             </div>
+            {__PREMIUM ? (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: LBL, textTransform: "uppercase", marginBottom: 8 }}>Biometrics</div>
+                <div style={styles.formGrid}>
+                  <Field label="Resting HR (bpm)">
+                    <input type="number" inputMode="numeric" value={form.restingHR}
+                      onChange={(e) => setForm({ ...form, restingHR: e.target.value })}
+                      placeholder="—" style={styles.input} />
+                  </Field>
+                  <Field label="HRV (ms)">
+                    <input type="number" inputMode="numeric" value={form.hrv}
+                      onChange={(e) => setForm({ ...form, hrv: e.target.value })}
+                      placeholder="—" style={styles.input} />
+                  </Field>
+                  <Field label="Weight (lbs)">
+                    <input type="number" inputMode="decimal" value={form.weight}
+                      onChange={(e) => setForm({ ...form, weight: e.target.value })}
+                      placeholder="—" style={styles.input} />
+                  </Field>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: 12, padding: "12px 14px", background: "rgba(201,160,32,0.08)", border: "1px solid rgba(201,160,32,0.35)", borderRadius: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#C9A020", letterSpacing: "0.04em", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>Biometrics</div>
+                <div style={{ fontSize: 11, color: "#9a9a9a", marginTop: 4, lineHeight: 1.5, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>Log resting heart rate, HRV, and weight with <b style={{ color: "#C9A020" }}>Premium</b>.</div>
+                <a href="/billing.html" target="_top" style={{ display: "inline-block", marginTop: 8, padding: "7px 18px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", borderRadius: 8, textDecoration: "none", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>↑ Unlock with Premium</a>
+              </div>
+            )}
             <div style={styles.formFoot}>
               <div style={styles.preview}>
                 {form.sleepTime ? (
                   <>
-                    Duration: <strong style={{ color: "#9b6bc9" }}>{calcHours(form.sleepTime, form.wakeTime)}h</strong>
+                    Duration: <strong style={{ color: PURPLE }}>{calcHours(form.sleepTime, form.wakeTime)}h</strong>
                     {" · "}
-                    Recovery: <strong style={{ color: "#c9a86b" }}>
+                    Recovery: <strong style={{ color: GOLD }}>
                       {calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness)}%
                     </strong>
                   </>
@@ -665,7 +719,7 @@ function SleepTracker() {
               <button className="btn-primary" style={styles.btnPrimary} onClick={saveEntry}>SAVE</button>
             </div>
             {saveError && (
-              <div style={{ marginTop: 12, padding: 8, background: "#2a1010", border: "1px solid #8b3a3a", color: "#e8a0a0", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}>
+              <div style={{ marginTop: 12, padding: 8, background: __GRAY ? "#1a1a1a" : "#2a1010", border: __GRAY ? "1px solid #444" : "1px solid #8b3a3a", color: __GRAY ? "#bbbbbb" : "#e8a0a0", fontSize: 11, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
                 {saveError}
               </div>
             )}
@@ -681,16 +735,24 @@ function SleepTracker() {
             <section style={styles.todayCard}>
               <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
               <div style={styles.todayGrid}>
-                <TodayStat icon={<IconSun />}       label="Woke"     value={today?.wakeTime ? fmt12(today.wakeTime) : "—"} accent="#9b6bc9" />
-                <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? `${today.hours}h` : "—"} accent="#9b6bc9" />
-                <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent="#9b6bc9" />
-                <TodayStat icon={<IconHeart />}     label="Soreness" value={today ? `${today.soreness}/10` : "—"} accent="#9b6bc9" />
-                <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent="#9b6bc9" />
-                <TodayStat icon={<IconBattery />}   label="Recovery" value={today?.recovery != null ? `${today.recovery}%` : "—"} accent="#9b6bc9" />
+                <TodayStat icon={<IconSun />}       label="Woke"     value={today?.wakeTime ? fmt12(today.wakeTime) : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? `${today.hours}h` : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent={PURPLE} />
+                <TodayStat icon={<IconHeart />}     label="Soreness" value={today ? `${today.soreness}/10` : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent={PURPLE} />
+                <TodayStat icon={<IconBattery />}   label="Recovery" value={today?.recovery != null ? `${today.recovery}%` : "—"} accent={PURPLE} />
               </div>
               {!today && <div style={{...styles.empty, marginTop: 8}}>No entry yet — tap + LOG ENTRY to start.</div>}
             </section>
 
+            {__CORE ? (
+              <section style={{ padding: "8px 0 4px", textAlign: "center" }}>
+                <div style={{ marginBottom: 10, color: "#C9A020" }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#f5f5f5", letterSpacing: 1, marginBottom: 8 }}>TRENDS ARE AN ELITE FEATURE</div>
+                <div style={{ fontSize: 13, color: "#9a9a9a", lineHeight: 1.6, marginBottom: 20, maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>Your nightly log is saved. Unlock charts and 7-day averages to see the patterns.</div>
+                <a href="/billing.html" target="_top" style={{ display: "inline-block", padding: "12px 26px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 13, letterSpacing: 1, borderRadius: 10, textDecoration: "none" }}>↑ UNLOCK WITH ELITE</a>
+              </section>
+            ) : (<>
             {/* 7-day stats */}
             <section style={styles.statsRow}>
               <StatBlock label="Avg Sleep"    value={`${stats.hours}h`}        sub="7-day" trend={trend("hours")}    good="up" />
@@ -710,39 +772,49 @@ function SleepTracker() {
 
               {/* Recovery Score — pure SVG, always renders */}
               <ChartCard title="Recovery Score" sub="% · last 30 nights">
-                <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:"#c9a86b"}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
+                <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:GOLD}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
               </ChartCard>
 
               {/* Energy vs Soreness — pure SVG, always renders */}
               <ChartCard title="Energy vs Soreness" sub="1–10 scale · last 30">
-                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:"#c9a86b"},{key:"soreness",stroke:"#9b6bc9"}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
-                <div style={{display:"flex",gap:16,marginTop:6,fontSize:10,fontFamily:"JetBrains Mono, monospace"}}>
-                  <span style={{color:"#9aa3b2"}}><span style={{color:"#c9a86b"}}>——</span> energy</span>
-                  <span style={{color:"#9aa3b2"}}><span style={{color:"#9b6bc9"}}>——</span> soreness</span>
+                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:GOLD},{key:"soreness",stroke:PURPLE}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
+                <div style={{display:"flex",gap:16,marginTop:8,fontSize:12,fontFamily:"'Inter', system-ui, -apple-system, sans-serif"}}>
+                  <span style={{color:"#9aa3b2"}}><span style={{color:GOLD}}>——</span> energy</span>
+                  <span style={{color:"#9aa3b2"}}><span style={{color:PURPLE}}>——</span> soreness</span>
                 </div>
               </ChartCard>
 
             </section>
+            {__PREMIUM && <DevicesCard />}
+            </>)}
           </>
         )}
 
         {/* ══════════════════════════════════════════
             INSIGHTS TAB
             ══════════════════════════════════════════ */}
-        {activeTab === "insights" && (
+        {activeTab === "insights" && __CORE && (
+          <section style={{ padding: "4px 0", textAlign: "center" }}>
+            <div style={{ fontSize: 34, marginBottom: 10 }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#f5f5f5", letterSpacing: 1, marginBottom: 8 }}>INSIGHTS ARE AN ELITE FEATURE</div>
+            <div style={{ fontSize: 13, color: "#9a9a9a", lineHeight: 1.6, marginBottom: 20, maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>Unlock sleep trends, recovery scores, and weekly insights. Logging stays free — upgrade to see the patterns.</div>
+            <a href="/billing.html" target="_top" style={{ display: "inline-block", padding: "12px 26px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 13, letterSpacing: 1, borderRadius: 10, textDecoration: "none" }}>↑ UNLOCK WITH ELITE</a>
+          </section>
+        )}
+        {activeTab === "insights" && !__CORE && (
           <section style={{ padding: "4px 0" }}>
             <div style={styles.eyebrow}>WEEKLY INSIGHTS</div>
-            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4", marginBottom: 20, letterSpacing: "-0.01em" }}>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5", marginBottom: 20, letterSpacing: "-0.01em" }}>
               This Week
             </div>
-            <InsightRow label="Average Wake Time"   value={insights.avgWakeFormatted  || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Bedtime"     value={insights.avgSleepFormatted || "—"} accent="#9b6bc9" />
-            <InsightRow label="Average Duration"    value={insights.avgDuration       || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Energy"      value={insights.avgEnergy         || "—"} accent="#c9a86b" />
-            <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent="#9b6bc9" />
-            <InsightRow label="Average Soreness"    value={insights.avgSoreness       || "—"} accent="#c9a86b" />
-            <InsightRow label="Best Recovery Day"   value={insights.bestDay  ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} accent="#c9a86b" />
-            <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent="#9b6bc9" />
+            <InsightRow label="Average Wake Time"   value={insights.avgWakeFormatted  || "—"} accent={GOLD} />
+            <InsightRow label="Average Bedtime"     value={insights.avgSleepFormatted || "—"} accent={PURPLE} />
+            <InsightRow label="Average Duration"    value={insights.avgDuration       || "—"} accent={GOLD} />
+            <InsightRow label="Average Energy"      value={insights.avgEnergy         || "—"} accent={GOLD} />
+            <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent={PURPLE} />
+            <InsightRow label="Average Soreness"    value={insights.avgSoreness       || "—"} accent={GOLD} />
+            <InsightRow label="Best Recovery Day"   value={insights.bestDay  ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} accent={GOLD} />
+            <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent={PURPLE} />
           </section>
         )}
 
@@ -753,30 +825,40 @@ function SleepTracker() {
           <div>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.18em", color: "#9b6bc9", textTransform: "uppercase" }}>Full Log</div>
-              <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#5a5264" }}>{entries.length} {entries.length === 1 ? "entry" : "entries"}</div>
+              <div style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.18em", color: PURPLE, textTransform: "uppercase" }}>{__PREMIUM ? "Full Log" : "Recent Log"}</div>
+              <div style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>{(__PREMIUM ? enriched : enriched.filter(e => e.date >= HISTORY_CAP_CUTOFF)).length} {(__PREMIUM ? enriched : enriched.filter(e => e.date >= HISTORY_CAP_CUTOFF)).length === 1 ? "entry" : "entries"}</div>
             </div>
 
-            {entries.length === 0 ? (
-              <div style={styles.empty}>No entries yet. Log your first night.</div>
-            ) : (() => {
-              /* Group enriched entries by month, newest first */
+            {(() => {
+              /* 60-day history cap for Core/Elite (Premium sees everything). */
+              const capEntries = __PREMIUM ? enriched : enriched.filter(e => e.date >= HISTORY_CAP_CUTOFF);
+              const capHidden = enriched.length - capEntries.length;
+              if (capEntries.length === 0) return (<div style={styles.empty}>{__PREMIUM ? "No entries yet. Log your first night." : "No entries in the last 60 days."}</div>);
+              /* Group capped entries by month, newest first */
               const byMonth = {};
-              [...enriched].reverse().forEach(e => {
+              [...capEntries].reverse().forEach(e => {
                 const m = e.date.slice(0, 7);
                 if (!byMonth[m]) byMonth[m] = [];
                 byMonth[m].push(e);
               });
               const todayWs = dateToStr(startOfWeek(todayStr()));
 
-              return Object.entries(byMonth).map(([month, mes]) => (
-                <div key={month} style={{ background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.15)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+              return (<React.Fragment>
+              {capHidden > 0 && (
+                <div style={{ textAlign: "center", padding: "14px 18px", marginBottom: 14, background: "rgba(201,160,32,0.08)", border: "1px solid rgba(201,160,32,0.35)", borderRadius: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#C9A020", letterSpacing: "0.04em" }}>Showing your last 60 days</div>
+                  <div style={{ fontSize: 11, color: "#9a9a9a", marginTop: 4, lineHeight: 1.5 }}>Upgrade to <b style={{ color: "#C9A020" }}>Premium</b> to see your full sleep history.</div>
+                  <a href="/billing.html" target="_top" style={{ display: "inline-block", marginTop: 8, padding: "7px 18px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", borderRadius: 8, textDecoration: "none" }}>↑ Unlock full history</a>
+                </div>
+              )}
+              {Object.entries(byMonth).map(([month, mes]) => (
+                <div key={month} style={{ background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.15)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
                   {/* Month header */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(155,107,201,0.08)" }}>
-                    <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(150,150,150,0.08)" }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5" }}>
                       {fmtMonth(month + "-01")}
                     </div>
-                    <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#5a5264" }}>
+                    <div style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
                       {mes.length} {mes.length === 1 ? "entry" : "entries"} ∨
                     </div>
                   </div>
@@ -795,11 +877,11 @@ function SleepTracker() {
                       return (
                         <div key={ws} style={{ padding: "10px 12px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                            <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.14em", color: "#5a5264", textTransform: "uppercase" }}>
+                            <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: LBL, textTransform: "uppercase" }}>
                               Week of {fmtWeekRange(wsDate)}
                             </div>
                             {isCurrent && (
-                              <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", color: "#9b6bc9", background: "rgba(155,107,201,0.12)", border: "1px solid rgba(155,107,201,0.3)", borderRadius: 4, padding: "2px 8px" }}>
+                              <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.1em", color: PURPLE, background: "rgba(150,150,150,0.12)", border: "1px solid rgba(150,150,150,0.3)", borderRadius: 4, padding: "2px 8px" }}>
                                 CURRENT
                               </div>
                             )}
@@ -815,7 +897,8 @@ function SleepTracker() {
                     });
                   })()}
                 </div>
-              ));
+              ))}
+              </React.Fragment>);
             })()}
           </div>
         )}
@@ -832,19 +915,52 @@ function SleepTracker() {
 /* Field — form label wrapper */
 const Field = ({ label, children }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-    <label style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#9b6bc9", textTransform: "uppercase" }}>
+    <label style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: PURPLE, textTransform: "uppercase" }}>
       {label}
     </label>
     {children}
   </div>
 );
 
+/* DevicesCard — Premium "connect a wearable" UI. Integration-ready: the pairing
+   options are present and the flow is glitch-free, but it does NOT fake a sync.
+   Live providers (Oura/Fitbit/etc.) wire into a real OAuth backend in Phase 2;
+   for now "Notify me" registers interest so the user can opt in seamlessly. */
+const WEARABLES = [
+  { id:"apple",  name:"Apple Health / Watch", note:"Needs the MPS iPhone app (in development)" },
+  { id:"oura",   name:"Oura Ring",            note:"HRV · sleep · readiness" },
+  { id:"fitbit", name:"Fitbit",               note:"Sleep · heart rate · steps" },
+  { id:"garmin", name:"Garmin",               note:"Sleep · HRV · training" },
+  { id:"whoop",  name:"Whoop",                note:"Recovery · strain · sleep" },
+];
+const DevicesCard = () => {
+  const [interest, setInterest] = useState({});
+  useEffect(() => { try { const raw = localStorage.getItem("rr_sleep:wearable_interest"); if (raw) setInterest(JSON.parse(raw)); } catch (e) {} }, []);
+  const toggle = (id) => { const next = { ...interest, [id]: !interest[id] }; setInterest(next); try { localStorage.setItem("rr_sleep:wearable_interest", JSON.stringify(next)); } catch (e) {} try { if (window.storage && window.storage.set) window.storage.set("wearable_interest", JSON.stringify(next)); } catch (e) {} };
+  const FONT = "'Inter', system-ui, -apple-system, sans-serif";
+  return (
+    <section style={{ background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.15)", borderRadius: 14, padding: "16px 18px", marginTop: 14 }}>
+      <div style={{ fontSize: 10, fontFamily: FONT, letterSpacing: "0.18em", color: LBL, textTransform: "uppercase", marginBottom: 8 }}>Devices &amp; Wearables</div>
+      <div style={{ fontSize: 12, fontFamily: FONT, color: "#8a8f99", lineHeight: 1.5, marginBottom: 6 }}>Auto-fill your biometrics from a device. Live sync is in development — tap <b style={{ color: GOLD }}>Notify me</b> and we'll let you know the moment your device connects.</div>
+      {WEARABLES.map((wv, i) => (
+        <div key={wv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 0", borderTop: i === 0 ? "none" : "1px solid rgba(150,150,150,0.12)" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontFamily: FONT, color: "#f5f5f5", fontWeight: 600 }}>{wv.name}</div>
+            <div style={{ fontSize: 11, fontFamily: FONT, color: "#6b7280", marginTop: 2 }}>{wv.note}</div>
+          </div>
+          <button onClick={() => toggle(wv.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 8, fontFamily: FONT, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer", whiteSpace: "nowrap", border: `1px solid ${interest[wv.id] ? GOLD : (__GRAY ? "rgba(255,255,255,0.22)" : "rgba(155,107,201,0.55)")}`, background: interest[wv.id] ? GOLD : "transparent", color: interest[wv.id] ? "#0a0a0a" : LBL }}>{interest[wv.id] ? "✓ Notify on" : "Notify me"}</button>
+        </div>
+      ))}
+    </section>
+  );
+};
+
 /* TodayStat — stat card in the Today snapshot grid */
 const TodayStat = ({ icon, label, value, accent }) => (
   <div style={{
-    background: "rgba(20, 16, 28, 0.85)",
-    border: "1px solid rgba(155,107,201,0.22)",
-    borderLeft: "3px solid rgba(155,107,201,0.6)",
+    background: "rgba(18,18,20, 0.85)",
+    border: `1px solid rgba(${BRDR},0.22)`,
+    borderLeft: `3px solid rgba(${BRDR},0.6)`,
     borderRadius: 10,
     padding: "14px 16px",
     display: "flex",
@@ -853,17 +969,17 @@ const TodayStat = ({ icon, label, value, accent }) => (
   }}>
     <div style={{
       display: "flex", alignItems: "center", gap: 6,
-      fontSize: 10, fontFamily: "JetBrains Mono, monospace",
-      letterSpacing: "0.14em", color: "#7a6a8a",
+      fontSize: 12, fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      letterSpacing: "0.14em", color: LBL,
       textTransform: "uppercase",
     }}>
-      <span style={{ color: "#9b6bc9", display: "flex", alignItems: "center" }}>{icon}</span>
+      <span style={{ color: PURPLE, display: "flex", alignItems: "center" }}>{icon}</span>
       {label}
     </div>
     <div style={{
       fontSize: 22, fontWeight: 700, lineHeight: 1,
-      fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
-      color: value === "—" ? "#3d3047" : "#ede0c4",
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      color: value === "—" ? "#4a4a4a" : "#f5f5f5",
     }}>
       {value}
     </div>
@@ -880,21 +996,25 @@ function _fmt12(t) {
 
 /* StatBlock — 7-day summary stat */
 const StatBlock = ({ label, value, sub, trend, good }) => {
-  const arrow = trend === "up" ? (good ? "↑" : "↓") : trend === "down" ? (good ? "↓" : "↑") : "—";
-  const arrowColor = (trend === "up" && good) || (trend === "down" && !good) ? "#6ac96b" : trend === "flat" ? "#5a5264" : "#c96b6b";
+  // `good` names which DIRECTION is desirable ("up" or "down"). Color the arrow
+  // green when the trend moves the desired way, red when it moves against it.
+  const goodDir = good === "down" ? "down" : "up";   // default: rising is good
+  const arrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "—";
+  const isGood = trend === goodDir;
+  const arrowColor = trend === "flat" ? "#5a5264" : (isGood ? UP_CLR : DOWN_CLR);
   return (
     <div style={{
       flex: "1 1 calc(50% - 6px)", minWidth: 120,
-      background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.12)",
+      background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
       borderRadius: 10, padding: "14px 16px",
     }}>
-      <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264", textTransform: "uppercase", marginBottom: 6 }}>
+      <div style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 6 }}>
         {label}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#ede0c4", lineHeight: 1 }}>
+      <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5", lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 10, color: "#5a5264", fontFamily: "JetBrains Mono, monospace", marginTop: 4 }}>
+      <div style={{ fontSize: 10, color: LBL, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", marginTop: 4 }}>
         — {sub} <span style={{ color: arrowColor }}>{arrow}</span>
       </div>
     </div>
@@ -905,13 +1025,13 @@ const StatBlock = ({ label, value, sub, trend, good }) => {
 const InsightRow = ({ label, value, accent }) => (
   <div style={{
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(155,107,201,0.13)",
+    background: "rgba(255,255,255,0.03)", border: `1px solid rgba(${BRDR},0.13)`,
     borderRadius: 10, padding: "15px 18px", marginBottom: 8,
   }}>
-    <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.13em", color: "#6a5870", textTransform: "uppercase" }}>
+    <span style={{ fontSize: 13, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.13em", color: LBL, textTransform: "uppercase" }}>
       {label}
     </span>
-    <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || "#9b6bc9" }}>
+    <span style={{ fontSize: 19, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: accent || PURPLE }}>
       {value}
     </span>
   </div>
@@ -920,15 +1040,15 @@ const InsightRow = ({ label, value, accent }) => (
 /* LogBlock — single stat cell inside a log entry card */
 const LogBlock = ({ label, value, accent }) => (
   <div style={{
-    background: "rgba(155,107,201,0.06)",
-    border: "1px solid rgba(155,107,201,0.12)",
-    borderLeft: "3px solid rgba(155,107,201,0.55)",
+    background: "rgba(150,150,150,0.06)",
+    border: `1px solid rgba(${BRDR},0.12)`,
+    borderLeft: "3px solid rgba(150,150,150,0.55)",
     borderRadius: 8, padding: "8px 10px",
   }}>
-    <div style={{ fontSize: 9, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.12em", color: "#5a5264", textTransform: "uppercase", marginBottom: 4 }}>
+    <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 4 }}>
       {label}
     </div>
-    <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: accent || "#ede0c4", lineHeight: 1 }}>
+    <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: accent || "#f5f5f5", lineHeight: 1 }}>
       {value}
     </div>
   </div>
@@ -937,71 +1057,53 @@ const LogBlock = ({ label, value, accent }) => (
 /* LogCard — full entry card with 7 stat blocks */
 const LogCard = ({ e, onEdit, onDelete }) => (
   <div style={{
-    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(155,107,201,0.13)",
+    background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
     borderRadius: 10, padding: "14px 16px", marginBottom: 16,
   }}>
     {/* Date header */}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#9b6bc9" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: PURPLE }}>
           {e.date.split("-").slice(1).concat(e.date.split("-").slice(0,1)).join("/").replace(/(\d+)\/(\d+)\/(\d+)/, (_, m, d, y) => `${m.padStart(2,"0")}/${d.padStart(2,"0")}/${y}`)}
         </span>
-        <span style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.14em", color: "#c9a86b" }}>
+        <span style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: GOLD }}>
           {e.weekday}
         </span>
       </div>
       <div style={{ display: "flex", gap: 5 }}>
-        <button style={{ background: "transparent", border: "1px solid rgba(155,107,201,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#5a5264", display: "flex", alignItems: "center" }} onClick={onEdit}><Pencil size={12} /></button>
-        <button style={{ background: "transparent", border: "1px solid rgba(155,107,201,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
+        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: LBL, display: "flex", alignItems: "center" }} onClick={onEdit}><Pencil size={12} /></button>
+        <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: __GRAY ? "#999999" : "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
       </div>
     </div>
     {/* Row 1: Wake · Sleep · Duration */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginBottom: 12.48 }}>
       <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
-      <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent="#9b6bc9" />
+      <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
-    {/* Row 2: Recovery · Energy · Soreness · Clarity */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12.48 }}>
-      <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent="#c9a86b" />
+    {/* Row 2: Recovery · Energy · Soreness · Clarity · Restlessness */}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12.48 }}>
+      <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
-      <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent="#9b6bc9" />
+      <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
+      <LogBlock label="Restless" value={e.restlessness != null ? `${e.restlessness}/10` : "—"} />
     </div>
+    {(e.restingHR || e.hrv || e.weight) && (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginTop: 12.48 }}>
+        <LogBlock label="Resting HR" value={e.restingHR ? `${e.restingHR} bpm` : "—"} />
+        <LogBlock label="HRV"        value={e.hrv ? `${e.hrv} ms` : "—"} accent={PURPLE} />
+        <LogBlock label="Weight"     value={e.weight ? `${e.weight} lbs` : "—"} accent={GOLD} />
+      </div>
+    )}
   </div>
 );
 
-/* Isometric3DBar — custom bar shape */
-const Isometric3DBar = (props) => {
-  const { x, y, width, height } = props;
-  if (!height || height <= 0) return null;
-  const d = 4;
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} fill={props.fill || "#9b6bc9"} />
-      <polygon points={`${x},${y} ${x+d},${y-d} ${x+width+d},${y-d} ${x+width},${y}`} fill="rgba(255,255,255,0.15)" />
-      <polygon points={`${x+width},${y} ${x+width+d},${y-d} ${x+width+d},${y+height-d} ${x+width},${y+height}`} fill="rgba(0,0,0,0.25)" />
-    </g>
-  );
-};
-
-/* DateTick — custom XAxis tick */
-const DateTick = ({ x, y, payload, weekdayMap }) => {
-  if (!payload?.value) return null;
-  const wd = weekdayMap?.[payload.value];
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={12} textAnchor="middle" fill="#4a4255" fontSize={9} fontFamily="JetBrains Mono, monospace">
-        {wd ? wd.slice(0, 1) : payload.value.slice(-2)}
-      </text>
-    </g>
-  );
-};
 
 /* ── Pure SVG chart components — no external library, always renders ── */
 const SvgChart = (() => {
-  const PAD = { top: 8, right: 8, bottom: 36, left: 40 };
-  const W = 600, H = 200;
+  const PAD = { top: 12, right: 10, bottom: 46, left: 48 };
+  const W = 600, H = 440;
   const pw = W - PAD.left - PAD.right;
   const ph = H - PAD.top - PAD.bottom;
   const ys = (v, min, max) => PAD.top + ph - ((v - min) / (max - min)) * ph;
@@ -1013,7 +1115,7 @@ const SvgChart = (() => {
       const y = ys(t, min, max);
       return <g key={t}>
         <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1}/>
-        <text x={PAD.left - 6} y={y + 4} textAnchor="end" fill="#ede0c4" fontSize={12} fontFamily="system-ui,sans-serif">{t}</text>
+        <text x={PAD.left - 8} y={y + 5} textAnchor="end" fill="#f5f5f5" fontSize={16} fontFamily="'Inter', system-ui, -apple-system, sans-serif">{t}</text>
       </g>;
     })}</>;
   };
@@ -1021,7 +1123,7 @@ const SvgChart = (() => {
   const XLabels = ({ data }) => {
     const step = Math.max(1, Math.ceil(data.length / 7));
     return <>{data.map((d, i) => i % step === 0
-      ? <text key={i} x={xs(i, data.length)} y={H - 4} textAnchor="middle" fill="#5a6470" fontSize={10} fontFamily="system-ui,sans-serif">{d.label}</text>
+      ? <text key={i} x={xs(i, data.length)} y={H - 6} textAnchor="middle" fill="#8a8a8a" fontSize={15} fontFamily="'Inter', system-ui, -apple-system, sans-serif">{d.label}</text>
       : null
     )}</>;
   };
@@ -1030,14 +1132,14 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const bw = Math.max(3, pw / data.length * 0.6);
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:200,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:440,display:"block"}}>
         <defs>
           <linearGradient id="svgBarGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c9a3eb"/><stop offset="100%" stopColor="#5a3088"/>
+            <stop offset="0%" stopColor={BAR_TOP}/><stop offset="100%" stopColor={BAR_BOT}/>
           </linearGradient>
         </defs>
         <YAxisLines ticks={ticks} domain={domain}/>
-        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke="#9b6bc9" strokeDasharray="3 5" opacity={0.4}/>}
+        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke={PURPLE} strokeDasharray="3 5" opacity={0.4}/>}
         {data.map((d, i) => {
           const v = d[dataKey]; if (v == null) return null;
           const bh = ((v - min) / (max - min)) * ph;
@@ -1052,9 +1154,9 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const n = data.length;
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:200,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:440,display:"block"}}>
         <YAxisLines ticks={ticks} domain={domain}/>
-        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke="#c9a86b" strokeDasharray="3 5" opacity={0.35}/>}
+        {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke={GOLD} strokeDasharray="3 5" opacity={0.35}/>}
         {lines.map(({key, stroke}) => {
           const pts = data.reduce((acc, d, i) => {
             const v = d[key]; if (v == null) return acc;
@@ -1073,31 +1175,17 @@ const SvgChart = (() => {
 /* ChartCard */
 const ChartCard = ({ title, sub, children }) => (
   <div style={{
-    background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.12)",
+    background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
     borderRadius: 12, padding: "16px", marginBottom: 12,
   }}>
-    <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.14em",
-      textTransform: "uppercase", color: "#ede0c4", marginBottom: 2 }}>
+    <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 12, letterSpacing: "0.14em",
+      textTransform: "uppercase", color: "#f5f5f5", marginBottom: 3 }}>
       {title}
     </div>
-    {sub && <div style={{ fontSize: 9, color: "#6a5e48", fontFamily: "JetBrains Mono, monospace", marginBottom: 12 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 12, color: "#C9A020", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", marginBottom: 14 }}>{sub}</div>}
     {children}
   </div>
 );
-
-/* CustomTooltip */
-const CustomTooltip = ({ active, payload, label, suffix = "" }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{ background: "#120e1c", border: "1px solid rgba(155,107,201,0.3)",
-      borderRadius: 6, padding: "8px 12px", fontFamily: "JetBrains Mono, monospace", fontSize: 10 }}>
-      <div style={{ color: "#5a5264", marginBottom: 4 }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color || "#c9a86b" }}>{p.name}: {p.value}{suffix}</div>
-      ))}
-    </div>
-  );
-};
 
 /* ══════════════════════════════════════════════════════════
    STYLES
@@ -1109,46 +1197,29 @@ const styles = {
 
   /* Header / brand block */
   header:      { marginBottom: 20 },
-  mpsLogoWrap: { background: "rgba(201,168,107,0.05)", border: "1px solid rgba(201,168,107,0.2)",
-    borderRadius: 12, padding: "18px 20px 14px", textAlign: "center", marginBottom: 10 },
-  mpsLogo:     { fontFamily: "'Saira Condensed', 'Arial Black', sans-serif", fontStyle: "italic",
-    fontWeight: 900, fontSize: 52, letterSpacing: 6, lineHeight: 1,
-    background: "linear-gradient(160deg, #ffffff 0%, #fff8e0 30%, #c9a86b 60%, #7a5020 100%)",
-    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-    filter: "drop-shadow(0 0 14px rgba(201,168,107,0.5))", display: "inline-block" },
-  mpsDivider:  { height: 1, background: "linear-gradient(90deg, transparent, rgba(201,168,107,0.5), transparent)", margin: "8px 0 6px" },
-  mpsTagline:  { fontSize: 9, letterSpacing: "0.32em", color: "rgba(201,168,107,0.6)",
-    fontFamily: "JetBrains Mono, monospace", textTransform: "uppercase", marginBottom: 4 },
-  appName:     { fontFamily: "'Bebas Neue', 'Arial Black', sans-serif", fontSize: 20,
-    letterSpacing: 4, color: "#e8d5b0" },
-  subtitle:    { fontSize: 10, color: "#4a4255", fontFamily: "JetBrains Mono, monospace",
+  subtitle:    { fontSize: 10, color: "#4a4255", fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" },
-  actionRow:   { display: "flex", gap: 8, flexWrap: "wrap" },
-  btnPrimary:  { flex: 1, background: "rgba(201,168,107,0.12)", border: "1px solid rgba(201,168,107,0.4)",
-    color: "#c9a86b", borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
-    fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
-  btnPurple:   { flex: 1, background: "rgba(155,107,201,0.1)", border: "1px solid rgba(155,107,201,0.3)",
-    color: "#9b6bc9", borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
-    fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em", cursor: "pointer",
+  btnPrimary:  { flex: 1, background: "rgba(201,160,32,0.12)", border: "1px solid rgba(201,160,32,0.4)",
+    color: GOLD, borderRadius: 8, padding: "10px 16px", fontSize: 11, fontWeight: 700,
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.1em", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
 
   /* Form */
-  formCard:    { background: "rgba(20,16,28,0.95)", border: "1px solid rgba(201,168,107,0.2)",
+  formCard:    { background: "rgba(18,18,20,0.95)", border: "1px solid rgba(201,160,32,0.2)",
     borderRadius: 12, padding: 16, marginBottom: 16 },
   formGrid:    { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 },
-  input:       { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(155,107,201,0.25)",
+  input:       { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(150,150,150,0.25)",
     borderRadius: 6, padding: "8px 10px", color: "#e8d5b0", fontSize: 13,
-    fontFamily: "JetBrains Mono, monospace", width: "100%", boxSizing: "border-box" },
-  range:       { width: "100%", accentColor: "#c9a86b" },
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif", width: "100%", boxSizing: "border-box" },
+  range:       { width: "100%", accentColor: GOLD },
   formFoot:    { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  preview:     { fontSize: 11, color: "#5a5264", fontFamily: "JetBrains Mono, monospace", flex: 1 },
+  preview:     { fontSize: 11, color: LBL, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", flex: 1 },
 
   /* Today snapshot */
-  todayCard:   { background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.2)",
+  todayCard:   { background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.2)",
     borderRadius: 12, padding: "16px 16px 14px", marginBottom: 12 },
-  eyebrow:     { fontSize: 10, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.18em",
-    color: "#9b6bc9", textTransform: "uppercase", marginBottom: 12 },
+  eyebrow:     { fontSize: 18, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em",
+    color: PURPLE, textTransform: "uppercase", marginBottom: 14 },
   todayGrid:   { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
 
   /* 7-day stats row */
@@ -1157,21 +1228,8 @@ const styles = {
   /* Charts grid */
   chartsGrid:  { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 12px" },
 
-  /* Insights */
-  insightsCard: { background: "rgba(20,16,28,0.85)", border: "1px solid rgba(155,107,201,0.15)",
-    borderRadius: 12, padding: "16px", marginBottom: 12 },
-
   /* Log tab */
-  logRow:      { display: "flex", alignItems: "center", gap: 10, padding: "12px 0",
-    borderBottom: "1px solid rgba(155,107,201,0.08)" },
-  logLeft:     { flex: 1 },
-  logDate:     { fontSize: 13, fontWeight: 700, fontFamily: "Bricolage Grotesque, system-ui, sans-serif", color: "#e8d5b0" },
-  logSub:      { fontSize: 10, color: "#4a4255", fontFamily: "JetBrains Mono, monospace", marginTop: 2 },
-  logStats:    { display: "flex", gap: 8, fontSize: 11, fontFamily: "JetBrains Mono, monospace" },
-  iconBtn:     { background: "transparent", border: "1px solid rgba(155,107,201,0.2)",
-    borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: "#5a5264",
-    display: "flex", alignItems: "center" },
-  empty:       { fontSize: 11, color: "#4a4255", fontFamily: "JetBrains Mono, monospace",
+  empty:       { fontSize: 11, color: "#4a4255", fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     textAlign: "center", padding: "24px 0", letterSpacing: "0.1em" },
 };
 
