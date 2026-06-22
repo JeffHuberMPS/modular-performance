@@ -273,6 +273,10 @@
         <button class="tier-opt" id="demo-load" onclick="demoLoad()">Load demo</button>
         <button class="tier-opt" id="demo-clear" onclick="demoClear()">Clear demo</button>
       </div>
+      <span class="tier-tester__label" style="margin-top:4px;">Clean slate (keeps Expenses)</span>
+      <div class="tier-tester__row">
+        <button class="tier-opt" id="reset-trackers" onclick="resetTrackers()">Reset trackers</button>
+      </div>
     </div>
   </div>
 
@@ -324,7 +328,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '164';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '165';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -695,6 +699,24 @@
       _demoBusy(true); showToast('Clearing sample data…');
       try { const r = await MPS_DEMO.clear(); showToast(r && r.cleared ? 'Sample data cleared — refreshing…' : 'No sample data to clear'); setTimeout(() => location.reload(), 700); }
       catch (e) { console.error(e); _demoBusy(false); showToast('Clear failed: ' + (e && e.message || e)); }
+    }
+    // Reset Trackers — wipes ALL Workout/Habits/Recovery/Journal data (local + cloud), KEEPS Expenses.
+    // Two-tap guard so it can never fire by accident.
+    let _resetArmed = false, _resetTimer = null;
+    async function resetTrackers() {
+      if (!window.MPS_DEMO || !MPS_DEMO.wipeTrackers) return showToast('Reset not ready');
+      const b = document.getElementById('reset-trackers');
+      if (!_resetArmed) {
+        _resetArmed = true;
+        if (b) b.textContent = 'Tap again to confirm';
+        showToast('This wipes Workout/Habits/Recovery/Journal (Expenses kept). Tap again to confirm.');
+        clearTimeout(_resetTimer); _resetTimer = setTimeout(() => { _resetArmed = false; if (b) b.textContent = 'Reset trackers'; }, 4500);
+        return;
+      }
+      _resetArmed = false; clearTimeout(_resetTimer);
+      if (b) { b.disabled = true; b.textContent = 'Resetting…'; }
+      try { await MPS_DEMO.wipeTrackers(); showToast('Trackers reset — refreshing…'); setTimeout(() => location.reload(), 800); }
+      catch (e) { console.error(e); if (b) { b.disabled = false; b.textContent = 'Reset trackers'; } showToast('Reset failed: ' + (e && e.message || e)); }
     }
     // Collapse / expand the owner-only dev panel
     function toggleTester(){

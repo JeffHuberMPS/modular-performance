@@ -388,5 +388,43 @@ window.MPS_DEMO = (function () {
 
   function isLoaded() { return !!jget(MANIFEST_KEY, null); }
 
-  return { load, clear, isLoaded };
+  // ═══════════════════════════════════════════════════════════════════════
+  //  WIPE TRACKERS  — clean slate for Workout/Habits/Recovery/Journal
+  //  (local + cloud). DELIBERATELY KEEPS Expenses (mps_expense:* + its Sheet
+  //  sync config) so the live Google-Sheet connection is never touched.
+  // ═══════════════════════════════════════════════════════════════════════
+  async function wipeTrackers() {
+    const u = uid();
+    // 1) localStorage — fixed tracker keys + the demo manifest. (Expenses keys untouched.)
+    ['mps_v3_state', 'mps_v3_history', 'mps_v3_prs', 'habits_v4', 'gym_v4', 'blocks_v4', MANIFEST_KEY].forEach(lsDel);
+    // sleep (rr_sleep:*) + journal (mps_jnl_<uid>_*) — prefix scan
+    try {
+      const del = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.indexOf('rr_sleep:') === 0) del.push(k);
+        else if (u && k.indexOf('mps_jnl_' + u + '_') === 0) del.push(k);
+      }
+      del.forEach(lsDel);
+    } catch (e) {}
+    // 2) Firestore — tracker subcollections + backup docs (NOT expense_logs / expenses_backup).
+    if (u) {
+      const colls = ['workout_history', 'sleep_logs', 'journal_entries'];
+      for (const coll of colls) {
+        try {
+          const snap = await db().collection('users').doc(u).collection(coll).get();
+          let b = db().batch(), o = 0;
+          for (const doc of snap.docs) { b.delete(doc.ref); if (++o >= 400) { await b.commit(); b = db().batch(); o = 0; } }
+          if (o) await b.commit();
+        } catch (err) { console.warn('[wipe]', coll, err); }
+      }
+      for (const docName of ['workout_backup', 'habits_backup', 'sleep_backup', 'journal_backup']) {
+        try { await db().collection('users').doc(u).collection('settings').doc(docName).delete(); } catch (e) {}
+      }
+    }
+    return { wiped: true };
+  }
+
+  return { load, clear, isLoaded, wipeTrackers };
 })();
