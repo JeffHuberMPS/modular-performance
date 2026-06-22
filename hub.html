@@ -324,7 +324,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '163';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '164';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -589,8 +589,10 @@
 
       try {
         const entries = (sget('mps_expense:entries') || []).filter(e => e && e.date);
-        const purch = entries.filter(e => e.item === 'Purchase');   // exclude income/paychecks
-        const amt = e => { const a = Number(e.amount); return isNaN(a) ? 0 : a; };
+        // Match the Expense app exactly (v156): every outflow is spend (incl. transfers/investments);
+        // only Income/Paycheck are excluded, and amounts are summed as absolute values.
+        const purch = entries.filter(e => e.item !== 'Income' && e.item !== 'Paycheck');
+        const amt = e => { const a = Math.abs(Number(e.amount)); return isNaN(a) ? 0 : a; };
         const monthP = purch.filter(e => (e.date||'').startsWith(monthPrefix));
         let total=0; monthP.forEach(e => total += amt(e));
         const txns = monthP.length;
