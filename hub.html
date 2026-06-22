@@ -289,13 +289,13 @@
     .tier-banner__pill { font-family: 'Bebas Neue',sans-serif; font-size: 0.8rem; letter-spacing: 0.1em; color: var(--ns-yellow); border: 1px solid rgba(201,160,32,0.45); border-radius: 4px; padding: 1px 9px; flex-shrink: 0; }
     .tier-banner__text b { color: var(--text-primary); font-weight: 600; }
     /* Desktop: feature note centered on the MPS line (replaces the gold banner bar). Mobile keeps the bar. */
-    .shell-feature-note { flex: 1 1 auto; min-width: 0; text-align: center; padding: 0 18px; font-family: 'Inter',sans-serif; font-size: 0.74rem; color: var(--text-dim); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; display: none; }
-    .shell-feature-note b { color: var(--text-primary); font-weight: 600; }
-    .shell-feature-note .sfn-pill { color: var(--ns-yellow); font-family: 'Bebas Neue',sans-serif; letter-spacing: 0.08em; font-size: 0.84rem; margin-right: 8px; }
-    .shell-feature-note .sfn-cta { color: var(--ns-yellow); font-weight: 700; margin-left: 8px; }
+    .shell-feature-note { flex: 1 1 auto; min-width: 0; display: none; align-items: center; justify-content: center; gap: 9px; padding: 0 18px; font-family: 'Inter',sans-serif; font-size: 0.78rem; color: var(--text-dim); letter-spacing: 0.01em; cursor: pointer; }
+    .shell-feature-note .sfn-pill { flex: 0 0 auto; color: var(--ns-yellow); font-family: 'Bebas Neue',sans-serif; letter-spacing: 0.09em; font-size: 0.94rem; }
+    .shell-feature-note .sfn-pitch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+    .shell-feature-note .sfn-cta { flex: 0 0 auto; color: var(--ns-yellow); font-weight: 700; white-space: nowrap; }
     .shell-feature-note:hover .sfn-cta { text-decoration: underline; }
     @media (min-width: 760px) {
-      .shell-feature-note.show { display: block; }
+      .shell-feature-note.show { display: flex; }
       .tier-banner.show { display: none !important; }
     }
   </style>
@@ -318,6 +318,14 @@
       journal:  { free:'Locked · unlocks with Elite', medium:'Unlocked · last 60 days of history', all:'Upgraded journal + full history + colorful theme' }
     };
     const TIER_LABEL = { free: 'Core', medium: 'Elite', all: 'Premium' };
+    // Aspirational Premium pitches (per app) for the header upsell — benefit-led, what they're missing.
+    const PREMIUM_PITCH = {
+      workout:  'Every PR + your full training history, not just 60 days — proof you’re getting stronger.',
+      habits:   'Your entire habit history + deep insights — watch your discipline compound over time.',
+      sleep:    'Full sleep history + recovery insights — know exactly what’s recharging you.',
+      expenses: 'Your full money history + spending insights — see where every dollar actually goes.',
+      journal:  'Your complete journal archive + the upgraded editor — every word kept, not just 60 days.'
+    };
     // Normalize every tier spelling used across the codebase (single/duo/trio/all-access,
     // Free/Medium/All-Access, Core/Elite/Premium) into the hub's internal free|medium|all.
     function normTier(t) {
@@ -339,7 +347,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '171';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '172';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -802,17 +810,17 @@
       if (activeId === 'home' || currentTier === 'all') { hide(); return; }
       const app = APPS.find(a => a.id === activeId);
       if (!app) { hide(); return; }
-      // Aspirational upsell: advertise what PREMIUM unlocks (NOT the current tier) so lower tiers see what they're missing.
-      const premiumFeats = (TIER_FEATURES[app.id] || {}).all || 'Everything + full history + colorful theme';
+      // Aspirational upsell: sell what PREMIUM unlocks (NOT the current tier) so lower tiers see what they're missing.
+      const pitch = PREMIUM_PITCH[app.id] || 'Unlock everything — your full history, every insight, no limits.';
       const goBilling = () => { location.href = '/billing.html'; };
       // Desktop: centered note on the MPS line
       if (note) {
-        note.innerHTML = '<span class="sfn-pill">◆ PREMIUM</span><b>' + app.label + ':</b> ' + premiumFeats + '<span class="sfn-cta">Upgrade →</span>';
+        note.innerHTML = '<span class="sfn-pill">◆ PREMIUM</span><span class="sfn-pitch">' + pitch + '</span><span class="sfn-cta">Unlock Premium →</span>';
         note.onclick = goBilling; note.classList.add('show');
       }
       // Mobile: thin bar
       if (banner) {
-        banner.innerHTML = '<span class="tier-banner__pill">◆ PREMIUM</span><span class="tier-banner__text"><b>' + app.label + ':</b> ' + premiumFeats + ' — Upgrade →</span>';
+        banner.innerHTML = '<span class="tier-banner__pill">◆ PREMIUM</span><span class="tier-banner__text">' + pitch + ' — Unlock Premium →</span>';
         banner.onclick = goBilling; banner.style.cursor = 'pointer'; banner.classList.add('show');
       }
     }
