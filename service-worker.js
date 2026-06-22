@@ -1,5 +1,5 @@
 // MPS Service Worker — offline support + update notification
-const CACHE_VERSION = 'mps-v157';
+const CACHE_VERSION = 'mps-v158';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const FONT_CACHE    = CACHE_VERSION + '-fonts';
 
@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
   '/demo-data.js',
   '/shared/auth-guard.js',
   '/shared/components.js',
+  '/shared/install-prompt.js',
   '/apps/workout/index.html'
 ];
 
