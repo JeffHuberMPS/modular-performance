@@ -320,11 +320,11 @@
     const TIER_LABEL = { free: 'Core', medium: 'Elite', all: 'Premium' };
     // Aspirational Premium pitches (per app) for the header upsell — benefit-led, what they're missing.
     const PREMIUM_PITCH = {
-      workout:  'Every PR + your full training history, not just 60 days — proof you’re getting stronger.',
-      habits:   'Your entire habit history + deep insights — watch your discipline compound over time.',
-      sleep:    'Full sleep history + recovery insights — know exactly what’s recharging you.',
-      expenses: 'Your full money history + spending insights — see where every dollar actually goes.',
-      journal:  'Your complete journal archive + the upgraded editor — every word kept, not just 60 days.'
+      workout:  'Unlock PR tracking, your Strength-Score trends & the 6-week auto-load plan — train with a blueprint.',
+      habits:   'Unlock the Compound view — a full-year heatmap of every streak, so you see what’s actually sticking.',
+      sleep:    'Unlock your Recovery Score, 7-day trend charts & wearable sync (HRV, resting HR) — recover by the data.',
+      expenses: 'Unlock budget alerts, auto-tagging rules & insights — top merchants, biggest buys & your YTD net.',
+      journal:  'Unlock guided weekly check-ins that pull your workouts, habits, sleep & money into one reflection.'
     };
     // Normalize every tier spelling used across the codebase (single/duo/trio/all-access,
     // Free/Medium/All-Access, Core/Elite/Premium) into the hub's internal free|medium|all.
@@ -347,7 +347,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '172';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '173';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
