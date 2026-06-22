@@ -289,9 +289,11 @@
     .tier-banner__pill { font-family: 'Bebas Neue',sans-serif; font-size: 0.8rem; letter-spacing: 0.1em; color: var(--ns-yellow); border: 1px solid rgba(201,160,32,0.45); border-radius: 4px; padding: 1px 9px; flex-shrink: 0; }
     .tier-banner__text b { color: var(--text-primary); font-weight: 600; }
     /* Desktop: feature note centered on the MPS line (replaces the gold banner bar). Mobile keeps the bar. */
-    .shell-feature-note { flex: 1 1 auto; min-width: 0; text-align: center; padding: 0 18px; font-family: 'Inter',sans-serif; font-size: 0.74rem; color: var(--text-dim); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: none; }
+    .shell-feature-note { flex: 1 1 auto; min-width: 0; text-align: center; padding: 0 18px; font-family: 'Inter',sans-serif; font-size: 0.74rem; color: var(--text-dim); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; display: none; }
     .shell-feature-note b { color: var(--text-primary); font-weight: 600; }
     .shell-feature-note .sfn-pill { color: var(--ns-yellow); font-family: 'Bebas Neue',sans-serif; letter-spacing: 0.08em; font-size: 0.84rem; margin-right: 8px; }
+    .shell-feature-note .sfn-cta { color: var(--ns-yellow); font-weight: 700; margin-left: 8px; }
+    .shell-feature-note:hover .sfn-cta { text-decoration: underline; }
     @media (min-width: 760px) {
       .shell-feature-note.show { display: block; }
       .tier-banner.show { display: none !important; }
@@ -337,7 +339,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '170';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '171';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -793,20 +795,26 @@
       }
     }
     function updateTierBanner() {
-      const banner = document.getElementById('tier-banner'), tester = document.getElementById('tier-tester');
+      const banner = document.getElementById('tier-banner');
       const note = document.getElementById('shell-feature-note');
       const hide = () => { if (banner) banner.classList.remove('show'); if (note) { note.classList.remove('show'); note.innerHTML = ''; } };
-      if (!banner || !tester || !tester.classList.contains('show') || activeId === 'home') { hide(); return; }
+      // Premium users already have everything → no upsell. Nothing on Home either.
+      if (activeId === 'home' || currentTier === 'all') { hide(); return; }
       const app = APPS.find(a => a.id === activeId);
       if (!app) { hide(); return; }
-      const feats = (TIER_FEATURES[app.id] || {})[currentTier] || '';
-      const themeNote = currentTier === 'all' ? ' · Colorful theme available' : ' · Black/gray theme';
-      const pill = TIER_LABEL[currentTier].toUpperCase();
-      // Mobile bar
-      banner.innerHTML = '<span class="tier-banner__pill">' + pill + '</span><span class="tier-banner__text"><b>' + app.label + ':</b> ' + feats + themeNote + '</span>';
-      banner.classList.add('show');
-      // Desktop: same info centered on the MPS line (CSS hides the bar on desktop, this note on mobile)
-      if (note) { note.innerHTML = '<span class="sfn-pill">' + pill + '</span><b>' + app.label + ':</b> ' + feats + themeNote; note.classList.add('show'); }
+      // Aspirational upsell: advertise what PREMIUM unlocks (NOT the current tier) so lower tiers see what they're missing.
+      const premiumFeats = (TIER_FEATURES[app.id] || {}).all || 'Everything + full history + colorful theme';
+      const goBilling = () => { location.href = '/billing.html'; };
+      // Desktop: centered note on the MPS line
+      if (note) {
+        note.innerHTML = '<span class="sfn-pill">◆ PREMIUM</span><b>' + app.label + ':</b> ' + premiumFeats + '<span class="sfn-cta">Upgrade →</span>';
+        note.onclick = goBilling; note.classList.add('show');
+      }
+      // Mobile: thin bar
+      if (banner) {
+        banner.innerHTML = '<span class="tier-banner__pill">◆ PREMIUM</span><span class="tier-banner__text"><b>' + app.label + ':</b> ' + premiumFeats + ' — Upgrade →</span>';
+        banner.onclick = goBilling; banner.style.cursor = 'pointer'; banner.classList.add('show');
+      }
     }
 
     /* ── Auth ─────────────────────────────────────────────── */
