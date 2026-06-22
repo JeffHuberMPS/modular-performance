@@ -324,7 +324,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '161';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '162';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -778,6 +778,7 @@
         renderUser(user.displayName || 'Jeff', user.email, user.photoURL, 'All-Access');
         refreshTabLocks();
         document.getElementById('tier-tester').classList.add('show');
+        clampTesterIntoView();
         previewTier('all');
         if (activeId === 'home') loadDashboard();
         return;
@@ -794,12 +795,10 @@
         return;
       }
       let tier = 'free';
-      // Owner / comped accounts get the dev tools box — dev email OR billing_bypass OR developer role.
-      let ownerDev = DEV_EMAILS.includes((user.email || '').toLowerCase());
       try {
         const snap = await firebase.firestore().collection('users').doc(user.uid).get();
         const data = snap.exists ? snap.data() : {};
-        if (data.billing_bypass === true || data.role === 'developer') { tier = 'all'; ownerDev = true; }
+        if (data.billing_bypass === true || data.role === 'developer') tier = 'all';
         else tier = normTier(data.tier);
       } catch (err) { tier = 'free'; }   // fail SAFE: a Firestore error must NOT grant free Premium
       // Unified one-app: every tracker is available to all tiers; tiers are feature/theme levels.
@@ -810,7 +809,7 @@
       applyTheme();
       updateTierBadge();
       refreshTabLocks();
-      if (ownerDev) { const dt = document.getElementById('tier-tester'); if (dt) { dt.classList.add('show'); clampTesterIntoView(); } }
+      // NOTE: the dev tools box is OWNER-ONLY — shown only in the DEV_EMAILS branch above. Never here.
       if (activeId === 'home') loadDashboard();
     });
 
