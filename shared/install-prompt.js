@@ -114,7 +114,8 @@
     'On your iPhone: tap the Share button ' + shareSvg +
     ' at the bottom of Safari, then choose <b>"Add to Home Screen"</b>.';
   var genericSteps =
-    'Open your browser menu and choose <b>"Install app"</b> or <b>"Add to Home screen"</b>.';
+    'Open your browser menu and choose <b>"Install app"</b> or <b>"Add to Home screen."</b> ' +
+    'Already installed? Just open MPS from your home screen — or the <b>"Open in app"</b> icon in your address bar.';
 
   bar.innerHTML =
     '<div class="mi-card">' +
