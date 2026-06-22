@@ -184,11 +184,24 @@
     let authUser    = undefined;
     let minTimeDone = false;
 
+    // Installed app (added to home screen) launches straight into the app —
+    // never the marketing landing page. The website still shows landing to visitors.
+    var isInstalledApp =
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true ||
+      (document.referrer || '').indexOf('android-app://') === 0;
+
     function tryProceed() {
       if (authUser === undefined || !minTimeDone) return;
       splashEl.classList.add('fade-out');
       setTimeout(function() {
-        window.location.replace('/landing.html');
+        var dest;
+        if (isInstalledApp) {
+          dest = authUser ? '/hub.html' : '/auth.html'; // app: signed-in → app, else → sign in
+        } else {
+          dest = '/landing.html';                        // website: marketing landing
+        }
+        window.location.replace(dest);
       }, 480);
     }
 
