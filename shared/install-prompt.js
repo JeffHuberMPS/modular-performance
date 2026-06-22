@@ -7,8 +7,14 @@
      the real OS install dialog.
    • iPhone / iPad (Safari): there is NO native install event, so we show the
      exact manual steps — tap the Share button, then "Add to Home Screen".
-   • Already installed (running standalone): never shows.
-   • Dismissed: snoozes for a week so it is never naggy.
+   • Already installed (running standalone): never shows; reports installed.
+   • Auto-banner dismissed: snoozes for a week so it is never naggy.
+
+   Exposes a small API the in-app "Install App" menu button uses:
+     window.MPS_isInstalled()   → true if running as the installed app
+     window.MPS_promptInstall() → force the prompt NOW (ignores the snooze)
+   Fires a 'mps-install-state' event on document when install state changes
+   (e.g. the user just installed) so menus can hide the button.
 
    Self-contained: injects its own styles, no dependencies. Just include
    <script src="/shared/install-prompt.js" defer></script> on any page.
@@ -16,20 +22,37 @@
 (function () {
   'use strict';
 
-  // ── Don't show if the app is already installed / launched from home screen ──
+  // ── Are we already installed / launched from the home screen? ──
   var isStandalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
     window.navigator.standalone === true || // iOS Safari
-    document.referrer.indexOf('android-app://') === 0;
-  if (isStandalone) return;
+    (document.referrer || '').indexOf('android-app://') === 0;
 
-  // ── Don't nag: snooze for a week after a dismissal ──
+  function announceState() {
+    try { document.dispatchEvent(new CustomEvent('mps-install-state', { detail: { installed: isStandalone } })); }
+    catch (e) {}
+  }
+
+  // Public API (always defined so the menu button works on every page/state).
+  window.MPS_isInstalled = function () { return isStandalone; };
+
+  // When already running as the installed app there is nothing to prompt.
+  if (isStandalone) {
+    window.MPS_promptInstall = function () {};
+    announceState();
+    return;
+  }
+
+  // ── Snooze: how long to suppress the AUTO banner after a dismissal. The
+  //    on-demand menu button ignores this entirely. ──
   var DISMISS_KEY = 'mps_install_dismissed_at';
   var SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
-  try {
-    var last = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
-    if (last && Date.now() - last < SNOOZE_MS) return;
-  } catch (e) { /* localStorage may be blocked; carry on */ }
+  function isSnoozed() {
+    try {
+      var last = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
+      return !!(last && Date.now() - last < SNOOZE_MS);
+    } catch (e) { return false; }
+  }
 
   // ── Platform detection ──
   var ua = navigator.userAgent || '';
@@ -66,7 +89,7 @@
     '#mps-install .mi-close{font-family:inherit;font-size:1.2rem;line-height:1;color:#777;' +
     'background:none;border:none;padding:4px 6px;cursor:pointer;}' +
     '#mps-install .mi-close:hover{color:#bbb;}' +
-    /* iOS instruction sheet */
+    /* manual instruction sheet (iOS or other browsers) */
     '#mps-install .mi-ios{margin-top:10px;padding-top:11px;border-top:1px solid rgba(255,255,255,.09);' +
     'font-size:.82rem;color:#d8d2c4;line-height:1.5;display:none;}' +
     '#mps-install.ios-open .mi-ios{display:block;}' +
@@ -87,6 +110,11 @@
     'stroke="#4ab3f4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
     '<path d="M12 16V4M12 4l-4 4M12 4l4 4"/>' +
     '<path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg>';
+  var iosSteps =
+    'On your iPhone: tap the Share button ' + shareSvg +
+    ' at the bottom of Safari, then choose <b>"Add to Home Screen"</b>.';
+  var genericSteps =
+    'Open your browser menu and choose <b>"Install app"</b> or <b>"Add to Home screen"</b>.';
 
   bar.innerHTML =
     '<div class="mi-card">' +
@@ -100,8 +128,7 @@
     '<button class="mi-close" type="button" aria-label="Not now">&times;</button>' +
     '</div>' +
     '</div>' +
-    '<div class="mi-ios">On your iPhone: tap the Share button ' + shareSvg +
-    ' at the bottom of Safari, then choose <b>"Add to Home Screen"</b>.</div>';
+    '<div class="mi-ios"></div>';
 
   function mount() {
     if (!document.getElementById('mps-install')) {
@@ -109,23 +136,26 @@
       document.body.appendChild(bar);
     }
   }
-
   function show() {
     mount();
-    // next frame so the CSS transition plays
     requestAnimationFrame(function () { bar.classList.add('show'); });
   }
-
-  function hide() {
-    bar.classList.remove('show');
-  }
-
+  function hide() { bar.classList.remove('show'); }
   function dismiss() {
     hide();
     try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch (e) {}
   }
 
-  // ── Wire up buttons ──
+  // Reveal the manual steps (used on iOS, and on browsers with no native event).
+  function showManualSteps() {
+    var sheet = bar.querySelector('.mi-ios');
+    if (sheet) sheet.innerHTML = isIOSSafari ? iosSteps : genericSteps;
+    bar.classList.add('ios-open');
+    var btn = bar.querySelector('.mi-install');
+    if (btn) btn.textContent = 'Got it';
+  }
+
+  // ── Button clicks inside the banner ──
   bar.addEventListener('click', function (e) {
     var t = e.target;
     if (t.closest && t.closest('.mi-close')) { dismiss(); return; }
@@ -133,17 +163,11 @@
       if (deferredPrompt) {
         // Android / Chrome / desktop: fire the real OS install dialog.
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.finally(function () {
-          deferredPrompt = null;
-          hide();
-        });
-      } else if (isIOSSafari) {
-        // iOS: reveal the manual steps (no programmatic install on iOS).
-        bar.classList.add('ios-open');
-        var btn = bar.querySelector('.mi-install');
-        if (btn) btn.textContent = 'Got it';
-        if (bar.classList.contains('ios-shown')) dismiss(); // second tap = done
-        bar.classList.add('ios-shown');
+        deferredPrompt.userChoice.finally(function () { deferredPrompt = null; hide(); });
+      } else if (bar.classList.contains('ios-open')) {
+        dismiss(); // second tap on "Got it" closes it
+      } else {
+        showManualSteps();
       }
     }
   });
@@ -152,17 +176,34 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault(); // stop Chrome's mini-infobar; we show our own banner
     deferredPrompt = e;
-    show();
+    if (!isSnoozed()) show(); // auto-banner respects the snooze
   });
 
-  // ── iOS Safari: no event fires, so offer the manual route after a short beat ──
-  if (isIOSSafari) {
-    setTimeout(show, 2800);
+  // ── iOS Safari: no event fires — auto-offer the manual route after a beat ──
+  if (isIOSSafari && !isSnoozed()) {
+    setTimeout(function () { show(); showManualSteps(); }, 2800);
   }
+
+  // ── On-demand: the in-app "Install App" menu button calls this. Always shows,
+  //    ignoring the snooze. ──
+  window.MPS_promptInstall = function () {
+    if (deferredPrompt) {
+      show();
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.finally(function () { deferredPrompt = null; hide(); });
+    } else {
+      show();
+      showManualSteps();
+    }
+  };
 
   // ── If they install (any platform), get out of the way and don't ask again ──
   window.addEventListener('appinstalled', function () {
     hide();
     try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch (e) {}
+    isStandalone = true;        // so MPS_isInstalled() now reports true
+    announceState();            // menus hide their "Install App" button
   });
+
+  announceState();
 })();
