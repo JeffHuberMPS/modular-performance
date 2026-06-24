@@ -709,7 +709,7 @@ function SleepTracker() {
                     Duration: <strong style={{ color: PURPLE }}>{calcHours(form.sleepTime, form.wakeTime)}h</strong>
                     {" · "}
                     Recovery: <strong style={{ color: GOLD }}>
-                      {calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness)}%
+                      {__CORE ? "🔒 Premium" : calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness) + "%"}
                     </strong>
                   </>
                 ) : (
@@ -742,7 +742,7 @@ function SleepTracker() {
                 <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent={PURPLE} />
                 <TodayStat icon={<IconHeart />}     label="Soreness" value={today ? `${today.soreness}/10` : "—"} accent={PURPLE} />
                 <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent={PURPLE} />
-                <TodayStat icon={<IconBattery />}   label="Recovery" value={today?.recovery != null ? `${today.recovery}%` : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconBattery />}   label="Recovery" value={__CORE ? "🔒" : (today?.recovery != null ? `${today.recovery}%` : "—")} accent={PURPLE} />
               </div>
               {!today && <div style={{...styles.empty, marginTop: 8}}>No entry yet — tap + LOG ENTRY to start.</div>}
             </section>
@@ -1085,7 +1085,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     </div>
     {/* Row 2: Recovery · Energy · Soreness · Clarity · Restlessness */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12.48 }}>
-      <LogBlock label="Recovery" value={e.recovery != null ? `${e.recovery}%` : "—"} accent={GOLD} />
+      <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
