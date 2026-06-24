@@ -1286,6 +1286,28 @@ async function cloudBackupNow() {
     return true;
   } catch (e) { _cloudBusy = false; return false; }
 }
+// ===== LIVE TWO-WAY SYNC (workout) ===== additive only (pulls cloud changes live; never deletes local — safe).
+let _cloudLiveSig = '';
+function watchCloudLive() {
+  const doc = _cloudDoc();
+  if (!doc) return;
+  try {
+    doc.onSnapshot(function (s) {
+      if (!s.exists || !s.data() || !s.data().data) return;
+      const d = s.data().data;
+      let mine = {};
+      try { mine = _collectLocal(); } catch (e) {}
+      let differs = false;
+      for (const k in d) { if (d[k] !== mine[k]) { differs = true; break; } }
+      if (!differs) return;                       // cloud matches our state (our own backup) — ignore
+      let sig = ''; try { sig = JSON.stringify(d); } catch (e) {}
+      if (sig && sig === _cloudLiveSig) return;   // same payload already applied (writes failing) — no loop
+      _cloudLiveSig = sig;
+      Object.keys(d).forEach(function (k) { try { localStorage.setItem(k, d[k]); } catch (e) {} });
+      location.reload();
+    });
+  } catch (e) {}
+}
 const K_RESTORE_FLAG = 'mps_restore_attempted';
 async function cloudRestoreIfEmpty() {
   // Guard against an infinite reload loop: only attempt a restore once per session.
@@ -3646,6 +3668,7 @@ async function checkAutoBackupOnOpen() {
     }
   } catch (e) {}
   cloudBackupNow();                                // fire-and-forget backup on open
+  watchCloudLive();                                // live two-way: pull other devices' changes in real time
 }
 function wireBackupButtons() {
   const exportBtn = document.getElementById('backup-export-btn');

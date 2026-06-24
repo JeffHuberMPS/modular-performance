@@ -166,10 +166,23 @@
     window.sleepScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
     function _bNow(){ if(_bBusy) return; _bBusy=true; try{ _bDoc.set({data:_bCollect(),ts:Date.now(),v:1}).then(function(){_bBusy=false;}).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
+    // ===== LIVE TWO-WAY SYNC (sleep) ===== additive only (pulls cloud changes live; never deletes local — safe).
+    var _bLiveSig='';
+    function _bWatchLive(){ try{ _bDoc.onSnapshot(function(s){
+      if(!s.exists||!s.data()||!s.data().data) return;
+      var d=s.data().data, differs=false;
+      for(var k in d){ if(localStorage.getItem(k)!==d[k]){ differs=true; break; } }
+      if(!differs) return;                 // already in sync (includes our own backups)
+      var sig=''; try{ sig=JSON.stringify(d); }catch(e){}
+      if(sig && sig===_bLiveSig) return;   // same payload already applied (writes failing) — no loop
+      _bLiveSig=sig;
+      Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
+      location.reload();
+    }); }catch(e){} }
 
     // Restore first (download on fresh device), then reveal; seed cloud on open.
     var _revealed=false;
-    function _reveal(){ if(_revealed) return; _revealed=true; document.getElementById('auth-loading').style.display='none'; document.getElementById('root').style.display='block'; window.sleepScheduleBackup(); }
+    function _reveal(){ if(_revealed) return; _revealed=true; document.getElementById('auth-loading').style.display='none'; document.getElementById('root').style.display='block'; window.sleepScheduleBackup(); _bWatchLive(); }
     setTimeout(_reveal, 3000);   // safety: never stay stuck on the loading screen
     var _bDidReload=false; try{ _bDidReload = sessionStorage.getItem('sleep_restored')==='1'; }catch(e){}
     _bRestoreIfEmpty().then(function(restored){ if(restored && !_bDidReload){ try{ sessionStorage.setItem('sleep_restored','1'); }catch(e){} location.reload(); return; } _reveal(); });
