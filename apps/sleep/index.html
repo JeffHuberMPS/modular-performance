@@ -304,10 +304,12 @@ function SleepTracker() {
         const keys = await storage.list();
         const loaded = [];
         for (const k of keys) {
+          if (k === 'wearable_interest') continue; // settings key, NOT a dated sleep entry
           const value = await storage.get(k);
           if (value) {
             try {
               const parsed = JSON.parse(value);
+              if (!parsed || !parsed.date) continue; // skip anything that isn't a dated entry (prevents a blank/crashed app)
               loaded.push({
                 ...parsed,
                 energy: parsed.energy ?? 5,
@@ -318,7 +320,7 @@ function SleepTracker() {
             } catch (e) {}
           }
         }
-        loaded.sort((a, b) => a.date.localeCompare(b.date));
+        loaded.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
         setEntries(loaded);
       } catch (e) {
       } finally {
