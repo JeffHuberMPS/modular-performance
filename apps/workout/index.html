@@ -142,6 +142,12 @@
     /* Clear the phone's bottom nav/gesture bar so the last card (e.g. Advanced Stats) isn't cut off */
     padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
+  /* Friendly empty states (with a CTA to start logging) */
+  .empty-state { text-align: center; padding: 38px 20px; }
+  .empty-state__icon { font-size: 2.2rem; margin-bottom: 8px; }
+  .empty-state__title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .empty-state__sub { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 16px; line-height: 1.4; }
+  .empty-state__cta { display: inline-block; padding: 11px 20px; border-radius: 10px; border: 1px solid var(--mps-accent); background: rgba(var(--mps-accent-rgb),0.12); color: var(--mps-accent); font-weight: 700; font-size: 0.85rem; cursor: pointer; }
   .brand-block {
     background: #000000;
     background-image: radial-gradient(ellipse 60% 50% at 50% 45%, rgba(var(--mps-accent-rgb),0.20) 0%, rgba(var(--mps-accent-rgb),0.06) 45%, transparent 75%);
@@ -2628,7 +2634,7 @@ function renderHistory() {
     __capHidden = __before - allItems.length;
   }
   if (allItems.length === 0) {
-    c.innerHTML = (__capHidden > 0 ? historyCapNoteHTML() : '') + '<div class="card empty">' + (isPremium() ? 'No workouts logged yet.' : 'No workouts logged in the last 60 days.') + '</div>';
+    c.innerHTML = (__capHidden > 0 ? historyCapNoteHTML() : '') + emptyStateHTML('🏋️', (isPremium() ? 'No workouts logged yet' : 'No workouts in the last 60 days'), 'Your finished workouts show up here.', 'today', 'Log your first workout');
     return;
   }
   // Sort newest first
@@ -3158,6 +3164,12 @@ function historyCapNoteHTML(){ return '<div style="text-align:center;padding:14p
 function coreLockHTML(title, desc){ return '<div style="text-align:center;padding:48px 22px;"><div style="font-size:34px;margin-bottom:10px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div style="font-size:16px;font-weight:800;color:#f5f5f5;letter-spacing:1px;margin-bottom:8px;">'+title+' IS AN ELITE FEATURE</div><div style="font-size:13px;color:#9a9a9a;line-height:1.6;margin-bottom:20px;max-width:300px;margin-left:auto;margin-right:auto;">'+desc+'</div><a href="/billing.html" target="_top" style="display:inline-block;padding:12px 26px;background:#C9A020;color:#0a0a0a;font-weight:800;font-size:13px;letter-spacing:1px;border-radius:10px;text-decoration:none;">↑ UNLOCK WITH ELITE</a></div>'; }
 // PREMIUM-only Advanced Stats: total volume (tonnage), this-week volume, training
 // frequency, best estimated 1-rep-max (Epley), and muscle-group balance — all from real data.
+// Shared friendly empty-state with a CTA that jumps to a logging tab.
+function goToTab(name) { const t = document.querySelector('.tab[data-tab="' + name + '"]'); if (t) t.click(); }
+function emptyStateHTML(icon, title, sub, tab, cta) {
+  const btn = tab ? '<button class="empty-state__cta" onclick="goToTab(\'' + tab + '\')">' + cta + ' →</button>' : '';
+  return '<div class="empty-state"><div class="empty-state__icon">' + icon + '</div><div class="empty-state__title">' + title + '</div><div class="empty-state__sub">' + sub + '</div>' + btn + '</div>';
+}
 function advancedStatsHTML() {
   if (!isPremium()) {
     return '<div class="chart-card" style="text-align:center;">'
@@ -3229,7 +3241,7 @@ function renderPRs() {
   const c = document.getElementById('pr-list');
   if (isCore()) { if(c) c.innerHTML = coreLockHTML('PRs &amp; STATS', 'Unlock your personal records and strength stats. Logging workouts stays free; upgrade to track your PRs over time.'); return; }
   const entries = Object.entries(prs);
-  if (entries.length === 0) { c.innerHTML = '<div class="empty">No PRs yet. Lift heavy.</div>'; return; }
+  if (entries.length === 0) { c.innerHTML = emptyStateHTML('🏆', 'No PRs yet', 'Personal records appear as you log heavier lifts.', 'today', 'Start logging'); return; }
   // Group by muscle
   const grouped = {};
   entries.forEach(([name, val]) => {

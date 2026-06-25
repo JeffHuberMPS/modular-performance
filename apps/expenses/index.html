@@ -606,9 +606,11 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
           </thead>
           <tbody id="log-body"></tbody>
         </table>
-        <div class="empty" id="log-empty">
-          <div class="empty-title">No entries yet</div>
-          <div class="empty-sub">Set up your Google Sheet connection in Settings to sync.</div>
+        <div class="empty" id="log-empty" style="text-align:center;padding:34px 18px;">
+          <div style="font-size:2rem;margin-bottom:8px;">🧾</div>
+          <div class="empty-title">No expenses yet</div>
+          <div class="empty-sub" style="margin-bottom:16px;">Connect your spending sheet once — it syncs automatically after that.</div>
+          <button onclick="document.querySelector('.tab[data-tab=&quot;settings&quot;]').click()" style="display:inline-block;padding:11px 20px;border-radius:10px;border:1px solid var(--mps-mint);background:rgba(var(--mps-mint-rgb),0.12);color:var(--mps-mint);font-weight:700;font-size:0.85rem;cursor:pointer;">Connect in Settings →</button>
         </div>
       </div>
     </div>
