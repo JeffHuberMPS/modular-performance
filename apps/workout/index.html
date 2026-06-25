@@ -1278,16 +1278,18 @@ async function cloudBackupNow() {
     // The whole payload must live in the PARENT realm or Firestore rejects it as a
     // "custom Object". Rebuild it via the parent's JSON.parse so set() accepts it.
     const PJSON = (window.parent && window.parent.JSON) ? window.parent.JSON : JSON;
-    const payload = PJSON.parse(JSON.stringify({ data: _collectLocal(), ts: Date.now(), v: 1 }));
+    const _ts = Date.now();
+    const payload = PJSON.parse(JSON.stringify({ data: _collectLocal(), ts: _ts, v: 1 }));
     await doc.set(payload);
+    try { localStorage.setItem('workout_synced_ts', String(_ts)); } catch (e) {}
     try { localStorage.setItem(K_LAST_BACKUP, new Date().toISOString()); } catch (e) {}
     try { updateBackupStatus(); } catch (e) {}
     _cloudBusy = false;
     return true;
   } catch (e) { _cloudBusy = false; return false; }
 }
-// ===== LIVE TWO-WAY SYNC (workout) ===== additive only (pulls cloud changes live; never deletes local — safe).
-let _cloudLiveSig = '';
+// ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (workout) =====
+// ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
 function watchCloudLive() {
   const doc = _cloudDoc();
   if (!doc) return;
@@ -1295,15 +1297,17 @@ function watchCloudLive() {
     doc.onSnapshot(function (s) {
       if (!s.exists || !s.data() || !s.data().data) return;
       const d = s.data().data;
-      let mine = {};
-      try { mine = _collectLocal(); } catch (e) {}
-      let differs = false;
-      for (const k in d) { if (d[k] !== mine[k]) { differs = true; break; } }
-      if (!differs) return;                       // cloud matches our state (our own backup) — ignore
-      let sig = ''; try { sig = JSON.stringify(d); } catch (e) {}
-      if (sig && sig === _cloudLiveSig) return;   // same payload already applied (writes failing) — no loop
-      _cloudLiveSig = sig;
-      Object.keys(d).forEach(function (k) { try { localStorage.setItem(k, d[k]); } catch (e) {} });
+      const cloudTs = s.data().ts || 0;
+      let localTs = 0; try { localTs = parseInt(localStorage.getItem('workout_synced_ts') || '0', 10) || 0; } catch (e) {}
+      if (cloudTs <= localTs) return;             // our own write or older → ignore (never overwrite)
+      let mine = {}; try { mine = _collectLocal(); } catch (e) {}
+      let changed = false;
+      for (const k in mine) { if (!(k in d)) changed = true; }      // a deletion (whole key gone)?
+      for (const k in d) { if (d[k] !== mine[k]) changed = true; }  // an add/edit?
+      try { localStorage.setItem('workout_synced_ts', String(cloudTs)); } catch (e) {}
+      if (!changed) return;
+      Object.keys(mine).forEach(function (k) { if (!(k in d)) localStorage.removeItem(k); });   // apply deletions
+      Object.keys(d).forEach(function (k) { try { localStorage.setItem(k, d[k]); } catch (e) {} });  // apply adds/edits
       location.reload();
     });
   } catch (e) {}

@@ -859,18 +859,23 @@ function save(key, val) {
   function _hasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_match(localStorage.key(i))) return true; } }catch(e){} return false; }
   var _t=null,_busy=false;
   window.expenseScheduleBackup=function(){ if(_t) clearTimeout(_t); _t=setTimeout(_now,1800); };
-  function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); try{ var size=0; try{ size=new Blob([JSON.stringify(data)]).size; }catch(e){ size=JSON.stringify(data).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return; } }catch(e){} _busy=true; try{ doc.set({data:data,ts:Date.now(),v:1}).then(function(){_busy=false;}).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
+  function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); try{ var size=0; try{ size=new Blob([JSON.stringify(data)]).size; }catch(e){ size=JSON.stringify(data).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return; } }catch(e){} _busy=true; var _ts=Date.now(); try{ doc.set({data:data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(_ts));}catch(e){} _busy=false; }).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
   function _restoreIfEmpty(){ var doc=_doc(); if(!doc) return Promise.resolve(false); if(_hasLocal()) return Promise.resolve(false); return doc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
-  // ===== LIVE TWO-WAY SYNC (expenses) ===== additive only (pulls cloud changes live; never deletes local — safe).
-  var _liveSig='';
+  // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (expenses) =====
+  // ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
   function _watchLive(){ var doc=_doc(); if(!doc) return; try{ doc.onSnapshot(function(s){
-    if(!s.exists||!s.data()||!s.data().data) return;
-    var d=s.data().data, differs=false;
-    for(var k in d){ if(localStorage.getItem(k)!==d[k]){ differs=true; break; } }
-    if(!differs) return;
-    var sig=''; try{ sig=JSON.stringify(d); }catch(e){}
-    if(sig && sig===_liveSig) return;
-    _liveSig=sig;
+    if(!s.exists||!s.data()) return;
+    var d=(s.data().data)||{};
+    var cloudTs=s.data().ts||0;
+    var localTs=0; try{ localTs=parseInt(localStorage.getItem('expenses_synced_ts')||'0',10)||0; }catch(e){}
+    if(cloudTs<=localTs) return;
+    var localKeys=[]; try{ for(var i=0;i<localStorage.length;i++){ var lk=localStorage.key(i); if(_match(lk)) localKeys.push(lk); } }catch(e){}
+    var changed=false;
+    localKeys.forEach(function(k){ if(!(k in d)) changed=true; });
+    for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }
+    try{ localStorage.setItem('expenses_synced_ts', String(cloudTs)); }catch(e){}
+    if(!changed) return;
+    localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });
     Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
     location.reload();
   }); }catch(e){} }
