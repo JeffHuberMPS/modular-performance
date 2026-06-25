@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '193';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '194';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -510,6 +510,9 @@
         if (!unlockedApps.includes(app.id)) return;
         setTimeout(() => { try { ensureFrame(app); } catch (e) {} }, i * 150);   // all 5 kicked within ~600ms
       });
+      // Safety re-renders: as the frames restore each app's data from the cloud on a fresh device,
+      // refresh Home so its numbers catch up even if a storage event is missed.
+      [1500, 3500, 6000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
     }
 
     /* ── Dashboard ────────────────────────────────────────── */
@@ -893,6 +896,18 @@
       refreshTabLocks();
       // NOTE: the dev tools box is OWNER-ONLY — shown only in the DEV_EMAILS branch above. Never here.
       if (activeId === 'home') loadDashboard();
+    });
+
+    /* Keep Home in sync with the apps. On a fresh device, localStorage starts empty and each app's
+       frame fills it as it restores from the cloud (and on every later edit). The cross-document
+       `storage` event fires here whenever a frame writes a tracker key — so re-render the dashboard
+       and the numbers update to the real data. This is why Home now matches the apps on every device. */
+    let _dashRefreshTimer = null;
+    window.addEventListener('storage', (e) => {
+      const k = e.key || '';
+      if (!/^(mps_|rr_sleep:|habits_v4|blocks_v4)/.test(k)) return;   // only tracker data
+      clearTimeout(_dashRefreshTimer);
+      _dashRefreshTimer = setTimeout(() => { if (activeId === 'home') loadDashboard(); }, 350);
     });
 
     function refreshTabLocks() {
