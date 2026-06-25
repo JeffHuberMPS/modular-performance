@@ -28,7 +28,7 @@
 
   <style>
     :root { --shell-header-h: 56px; --shell-tabs-h: 60px; }
-    html, body { height: 100%; overflow: hidden; }
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
     body { background: radial-gradient(120% 80% at 50% -10%, #15130c 0%, #0b0b0b 48%, #070707 100%); display: flex; flex-direction: column; min-height: 100dvh; }
 
     /* Header */
@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '196';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '197';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -437,6 +437,7 @@
         titleBar.classList.remove('show');
         updateTierBanner();
         loadDashboard();
+        maybeCleanupFrames();   // phone: free the app frames while sitting on Home → smooth
         return;
       }
       homeView.classList.remove('active');
@@ -460,6 +461,7 @@
       else document.getElementById('stage-loader').classList.remove('hidden');
       const frame = ensureFrame(app);
       frame.classList.add('active');
+      maybeCleanupFrames();   // phone: free the OTHER app frames → only the active app stays in RAM
     }
 
     /* Create an app's iframe once and keep it persistent. Pre-warming these in the background after the
@@ -487,6 +489,9 @@
                     + '.brand-block,.mps-header{display:none!important}'
                     + '*:has(> .mps-logo-rsp){display:none!important}'
                     + 'body{padding-top:0!important}'
+                    /* Smooth, contained scrolling: stop the iframe scroll from chaining into the locked
+                       hub shell (the "freezes when you scroll back up" symptom) + native momentum. */
+                    + 'html,body{overscroll-behavior:none!important;-webkit-overflow-scrolling:touch!important;}'
                     /* Uniform font across every tracker (skip <i>/icon elements to keep icon fonts). */
                     + 'body, body *:not(i):not([class*="icon"]):not([class*="ti-"]), svg text, svg tspan, text, tspan { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important; font-style: normal !important; }';
             if (app.id === 'journal') css += 'nav:first-of-type{display:none!important}';
@@ -508,6 +513,9 @@
        The phone is never asked to boot more than one app at a time, so scrolling stays buttery, and
        the frames still end up warm for instant switching. */
     function prewarmFrames() {
+      // Safety re-renders so Home catches up to cloud data on a fresh device (storage event also handles this).
+      [3000, 7000, 13000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
       const queue = APPS.filter(a => unlockedApps.includes(a.id));
       const idle = (cb) => ('requestIdleCallback' in window) ? requestIdleCallback(cb, { timeout: 4000 }) : setTimeout(cb, 700);
       let n = 0;
@@ -519,13 +527,29 @@
           try { f = ensureFrame(app); } catch (e) {}
           let advanced = false;
           const advance = () => { if (advanced) return; advanced = true; setTimeout(loadNext, 600); };   // breath between apps
-          if (f && f.dataset.loaded !== '1') { f.addEventListener('load', advance, { once: true }); setTimeout(advance, 5000); }  // don't stall the chain
-          else advance();
+          const onReady = () => {
+            // PHONE: this app has loaded and synced its data into localStorage (so Home shows the real
+            // numbers). Now release it from memory unless the user is actually in it — holding five apps
+            // in RAM is what made scrolling stutter/freeze. Desktop has the headroom, so it keeps them warm.
+            if (isMobile) setTimeout(() => { if (f && f.id !== 'frame-' + activeId) f.remove(); }, 3500);
+            advance();
+          };
+          if (f && f.dataset.loaded !== '1') { f.addEventListener('load', onReady, { once: true }); setTimeout(onReady, 5000); }  // don't stall the chain
+          else onReady();
         });
       }
       loadNext();
-      // Safety re-renders so Home catches up to cloud data on a fresh device (storage event also handles this).
-      [3000, 7000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
+    }
+
+    let _frameCleanupTimer = null;
+    /* On phones, keep only the app you're in loaded; free the rest after a short grace so RAM stays low
+       and scrolling stays buttery. Desktop keeps every frame warm for instant switching. */
+    function maybeCleanupFrames() {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+      clearTimeout(_frameCleanupTimer);
+      _frameCleanupTimer = setTimeout(() => {
+        document.querySelectorAll('.shell-frame').forEach(f => { if (f.id !== 'frame-' + activeId) f.remove(); });
+      }, 8000);
     }
 
     /* ── Dashboard ────────────────────────────────────────── */
