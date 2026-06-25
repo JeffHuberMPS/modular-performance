@@ -141,6 +141,8 @@
     background-attachment: fixed;
     color: var(--text);
     padding: 14px; padding-top: 60px; width: 100%; min-height: 100vh;
+    /* Clear the phone's bottom nav/gesture bar so the last card (e.g. Advanced Stats) isn't cut off */
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
   .brand-block {
     background: #000000;
