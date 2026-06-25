@@ -245,6 +245,22 @@ const IconBattery  = () => <svg width="13" height="13" viewBox="0 0 24 24" fill=
    STORAGE — localStorage primary, Firestore bonus sync
    ══════════════════════════════════════════════════ */
 const LS_PREFIX = "rr_sleep:";
+// Reusable delete-confirm modal (vanilla overlay): "Are you sure?" before any destructive delete.
+function sleepConfirmDelete(message, onYes) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,sans-serif;';
+  ov.innerHTML = '<div style="background:#141414;border:1px solid #333;border-radius:14px;padding:22px;max-width:360px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,0.6);">'
+    + '<div style="font-size:15px;color:#f5f5f5;font-weight:600;line-height:1.45;margin-bottom:18px;">' + message + '</div>'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button id="slp-cf-cancel" style="flex:1;padding:11px;border-radius:9px;border:1px solid #444;background:transparent;color:#bbb;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>'
+    + '<button id="slp-cf-ok" style="flex:1;padding:11px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:800;letter-spacing:.04em;cursor:pointer;font-family:inherit;">Delete</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelector('#slp-cf-cancel').addEventListener('click', close);
+  ov.querySelector('#slp-cf-ok').addEventListener('click', () => { close(); onYes(); });
+  ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+}
 const storage = {
   async get(key) {
     try {
@@ -358,8 +374,10 @@ function SleepTracker() {
   };
 
   const deleteEntry = async (date) => {
-    setEntries(entries.filter((e) => e.date !== date));
-    await storage.delete(date);
+    sleepConfirmDelete('Delete this sleep entry? This can’t be undone.', async () => {
+      setEntries(entries.filter((e) => e.date !== date));
+      await storage.delete(date);
+    });
   };
 
   const editEntry = (entry) => {

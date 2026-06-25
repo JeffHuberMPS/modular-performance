@@ -1881,6 +1881,22 @@ function mpsTextPrompt(title, onConfirm) {
   ov.addEventListener('click', (e) => { if (e.target === ov) done(null); });
   setTimeout(() => input.focus(), 30);
 }
+// Reusable delete-confirm modal: "Are you sure?" before any destructive delete.
+function mpsConfirm(message, onYes) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,sans-serif;';
+  ov.innerHTML = '<div style="background:#141414;border:1px solid #333;border-radius:14px;padding:22px;max-width:360px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,0.6);">'
+    + '<div style="font-size:15px;color:#f5f5f5;font-weight:600;line-height:1.45;margin-bottom:18px;">' + message + '</div>'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button id="mps-cf-cancel" style="flex:1;padding:11px;border-radius:9px;border:1px solid #444;background:transparent;color:#bbb;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>'
+    + '<button id="mps-cf-ok" style="flex:1;padding:11px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:800;letter-spacing:.04em;cursor:pointer;font-family:inherit;">Delete</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelector('#mps-cf-cancel').addEventListener('click', close);
+  ov.querySelector('#mps-cf-ok').addEventListener('click', () => { close(); onYes(); });
+  ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+}
 function confirmAddSplit(name) {
   if (name === 'Custom') {
     mpsTextPrompt('Custom split name', (custom) => {
@@ -2011,8 +2027,10 @@ function buildRoundsExercise(label, defaultRounds) {
   };
 }
 function removeBlock(type, blockIdx) {
-  getBlocks(type).splice(blockIdx, 1);
-  saveState(); render();
+  mpsConfirm('Delete this entire split and all its exercises? This can’t be undone.', () => {
+    getBlocks(type).splice(blockIdx, 1);
+    saveState(); render();
+  });
 }
 function addExercise(type, blockIdx, name, targetSets, targetReps) {
   if (!name) return;
@@ -2022,8 +2040,10 @@ function addExercise(type, blockIdx, name, targetSets, targetReps) {
   toast(`Added ${name}`);
 }
 function removeExercise(type, blockIdx, exIdx) {
+  mpsConfirm('Delete this exercise? This can’t be undone.', () => {
   getBlocks(type)[blockIdx].exercises.splice(exIdx, 1);
   saveState(); render();
+  });
 }
 function toggleSet(type, blockIdx, exIdx, setIdx) {
   const ex = getBlocks(type)[blockIdx].exercises[exIdx];
@@ -3667,8 +3687,8 @@ async function checkAutoBackupOnOpen() {
       location.reload(); return;   // fresh device pulled cloud data → re-render with it
     }
   } catch (e) {}
-  cloudBackupNow();                                // fire-and-forget backup on open
-  watchCloudLive();                                // live two-way: pull other devices' changes in real time
+  watchCloudLive();                                // pull newer cloud FIRST (live two-way) — must run before any backup
+  scheduleCloudBackup();                           // debounced seed/backup; a reload from a live pull cancels it (no stale overwrite)
 }
 function wireBackupButtons() {
   const exportBtn = document.getElementById('backup-export-btn');
@@ -4224,10 +4244,12 @@ function renderConditioningRecent() {
       const r = parseInt(btn.dataset.condDel, 10);
       const entry = (!isNaN(r)) ? recent[r] : null;
       if (!entry) return;
-      const gi = conditioningLogs.indexOf(entry);
-      if (gi !== -1) conditioningLogs.splice(gi, 1);
-      await saveConditioning();
-      renderConditioningRecent();
+      mpsConfirm('Delete this conditioning entry? This can’t be undone.', async () => {
+        const gi = conditioningLogs.indexOf(entry);
+        if (gi !== -1) conditioningLogs.splice(gi, 1);
+        await saveConditioning();
+        renderConditioningRecent();
+      });
     });
   });
 }

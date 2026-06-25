@@ -1145,7 +1145,7 @@ function renderRules() {
     body.appendChild(kCell);body.appendChild(cCell);body.appendChild(dCell);
   });
   body.querySelectorAll('input,select').forEach(inp=>{inp.addEventListener('change',()=>{const i=parseInt(inp.dataset.ri,10);const f=inp.dataset.rf;state.rules[i][f]=inp.value;save(STORE.rules,state.rules);});});
-  body.querySelectorAll('[data-del]').forEach(btn=>{btn.addEventListener('click',()=>{const i=parseInt(btn.dataset.del,10);state.rules.splice(i,1);save(STORE.rules,state.rules);renderRules();});});
+  body.querySelectorAll('[data-del]').forEach(btn=>{btn.addEventListener('click',()=>{const i=parseInt(btn.dataset.del,10);showOverlay({title:'Delete Rule',body:'Delete this auto-tagging rule? This can’t be undone.',confirmText:'Delete',confirmClass:'danger',onConfirm:()=>{state.rules.splice(i,1);save(STORE.rules,state.rules);renderRules();}});});});
 }
 // =================================================================
 // INSIGHTS
