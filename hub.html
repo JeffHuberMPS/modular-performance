@@ -141,7 +141,7 @@
       .home-screen--systems .mini-grid { gap: 6px 10px; }
       .home-screen--systems .mini__val { font-size: 1.02rem; }
       .home-screen--systems .mini__lbl { font-size: 0.55rem; }
-      .home-screen--systems .mini-grid .mini:nth-child(n+3) { display: none; }   /* headline + 2 key stats per tile */
+      .home-screen--systems .mini-grid .mini:nth-child(n+5) { display: none; }   /* headline + all 4 stats per tile (matches desktop) */
     }
     /* Calm home: navigate via the cards + Back, not a top tab strip */
     .shell-tabs { display: none !important; }
@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '191';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '192';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -454,40 +454,65 @@
         return;
       }
 
-      let frame = document.getElementById('frame-' + id);
-      if (!frame) {
-        document.getElementById('stage-loader').classList.remove('hidden');
-        frame = document.createElement('iframe');
-        frame.className = 'shell-frame';
-        frame.id = 'frame-' + id;
-        frame.setAttribute('title', app.label);
-        frame.setAttribute('loading', 'lazy');
-        frame.addEventListener('load', () => {
-          try {
-            const d = frame.contentDocument;
-            if (d) {
-              /* Load Inter into the app frame so the override below has the font available. */
-              const fl = d.createElement('link'); fl.rel = 'stylesheet';
-              fl.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
-              d.head.appendChild(fl);
-              let css = 'a[href="/hub.html"]{display:none!important}'
-                      + '#mps-hub-nav,#hub-nav,.nav-title{display:none!important}'
-                      + '.brand-block,.mps-header{display:none!important}'
-                      + '*:has(> .mps-logo-rsp){display:none!important}'
-                      + 'body{padding-top:0!important}'
-                      /* Uniform font across every tracker (skip <i>/icon elements to keep icon fonts). */
-                      + 'body, body *:not(i):not([class*="icon"]):not([class*="ti-"]), svg text, svg tspan, text, tspan { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important; font-style: normal !important; }';
-              if (app.id === 'journal') css += 'nav:first-of-type{display:none!important}';
-              const s = d.createElement('style'); s.textContent = css; d.head.appendChild(s);
-            }
-          } catch (e) {}
-          document.getElementById('stage-loader').classList.add('hidden');
-          applyFrameThemes();
-        });
-        frame.src = app.path + (app.path.indexOf('?') >= 0 ? '&' : '?') + 'v=' + APP_VERSION;
-        document.getElementById('stage').appendChild(frame);
-      }
+      const existing = document.getElementById('frame-' + id);
+      const warm = existing && existing.dataset.loaded === '1';
+      if (warm) document.getElementById('stage-loader').classList.add('hidden');
+      else document.getElementById('stage-loader').classList.remove('hidden');
+      const frame = ensureFrame(app);
       frame.classList.add('active');
+    }
+
+    /* Create an app's iframe once and keep it persistent. Pre-warming these in the background after the
+       hub loads makes the first tap instant — no cold network/Firebase/render lag when switching. */
+    function ensureFrame(app) {
+      let frame = document.getElementById('frame-' + app.id);
+      if (frame) return frame;
+      frame = document.createElement('iframe');
+      frame.className = 'shell-frame';
+      frame.id = 'frame-' + app.id;
+      frame.setAttribute('title', app.label);
+      frame.setAttribute('loading', 'lazy');
+      frame.dataset.loaded = '0';
+      frame.addEventListener('load', () => {
+        frame.dataset.loaded = '1';
+        try {
+          const d = frame.contentDocument;
+          if (d) {
+            /* Load Inter into the app frame so the override below has the font available. */
+            const fl = d.createElement('link'); fl.rel = 'stylesheet';
+            fl.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+            d.head.appendChild(fl);
+            let css = 'a[href="/hub.html"]{display:none!important}'
+                    + '#mps-hub-nav,#hub-nav,.nav-title{display:none!important}'
+                    + '.brand-block,.mps-header{display:none!important}'
+                    + '*:has(> .mps-logo-rsp){display:none!important}'
+                    + 'body{padding-top:0!important}'
+                    /* Uniform font across every tracker (skip <i>/icon elements to keep icon fonts). */
+                    + 'body, body *:not(i):not([class*="icon"]):not([class*="ti-"]), svg text, svg tspan, text, tspan { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important; font-style: normal !important; }';
+            if (app.id === 'journal') css += 'nav:first-of-type{display:none!important}';
+            const s = d.createElement('style'); s.textContent = css; d.head.appendChild(s);
+          }
+        } catch (e) {}
+        if (activeId === app.id) document.getElementById('stage-loader').classList.add('hidden');   // only the visible frame controls the loader
+        applyFrameThemes();
+      });
+      frame.src = app.path + (app.path.indexOf('?') >= 0 ? '&' : '?') + 'v=' + APP_VERSION;
+      document.getElementById('stage').appendChild(frame);
+      return frame;
+    }
+
+    let _prewarmed = false;
+    /* Background-load every unlocked app's iframe so switching from Home → an app is instant.
+       Staggered so five frames don't all hit the network/Firebase at once on a phone. */
+    function prewarmFrames() {
+      const run = () => {
+        APPS.forEach((app, i) => {
+          if (!unlockedApps.includes(app.id)) return;
+          setTimeout(() => { try { ensureFrame(app); } catch (e) {} }, 500 + i * 700);
+        });
+      };
+      if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 3000 });
+      else setTimeout(run, 1200);
     }
 
     /* ── Dashboard ────────────────────────────────────────── */
@@ -673,6 +698,7 @@
           + '<div class="home-hero__today-h">Today’s focus</div>'
           + list;
       } catch(e){}
+      if (!_prewarmed) { _prewarmed = true; prewarmFrames(); }   // warm all app frames in the background → instant tab switches
     }
 
     /* ── User menu ────────────────────────────────────────── */
