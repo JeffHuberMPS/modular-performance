@@ -782,6 +782,21 @@
           });
         }
 
+        // ── Proof-of-consent log (private; Firestore rules lock it to this user, invisible to others) ──
+        // Records WHICH terms version the user accepted and WHEN. Append-only history + a quick field on the user doc.
+        try {
+          const tv   = localStorage.getItem('mps_terms_version') || 'pre-2026-06-25';
+          const taAt = localStorage.getItem('mps_terms_accepted_at') || null;
+          await ref.set({ terms_version: tv, terms_accepted_at: taAt }, { merge: true });
+          await ref.collection('consents').add({
+            terms_version: tv,
+            accepted_at:   taAt,
+            recorded_at:   firebase.firestore.FieldValue.serverTimestamp(),
+            method:        (firebaseUser.providerData && firebaseUser.providerData[0] ? firebaseUser.providerData[0].providerId : 'unknown'),
+            user_agent:    (navigator.userAgent || '').slice(0, 300)
+          });
+        } catch (e) { console.warn('[MPS Auth] consent log skipped:', e && e.message); }   // never block sign-in over this
+
         // Persist session locally
         await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 

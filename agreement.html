@@ -330,9 +330,14 @@ TO THE MAXIMUM EXTENT PERMITTED BY LAW, YOU HEREBY RELEASE, WAIVE, AND DISCHARGE
     btn.textContent = all ? 'I Agree — Create Account' : 'Check all three to continue';
     document.getElementById('ag-hint').textContent = all ? 'You’re all set.' : 'All three boxes must be checked.';
   }
+  var MPS_TERMS_VERSION = '2026-06-25';   // bump this string whenever the agreement materially changes
   function agContinue(){
     if (!ORDER.every(k => checked[k])) return;
-    try { localStorage.setItem('mps_agreed_v1', new Date ? Date.now().toString() : '1'); } catch(e){}
+    try {
+      localStorage.setItem('mps_agreed_v1', Date.now().toString());
+      localStorage.setItem('mps_terms_version', MPS_TERMS_VERSION);          // which version they accepted
+      localStorage.setItem('mps_terms_accepted_at', new Date().toISOString()); // when they accepted (client time)
+    } catch(e){}
     const next = new URLSearchParams(location.search).get('next') || '/auth.html';
     window.location.href = next;
   }
