@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '200';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '201';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -507,16 +507,24 @@
           if (idoc && iwin && !idoc.__mpsScrollFix) {
             idoc.__mpsScrollFix = true;
             const TAB_SEL = '[data-tab],.tab,.tabs button,.seg,.seg-btn,.segment,[role="tab"],.view-tab,.subtab,.nav-pill,.toggle-btn';
+            // habits/sleep/journal render bare <button>s (no class) for tabs → also detect a small row of
+            // sibling nav buttons near the top of the page as a tab bar.
+            const looksLikeTabBar = (el) => {
+              const b = el.closest && el.closest('button,a,[role="button"]'); if (!b) return false;
+              const p = b.parentElement; if (!p) return false;
+              const sib = Array.from(p.children).filter(c => /^(BUTTON|A)$/.test(c.tagName));
+              return sib.length >= 2 && sib.length <= 8 && p.getBoundingClientRect().top < 210;
+            };
             idoc.addEventListener('click', (ev) => {
-              const tabish = ev.target.closest && ev.target.closest(TAB_SEL);
+              const tabish = (ev.target.closest && ev.target.closest(TAB_SEL)) || looksLikeTabBar(ev.target);
               const h0 = idoc.body.scrollHeight;
               iwin.setTimeout(() => {
                 const h1 = idoc.body.scrollHeight;
                 const changed = Math.abs(h1 - h0) > 40;          // a panel swapped in/out
-                if (tabish || changed) {
+                if ((tabish && changed) || h1 < h0 - 40) {       // tab switch w/ content change, OR shrank (the stuck case)
                   const se = idoc.scrollingElement || idoc.documentElement;
-                  if (tabish || h1 < h0) se.scrollTop = 0;        // tab switch (or shrunk) → land at the TOP of the new tab
-                  const b = idoc.body, o = b.style.overflowY;     // re-init the scroll layer so up + down both work
+                  se.scrollTop = 0;                              // land at the TOP of the new tab
+                  const b = idoc.body, o = b.style.overflowY;    // re-init the scroll layer so up + down both work
                   b.style.overflowY = 'hidden'; void b.offsetHeight; b.style.overflowY = o || '';
                 }
               }, 60);
