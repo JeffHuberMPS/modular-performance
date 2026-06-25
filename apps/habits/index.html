@@ -105,26 +105,30 @@
     function _bHasLocal(){ for(var i=0;i<_bKeys.length;i++){ try{ if(localStorage.getItem(_bKeys[i])!==null) return true; }catch(e){} } return false; }
     var _bTimer=null,_bBusy=false;
     window.habitsScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
-    function _bNow(){ if(_bBusy) return; _bBusy=true; try{ _bDoc.set({data:_bCollect(),ts:Date.now(),v:1}).then(function(){_bBusy=false;}).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+    var _TS_KEY='habits_synced_ts';   // ts of the cloud state this device is synced to (enables safe delete propagation)
+    function _bNow(){ if(_bBusy) return; _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_bCollect(),ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
     // Flush a pending debounced backup immediately (used on tab close so the last change isn't dropped).
     function _bFlush(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); }
     window.addEventListener('pagehide', _bFlush);
     document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') _bFlush(); });
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
-    // ===== LIVE TWO-WAY SYNC (habits) =====
-    // Real-time listener: the moment ANOTHER device saves, pull its data and refresh — even
-    // if this device already had data. Compares cloud vs local so our OWN writes never trigger
-    // a reload, and a per-payload guard prevents a loop if localStorage writes silently fail.
-    var _bLiveSig='';
+    // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (habits) =====
+    // Real-time listener. When ANOTHER device saves (cloud ts > our synced ts), make local match
+    // cloud EXACTLY — adds, edits, AND deletions. ts-gating means our own writes (and any older
+    // cloud state) are ignored, so we never overwrite or wipe newer local data.
     function _bWatchLive(){ try{ _bDoc.onSnapshot(function(s){
-      if(!s.exists||!s.data()||!s.data().data) return;
-      var d=s.data().data, differs=false;
-      for(var k in d){ if(localStorage.getItem(k)!==d[k]){ differs=true; break; } }
-      if(!differs) return;                 // already in sync (includes our own backups)
-      var sig=''; try{ sig=JSON.stringify(d); }catch(e){}
-      if(sig && sig===_bLiveSig) return;   // same payload already applied (writes failing) — don't loop
-      _bLiveSig=sig;
-      Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
+      if(!s.exists||!s.data()) return;
+      var d=(s.data().data)||{};
+      var cloudTs=s.data().ts||0;
+      var localTs=0; try{ localTs=parseInt(localStorage.getItem(_TS_KEY)||'0',10)||0; }catch(e){}
+      if(cloudTs<=localTs) return;            // our own write or older → ignore (never overwrite)
+      var changed=false;
+      _bKeys.forEach(function(k){ if(!(k in d) && localStorage.getItem(k)!==null) changed=true; });  // a deletion?
+      for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }                          // an add/edit?
+      try{ localStorage.setItem(_TS_KEY, String(cloudTs)); }catch(e){}   // advance synced marker either way
+      if(!changed) return;                    // already matches cloud — no reload needed
+      _bKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });                // apply deletions
+      Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });   // apply adds/edits
       location.reload();
     }); }catch(e){} }
 
