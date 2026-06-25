@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '192';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '193';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -502,17 +502,14 @@
     }
 
     let _prewarmed = false;
-    /* Background-load every unlocked app's iframe so switching from Home → an app is instant.
-       Staggered so five frames don't all hit the network/Firebase at once on a phone. */
+    /* Background-load every unlocked app's iframe the moment the hub is ready, so switching
+       Home → app is instant. Fire immediately with only a tiny stagger (same-origin subresources
+       like the Firebase SDK + fonts are HTTP-cached after the first frame, so the rest load fast). */
     function prewarmFrames() {
-      const run = () => {
-        APPS.forEach((app, i) => {
-          if (!unlockedApps.includes(app.id)) return;
-          setTimeout(() => { try { ensureFrame(app); } catch (e) {} }, 500 + i * 700);
-        });
-      };
-      if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 3000 });
-      else setTimeout(run, 1200);
+      APPS.forEach((app, i) => {
+        if (!unlockedApps.includes(app.id)) return;
+        setTimeout(() => { try { ensureFrame(app); } catch (e) {} }, i * 150);   // all 5 kicked within ~600ms
+      });
     }
 
     /* ── Dashboard ────────────────────────────────────────── */
