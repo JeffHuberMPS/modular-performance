@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '194';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '195';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -502,17 +502,30 @@
     }
 
     let _prewarmed = false;
-    /* Background-load every unlocked app's iframe the moment the hub is ready, so switching
-       Home → app is instant. Fire immediately with only a tiny stagger (same-origin subresources
-       like the Firebase SDK + fonts are HTTP-cached after the first frame, so the rest load fast). */
+    /* GENTLE, SEQUENTIAL prewarm. Booting all five app frames at once spiked a phone's memory and
+       main thread and froze scrolling. Instead, load ONE frame at a time — each scheduled on idle
+       (so it never runs mid-scroll), only after the previous one finished loading plus a short breath.
+       The phone is never asked to boot more than one app at a time, so scrolling stays buttery, and
+       the frames still end up warm for instant switching. */
     function prewarmFrames() {
-      APPS.forEach((app, i) => {
-        if (!unlockedApps.includes(app.id)) return;
-        setTimeout(() => { try { ensureFrame(app); } catch (e) {} }, i * 150);   // all 5 kicked within ~600ms
-      });
-      // Safety re-renders: as the frames restore each app's data from the cloud on a fresh device,
-      // refresh Home so its numbers catch up even if a storage event is missed.
-      [1500, 3500, 6000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
+      const queue = APPS.filter(a => unlockedApps.includes(a.id));
+      const idle = (cb) => ('requestIdleCallback' in window) ? requestIdleCallback(cb, { timeout: 4000 }) : setTimeout(cb, 700);
+      let n = 0;
+      function loadNext() {
+        if (n >= queue.length) return;
+        const app = queue[n++];
+        idle(() => {
+          let f = null;
+          try { f = ensureFrame(app); } catch (e) {}
+          let advanced = false;
+          const advance = () => { if (advanced) return; advanced = true; setTimeout(loadNext, 600); };   // breath between apps
+          if (f && f.dataset.loaded !== '1') { f.addEventListener('load', advance, { once: true }); setTimeout(advance, 5000); }  // don't stall the chain
+          else advance();
+        });
+      }
+      loadNext();
+      // Safety re-renders so Home catches up to cloud data on a fresh device (storage event also handles this).
+      [3000, 7000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
     }
 
     /* ── Dashboard ────────────────────────────────────────── */
