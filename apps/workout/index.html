@@ -108,9 +108,8 @@
     display: flex;
     align-items: center;
     padding: 0 16px;
-    background: rgba(7, 12, 28, 0.96);
+    background: rgba(7, 12, 28, 1);
     border-bottom: 1px solid rgba(var(--mps-accent-rgb), 0.18);
-    backdrop-filter: blur(14px);
     z-index: 1000;
   }
   #mps-hub-nav a {
@@ -138,7 +137,6 @@
       radial-gradient(ellipse at top, rgba(26, 47, 92, 0.35) 0%, transparent 60%),
       radial-gradient(ellipse at bottom, rgba(26, 47, 92, 0.2) 0%, transparent 50%),
       var(--bg);
-    background-attachment: fixed;
     color: var(--text);
     padding: 14px; padding-top: 60px; width: 100%; min-height: 100vh;
     /* Clear the phone's bottom nav/gesture bar so the last card (e.g. Advanced Stats) isn't cut off */

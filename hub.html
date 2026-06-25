@@ -32,7 +32,7 @@
     body { background: radial-gradient(120% 80% at 50% -10%, #15130c 0%, #0b0b0b 48%, #070707 100%); display: flex; flex-direction: column; min-height: 100dvh; }
 
     /* Header */
-    .shell-header { flex: 0 0 auto; height: var(--shell-header-h); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-lg); background: linear-gradient(180deg, rgba(24,22,16,0.96) 0%, rgba(10,10,10,0.96) 100%); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(201,160,32,0.28), 0 6px 18px rgba(0,0,0,0.5); position: relative; z-index: 30; }
+    .shell-header { flex: 0 0 auto; height: var(--shell-header-h); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-lg); background: linear-gradient(180deg, rgba(24,22,16,1) 0%, rgba(10,10,10,1) 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(201,160,32,0.28), 0 6px 18px rgba(0,0,0,0.5); position: relative; z-index: 30; }
     .shell-logo { display: flex; align-items: baseline; gap: 9px; cursor: pointer; }
     .logo-mps { font-family: 'Saira Condensed','Bebas Neue',sans-serif; font-style: italic; font-weight: 900; font-size: 2rem; letter-spacing: 0.04em; line-height: 1; background: linear-gradient(180deg, #ffffff 0%, #f6e9c2 26%, #C9A020 60%, #8a6d15 88%, #5c4708 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6)); }
     .shell-logo .bar { align-self: center; width: 22px; height: 2px; background: linear-gradient(90deg, rgba(201,160,32,0.2), #C9A020 50%, rgba(192,192,192,0.7)); }
@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '195';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '196';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
