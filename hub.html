@@ -96,7 +96,7 @@
 
     /* Stage */
     .shell-stage { flex: 1 1 auto; position: relative; background: var(--ns-black); overflow: hidden; }
-    .shell-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--ns-black); opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
+    .shell-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--ns-black); opacity: 0; pointer-events: none; transition: opacity 0.1s ease; }
     .shell-frame.active { opacity: 1; pointer-events: auto; }
     .shell-loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ns-black); z-index: 5; }
     .shell-loader.hidden { display: none; }
@@ -349,7 +349,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '197';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '198';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -515,7 +515,6 @@
     function prewarmFrames() {
       // Safety re-renders so Home catches up to cloud data on a fresh device (storage event also handles this).
       [3000, 7000, 13000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
-      const isMobile = window.matchMedia('(max-width: 768px)').matches;
       const queue = APPS.filter(a => unlockedApps.includes(a.id));
       const idle = (cb) => ('requestIdleCallback' in window) ? requestIdleCallback(cb, { timeout: 4000 }) : setTimeout(cb, 700);
       let n = 0;
@@ -527,30 +526,16 @@
           try { f = ensureFrame(app); } catch (e) {}
           let advanced = false;
           const advance = () => { if (advanced) return; advanced = true; setTimeout(loadNext, 600); };   // breath between apps
-          const onReady = () => {
-            // PHONE: this app has loaded and synced its data into localStorage (so Home shows the real
-            // numbers). Now release it from memory unless the user is actually in it — holding five apps
-            // in RAM is what made scrolling stutter/freeze. Desktop has the headroom, so it keeps them warm.
-            if (isMobile) setTimeout(() => { if (f && f.id !== 'frame-' + activeId) f.remove(); }, 3500);
-            advance();
-          };
-          if (f && f.dataset.loaded !== '1') { f.addEventListener('load', onReady, { once: true }); setTimeout(onReady, 5000); }  // don't stall the chain
-          else onReady();
+          // Keep EVERY frame warm (don't unload) → tapping an app is instant. The scroll-jank causes
+          // (fixed background, header blur) were fixed in v196, so warm frames no longer hurt scrolling.
+          if (f && f.dataset.loaded !== '1') { f.addEventListener('load', advance, { once: true }); setTimeout(advance, 5000); }
+          else advance();
         });
       }
       loadNext();
     }
 
-    let _frameCleanupTimer = null;
-    /* On phones, keep only the app you're in loaded; free the rest after a short grace so RAM stays low
-       and scrolling stays buttery. Desktop keeps every frame warm for instant switching. */
-    function maybeCleanupFrames() {
-      if (!window.matchMedia('(max-width: 768px)').matches) return;
-      clearTimeout(_frameCleanupTimer);
-      _frameCleanupTimer = setTimeout(() => {
-        document.querySelectorAll('.shell-frame').forEach(f => { if (f.id !== 'frame-' + activeId) f.remove(); });
-      }, 8000);
-    }
+    function maybeCleanupFrames() { /* no-op: frames stay warm on every device for instant switching */ }
 
     /* ── Dashboard ────────────────────────────────────────── */
     function setMini(id, i, value, label) {
