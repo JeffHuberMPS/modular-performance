@@ -2122,10 +2122,12 @@ function addSet(type, blockIdx, exIdx) {
   saveState(); render();
 }
 function removeSet(type, blockIdx, exIdx, setIdx) {
-  const ex = getBlocks(type)[blockIdx].exercises[exIdx];
-  ex.sets.splice(setIdx, 1);
-  ex.done = ex.sets.length > 0 && ex.sets.every(s => s.done);
-  saveState(); render();
+  mpsConfirm('Delete this set? This can’t be undone.', () => {
+    const ex = getBlocks(type)[blockIdx].exercises[exIdx];
+    ex.sets.splice(setIdx, 1);
+    ex.done = ex.sets.length > 0 && ex.sets.every(s => s.done);
+    saveState(); render();
+  });
 }
 function updateStats() {
   const day = getCurrentDay();
