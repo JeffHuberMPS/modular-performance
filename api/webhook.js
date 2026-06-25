@@ -76,6 +76,44 @@ function tierFromPriceId(priceId) {
   return PRICE_TIER_MAP[priceId] || 'core';
 }
 
+/* ── MailerLite: add Elite buyers to the "Elite Buyers" group ──────
+   Fires the Email #6 automation. Elite ONLY (never Premium).
+   Env vars (set in Vercel):
+     MAILERLITE_API_KEY        (required) — generate at dashboard.mailerlite.com/integrations/api
+     MAILERLITE_ELITE_GROUP_ID (optional) — if unset, the group id is looked up by the name "Elite Buyers"
+   A MailerLite failure NEVER fails the webhook (Stripe must still get its 200). */
+let _mlEliteGroupId = null;   // cached across warm serverless invocations
+async function getEliteGroupId(apiKey) {
+  if (_mlEliteGroupId) return _mlEliteGroupId;
+  if (process.env.MAILERLITE_ELITE_GROUP_ID) { _mlEliteGroupId = process.env.MAILERLITE_ELITE_GROUP_ID; return _mlEliteGroupId; }
+  const res = await fetch('https://connect.mailerlite.com/api/groups', {
+    headers: { Authorization: 'Bearer ' + apiKey, Accept: 'application/json' }
+  });
+  if (!res.ok) throw new Error('groups fetch failed: ' + res.status);
+  const data = await res.json();
+  const grp = (data.data || []).find(g => (g.name || '').trim().toLowerCase() === 'elite buyers');
+  if (!grp) throw new Error('"Elite Buyers" group not found');
+  _mlEliteGroupId = grp.id;
+  return _mlEliteGroupId;
+}
+async function addEliteBuyerToMailerLite(email) {
+  const apiKey = process.env.MAILERLITE_API_KEY;
+  if (!apiKey) { console.warn('[Webhook] MAILERLITE_API_KEY not set — skipping MailerLite sync'); return; }
+  if (!email)  { console.warn('[Webhook] No buyer email — skipping MailerLite sync'); return; }
+  try {
+    const groupId = await getEliteGroupId(apiKey);
+    const res = await fetch('https://connect.mailerlite.com/api/subscribers', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ email: email, groups: [groupId] })
+    });
+    if (!res.ok) { console.error('[Webhook] MailerLite add failed:', res.status, await res.text()); return; }
+    console.log('[Webhook] Added Elite buyer to MailerLite:', email);
+  } catch (e) {
+    console.error('[Webhook] MailerLite sync error:', e.message);
+  }
+}
+
 /* ── Webhook Handler ─────────────────────────────────────────── */
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -151,6 +189,13 @@ module.exports = async (req, res) => {
         });
 
         console.log(`[Webhook] Upgraded user ${uid} to ${tier}${lifetime ? ' (lifetime)' : trialActive ? ' (trial)' : ''}`);
+
+        // Elite buyers ONLY → MailerLite "Elite Buyers" group (triggers the Email #6 automation).
+        // Both Elite plans ($49 one-time + $5.99/mo) count; Premium buyers are intentionally excluded.
+        if (tier === 'elite') {
+          const buyerEmail = session.customer_details?.email || session.customer_email || null;
+          await addEliteBuyerToMailerLite(buyerEmail);
+        }
         break;
       }
 
