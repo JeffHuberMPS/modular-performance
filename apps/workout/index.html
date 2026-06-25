@@ -3577,27 +3577,6 @@ function _renderDashboard() {
       </div>
     </div>
     ${advancedStatsHTML()}
-    <div class="chart-card" style="margin-top:12px;">
-      <div class="chart-title">Backup &amp; Sync</div>
-      <div class="chart-subtitle">Your data backs up to the cloud automatically</div>
-      <div id="backup-status-row" style="margin-top:10px; padding:10px 12px; background:rgba(var(--mps-accent-rgb),0.08); border:1px solid rgba(var(--mps-accent-rgb),0.25); border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-        <div>
-          <div style="font-size:10px; color:var(--text-dim); letter-spacing:0.5px;">AUTO-BACKUP STATUS</div>
-          <div id="backup-status-text" style="font-size:13px; font-weight:700; color:var(--mps-accent); margin-top:2px;">checking…</div>
-        </div>
-        <button id="backup-now-btn" style="padding:8px 14px; border-radius:6px; border:1px solid var(--mps-accent); background:transparent; color:var(--mps-accent); font-weight:700; font-size:12px;">Backup now</button>
-      </div>
-      <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <button id="backup-export-btn" class="end-btn" style="flex:1; min-width:120px; background:transparent; color:var(--mps-accent); border:1px solid var(--mps-accent);">⬇ Export a copy</button>
-        <button id="backup-import-btn" class="end-btn" style="flex:1; min-width:120px; background:transparent; color:var(--text-dim); border:1px solid var(--border);">⬆ Import a file</button>
-        <input type="file" id="backup-import-file" accept=".json,application/json" style="display:none;">
-      </div>
-      <div style="font-size:11px; color:var(--text-dim); margin-top:12px; line-height:1.5;">
-        <strong style="color:var(--mps-accent);">Automatic:</strong> Your data backs up to your account every time you open the app and after every change — silently, nothing to manage.<br>
-        <strong style="color:var(--mps-accent);">Export a copy:</strong> Optional — download a JSON snapshot to keep offline.<br>
-        <strong style="color:var(--mps-accent);">Import a file:</strong> Restore from a JSON snapshot you exported earlier.
-      </div>
-    </div>
   `;
   // Render all 6 charts after DOM is in place
   setTimeout(renderAllDashboardCharts, 0);
