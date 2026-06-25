@@ -7,12 +7,12 @@
 
 window.STRIPE_CONFIG = (function() {
 
-  const IS_TEST_MODE = true;
+  const IS_TEST_MODE = false;
 
   // ── Publishable keys (safe to expose — these are public) ────
   const KEYS = {
     test: 'pk_test_51TaiYOJr8jtgHpa2adUHk5InaoBQ4ik29TPAWYtNRABP3LPwdV9AyzYoR4fOrrSTi6W1jnT34xdUv1dxcwR88Ryp00CN408axu',  // MPS test publishable key (public — safe in client code)
-    live: 'pk_live_REPLACE_WITH_YOUR_LIVE_KEY'
+    live: 'pk_live_51TaiY8QswWRvVfC8HYlTeUy7XrlIcp9y3uWG6RvGFUWPPZH7lTp76E2xEhaxGRmmJ8LxXaTvoRpZ9Y1UAqlZW9gN00RtvKCBQL'
   };
 
   // ── Price IDs (from Stripe Dashboard → Products) ────────────
@@ -25,10 +25,10 @@ window.STRIPE_CONFIG = (function() {
       premium_onetime: 'price_1TkstIJr8jtgHpa2N2LL5KSR'    // $99 once
     },
     live: {
-      elite_monthly:   'price_elite_monthly_live',
-      premium_monthly: 'price_premium_monthly_live',
-      elite_onetime:   'price_elite_onetime_live',
-      premium_onetime: 'price_premium_onetime_live'
+      elite_monthly:   'price_1Tm1QDQswWRvVfC8EApuHW2N',   // $5.99/mo
+      premium_monthly: 'price_1Tm1QDQswWRvVfC8ZN3f6u3G',   // $14.99/mo
+      elite_onetime:   'price_1Tm1Q8QswWRvVfC8efaAhqRu',   // $49 once
+      premium_onetime: 'price_1Tm1QEQswWRvVfC8WMFOLP3R'    // $99 once
     }
   };
 

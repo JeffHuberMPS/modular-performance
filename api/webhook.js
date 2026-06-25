@@ -64,6 +64,12 @@ const PRICE_TIER_MAP = {
   // Premium (test)
   'price_1TkssoJr8jtgHpa2vOUnv9Um': 'premium',  // monthly $14.99
   'price_1TkstIJr8jtgHpa2N2LL5KSR': 'premium',  // one-time $99
+  // Elite (LIVE)
+  'price_1Tm1QDQswWRvVfC8EApuHW2N': 'elite',    // monthly $5.99
+  'price_1Tm1Q8QswWRvVfC8efaAhqRu': 'elite',    // one-time $49
+  // Premium (LIVE)
+  'price_1Tm1QDQswWRvVfC8ZN3f6u3G': 'premium',  // monthly $14.99
+  'price_1Tm1QEQswWRvVfC8WMFOLP3R': 'premium',  // one-time $99
 };
 
 function tierFromPriceId(priceId) {
