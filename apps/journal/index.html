@@ -377,7 +377,7 @@
           )}
 
           {monthDates.length === 0
-            ? <div style={{ color:'#374151', fontSize:13, textAlign:'center', padding:'32px 0' }}>No entries this month</div>
+            ? <div style={{ textAlign:'center', padding:'34px 18px' }}><div style={{ fontSize:30, marginBottom:8 }}>📓</div><div style={{ fontSize:15, fontWeight:700, color:'#e8e4df', marginBottom:4 }}>No entries this month</div><div style={{ fontSize:13, color:'#8a8276', marginBottom:16 }}>A few honest lines is all it takes.</div><button onClick={() => { const b=[...document.querySelectorAll('button')].find(x=>/^write$/i.test((x.textContent||'').trim())); if(b)b.click(); }} style={{ padding:'11px 20px', borderRadius:10, border:'1px solid #C9A020', background:'rgba(201,160,32,0.14)', color:'#C9A020', fontWeight:700, fontSize:13, cursor:'pointer' }}>Write your first entry →</button></div>
             : monthDates.map(dateStr => {
                 const e = entries[dateStr] || {};
                 const [yr,mo,dd] = dateStr.split('-');

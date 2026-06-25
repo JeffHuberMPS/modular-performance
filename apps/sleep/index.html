@@ -873,7 +873,7 @@ function SleepTracker() {
               /* 60-day history cap for Core/Elite (Premium sees everything). */
               const capEntries = __PREMIUM ? enriched : enriched.filter(e => e.date >= HISTORY_CAP_CUTOFF);
               const capHidden = enriched.length - capEntries.length;
-              if (capEntries.length === 0) return (<div style={styles.empty}>{__PREMIUM ? "No entries yet. Log your first night." : "No entries in the last 60 days."}</div>);
+              if (capEntries.length === 0) return (<div style={{textAlign:'center',padding:'34px 18px'}}><div style={{fontSize:30,marginBottom:8}}>🌙</div><div style={{fontSize:15,fontWeight:700,color:'#e8e4f0',marginBottom:4}}>{__PREMIUM ? "No sleep logged yet" : "No entries in the last 60 days"}</div><div style={{fontSize:13,color:'#8a7fa5',marginBottom:16}}>Track a night and your recovery shows up here.</div><button onClick={() => { const b=[...document.querySelectorAll('button')].find(x=>/log entry/i.test(x.textContent||'')); if(b)b.click(); }} style={{padding:'11px 20px',borderRadius:10,border:'1px solid #8b5cf6',background:'rgba(139,92,246,0.14)',color:'#a78bfa',fontWeight:700,fontSize:13,cursor:'pointer'}}>Log your first night →</button></div>);
               /* Group capped entries by month, newest first */
               const byMonth = {};
               [...capEntries].reverse().forEach(e => {
