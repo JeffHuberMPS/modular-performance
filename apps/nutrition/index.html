@@ -1038,7 +1038,7 @@ let obIdx=0, obData={weight:180, goal:'maintain', mealCount:'3'};
 function startOnboarding(){ obIdx=0; renderOB(); }
 function renderOB(){
   var step=OB[obIdx];
-  var prog=OB.map((_,i)=>{ var visited=i<=obIdx; return '<div class="'+(visited?'on clk':'')+'"'+(visited?' onclick="obGoto('+i+')" title="Step '+(i+1)+'"':'')+'></div>'; }).join('');
+  var prog=OB.map((_,i)=>'<div class="'+(i<=obIdx?'on ':'')+'clk" onclick="obGoto('+i+')" title="Step '+(i+1)+'"></div>').join('');
   var body='';
   if(step.type==='num'){
     body='<input type="number" id="obIn" value="'+(obData[step.key]||'')+'" placeholder="'+step.ph+'">';
@@ -1053,8 +1053,8 @@ function renderOB(){
 }
 function obPick(v){ obData[OB[obIdx].key]=v; renderOB(); }
 function obGoto(i){
-  if(i<0 || i>obIdx) return;                 // only jump back to a step you've already reached
-  var step=OB[obIdx];                          // preserve the current answer before navigating
+  if(i<0 || i>=OB.length || i===obIdx) return;   // jump to ANY question, forward or back
+  var step=OB[obIdx];                              // preserve the current answer before navigating
   if(step.type==='num'){ var el=document.getElementById('obIn'); if(el){ var val=parseFloat(el.value); if(val) obData[step.key]=val; } }
   obIdx=i; renderOB();
 }
