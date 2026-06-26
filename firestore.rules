@@ -109,6 +109,56 @@ service cloud.firestore {
       }
     }
 
+    // ── CLOSED BETA (public, capped, self-serve) ──────────────
+    //   Isolated from /users — does NOT touch customer or billing
+    //   data. Powers the public beta link with a server-side cap.
+
+    // The single counter doc: { count, cap, open }.
+    match /beta_meta/{doc} {
+      // Anyone may read the live spots-left count.
+      allow read: if true;
+
+      // Only the owner can create/seed, reset, or change the cap / open flag.
+      allow write: if isDevEmail();
+
+      // The public may increment the counter by EXACTLY ONE, never past the
+      // cap, and may not touch the cap or the open flag. (This is what makes
+      // the "100 free spots then closed" limit hold across every device.)
+      allow update: if doc == 'counter'
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.count <= resource.data.cap
+        && request.resource.data.cap == resource.data.cap
+        && request.resource.data.open == resource.data.open;
+    }
+
+    // One doc per beta tester, keyed by an email-derived id.
+    match /beta_signups/{key} {
+      // A returning tester can fetch THEIR OWN record by exact id, but the
+      // roster is NOT enumerable by the public (no email harvesting).
+      allow get:  if true;
+      allow list: if isDevEmail();          // only the owner sees the full list
+
+      // Public self-serve join: allowed only while free spots remain, with a
+      // fixed set of non-privileged fields.
+      allow create: if
+           get(/databases/$(database)/documents/beta_meta/counter).data.count
+             < get(/databases/$(database)/documents/beta_meta/counter).data.cap
+        && request.resource.data.email is string
+        && request.resource.data.keys().hasOnly(
+             ['name','email','joinedAt','betaStart','betaExpiry','invitedBy',
+              'surveyCompleted','surveyDate','survey','lifetime','rating','bg']);
+
+      // A tester may complete their survey (and thereby unlock lifetime), but
+      // may only change survey-related fields — never their identity.
+      allow update: if
+           request.resource.data.email == resource.data.email
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['surveyCompleted','surveyDate','survey','lifetime','rating','bg']);
+
+      // Owner can clean up; testers cannot delete.
+      allow delete: if isDevEmail();
+    }
+
     // ── Catch-all: deny everything else ───────────────────────
     match /{document=**} {
       allow read, write: if false;
