@@ -239,6 +239,74 @@
 <!-- ── MPS shell embed: hide own wordmark when running inside hub.html (matches the other 5 systems) ── -->
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
 <style>html.mps-embedded .brand{display:none!important}html.mps-embedded body{padding-top:0!important}</style>
+<!-- ── Cross-device cloud sync (matches the other 5 systems): mirrors the single 'mps_nutrition' blob to
+     users/{uid}/settings/nutrition_backup, timestamp-gated two-way, restores on a fresh device. ── -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/firebase-config.js"></script>
+<script>
+(function(){ 'use strict';
+  if (typeof firebase === 'undefined' || !firebase.auth) return;
+  var KEY = 'mps_nutrition', TS_KEY = 'nutrition_synced_ts';
+  firebase.auth().onAuthStateChanged(function(user){
+    if (!user) return;                     // signed out → local-only; hub handles auth
+    var _bDoc = firebase.firestore().doc('users/' + user.uid + '/settings/nutrition_backup');
+    var _busy = false, _timer = null;
+
+    function _push(){
+      if (_busy) return; _busy = true; var ts = Date.now(), val = null;
+      try { val = localStorage.getItem(KEY); } catch(e){}
+      try { _bDoc.set({ data: val, ts: ts, v: 1 }).then(function(){
+        try { localStorage.setItem(TS_KEY, String(ts)); } catch(e){} _busy = false;
+      }).catch(function(){ _busy = false; }); } catch(e){ _busy = false; }
+    }
+    // debounced backup, called from the app's save()
+    window.nutritionScheduleBackup = function(){ if (_timer) clearTimeout(_timer); _timer = setTimeout(_push, 1500); };
+    // wipe → push an empty state to the cloud with a fresh ts so the reset propagates (and restore won't undo it)
+    window.nutritionPushWipe = function(){
+      var ts = Date.now(); try { localStorage.setItem(TS_KEY, String(ts)); } catch(e){}
+      try { return _bDoc.set({ data: null, ts: ts, v: 1 }); } catch(e){ return Promise.resolve(); }
+    };
+
+    // Restore on a fresh device ONLY when there's no local data yet (never clobber local edits).
+    function _restoreIfEmpty(){
+      var hasLocal = false; try { hasLocal = !!localStorage.getItem(KEY); } catch(e){}
+      if (hasLocal) return Promise.resolve(false);
+      return _bDoc.get().then(function(s){
+        if (s.exists && s.data() && s.data().data){
+          try { localStorage.setItem(KEY, s.data().data); } catch(e){}
+          try { localStorage.setItem(TS_KEY, String(s.data().ts || Date.now())); } catch(e){}
+          return true;
+        }
+        return false;
+      }).catch(function(){ return false; });
+    }
+
+    // Live two-way: apply ONLY a strictly-newer cloud state (ts-gated → ignores our own/older writes).
+    function _watchLive(){
+      try { _bDoc.onSnapshot(function(s){
+        if (!s.exists || !s.data()) return;
+        var cloud = s.data().data, cloudTs = s.data().ts || 0, localTs = 0;
+        try { localTs = parseInt(localStorage.getItem(TS_KEY) || '0', 10) || 0; } catch(e){}
+        if (cloudTs <= localTs) return;
+        try { localStorage.setItem(TS_KEY, String(cloudTs)); } catch(e){}
+        var cur = null; try { cur = localStorage.getItem(KEY); } catch(e){}
+        if (cur === cloud) return;
+        try { if (cloud == null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, cloud); } catch(e){}
+        location.reload();
+      }); } catch(e){}
+    }
+
+    var _did = false; try { _did = sessionStorage.getItem('nutrition_restored') === '1'; } catch(e){}
+    _restoreIfEmpty().then(function(restored){
+      if (restored && !_did){ try { sessionStorage.setItem('nutrition_restored','1'); } catch(e){} location.reload(); return; }
+      window.nutritionScheduleBackup();    // seed cloud on open
+      _watchLive();
+    });
+  });
+})();
+</script>
 </head>
 <body>
   <div class="header">
@@ -367,7 +435,7 @@ let curDate = todayISO();
 
 function todayISO(){ var t=new Date(); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
 function load(){ try{ var d=JSON.parse(localStorage.getItem('mps_nutrition')); if(d) S=Object.assign(S,d); }catch(e){} }
-function save(){ localStorage.setItem('mps_nutrition', JSON.stringify(S)); }
+function save(){ localStorage.setItem('mps_nutrition', JSON.stringify(S)); try{ if(window.nutritionScheduleBackup) window.nutritionScheduleBackup(); }catch(e){} }
 function allFoods(){ return FOODS.concat(S.customFoods); }
 function foodById(id){ return allFoods().find(f=>f.id===id); }
 function tierOK(req){ return TIER_RANK[S.tier] >= TIER_RANK[req]; }
@@ -952,6 +1020,9 @@ function seedDemo(){
 function resetAll(){
   if(!confirm('Erase all nutrition data and start fresh?')) return;
   localStorage.removeItem('mps_nutrition');
+  try {
+    if (window.nutritionPushWipe) { window.nutritionPushWipe().then(function(){ location.reload(); }).catch(function(){ location.reload(); }); return; }
+  } catch(e){}
   location.reload();
 }
 
