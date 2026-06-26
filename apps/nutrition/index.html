@@ -231,11 +231,10 @@
   .ob-card input:focus { outline:none; border-color:var(--g); }
   .ob-next { width:100%; font-family:var(--disp); letter-spacing:1px; text-transform:uppercase; background:var(--g); color:var(--gdark); border:none; border-radius:10px; padding:14px; font-weight:600; font-size:15px; cursor:pointer; margin-top:18px; }
   .ob-prog { display:flex; gap:5px; margin-bottom:18px; }
-  /* taller transparent padding = an easy click target; the visible 4px bar stays via background-clip */
-  .ob-prog > div { flex:1; height:4px; border-radius:2px; background-color:#262b31; padding:9px 0; background-clip:content-box; }
-  .ob-prog > div.on { background-color:var(--g); }
+  .ob-prog > div { flex:1; height:6px; border-radius:2px; background:#262b31; transition:background .15s; }
+  .ob-prog > div.on { background:var(--g); }
   .ob-prog > div.clk { cursor:pointer; }
-  .ob-prog > div.clk:hover { background-color:var(--g2); }
+  .ob-prog > div.clk:hover { background:var(--g2); box-shadow:0 0 8px var(--gglow); }
 
   .disclaimer { font-size:11px; color:#5f6a76; text-align:center; margin-top:24px; padding:14px; border-top:1px solid #15181c; line-height:1.5; }
 </style>
