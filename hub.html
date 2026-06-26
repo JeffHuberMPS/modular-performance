@@ -377,7 +377,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '221';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '222';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -805,10 +805,10 @@
         if (left>0) todos.push(['Finish your habits — '+left+' left','habits']);
         if (!sig.workout) todos.push(['Log a workout','workout']);
         if (!sig.sleep) todos.push(['Log last night’s sleep','sleep']);
+        if (!sig.nutrition) todos.push(['Track your macros','nutrition']);
         if (!sig.journal) todos.push(['Write your journal','journal']);
         if (!sig.expense) todos.push(['Log your spending','expenses']);
-        if (!sig.nutrition) todos.push(['Log your meals','nutrition']);
-        const top = todos.slice(0,3);
+        const top = todos.slice(0,4);
         const list = top.length
           ? top.map(t => '<button class="today-item" onclick="selectTab(\''+t[1]+'\')"><span class="today-item__dot"></span><span class="today-item__txt">'+t[0]+'</span><span class="today-item__go">›</span></button>').join('')
           : '<div class="today-alldone"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><polyline points="20 6 9 17 4 12"/></svg>All your disciplines are done today. Well done.</div>';
