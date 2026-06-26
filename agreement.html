@@ -87,7 +87,7 @@
   <script>
   /* If already accepted on this device, skip straight to sign-in (no re-nag).
      Add ?view to the URL to ALWAYS read the terms (review/preview), even when signed in or already agreed. */
-  (function(){ try { var q = new URLSearchParams(location.search); if (!q.has('view') && localStorage.getItem('mps_agreed_v1')) { location.replace(q.get('next') || '/auth.html'); } } catch(e){} })();
+  (function(){ try { var q = new URLSearchParams(location.search); if (!q.has('view') && localStorage.getItem('mps_terms_version') === '2026-06-25') { location.replace(q.get('next') || '/auth.html'); } } catch(e){} })();
   /* ── Legal content (contact emails on the MPS domain) ───────────── */
   const SECTIONS = {
     terms: {
@@ -109,7 +109,7 @@ You are responsible for all transactions, activities, and communications conduct
 
 You grant MPS the right to send electronic communications to the email address and phone number associated with your account for transactional, account, promotional, and administrative purposes. You can opt out of non-transactional communications through your account settings, but you cannot opt out of transactional communications related to your account or purchases.
 
-You agree to comply with all applicable laws, regulations, and this Agreement when using MPS services. If you are under the age of 18, you represent that you have obtained parental or guardian consent prior to using MPS services, and your parent or guardian agrees to be bound by this Agreement.` },
+You agree to comply with all applicable laws, regulations, and this Agreement when using MPS services. You represent that you are at least eighteen (18) years of age. MPS is intended only for adults; if you are under 18, you may not create an account or use MPS services.` },
         '1.3': { title: 'Acceptable Use', body: `You agree not to:
 
 (a) Use MPS services for any illegal purpose or in violation of any applicable law, regulation, or third-party right;
@@ -167,7 +167,7 @@ If any court or arbitrator determines that the class action waiver is unenforcea
     },
     purchases: {
       sectitle: 'Section 2',
-      statement: 'I understand that all purchases are final and non-refundable.',
+      statement: 'I understand purchases are final and non-refundable, except where a refund is required by law. I can cancel anytime to stop future charges.',
       subs: {
         '2.1': { title: 'Digital Delivery', body: `MPS provides all products and services in digital form, including software applications, digital content, courses, guides, trackers, AI-generated recommendations, access to platforms, and electronic subscriptions.
 
@@ -181,7 +181,7 @@ Technical Support vs. Refund: If you encounter technical difficulty accessing a 
 By purchasing any MPS product or service, you acknowledge that you are making an informed decision and accept the product "as-is," except for the limited refund circumstances defined in Section 2.3.
 
 Refunds will NOT be issued for: (a) change of mind or dissatisfaction with product quality or content; (b) failure to achieve expected results or outcomes; (c) incompatibility with your device or software not caused by MPS; (d) third-party tool or service incompatibility; (e) misuse, misunderstanding, or failure to follow instructions; (f) partial consumption or access to the product; (g) products purchased during promotional periods; (h) change in personal circumstances or preferences.` },
-        '2.3': { title: 'Refund Policy', body: `Refunds will be considered only under the following circumstances: (a) Product Not Delivered: MPS failed to deliver or make a product accessible within three (3) business days of purchase, with evidence of non-delivery; (b) Material Defect: a material defect (broken links, corrupted files, non-functional software) prevents normal use, not caused by your device or internet, you attempted technical support, and provide detailed evidence; (c) Unauthorized Transaction: made without your authorization, reported within thirty (30) days, with evidence; (d) Duplicate Charge: charged multiple times in error, with evidence; (e) Statutory Refund Right: your state or country law provides a mandatory right that overrides this policy.
+        '2.3': { title: 'Limited Exceptions (Required by Law)', body: `MPS does not offer discretionary refunds. The only circumstances in which money is returned are those required by law or by payment-card network rules: (a) Product Not Delivered: MPS failed to deliver or make a product accessible within three (3) business days of purchase, with evidence of non-delivery; (b) Material Defect: a material defect (broken links, corrupted files, non-functional software) prevents normal use, not caused by your device or internet, you attempted technical support, and provide detailed evidence; (c) Unauthorized Transaction: made without your authorization, reported within thirty (30) days, with evidence; (d) Duplicate Charge: charged multiple times in error, with evidence; (e) Statutory Refund Right: your state or country law provides a mandatory right that overrides this policy. Outside these limited exceptions, all sales are final and your only remedy is to cancel any active subscription to stop future charges.
 
 Process: submit a refund request within thirty (30) days of purchase via support@modular-performance.com with your order number, detailed reason, and supporting documentation; provide a description of the issue (screenshots, errors, logs); MPS responds within fourteen (14) business days; if approved, funds return to your original payment method within thirty (30) days.` },
         '2.4': { title: 'Chargebacks', body: `If you believe you have been overcharged, charged in error, or charged without authorization, you MUST first: (a) contact MPS at support@modular-performance.com with order number, payment date, amount, and description; (b) provide evidence; (c) allow MPS ten (10) business days to investigate and respond; (d) work in good faith toward resolution; (e) escalate to disputes@modular-performance.com if unsatisfied.
@@ -193,7 +193,7 @@ Legitimate disputes are protected: nothing here prevents you from filing a legit
 
 Auto-Renewal (please read carefully): paid subscriptions automatically renew. Before you subscribe, the price, the billing frequency (for example, monthly), and the automatic-renewal nature of the plan are disclosed to you, and by subscribing you give your affirmative consent to recurring charges. Your subscription continues and your payment method is charged at the then-current price at the start of each billing period until you cancel. You may cancel at any time — cancellation is as simple as signing up — through your account settings (Billing) or the Stripe billing portal, without phoning or emailing anyone. Cancellation stops all future renewals and takes effect at the end of your current billing period. Where required by applicable law, MPS will send an advance renewal or price-change reminder. It is your responsibility to cancel before a renewal date if you do not wish to be charged for the next period.
 
-No Refund for Current Cycle: subscription charges are non-refundable once the billing period has begun, except if MPS fails to provide access or if you cancel within forty-eight (48) hours of purchase and have not accessed the benefits.` },
+No Refund for Current Cycle: subscription charges are non-refundable once the billing period has begun. Cancelling stops all future renewals but does not refund the current period, except where a refund is required by law or where MPS fails to provide access.` },
         '2.6': { title: 'No Guarantee of Results', body: `MPS provides educational information, tools, recommendations, and guidance related to fitness, productivity, habit formation, wellness, and personal development.
 
 MPS MAKES NO GUARANTEE, PROMISE, OR REPRESENTATION THAT USE OF MPS SERVICES WILL RESULT IN ANY SPECIFIC OUTCOME, INCLUDING: weight loss or gain; muscle gain or development; improved fitness, strength, or conditioning; habit formation or behavior change; increased productivity; financial gain or business success; improved health or medical outcomes; or any other specific result.
@@ -215,7 +215,7 @@ You assume all responsibility for evaluating the accuracy, completeness, and use
 
 You warrant that: (a) you own or have the right to provide all data you submit; (b) providing such data does not violate any third-party rights; (c) the data is accurate and truthful; (d) you have obtained any necessary consents from other individuals whose data you provide.
 
-MPS will use your data in accordance with the MPS Privacy Policy. By providing data to MPS, you consent to such use, including use for AI training and personalization as described in the Privacy Policy.` },
+MPS will use your data in accordance with the MPS Privacy Policy. By providing data to MPS, you consent to such use, including personalization and the use of de-identified, aggregated data to improve MPS, as described in the Privacy Policy and Section 3.7. MPS will not use your personal identifying information to train AI models without your explicit consent, and you may opt out as described in Section 3.7.` },
         '3.2': { title: 'User Backups', body: `MPS automatically backs up your data to secure cloud storage on an ongoing basis. However, YOU ARE ALSO ENCOURAGED TO MAINTAIN INDEPENDENT BACKUPS OF ANY DATA YOU STORE ON MPS SERVICES via the download and export functionality provided, including downloaded content, User-Generated Content, health and fitness records, financial data, and account information.
 
 Failure to maintain independent backups does not relieve MPS of responsibility for data loss caused by MPS's negligence, but it is prudent to maintain backups regardless.` },
@@ -261,9 +261,9 @@ YOUR CONTINUED USE OF MPS SERVICES AFTER ANY MODIFICATION CONSTITUTES YOUR ACCEP
         '3.14': { title: 'Electronic Consent', body: `By creating an account, you consent to receiving electronic communications, including account notifications, service updates, marketing emails, transactional emails, legal notices, and SMS or push notifications.
 
 You may opt out of non-transactional communications through your account settings, but you cannot opt out of transactional communications necessary for account operation and legal compliance.` },
-        '3.15': { title: 'Age Requirement', body: `MPS services are intended for individuals age 18 and older. If you are under age 18, you may only use MPS services with explicit written consent of your parent or legal guardian, who must agree to be bound by this Agreement.
+        '3.15': { title: 'Age Requirement', body: `MPS services are intended only for individuals who are at least eighteen (18) years of age. By creating an account or using MPS services, you represent and warrant that you are 18 or older. If you are under 18, you may not use MPS services.
 
-MPS does not knowingly collect data from individuals under age 13. If MPS becomes aware of such collection, it will delete the data.` },
+MPS does not knowingly collect data from anyone under 18. If MPS becomes aware that it has collected data from a person under 18, it will delete that data.` },
         '3.16': { title: 'No Medical Advice', body: `MPS DOES NOT PROVIDE MEDICAL ADVICE, DIAGNOSIS, TREATMENT, OR PROFESSIONAL MEDICAL SERVICES. Any health or fitness information provided is educational and should not be treated as medical advice.
 
 If you have health concerns, medical symptoms, or are taking medications, you must consult with a qualified physician or healthcare provider before using MPS services or following any recommendations.
