@@ -977,7 +977,25 @@ const WEARABLES = [
 const DevicesCard = () => {
   const [interest, setInterest] = useState({});
   useEffect(() => { try { const raw = localStorage.getItem("rr_sleep:wearable_interest"); if (raw) setInterest(JSON.parse(raw)); } catch (e) {} }, []);
-  const toggle = (id) => { const next = { ...interest, [id]: !interest[id] }; setInterest(next); try { localStorage.setItem("rr_sleep:wearable_interest", JSON.stringify(next)); } catch (e) {} try { if (window.storage && window.storage.set) window.storage.set("wearable_interest", JSON.stringify(next)); } catch (e) {} };
+  const toggle = (id) => {
+    const next = { ...interest, [id]: !interest[id] };
+    setInterest(next);
+    try { localStorage.setItem("rr_sleep:wearable_interest", JSON.stringify(next)); } catch (e) {}
+    try { if (window.storage && window.storage.set) window.storage.set("wearable_interest", JSON.stringify(next)); } catch (e) {}
+    // Tell Jeff what people actually want: record the current selection in MailerLite (grouped by device).
+    try {
+      const u = (window.firebase && firebase.auth && firebase.auth().currentUser) || null;
+      const email = u && u.email;
+      if (email) {
+        const devices = WEARABLES.filter(w => next[w.id]).map(w => w.name);
+        fetch("/api/wearable-interest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, device: (WEARABLES.find(w => w.id === id) || {}).name, devices: devices })
+        }).catch(() => {});
+      }
+    } catch (e) {}
+  };
   const FONT = "'Inter', system-ui, -apple-system, sans-serif";
   return (
     <section style={{ background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.15)", borderRadius: 14, padding: "16px 18px", marginTop: 14 }}>
