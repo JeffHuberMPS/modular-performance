@@ -117,7 +117,7 @@
     .home-screen--systems .home-section-label { text-align: center; margin: 0 0 14px; }
     .home-screen--systems .home-grid { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 26px; max-width: 1340px; width: 100%; }
     .home-screen--systems .metric-card { flex: 1 1 360px; max-width: 422px; padding: 17px 21px; }
-    .home-screen--systems .metric-card:nth-child(5) { width: auto; }
+    /* 6 systems → even 3×2 grid (3 per row desktop, 2 per row mobile). No lonely-card special-case. */
     .home-screen--systems .metric-card__head { margin-bottom: 10px; }
     .home-screen--systems .metric-card__hl { margin: 0 0 12px; padding-bottom: 12px; }
     .home-screen--systems .hl-val { font-size: 1.9rem; }
@@ -335,7 +335,8 @@
       { id: 'habits',   label: 'Habits',   title: 'Habit Tracker',   path: '/apps/habits/',   accent: '#dc2626' },
       { id: 'sleep',    label: 'Recovery', title: 'Rest & Recovery', path: '/apps/sleep/',    accent: '#9b6bc9' },
       { id: 'expenses', label: 'Expenses', title: 'Expense Tracker', path: '/apps/expenses/', accent: '#16a34a' },
-      { id: 'journal',  label: 'Journal',  title: 'Journal',         path: '/apps/journal/',  accent: '#c9a86b' }
+      { id: 'journal',  label: 'Journal',  title: 'Journal',         path: '/apps/journal/',  accent: '#c9a86b' },
+      { id: 'nutrition',label: 'Nutrition',title: 'Nutrition Tracker',path: '/apps/nutrition/',accent: '#69BE28' }
     ];
     const NAV = [{ id: 'home', label: 'Home', accent: '#C9A020' }].concat(APPS);
 
@@ -376,7 +377,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '219';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '220';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -773,6 +774,28 @@
         setCardMetrics('journal', [[String(streak),'day streak'], [String(month),'this month'], [String(dateList.length),'total entries'], [lastAgo,'last entry'], [String(week),'this week'], [String(best),'best streak']]);
       } catch(e){ setCardMetrics('journal', []); }
 
+      try {
+        /* Nutrition stores one JSON blob under 'mps_nutrition' → { log:{ 'YYYY-MM-DD':[entries] }, targets, profile }.
+           Date keys match ymd() exactly (the app's todayISO() is identical). */
+        const nut = sget('mps_nutrition') || {};
+        const nlog = nut.log || {};
+        const ntargets = nut.targets || {};
+        const todayEntries = nlog[todayKey] || [];
+        let calToday = 0, protToday = 0;
+        todayEntries.forEach(en => { const m = (en && en.m) || {}; calToday += (+m.cal || 0); protToday += (+m.p || 0); });
+        const daysLogged = Object.keys(nlog).filter(d => (nlog[d] || []).length).length;
+        let nweek = 0; for (let i = 0; i < 7; i++) { if ((nlog[ymd(daysAgo(i))] || []).length) nweek++; }
+        const calTarget = Math.round(+ntargets.calories || 0);
+        sig.nutrition = todayEntries.length > 0;
+        setCardMetrics('nutrition', [
+          [String(Math.round(calToday)), calTarget ? 'cal · goal ' + calTarget : 'calories today'],
+          [Math.round(protToday) + 'g', 'protein today'],
+          [String(daysLogged), 'days logged'],
+          [nweek + ' / 7', 'this week'],
+          [String(todayEntries.length), 'logged today']
+        ]);
+      } catch(e){ setCardMetrics('nutrition', []); }
+
       /* ── Calm home: Discipline Score + today's 3 things ── */
       try {
         const hPct = sig.habitsTotal>0 ? sig.habitsDone/sig.habitsTotal*100 : 0;
@@ -784,6 +807,7 @@
         if (!sig.sleep) todos.push(['Log last night’s sleep','sleep']);
         if (!sig.journal) todos.push(['Write your journal','journal']);
         if (!sig.expense) todos.push(['Log your spending','expenses']);
+        if (!sig.nutrition) todos.push(['Log your meals','nutrition']);
         const top = todos.slice(0,3);
         const list = top.length
           ? top.map(t => '<button class="today-item" onclick="selectTab(\''+t[1]+'\')"><span class="today-item__dot"></span><span class="today-item__txt">'+t[0]+'</span><span class="today-item__go">›</span></button>').join('')
