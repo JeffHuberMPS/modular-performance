@@ -231,8 +231,11 @@
   .ob-card input:focus { outline:none; border-color:var(--g); }
   .ob-next { width:100%; font-family:var(--disp); letter-spacing:1px; text-transform:uppercase; background:var(--g); color:var(--gdark); border:none; border-radius:10px; padding:14px; font-weight:600; font-size:15px; cursor:pointer; margin-top:18px; }
   .ob-prog { display:flex; gap:5px; margin-bottom:18px; }
-  .ob-prog > div { flex:1; height:4px; border-radius:2px; background:#262b31; }
-  .ob-prog > div.on { background:var(--g); }
+  /* taller transparent padding = an easy click target; the visible 4px bar stays via background-clip */
+  .ob-prog > div { flex:1; height:4px; border-radius:2px; background-color:#262b31; padding:9px 0; background-clip:content-box; }
+  .ob-prog > div.on { background-color:var(--g); }
+  .ob-prog > div.clk { cursor:pointer; }
+  .ob-prog > div.clk:hover { background-color:var(--g2); }
 
   .disclaimer { font-size:11px; color:#5f6a76; text-align:center; margin-top:24px; padding:14px; border-top:1px solid #15181c; line-height:1.5; }
 </style>
@@ -1036,7 +1039,7 @@ let obIdx=0, obData={weight:180, goal:'maintain', mealCount:'3'};
 function startOnboarding(){ obIdx=0; renderOB(); }
 function renderOB(){
   var step=OB[obIdx];
-  var prog=OB.map((_,i)=>'<div class="'+(i<=obIdx?'on':'')+'"></div>').join('');
+  var prog=OB.map((_,i)=>{ var visited=i<=obIdx; return '<div class="'+(visited?'on clk':'')+'"'+(visited?' onclick="obGoto('+i+')" title="Step '+(i+1)+'"':'')+'></div>'; }).join('');
   var body='';
   if(step.type==='num'){
     body='<input type="number" id="obIn" value="'+(obData[step.key]||'')+'" placeholder="'+step.ph+'">';
@@ -1050,6 +1053,12 @@ function renderOB(){
     +'<button class="ob-next" onclick="obNext()">'+(obIdx===OB.length-1?'Finish Setup':'Next')+'</button></div></div>';
 }
 function obPick(v){ obData[OB[obIdx].key]=v; renderOB(); }
+function obGoto(i){
+  if(i<0 || i>obIdx) return;                 // only jump back to a step you've already reached
+  var step=OB[obIdx];                          // preserve the current answer before navigating
+  if(step.type==='num'){ var el=document.getElementById('obIn'); if(el){ var val=parseFloat(el.value); if(val) obData[step.key]=val; } }
+  obIdx=i; renderOB();
+}
 function obNext(){
   var step=OB[obIdx];
   if(step.type==='num'){ var val=parseFloat(document.getElementById('obIn').value); if(val) obData[step.key]=val; }
