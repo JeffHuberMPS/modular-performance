@@ -72,6 +72,9 @@
     .shell-tab.active .shell-tab__dot { opacity: 1; }
     .shell-tab__lock { font-size: 0.6rem; opacity: 0.5; }
     .shell-tab.locked { opacity: 0.5; }
+    .shell-tab.soon { opacity: 0.4; }
+    .metric-card.soon { opacity: 0.5; }
+    .metric-card.soon:hover { transform: none; border-color: rgba(255,255,255,0.08); }
 
     /* Free/Medium = professional silver-gray + black with GOLD accent words and a thin
        gold wireframe outline. Clean desaturation only — NO sepia / old-photo wash. */
@@ -267,8 +270,8 @@
     </section>
     <div class="shell-locked-panel" id="locked-panel">
       <h2 id="locked-title">App Locked</h2>
-      <p>This app isn’t part of your current plan. Add it from your plan page to unlock it here.</p>
-      <button class="btn btn-primary" onclick="location.href='/billing.html'">Manage Plan</button>
+      <p id="locked-sub">This app isn’t part of your current plan. Add it from your plan page to unlock it here.</p>
+      <button class="btn btn-primary" id="locked-btn" onclick="location.href='/billing.html'">Manage Plan</button>
     </div>
   </main>
 
@@ -340,6 +343,9 @@
       { id: 'nutrition',label: 'Nutrition',title: 'Nutrition Tracker',path: '/apps/nutrition/',accent: '#69BE28' }
     ];
     const NAV = [{ id: 'home', label: 'Home', accent: '#C9A020' }].concat(APPS);
+    /* Friends-preview build only (git-unified-app host): Nutrition shows "Coming Soon". Main link stays live. */
+    const COMING_SOON = location.hostname.indexOf('git-unified-app') >= 0 ? ['nutrition'] : [];
+    const isSoon = (id) => COMING_SOON.indexOf(id) >= 0;
 
     const TIER_FEATURES = {
       workout:  { free:'Log freely · PRs & stats locked', medium:'Everything unlocked · last 60 days of history', all:'Everything + full history + colorful theme' },
@@ -378,7 +384,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '235';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '236';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -446,6 +452,7 @@
         tab.id = 'tab-' + item.id;
         tab.style.setProperty('--accent', item.accent);
         tab.innerHTML = '<span class="shell-tab__dot"></span><span>' + item.label + '</span>';
+        if (isSoon(item.id)) tab.classList.add('soon');
         tab.addEventListener('click', () => selectTab(item.id));
         strip.appendChild(tab);
       });
@@ -478,8 +485,17 @@
       titleBar.classList.add('show');
       updateTierBanner();
 
+      if (isSoon(id)) {
+        document.getElementById('locked-title').textContent = app.label.toUpperCase() + ' — Coming Soon';
+        document.getElementById('locked-sub').textContent = 'We’re putting the finishing touches on this one. Check back soon.';
+        document.getElementById('locked-btn').style.display = 'none';
+        lockedPanel.classList.add('show');
+        return;
+      }
       if (!unlockedApps.includes(id)) {
         document.getElementById('locked-title').textContent = app.label.toUpperCase() + ' Locked';
+        document.getElementById('locked-sub').textContent = 'This app isn’t part of your current plan. Add it from your plan page to unlock it here.';
+        document.getElementById('locked-btn').style.display = '';
         lockedPanel.classList.add('show');
         return;
       }
@@ -634,10 +650,10 @@
       const grid = document.getElementById('home-grid'); grid.innerHTML = '';
       APPS.forEach(app => {
         const c = document.createElement('div');
-        c.className = 'metric-card'; c.style.setProperty('--accent', app.accent); c.onclick = () => selectTab(app.id);
+        c.className = 'metric-card' + (isSoon(app.id) ? ' soon' : ''); c.style.setProperty('--accent', app.accent); c.onclick = () => selectTab(app.id);
         let minis = '';
         for (let i = 0; i < 4; i++) minis += '<div class="mini"><div class="mini__val">0</div><div class="mini__lbl"></div></div>';
-        c.innerHTML = '<div class="metric-card__head"><span class="pip"></span><span class="metric-card__title">' + app.label.toUpperCase() + '</span><span class="metric-card__open">Open ›</span></div>'
+        c.innerHTML = '<div class="metric-card__head"><span class="pip"></span><span class="metric-card__title">' + app.label.toUpperCase() + '</span><span class="metric-card__open">' + (isSoon(app.id) ? 'Coming Soon' : 'Open ›') + '</span></div>'
           + '<div class="metric-card__hl"><span class="hl-val" id="m-'+app.id+'-h-v">0</span><span class="hl-lbl" id="m-'+app.id+'-h-l"></span></div>'
           + '<div class="mini-grid" id="mini-grid-'+app.id+'">' + minis + '</div>';
         grid.appendChild(c);
