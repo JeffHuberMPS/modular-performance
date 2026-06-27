@@ -420,6 +420,18 @@ const METRIC = {}; METRICS.forEach(x=>METRIC[x.k]=x);
 const MEAL_TYPES = ['Pre-Workout Meal','Breakfast','Snack 1','Lunch','Snack 2','Dinner','Additional'];
 /* Wireframe (line) icons to match the rest of MPS — stroke=currentColor so they tint with the text. */
 function wfIcon(inner){ return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;flex-shrink:0">'+inner+'</svg>'; }
+/* Wireframe food icon by category (replaces the food emojis in the picker / logged rows). */
+function catIcon(cat){
+  var P={
+    protein:'<path d="M13 3a5 5 0 0 1 3 8.4L9.6 17.9a2.5 2.5 0 1 1-3.5-3.5L12.6 8A5 5 0 0 1 13 3z"/><path d="M7.4 14.6L4 18"/>',
+    carbs:'<path d="M5 12.5a7 4 0 0 1 14 0V17a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8.5 12v3M12 12v3M15.5 12v3"/>',
+    veg:'<path d="M12 21V11"/><path d="M16 11a4 4 0 1 0-4-4 4 4 0 1 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4z"/>',
+    fruit:'<path d="M12 7.5c2-3 6.5-2 6.5 2.2 0 4.3-3.2 11.3-6.5 11.3S5.5 14 5.5 9.7C5.5 5.5 10 4.5 12 7.5z"/><path d="M12 7.5V4.2C12 3 13 2 14.3 2"/>',
+    snack:'<circle cx="12" cy="12" r="8"/><circle cx="10" cy="10" r="1"/><circle cx="14.5" cy="11" r="1"/><circle cx="11" cy="15" r="1"/>'
+  };
+  return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'+(P[cat]||P.snack)+'</svg>';
+}
+function foodCat(name){ try{ var f=allFoods().find(function(x){return x.n===name;}); return f?f.cat:'snack'; }catch(e){ return 'snack'; } }
 var WF_SNACK = '<circle cx="12" cy="12" r="9"/><circle cx="9.5" cy="10" r="1"/><circle cx="14" cy="9.5" r="1"/><circle cx="13" cy="14" r="1"/><circle cx="9" cy="15" r="1"/>';
 const MEAL_EMOJI = {
   'Pre-Workout Meal': wfIcon('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>'),                                  /* bolt */
@@ -647,7 +659,7 @@ function renderMeals(){
       +'<button class="add" onclick="openSearch(\''+meal+'\')">+ Add Food</button></div>';
     if(items.length){
       items.forEach(it=>{
-        html+='<div class="food-line"><span class="food-emoji">'+it.emoji+'</span>'
+        html+='<div class="food-line"><span class="food-emoji">'+catIcon(foodCat(it.name))+'</span>'
           +'<div class="food-info"><div class="fn">'+it.name+' <span style="color:#5f6a76">×'+it.qty+'</span></div>'
           +'<div class="fm">P'+Math.round(it.m.protein)+' C'+Math.round(it.m.carbs)+' F'+Math.round(it.m.fats)+' · '+Math.round(it.m.calories)+'cal</div></div>'
           +'<span class="food-del" onclick="delEntry(\''+it.id+'\')">×</span></div>';
@@ -701,7 +713,7 @@ function renderResults(){
     var favBtn = tierOK('elite')
       ? '<span class="res-fav '+(fav?'star-on':'star-off')+'" onclick="event.stopPropagation();toggleFav(\''+f.id+'\')">'+(fav?'★':'☆')+'</span>'
       : '';
-    return '<div class="res-item" onclick="openServing(\''+f.id+'\')"><span class="res-emoji">'+f.e+'</span>'
+    return '<div class="res-item" onclick="openServing(\''+f.id+'\')"><span class="res-emoji">'+catIcon(f.cat)+'</span>'
       +'<div class="res-info"><div class="rn">'+f.n+'</div><div class="rm">'+f.serv+' · P'+f.m.p+' C'+f.m.c+' F'+f.m.f+' · '+f.m.cal+'cal</div></div>'
       +favBtn+'</div>';
   }).join('');
@@ -716,7 +728,7 @@ function openServing(foodId){
   var f=foodById(foodId);
   document.getElementById('modal').innerHTML=
     '<div class="modal-head"><h2>Add Food</h2><span class="x" onclick="closeModal()">×</span></div>'
-    +'<div class="serv-food"><span class="se">'+f.e+'</span><div><div class="sn">'+f.n+'</div><div class="sc">Base serving: '+f.serv+'</div></div></div>'
+    +'<div class="serv-food"><span class="se">'+catIcon(f.cat)+'</span><div><div class="sn">'+f.n+'</div><div class="sc">Base serving: '+f.serv+'</div></div></div>'
     +'<div class="serv-row"><div><label>Quantity</label><input type="number" id="servQty" value="1" min="0.25" step="0.25" oninput="updMacro(\''+foodId+'\')"></div>'
     +'<div><label>Serving</label><select id="servSel" onchange="updMacro(\''+foodId+'\')"><option value="1">'+f.serv+'</option><option value="0.5">Half serving</option><option value="2">Double serving</option></select></div></div>'
     +'<div class="macro-preview" id="macroPrev"></div>'
@@ -942,7 +954,7 @@ function renderSettings(){
 
   html+='<div class="set-card glass"><h3>Custom Foods '+(!tierOK('elite')?'<span class="lock-tag elite">ELITE</span>':'')+'</h3><div class="desc">Add your own foods with custom macros.</div>';
   if(tierOK('elite')){
-    if(S.customFoods.length){ html+=S.customFoods.map(f=>'<div class="food-line"><span class="food-emoji">'+f.e+'</span><div class="food-info"><div class="fn">'+f.n+'</div><div class="fm">P'+f.m.p+' C'+f.m.c+' F'+f.m.f+'</div></div></div>').join(''); }
+    if(S.customFoods.length){ html+=S.customFoods.map(f=>'<div class="food-line"><span class="food-emoji">'+catIcon(f.cat||'snack')+'</span><div class="food-info"><div class="fn">'+f.n+'</div><div class="fm">P'+f.m.p+' C'+f.m.c+' F'+f.m.f+'</div></div></div>').join(''); }
     html+='<div style="margin-top:12px"><button class="btn-ghost" onclick="openCustomFood()">+ Add Custom Food</button></div>';
   } else { html+='<div class="desc">Upgrade to ELITE to create custom foods.</div>'; }
   html+='</div>';
