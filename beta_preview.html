@@ -83,6 +83,19 @@
   .ti { display:inline-flex; align-items:center; gap:9px; }
   h2 .ti svg { width:17px; height:17px; }
   .divider { height:1px; background:#1f1f1f; margin:22px 0; }
+  .qacc { border:1px solid #20242c; border-radius:12px; margin-bottom:10px; overflow:hidden; background:#0e0f13; }
+  .qacc-head { display:flex; align-items:center; gap:11px; padding:14px 16px; cursor:pointer; user-select:none; }
+  .qacc-head:hover { background:rgba(255,255,255,0.025); }
+  .qacc-arrow { color:#00d4ff; font-size:11px; width:12px; flex-shrink:0; transition:transform .15s; }
+  .qacc.open .qacc-arrow { transform:rotate(90deg); }
+  .qacc-q { font-size:14px; font-weight:600; color:#e8ecf2; flex:1; }
+  .qacc-count { font-size:12px; font-weight:700; font-family:'Courier New',monospace; color:#9aa2ad; background:#1a1d24; border-radius:20px; padding:3px 11px; flex-shrink:0; }
+  .qacc-body { padding:2px 16px 14px 39px; }
+  .qacc-tally { font-size:12.5px; color:#00d4ff; margin:2px 0 12px; font-weight:600; }
+  .qacc-ans { padding:8px 0; border-bottom:1px solid #1a1a1a; font-size:13px; color:#cdd2da; display:flex; justify-content:space-between; gap:14px; align-items:baseline; }
+  .qacc-ans:last-child { border-bottom:none; }
+  .qacc-ans .who { color:#6a7280; font-size:12px; white-space:nowrap; }
+  .qacc-empty { font-size:13px; color:#5f6671; padding:4px 0; }
   .stars { display:flex; gap:6px; font-size:30px; }
   .stars span { cursor:pointer; color:#33373f; transition:.1s; }
   .stars span.on { color:#f0b65a; }
@@ -485,22 +498,28 @@ function adminSignups(){
     +(s.length?'<div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Survey</th><th>Joined</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="hint" style="margin-top:10px">No sign-ups yet. Share your public beta link to get started.</p>')+'</div>';
 }
 function adminFeedback(){
-  var disc=ADMIN_DATA.signups.filter(function(x){return x.surveyCompleted&&x.survey;});
-  var rows=disc.map(function(i){var s=i.survey;return '<tr><td><b>'+esc(i.name||'')+'</b><br><span class="muted" style="font-size:12px">'+esc(i.email)+'</span></td>'
-    +'<td>'+esc(s.bg||'—')+'</td><td>'+'★'.repeat(+s.rating||0)+'</td><td>'+esc(s.tier||'—')+'</td><td>'+esc(s.buy||'—')+'</td><td>'+esc(s.price||'—')+'</td>'
-    +'<td class="muted">'+esc(s.quit||'')+'</td><td class="muted">'+esc(s.change||'')+'</td></tr>';}).join('');
-  var qcard='<div class="card" style="--a:#f0b65a"><h2>The survey your testers fill out</h2>'
-    +'<p class="lead" style="margin:6px 0 12px">The exact questions every beta tester answers — their responses fill the table below.</p><ul class="clean">'
-    +'<li><b>★</b> Overall rating of MPS (1 to 5 stars)</li>'
-    +'<li><b>•</b> Their background — Fitness / Business / Tech / General</li>'
-    +SURVEY_Q.map(function(q,i){return '<li><b>'+(i+1)+'.</b> '+esc(q.t)+(q.opt?' <span class="muted">(optional)</span>':'')+'</li>';}).join('')
-    +'</ul></div>';
-  $('#adminBody').innerHTML=qcard+'<div class="card"><div class="row" style="justify-content:space-between"><h2>Survey responses ('+disc.length+')</h2>'
-    +(disc.length?'<button class="btn ghost sm" onclick="exportFeedback()">Export CSV</button>':'')+'</div>'
-    +'<div class="field" style="margin-top:12px"><input id="fSearch" placeholder="Search answers…" oninput="filterDisc(this.value)"></div>'
-    +(disc.length?'<div style="overflow-x:auto"><table id="discTable"><thead><tr><th>Tester</th><th>Background</th><th>Rating</th><th>Pricing</th><th>Buy?</th><th>Fair price</th><th>Almost quit</th><th>Change one thing</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="hint" style="margin-top:10px">No completed surveys yet.</p>')+'</div>';
+  var done=ADMIN_DATA.signups.filter(function(x){return x.surveyCompleted&&x.survey;});
+  // one dropdown per question: question on top, every tester's answer to it below
+  var ALLQ=[{k:'rating',label:'Overall rating of MPS (1 to 5 stars)',type:'rating'},
+            {k:'bg',label:'Their background (Fitness / Business / Tech / General)',type:'choice'}]
+    .concat(SURVEY_Q.map(function(q){return {k:q.k,label:q.t,type:(q.type==='tier'||q.type==='buy')?'choice':'text'};}));
+  var blocks=ALLQ.map(function(q,idx){
+    var answers=done.map(function(x){var v=(q.k==='rating')?(x.rating||(x.survey||{}).rating):((x.survey||{})[q.k]);return {v:v,name:x.name||x.email};})
+      .filter(function(a){return a.v!=null&&String(a.v).trim()!=='';});
+    var n=answers.length, tally='';
+    if(q.type==='rating'&&n){var nums=answers.map(function(a){return +a.v;}).filter(function(x){return x>0;});var avg=nums.length?(nums.reduce(function(a,b){return a+b;},0)/nums.length).toFixed(1):'—';tally='Average '+avg+' ★   ·   '+nums.length+' rating'+(nums.length===1?'':'s');}
+    else if(q.type==='choice'&&n){var c={};answers.forEach(function(a){c[a.v]=(c[a.v]||0)+1;});tally=Object.keys(c).map(function(k){return esc(k)+' ×'+c[k];}).join('     ');}
+    var body;
+    if(!n){body='<div class="qacc-empty">No answers yet.</div>';}
+    else{var list=answers.map(function(a){var disp=(q.type==='rating')?('★'.repeat(+a.v||0)):esc(a.v);return '<div class="qacc-ans"><span>'+disp+'</span><span class="who">— '+esc(a.name)+'</span></div>';}).join('');body=(tally?'<div class="qacc-tally">'+tally+'</div>':'')+list;}
+    return '<div class="qacc" id="qacc-'+idx+'"><div class="qacc-head" onclick="toggleQ('+idx+')"><span class="qacc-arrow">▶</span><span class="qacc-q">'+esc(q.label)+'</span><span class="qacc-count">'+n+'</span></div><div class="qacc-body" id="qbody-'+idx+'" style="display:none">'+body+'</div></div>';
+  }).join('');
+  $('#adminBody').innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h2>Feedback by question</h2>'
+    +(done.length?'<button class="btn ghost sm" onclick="exportFeedback()">Export CSV</button>':'')+'</div>'
+    +'<p class="lead" style="margin:6px 0 14px">Each question is its own dropdown — tap one to read every tester\'s answer to it. ('+done.length+' completed survey'+(done.length===1?'':'s')+' so far.)</p>'
+    + blocks +'</div>';
 }
-function filterDisc(q){ q=(q||'').toLowerCase(); document.querySelectorAll('#discTable tbody tr').forEach(function(r){ r.style.display=r.textContent.toLowerCase().indexOf(q)>=0?'':'none'; }); }
+function toggleQ(idx){var el=document.getElementById('qacc-'+idx),b=document.getElementById('qbody-'+idx);if(!el||!b)return;var open=b.style.display!=='none';b.style.display=open?'none':'block';el.classList.toggle('open',!open);}
 
 function adminSettings(){
   var c=ADMIN_DATA.counter;
