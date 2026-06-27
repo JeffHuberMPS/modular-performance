@@ -340,7 +340,7 @@
       { id: 'sleep',    label: 'Recovery', title: 'Rest & Recovery', path: '/apps/sleep/',    accent: '#9b6bc9' },
       { id: 'expenses', label: 'Expenses', title: 'Expense Tracker', path: '/apps/expenses/', accent: '#16a34a' },
       { id: 'journal',  label: 'Journal',  title: 'Journal',         path: '/apps/journal/',  accent: '#c9a86b' },
-      { id: 'nutrition',label: 'Nutrition',title: 'Nutrition Tracker',path: '/apps/nutrition/',accent: '#69BE28' }
+      { id: 'nutrition',label: 'Nutrition',title: 'Nutrition Tracker',path: '/apps/nutrition/',accent: '#34D399' }
     ];
     const NAV = [{ id: 'home', label: 'Home', accent: '#C9A020' }].concat(APPS);
     /* Friends-preview build only (git-unified-app host): Nutrition shows "Coming Soon". Main link stays live. */
@@ -384,7 +384,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '236';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '237';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';

@@ -9,10 +9,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --g:#69be28;            /* nutrition — Seahawks "Action Green" */
-    --g2:#8fd64a;           /* lighter */
+    --g:#34d399;            /* nutrition — Seahawks "Action Green" */
+    --g2:#6ee7b7;           /* lighter */
     --gdark:#08240f;        /* text on green */
-    --gglow:rgba(105,190,40,0.45);
+    --gglow:rgba(52,211,153,0.45);
     --gactive:#16280e;      /* dark green active bg */
     --gold:#d8b25f;
     --bg:#050506;
@@ -24,7 +24,7 @@
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:var(--body); background:var(--bg); color:#fff; min-height:100vh; padding:22px;
-    background-image:radial-gradient(880px 480px at 12% -14%, rgba(105,190,40,0.07), transparent 60%), radial-gradient(760px 460px at 100% -8%, rgba(120,140,170,0.04), transparent 60%); }
+    background-image:radial-gradient(880px 480px at 12% -14%, rgba(52,211,153,0.07), transparent 60%), radial-gradient(760px 460px at 100% -8%, rgba(120,140,170,0.04), transparent 60%); }
   .accent { color:var(--g); }
 
   /* Modular Performance card look */
@@ -119,7 +119,7 @@
   /* search / log modal */
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); align-items:flex-start; justify-content:center; padding:18px; z-index:50; overflow-y:auto; }
   .overlay.active { display:flex; }
-  .modal { width:100%; max-width:520px; border-radius:16px; padding:22px; margin-top:30px; border:1px solid rgba(105,190,40,.35); background:linear-gradient(160deg, #16191e, #0b0c0e); box-shadow:0 24px 60px rgba(0,0,0,0.7), 0 0 50px -20px var(--gglow); }
+  .modal { width:100%; max-width:520px; border-radius:16px; padding:22px; margin-top:30px; border:1px solid rgba(52,211,153,.35); background:linear-gradient(160deg, #16191e, #0b0c0e); box-shadow:0 24px 60px rgba(0,0,0,0.7), 0 0 50px -20px var(--gglow); }
   .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
   .modal-head h2 { font-family:var(--disp); font-weight:600; font-size:19px; letter-spacing:1px; }
   .modal-head .x { cursor:pointer; color:#8a93a0; font-size:22px; line-height:1; }
@@ -220,7 +220,7 @@
 
   /* onboarding */
   .ob-overlay { position:fixed; inset:0; background:rgba(4,5,6,.97); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .ob-card { width:100%; max-width:440px; border-radius:18px; padding:28px; border:1px solid rgba(105,190,40,.28); background:linear-gradient(160deg, #16191e, #0a0b0d); box-shadow:0 30px 70px rgba(0,0,0,.7), 0 0 60px -24px var(--gglow); }
+  .ob-card { width:100%; max-width:440px; border-radius:18px; padding:28px; border:1px solid rgba(52,211,153,.28); background:linear-gradient(160deg, #16191e, #0a0b0d); box-shadow:0 30px 70px rgba(0,0,0,.7), 0 0 60px -24px var(--gglow); }
   .ob-card .ob-step { font-family:var(--disp); font-size:11px; color:var(--g); letter-spacing:2px; text-transform:uppercase; }
   .ob-card h2 { font-family:var(--disp); font-weight:600; letter-spacing:1px; font-size:24px; margin:6px 0 4px; text-transform:uppercase; }
   .ob-card .ob-q { font-size:13px; color:#8a93a0; margin-bottom:18px; }
@@ -527,7 +527,7 @@ function dailyScore(date){
 function colorFor(pct){
   if(pct>100) return '#0a0a0a';
   if(pct>=100) return '#1f8f4e';
-  if(pct>=65) return '#69be28';
+  if(pct>=65) return '#34d399';
   if(pct>=33) return '#ffc24d';
   return '#ff6b6b';
 }
@@ -592,7 +592,7 @@ function renderToday(){
       +'stroke-dasharray="'+dash.toFixed(1)+' '+(circ-dash).toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>';
   });
   svg+='</svg>';
-  var ovCol = overall>=100?'#2ecc71': overall>=65?'#69be28': overall>=33?'#ffc24d':'#ff6b6b';
+  var ovCol = overall>=100?'#2ecc71': overall>=65?'#34d399': overall>=33?'#ffc24d':'#ff6b6b';
 
   var legend=ms.map(m=>{
     var tot=Math.round(dayTotals(curDate)[m.k]);
@@ -643,7 +643,7 @@ function renderBreakdownPanel(){
       +'<div class="bar-track"><div class="bar-fill" style="width:'+Math.min(100,pct)+'%;background:'+col+'"></div></div></div>';
   }).join('');
   var overall=dailyScore(curDate);
-  var ovCol = overall>=100?'#2ecc71': overall>=65?'#69be28': overall>=33?'#ffc24d':'#ff6b6b';
+  var ovCol = overall>=100?'#2ecc71': overall>=65?'#34d399': overall>=33?'#ffc24d':'#ff6b6b';
   bd.innerHTML='<span class="back-btn" onclick="toggleBreakdown()">← back to donut</span>'
     +'<div class="bd-grid"><div class="glass" style="border-radius:16px;padding:20px">'+bars+'</div>'
     +'<div class="bd-overall glass"><b style="color:'+ovCol+'">'+overall+'%</b><span>Overall Daily</span></div></div>';
@@ -783,7 +783,7 @@ function renderHistory(){
   var scored=data.filter(d=>d.has);
   var avg = scored.length? Math.round(scored.reduce((a,d)=>a+d.score,0)/scored.length):0;
   html+='<div class="chart-card glass"><div class="section-title">Average Daily Score · last '+days+' days</div>'
-    +'<div style="font-family:var(--disp);font-size:44px;font-weight:600;color:'+(avg>=65?'#69be28':avg>=33?'#ffc24d':'#ff6b6b')+'">'+avg+'%</div>'
+    +'<div style="font-family:var(--disp);font-size:44px;font-weight:600;color:'+(avg>=65?'#34d399':avg>=33?'#ffc24d':'#ff6b6b')+'">'+avg+'%</div>'
     +'<div style="font-size:12px;color:#8a93a0">'+scored.length+' day'+(scored.length===1?'':'s')+' with logged data</div></div>';
 
   var ms=activeMetrics();
