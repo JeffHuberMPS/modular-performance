@@ -418,7 +418,18 @@ const METRICS = [
 const METRIC = {}; METRICS.forEach(x=>METRIC[x.k]=x);
 
 const MEAL_TYPES = ['Pre-Workout Meal','Breakfast','Snack 1','Lunch','Snack 2','Dinner','Additional'];
-const MEAL_EMOJI = {'Pre-Workout Meal':'⚡','Breakfast':'🌅','Snack 1':'🍎','Lunch':'🥗','Snack 2':'🥨','Dinner':'🍽️','Additional':'➕'};
+/* Wireframe (line) icons to match the rest of MPS — stroke=currentColor so they tint with the text. */
+function wfIcon(inner){ return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;flex-shrink:0">'+inner+'</svg>'; }
+var WF_SNACK = '<circle cx="12" cy="12" r="9"/><circle cx="9.5" cy="10" r="1"/><circle cx="14" cy="9.5" r="1"/><circle cx="13" cy="14" r="1"/><circle cx="9" cy="15" r="1"/>';
+const MEAL_EMOJI = {
+  'Pre-Workout Meal': wfIcon('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>'),                                  /* bolt */
+  'Breakfast':        wfIcon('<path d="M3 18h18"/><path d="M7.5 18a4.5 4.5 0 0 1 9 0"/><path d="M12 4.5v2.5M5.5 9.5l1.6 1.6M18.5 9.5l-1.6 1.6"/>'),  /* sunrise */
+  'Snack 1':          wfIcon(WF_SNACK),                                                                       /* cookie */
+  'Lunch':            wfIcon('<path d="M3 11h18"/><path d="M5 11a7 7 0 0 0 14 0"/>'),                          /* bowl */
+  'Snack 2':          wfIcon(WF_SNACK),                                                                       /* cookie */
+  'Dinner':           wfIcon('<path d="M7 3v6a2 2 0 0 0 4 0V3M9 3v18"/><path d="M17 3c-1.6 2-2.2 4.6-2.2 8H18v10"/>'),  /* fork & knife */
+  'Additional':       wfIcon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')  /* plus */
+};
 
 const TIER_RANK = {free:0, elite:1, premium:2};
 
@@ -509,11 +520,11 @@ function colorForText(pct){ return pct>100 ? '#888' : colorFor(pct); }
 
 /* ============================== NAV ============================== */
 const TABS = [
-  {id:'today', label:'Today', icon:'📊'},
-  {id:'history', label:'History', icon:'📈', tier:'elite'},
-  {id:'insights', label:'Insights', icon:'💡', tier:'elite'},
-  {id:'weight', label:'Weight', icon:'⚖️', tier:'elite'},
-  {id:'settings', label:'Settings', icon:'⚙️'},
+  {id:'today', label:'Today', icon: wfIcon('<line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/>')},
+  {id:'history', label:'History', icon: wfIcon('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'), tier:'elite'},
+  {id:'insights', label:'Insights', icon: wfIcon('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.5.4.9 1 1 1.6h5c.1-.6.5-1.2 1-1.6A6 6 0 0 0 12 3z"/>'), tier:'elite'},
+  {id:'weight', label:'Weight', icon: wfIcon('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 8.5a3 3 0 0 1 6 0"/><line x1="12" y1="8.5" x2="13" y2="11"/>'), tier:'elite'},
+  {id:'settings', label:'Settings', icon: wfIcon('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>')},
 ];
 let curTab='today';
 function buildTabs(){
@@ -522,7 +533,7 @@ function buildTabs(){
     var locked = t.tier && !tierOK(t.tier);
     var d=document.createElement('div');
     d.className='tab'+(t.id===curTab?' active':'');
-    d.innerHTML=t.icon+' '+t.label+(locked?' <span class="lock">🔒</span>':'');
+    d.innerHTML=t.icon+' '+t.label+(locked?' <span class="lock">'+wfIcon('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')+'</span>':'');
     d.onclick=()=>go(t.id);
     el.appendChild(d);
   });
@@ -830,7 +841,7 @@ function renderInsights(){
     var weakest=ms.map(m=>({m:m, avg: data.reduce((a,d)=>a+Math.min(100,metricPct(d.date,m.k)),0)/data.length})).sort((a,b)=>a.avg-b.avg)[0];
     html+='<div class="insight-card glass"><div class="ic-t">Recommendation</div><div class="ic-b">Your weakest area is <b>'+weakest.m.label+'</b> ('+Math.round(weakest.avg)+'%). Focus there next week for the biggest score jump.</div></div>';
   } else {
-    html+='<div class="locked-panel glass" style="margin-top:8px"><div class="lk">🔒</div><h3>Premium Insights</h3><p>Streak detection, calorie surplus/deficit projections, weight forecasts, and food-swap coaching.</p><button class="btn-primary" onclick="setTier(\'premium\')">Preview Premium</button></div>';
+    html+='<div class="locked-panel glass" style="margin-top:8px"><div class="lk"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Premium Insights</h3><p>Streak detection, calorie surplus/deficit projections, weight forecasts, and food-swap coaching.</p><button class="btn-primary" onclick="setTier(\'premium\')">Preview Premium</button></div>';
   }
   v.innerHTML=html;
 }
@@ -1002,7 +1013,7 @@ function simBarcode(){
 /* ============================== LOCKED PANEL ============================== */
 function lockedPanel(tier,title,desc){
   var nm=tier.toUpperCase();
-  return '<div class="locked-panel glass"><div class="lk">🔒</div><h3>'+title+'</h3><p>'+desc+'</p>'
+  return '<div class="locked-panel glass"><div class="lk"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>'+title+'</h3><p>'+desc+'</p>'
     +'<button class="btn-primary" onclick="setTier(\''+tier+'\')">Preview '+nm+'</button></div>';
 }
 
