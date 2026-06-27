@@ -880,12 +880,24 @@ function save(key, val) {
     if(!changed) return;
     localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });
     Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
+    // Data is already applied above. Guard the visual refresh so a sync can NEVER loop or yank you
+    // out of the app mid-use: settle for 6s after load, then reload at most once per 15s.
+    try{
+      if(performance.now() < 6000) return;
+      var _last=parseInt(sessionStorage.getItem('expenses_last_reload')||'0',10)||0;
+      if(Date.now()-_last < 15000) return;
+      sessionStorage.setItem('expenses_last_reload', String(Date.now()));
+    }catch(e){}
     location.reload();
   }); }catch(e){} }
   try {
     firebase.auth().onAuthStateChanged(function(u){
       if(!u) return;
-      _restoreIfEmpty().then(function(restored){ if(restored){ location.reload(); return; } window.expenseScheduleBackup(); _watchLive(); });
+      _restoreIfEmpty().then(function(restored){
+        var _did=false; try{ _did=sessionStorage.getItem('expenses_restored')==='1'; }catch(e){}
+        if(restored && !_did){ try{ sessionStorage.setItem('expenses_restored','1'); }catch(e){} location.reload(); return; }
+        window.expenseScheduleBackup(); _watchLive();
+      });
     });
   } catch(e) {}
 })();
