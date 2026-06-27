@@ -113,7 +113,7 @@
   .food-info .fn { font-weight:500; }
   .food-info .fm { font-size:11px; color:#8a93a0; font-family:var(--disp); letter-spacing:.5px; }
   .food-del { color:#5f6a76; cursor:pointer; font-size:16px; padding:0 4px; }
-  .food-del:hover { color:#ff6b6b; }
+  .food-del:hover { color:#ffffff; }
   .meal-empty { font-size:12px; color:#5f6a76; padding:6px 0; }
 
   /* search / log modal */
@@ -216,7 +216,7 @@
   .weight-now b { font-family:var(--disp); font-size:44px; font-weight:600; line-height:1; }
   .weight-now span { color:#8a93a0; }
   .wtrend { font-size:13px; margin-bottom:16px; }
-  .wup { color:#ff6b6b; } .wdown { color:var(--g); }
+  .wup { color:#ffffff; } .wdown { color:var(--g); }
 
   /* onboarding */
   .ob-overlay { position:fixed; inset:0; background:rgba(4,5,6,.97); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -529,7 +529,7 @@ function colorFor(pct){
   if(pct>=100) return '#1f8f4e';
   if(pct>=65) return '#34d399';
   if(pct>=33) return '#ffc24d';
-  return '#ff6b6b';
+  return '#ffffff';
 }
 function colorForText(pct){ return pct>100 ? '#888' : colorFor(pct); }
 
@@ -592,7 +592,7 @@ function renderToday(){
       +'stroke-dasharray="'+dash.toFixed(1)+' '+(circ-dash).toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>';
   });
   svg+='</svg>';
-  var ovCol = overall>=100?'#2ecc71': overall>=65?'#34d399': overall>=33?'#ffc24d':'#ff6b6b';
+  var ovCol = overall>=100?'#2ecc71': overall>=65?'#34d399': overall>=33?'#ffc24d':'#ffffff';
 
   var legend=ms.map(m=>{
     var tot=Math.round(dayTotals(curDate)[m.k]);
@@ -643,7 +643,7 @@ function renderBreakdownPanel(){
       +'<div class="bar-track"><div class="bar-fill" style="width:'+Math.min(100,pct)+'%;background:'+col+'"></div></div></div>';
   }).join('');
   var overall=dailyScore(curDate);
-  var ovCol = overall>=100?'#2ecc71': overall>=65?'#34d399': overall>=33?'#ffc24d':'#ff6b6b';
+  var ovCol = overall>=100?'#2ecc71': overall>=65?'#34d399': overall>=33?'#ffc24d':'#ffffff';
   bd.innerHTML='<span class="back-btn" onclick="toggleBreakdown()">← back to donut</span>'
     +'<div class="bd-grid"><div class="glass" style="border-radius:16px;padding:20px">'+bars+'</div>'
     +'<div class="bd-overall glass"><b style="color:'+ovCol+'">'+overall+'%</b><span>Overall Daily</span></div></div>';
@@ -783,7 +783,7 @@ function renderHistory(){
   var scored=data.filter(d=>d.has);
   var avg = scored.length? Math.round(scored.reduce((a,d)=>a+d.score,0)/scored.length):0;
   html+='<div class="chart-card glass"><div class="section-title">Average Daily Score · last '+days+' days</div>'
-    +'<div style="font-family:var(--disp);font-size:44px;font-weight:600;color:'+(avg>=65?'#34d399':avg>=33?'#ffc24d':'#ff6b6b')+'">'+avg+'%</div>'
+    +'<div style="font-family:var(--disp);font-size:44px;font-weight:600;color:'+(avg>=65?'#34d399':avg>=33?'#ffc24d':'#ffffff')+'">'+avg+'%</div>'
     +'<div style="font-size:12px;color:#8a93a0">'+scored.length+' day'+(scored.length===1?'':'s')+' with logged data</div></div>';
 
   var ms=activeMetrics();
@@ -969,7 +969,7 @@ function renderSettings(){
   html+='</div>';
 
   html+='<div class="set-card glass"><h3>Data</h3><div class="desc">Everything saves to this browser automatically (no account needed).</div>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-ghost" onclick="seedDemo()">Load Demo Week</button><button class="btn-ghost" onclick="resetAll()" style="color:#ff6b6b;border-color:#5a3a3a">Reset All Data</button></div></div>';
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-ghost" onclick="seedDemo()">Load Demo Week</button><button class="btn-ghost" onclick="resetAll()" style="color:#ffffff;border-color:#5a3a3a">Reset All Data</button></div></div>';
 
   v.innerHTML=html;
 }
