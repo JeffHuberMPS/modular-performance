@@ -483,7 +483,13 @@ function adminFeedback(){
   var rows=disc.map(function(i){var s=i.survey;return '<tr><td><b>'+esc(i.name||'')+'</b><br><span class="muted" style="font-size:12px">'+esc(i.email)+'</span></td>'
     +'<td>'+esc(s.bg||'—')+'</td><td>'+'★'.repeat(+s.rating||0)+'</td><td>'+esc(s.tier||'—')+'</td><td>'+esc(s.buy||'—')+'</td><td>'+esc(s.price||'—')+'</td>'
     +'<td class="muted">'+esc(s.quit||'')+'</td><td class="muted">'+esc(s.change||'')+'</td></tr>';}).join('');
-  $('#adminBody').innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h2>Customer discovery ('+disc.length+')</h2>'
+  var qcard='<div class="card" style="--a:#f0b65a"><h2>The survey your testers fill out</h2>'
+    +'<p class="lead" style="margin:6px 0 12px">The exact questions every beta tester answers — their responses fill the table below.</p><ul class="clean">'
+    +'<li><b>★</b> Overall rating of MPS (1 to 5 stars)</li>'
+    +'<li><b>•</b> Their background — Fitness / Business / Tech / General</li>'
+    +SURVEY_Q.map(function(q,i){return '<li><b>'+(i+1)+'.</b> '+esc(q.t)+(q.opt?' <span class="muted">(optional)</span>':'')+'</li>';}).join('')
+    +'</ul></div>';
+  $('#adminBody').innerHTML=qcard+'<div class="card"><div class="row" style="justify-content:space-between"><h2>Survey responses ('+disc.length+')</h2>'
     +(disc.length?'<button class="btn ghost sm" onclick="exportFeedback()">Export CSV</button>':'')+'</div>'
     +'<div class="field" style="margin-top:12px"><input id="fSearch" placeholder="Search answers…" oninput="filterDisc(this.value)"></div>'
     +(disc.length?'<div style="overflow-x:auto"><table id="discTable"><thead><tr><th>Tester</th><th>Background</th><th>Rating</th><th>Pricing</th><th>Buy?</th><th>Fair price</th><th>Almost quit</th><th>Change one thing</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="hint" style="margin-top:10px">No completed surveys yet.</p>')+'</div>';
