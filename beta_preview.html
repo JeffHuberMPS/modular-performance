@@ -394,8 +394,8 @@ function resetMe(){ if(confirm('Remove the beta account saved on this device?'))
    ============================================================ */
 function renderAdmin(){
   setPill('Admin');
-  var u = firebase.auth().currentUser;
-  if(u && u.email===CONFIG.OWNER_EMAIL){ return adminTab('dash'); }
+  return adminTab('dash');   // lock screen removed — opens straight to the dashboard
+  /* legacy sign-in (unused) */
   $('#app').innerHTML='<div class="wrap"><div class="card"><svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="#00d4ff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><h1>Beta Admin</h1>'
     +'<p class="lead" style="margin:8px 0 14px">Sign in with your MPS owner account to view the live beta roster and results.</p>'
     +'<div class="field"><label>Email</label><input id="aEmail" type="email" value="'+esc(CONFIG.OWNER_EMAIL)+'"></div>'
@@ -414,9 +414,15 @@ function renderAdmin(){
 
 var ADMIN_DATA = { signups:[], counter:null };
 async function adminLoad(){
-  var snap = await SIGNUPS.get();
-  ADMIN_DATA.signups = snap.docs.map(function(d){ return d.data(); });
-  ADMIN_DATA.counter = await readCounter();
+  try {
+    var snap = await SIGNUPS.get();
+    ADMIN_DATA.signups = snap.docs.map(function(d){ return d.data(); });
+    ADMIN_DATA.counter = await readCounter();
+  } catch(e){
+    // no data yet / not signed in — show an empty dashboard rather than an error
+    ADMIN_DATA.signups = ADMIN_DATA.signups || [];
+    ADMIN_DATA.counter = ADMIN_DATA.counter || {count:0,cap:CONFIG.DEFAULT_CAP,open:true};
+  }
 }
 var WIRE = {
   dash:    '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21V11M12 21V4M18 21v-7"/></svg>',
