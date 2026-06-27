@@ -469,7 +469,10 @@ function load(){ try{ var d=JSON.parse(localStorage.getItem('mps_nutrition')); i
 function save(){ localStorage.setItem('mps_nutrition', JSON.stringify(S)); try{ if(window.nutritionScheduleBackup) window.nutritionScheduleBackup(); }catch(e){} }
 function allFoods(){ return FOODS.concat(S.customFoods); }
 function foodById(id){ return allFoods().find(f=>f.id===id); }
-function tierOK(req){ return TIER_RANK[S.tier] >= TIER_RANK[req]; }
+/* When embedded in the hub, follow the hub's tier (Core/Elite/Premium); standalone uses the Settings switcher. */
+function curTier(){ try{ if(window.parent && window.parent!==window){ var b=window.parent.document.body; if(b.classList.contains('tier-core')) return 'free'; if(b.classList.contains('tier-premium')) return 'premium'; return 'elite'; } }catch(e){} return S.tier; }
+function tierOK(req){ return TIER_RANK[curTier()] >= TIER_RANK[req]; }
+try{ window.addEventListener('message', function(e){ if(e&&e.data&&e.data.type==='mps-tier'){ try{ buildTabs(); renderTierBadge(); go(curTab); }catch(err){} } }); }catch(e){}
 
 /* ============================== TARGETS ============================== */
 function computeTargets(){
@@ -564,8 +567,9 @@ function go(id){
 /* ============================== TIER BADGE ============================== */
 function renderTierBadge(){
   var b=document.getElementById('tierBadge');
-  b.textContent=S.tier.toUpperCase();
-  b.className='tier-badge tier-'+S.tier;
+  var t=curTier();
+  b.textContent=t.toUpperCase();
+  b.className='tier-badge tier-'+t;
 }
 
 /* ============================== TODAY ============================== */
