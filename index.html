@@ -195,6 +195,18 @@
       (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
       window.navigator.standalone === true;
 
+    // FAST PATH: a plain website visitor (not the installed app, not a ?beta link) can ONLY
+    // go to the landing page, and that decision depends on nothing async. So jump there
+    // instantly — no 2.4s splash, no waiting on Firebase. The splash below only runs for the
+    // installed-app / beta paths, which genuinely need the auth state to pick a destination.
+    (function() {
+      var qs = location.search || '';
+      var isBeta = false; try { isBeta = new URLSearchParams(qs).has('beta'); } catch(e){}
+      if (!isInstalledApp && !isBeta) {
+        window.location.replace('/landing.html' + qs);
+      }
+    })();
+
     function tryProceed() {
       if (authUser === undefined || !minTimeDone) return;
       splashEl.classList.add('fade-out');
