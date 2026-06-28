@@ -571,8 +571,10 @@
       const btn = document.getElementById('email-submit-btn');
       const txt = document.getElementById('email-toggle-text');
       const link = document.getElementById('email-toggle-link');
-      if (emailMode === 'signup') { btn.textContent = 'Create Account'; txt.textContent = 'Already have an account?'; link.textContent = 'Sign in'; }
-      else { btn.textContent = 'Sign In'; txt.textContent = 'New here?'; link.textContent = 'Create an account'; }
+      // One button handles both new + returning, so the label stays "Continue" either way.
+      btn.textContent = 'Continue';
+      if (emailMode === 'signup') { txt.textContent = 'Already have an account?'; link.textContent = 'Sign in'; }
+      else { txt.textContent = 'New here?'; link.textContent = 'Create an account'; }
     }
     async function emailSubmit() {
       clearError();
@@ -580,11 +582,20 @@
       const pass = document.getElementById('email-password').value || '';
       if (!email || email.indexOf('@') < 1) { showError('Enter a valid email.'); return; }
       if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
-      setLoading(true, emailMode === 'signup' ? 'Creating your account...' : 'Signing in...');
+      setLoading(true, 'One sec...');
       try {
-        const result = (emailMode === 'signup')
-          ? await firebase.auth().createUserWithEmailAndPassword(email, pass)
-          : await firebase.auth().signInWithEmailAndPassword(email, pass);
+        // ONE button for both: try to create the account; if the email already exists,
+        // sign in instead. New person → account made. Returning person → logged in.
+        let result;
+        try {
+          result = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+        } catch (e) {
+          if (e && e.code === 'auth/email-already-in-use') {
+            result = await firebase.auth().signInWithEmailAndPassword(email, pass);
+          } else {
+            throw e;
+          }
+        }
         await handlePostSignIn(result.user);
       } catch (err) { setLoading(false); showError(friendlyError(err)); }
     }
