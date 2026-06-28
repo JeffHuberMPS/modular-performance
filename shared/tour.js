@@ -37,33 +37,39 @@
       { sel: '.tab[data-tab="plan"]',      text: "And <b>Plan</b> — build or follow a full training program here. That's the whole app — go log a set.", click: true }
     ],
     habits: [
-      { txt: 'Track', sel: '.log-tab',     text: "Tap <b>Track</b> to pull up today's habits.", click: true },
-      { center: true,                       text: "Check off each habit as you do it. Miss one and that day restarts — that's the whole point.", click: false },
+      { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — every habit's streak and strength. Watch it scroll.", click: true },
+      { pan: true,                          text: "Your discipline at a glance: streaks, momentum, how each block is trending. This is what a couple weeks of checking the box looks like." },
+      { sel: 'button:has(path[d="M12 20h9"])', text: "<b>These are just starter habits, not yours yet.</b> Tap the <b>pencil</b> on any habit to rename it, change its icon, or delete it. Make them your own.", click: false },
+      { txt: 'Track', sel: '.log-tab',     text: "Now the <b>Track</b> tab — your daily check-in. Tap it.", click: true },
+      { center: true,                       text: "Tap each habit to check it off as you do it. Miss one and that day restarts — that's the whole point.", click: false },
       { txt: 'Save Entry',                  text: "Hit <b>Save Entry</b> to lock the day in.", click: true },
-      { txt: 'Insights',                    text: "<b>Insights</b> shows your patterns — strong days, weak spots, what's slipping.", click: true },
-      { txt: 'Compound',                    text: "<b>Compound</b> shows your discipline stacking up over time.", click: true },
-      { txt: 'Dashboard',                   text: "And last, your <b>Dashboard</b> — the streak and strength of every habit.", click: true },
-      { sel: 'button:has(path[d="M12 20h9"])', text: "<b>Important — these are just starter habits, not yours yet.</b> Tap the <b>pencil</b> next to any habit to rename it, change its icon, or delete it. Make them your own.", click: false }
+      { txt: 'Insights',                    text: "<b>Insights</b> — your patterns: best days, weak spots, what's slipping.", click: true },
+      { txt: 'Compound',                    text: "And <b>Compound</b> — how small daily reps stack into real change over time. That's the app.", click: true }
     ],
     sleep: [
-      { txt: 'Log Entry',                   text: "Tap <b>Log Entry</b> to open today's check-in.", click: true },
-      { center: true,                       text: "Set your <b>sleep &amp; wake times</b> and rate your energy, then <b>Save</b>. Your recovery score is figured out for you.", click: false },
-      { txt: 'Insights',                    text: "<b>Insights</b> tells you when to push and when rest IS the training.", click: true },
-      { txt: 'Dashboard',                   text: "And last, your <b>Dashboard</b> — recovery, sleep hours and trends at a glance. Done.", click: true }
+      { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — recovery score, sleep hours and trends. Watch it scroll.", click: true },
+      { pan: true,                          text: "Your recovery at a glance: how you've slept and how recovered you are. This is a couple weeks of check-ins." },
+      { txt: 'Insights',                    text: "<b>Insights</b> tells you when to push hard and when rest IS the training. Tap it.", click: true },
+      { txt: 'Log',                         text: "And <b>Log</b> is where you check in each day. Tap it.", click: true },
+      { txt: 'Log Entry',                   text: "Tap <b>Log Entry</b> to open today's form.", click: true },
+      { center: true,                       text: "Set your <b>sleep &amp; wake times</b>, rate your <b>energy</b> and soreness, then <b>Save</b>. Your recovery score is figured out for you. That's it." }
     ],
     expenses: [
-      { sel: '.tab[data-tab="log"]',       text: "<b>Log</b> is every expense, all in one place. Start here.", click: true },
+      { sel: '.tab[data-tab="dashboard"]', text: "First, your <b>Dashboard</b> — exactly where every dollar went, by category. Watch it scroll.", click: true },
+      { pan: true,                          text: "Spending by category, your daily burn, the trend — a couple weeks of expenses at a glance." },
+      { sel: '.tab[data-tab="log"]',       text: "<b>Log</b> — every expense in one place. Tap it.", click: true },
+      { center: true,                       text: "Add an expense and it lands here, auto-sorted. Everything you spend, tracked in one list." },
       { sel: '.tab[data-tab="budget"]',    text: "<b>Budget</b> — set your monthly cap and recurring bills.", click: true },
       { sel: '.tab[data-tab="rules"]',     text: "<b>Rules</b> — auto-categorize expenses so logging is effortless.", click: true },
-      { sel: '.tab[data-tab="insights"]',  text: "<b>Insights</b> finds the leaks in your spending.", click: true },
-      { sel: '.tab[data-tab="dashboard"]', text: "And last, your <b>Dashboard</b> — exactly where every dollar went, by category. That's the tracker.", click: true }
+      { sel: '.tab[data-tab="insights"]',  text: "And <b>Insights</b> — finds the leaks in your spending. That's the tracker.", click: true }
     ],
     journal: [
-      { txt: 'Write',                       text: "<b>Write</b> is your daily entry — faith, wins, lessons.", click: true },
-      { center: true,                       text: "Write your reflection, then tap <b>Save Entry</b>. Five minutes is all it takes.", click: false },
-      { txt: 'History',                     text: "<b>History</b> keeps every past entry to look back on.", click: true },
+      { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons. (Journal has no dashboard — your data lives in History.)", click: true },
+      { center: true,                       text: "Write your reflection — five minutes is all it takes — then tap <b>Save Entry</b>.", click: false },
+      { txt: 'History',                     text: "<b>History</b> keeps every past entry. Tap it — watch it scroll.", click: true },
+      { pan: true,                          text: "Every entry you've written, saved to look back on. This is a couple weeks of journaling." },
       { txt: 'Insights',                    text: "<b>Insights</b> surfaces themes and patterns across your entries.", click: true },
-      { txt: 'Check-In',                    text: "And last, <b>Check-In</b> — your weekly &amp; monthly review. Done.", click: true }
+      { txt: 'Check-In',                    text: "And <b>Check-In</b> — your weekly &amp; monthly review. That's the journal.", click: true }
     ],
     nutrition: [
       { sel: '.meal-head .add',             text: "Tap <b>+ Add Food</b> to log what you ate — search the built-in food list.", click: true },
