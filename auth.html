@@ -536,6 +536,20 @@
   <script>
     /* ── Auth Page UI Logic ────────────────────────────────── */
 
+    // Persist a beta invite the moment we hit this page (in case the visitor came straight to
+    // sign-in instead of through the landing page). Without this the beta flag can be lost and
+    // the app shows the generic welcome instead of the "Free Premium" beta welcome.
+    (function () {
+      try {
+        var bp = new URLSearchParams(location.search), b = bp.get('beta');
+        if (b === 'mps-beta-2026') {
+          localStorage.setItem('mps_beta', b);
+          var r = bp.get('ref');  if (r) localStorage.setItem('mps_beta_ref', r);
+          var f = bp.get('from'); if (f) localStorage.setItem('mps_beta_from', f);
+        }
+      } catch (e) {}
+    })();
+
     let confirmationResult = null;
 
     /* After a successful sign-in: if the user hasn't accepted the CURRENT agreement,

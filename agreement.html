@@ -89,6 +89,8 @@
   </div>
 
   <script>
+  /* Keep a beta invite flagged through the agreement step too, so the app shows the beta welcome. */
+  (function(){ try { var bp = new URLSearchParams(location.search), b = bp.get('beta'); if (b === 'mps-beta-2026') { localStorage.setItem('mps_beta', b); var r = bp.get('ref'); if (r) localStorage.setItem('mps_beta_ref', r); var f = bp.get('from'); if (f) localStorage.setItem('mps_beta_from', f); } } catch(e){} })();
   /* If already accepted on this device, skip straight to sign-in (no re-nag).
      Add ?view to the URL to ALWAYS read the terms (review/preview), even when signed in or already agreed. */
   (function(){ try { var q = new URLSearchParams(location.search); if (!q.has('view') && localStorage.getItem('mps_terms_version') === '2026-06-25') { location.replace(q.get('next') || '/hub.html'); } } catch(e){} })();
