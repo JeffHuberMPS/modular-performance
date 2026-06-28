@@ -577,6 +577,22 @@
     .suite-tile[data-app="journal"] .tile-system  { color: rgba(196,168,130,0.65); }
     .suite-tile[data-app="journal"] .tile-name    { color: rgba(255,255,255,0.90); }
 
+    /* Nutrition — deep teal / aqua */
+    .suite-tile[data-app="nutrition"] .tile-header {
+      background: radial-gradient(ellipse at center 30%, rgba(20,184,166,0.12) 0%, transparent 70%),
+                  linear-gradient(180deg, #06120f 0%, #030806 100%);
+      border: 1px solid rgba(20,184,166,0.42);
+      box-shadow: 0 0 28px rgba(20,184,166,0.12), inset 0 0 0 1px rgba(20,184,166,0.08);
+    }
+    .suite-tile[data-app="nutrition"] .tile-mps {
+      background: linear-gradient(180deg,#fff 0%,#a7f3e4 40%,#2dd4bf 72%,#0f766e 100%);
+      -webkit-background-clip: text; background-clip: text;
+      filter: drop-shadow(0 0 10px rgba(45,212,191,0.45));
+    }
+    .suite-tile[data-app="nutrition"] .tile-divider { background: linear-gradient(90deg,transparent,rgba(45,212,191,0.7),transparent); }
+    .suite-tile[data-app="nutrition"] .tile-system  { color: rgba(45,212,191,0.70); }
+    .suite-tile[data-app="nutrition"] .tile-name    { color: rgba(255,255,255,0.92); }
+
     /* Locked / Coming Soon tile */
     .suite-tile--locked { opacity: 0.4; filter: grayscale(0.6); pointer-events: none; position: relative; }
     .tile-coming-soon {
@@ -1241,7 +1257,7 @@
   ════════════════════════════════════════════════════════════ -->
   <section class="section" id="suite">
     <div class="section-label">The Suite</div>
-    <h2 class="section-title">Five systems.<br/><span>One command center.</span></h2>
+    <h2 class="section-title">Six systems.<br/><span>One command center.</span></h2>
     <div class="section-divider"></div>
 
     <div class="suite-scroll">
@@ -1289,6 +1305,15 @@
           <div class="tile-name">Journal</div>
         </div>
         <div class="tile-pill">5-minute daily reflection. Faith, wins, lessons. Build conviction. Track who you're becoming.</div>
+      </div>
+      <div class="suite-tile" data-app="nutrition">
+        <div class="tile-header">
+          <div class="tile-mps">MPS</div>
+          <div class="tile-divider"></div>
+          <div class="tile-system">Modular Performance Systems</div>
+          <div class="tile-name">Nutrition</div>
+        </div>
+        <div class="tile-pill">Track protein, carbs, calories and water. Fuel the work. Hit your numbers without the guesswork.</div>
       </div>
     </div>
 
@@ -1342,7 +1367,7 @@
         </div>
         <div class="diff-row">
           <span class="diff-row__icon">✓</span>
-          <span class="diff-row__text">One hub. Five systems. Everything talks to each other.</span>
+          <span class="diff-row__text">One hub. Six systems. Everything talks to each other.</span>
         </div>
         <div class="diff-row">
           <span class="diff-row__icon">✓</span>
