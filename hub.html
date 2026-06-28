@@ -407,7 +407,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '286';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '287';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -724,16 +724,36 @@
       var id = _tutAppId;
       if (id) { try { localStorage.setItem('mps_tut_' + id, '1'); } catch (e) {} }
       document.getElementById('tutorial-overlay').classList.remove('show');
-      // After the intro popup, kick off the interactive in-app walkthrough (runs inside the app frame).
-      if (id) {
-        setTimeout(function () {
-          try {
-            var f = document.getElementById('frame-' + id);
-            if (f && f.contentWindow && typeof f.contentWindow.startMpsTour === 'function') f.contentWindow.startMpsTour();
-          } catch (e) {}
-        }, 300);
+      if (id) startFullDemo(id);
+    }
+
+    // FULL DEMO: fill ~2 weeks of sample data so the app looks real, reload the app so it renders
+    // that data, then start the walkthrough. When the walkthrough ends, the app posts 'mps-tour-done'
+    // and we wipe the sample data (MPS_DEMO.clear only removes demo entries, never real ones).
+    async function startFullDemo(id) {
+      var f = document.getElementById('frame-' + id);
+      if (!f) return;
+      try { if (window.MPS_DEMO && typeof MPS_DEMO.load === 'function' && !MPS_DEMO.isLoaded()) { await MPS_DEMO.load(); } } catch (e) {}
+      try {
+        f.addEventListener('load', function onL() {
+          f.removeEventListener('load', onL);
+          try { f.contentWindow.postMessage({ type: 'mps-tier', tier: currentTier }, '*'); } catch (e) {}
+          setTimeout(function () { try { f.contentWindow.startMpsTour && f.contentWindow.startMpsTour(); } catch (e) {} }, 900);
+        }, { once: true });
+        f.contentWindow.location.reload();
+      } catch (e) {
+        setTimeout(function () { try { f.contentWindow.startMpsTour && f.contentWindow.startMpsTour(); } catch (e2) {} }, 500);
       }
     }
+
+    // Walkthrough finished (or skipped) → wipe sample data + reset the app to empty.
+    window.addEventListener('message', async function (ev) {
+      if (!ev || !ev.data || ev.data.type !== 'mps-tour-done') return;
+      var id = ev.data.app || activeId;
+      try { if (window.MPS_DEMO && typeof MPS_DEMO.clear === 'function') await MPS_DEMO.clear(); } catch (e) {}
+      var f = document.getElementById('frame-' + id);
+      if (f) { try { f.contentWindow.location.reload(); } catch (e) {} }
+    });
 
     /* First-time onboarding — shows ONCE for a brand-new user. Anyone who already has tracker data
        is treated as existing: the flag is set silently and they never see it. */

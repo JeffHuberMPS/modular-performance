@@ -19,7 +19,9 @@
 
   var TOURS = {
     workout: [
-      { sel: '.tab[data-tab="today"]',     text: "This is <b>Today</b> — where you log the session you're doing right now. Tap it.", click: true },
+      { sel: '.tab[data-tab="dashboard"]', text: "First, your <b>Dashboard</b>. Here's what a couple weeks of training looks like — watch it scroll.", click: true },
+      { pan: true,                          text: "Volume, your streak, recent lifts, trends — your whole training at a glance. This is your data once you've logged a while.", },
+      { sel: '.tab[data-tab="today"]',     text: "Now here's how you build that. <b>Today</b> is where you log the session you're doing right now. Tap it.", click: true },
       { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b>. A “split” is a muscle group / training day — like Push, Pull, or Legs.", click: true },
       { sel: '#split-picker-select',       text: "Pick which split you're training from this dropdown, then tap Next.", click: false },
       { sel: '#split-picker-confirm',      text: "Tap <b>Add</b> to create that split.", click: true },
@@ -30,10 +32,9 @@
       { sel: '#add-skill-btn',             text: "<b>+ Add Skill</b> logs skill work — mobility, technique, drills. Same idea as splits.", click: false },
       { sel: '#cond-cat-row',              text: "<b>Conditioning</b> — log your cardio here: running, sprints, or a cardio machine.", click: false },
       { sel: '#end-workout',               text: "When you're finished, <b>End Workout &amp; Save</b> logs the entire session at once.", click: false },
-      { sel: '.tab[data-tab="history"]',   text: "Now the other tabs, left to right. <b>History</b> — every past session, saved to look back on.", click: true },
+      { sel: '.tab[data-tab="history"]',   text: "Now the rest, left to right. <b>History</b> — every past session, saved to look back on.", click: true },
       { sel: '.tab[data-tab="prs"]',       text: "<b>PRs</b> — every personal record, tracked automatically as you get stronger.", click: true },
-      { sel: '.tab[data-tab="plan"]',      text: "<b>Plan</b> — build or follow a full training program here.", click: true },
-      { sel: '.tab[data-tab="dashboard"]', text: "And last, your <b>Dashboard</b> — your whole training at a glance: volume, streak and progress. That's the full tour.", click: true }
+      { sel: '.tab[data-tab="plan"]',      text: "And <b>Plan</b> — build or follow a full training program here. That's the whole app — go log a set.", click: true }
     ],
     habits: [
       { txt: 'Track', sel: '.log-tab',     text: "Tap <b>Track</b> to pull up today's habits.", click: true },
@@ -74,7 +75,7 @@
 
   function appKey() { var m = (location.pathname || '').match(/\/apps\/([^\/]+)/); return m ? m[1] : null; }
 
-  var els = {}, steps = [], idx = 0, target = null, clickHook = null, centerMode = false;
+  var els = {}, steps = [], idx = 0, target = null, clickHook = null, centerMode = false, panning = false;
 
   function mk(css) { var e = document.createElement('div'); e.style.cssText = css; document.body.appendChild(e); return e; }
   function setBox(e, x, y, w, h) { e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.width = Math.max(0, w) + 'px'; e.style.height = Math.max(0, h) + 'px'; }
@@ -112,7 +113,7 @@
   }
 
   function place() {
-    if (!els.top) return;
+    if (!els.top || panning) return;
     var W = window.innerWidth, H = window.innerHeight;
     if (centerMode || !target) {
       setBox(els.top, 0, 0, W, H); setBox(els.bottom, 0, 0, 0, 0); setBox(els.left, 0, 0, 0, 0); setBox(els.right, 0, 0, 0, 0);
@@ -137,11 +138,41 @@
 
   function clearHook() { if (clickHook) { document.removeEventListener('click', clickHook, true); clickHook = null; } }
 
+  // A "pan" step: no spotlight — slowly auto-scroll the whole screen top→bottom so the user
+  // watches their (sample) data scroll by, then advance. Moderate speed: readable, not slow.
+  function panStep(i, step) {
+    panning = true; centerMode = true; target = null;
+    setBox(els.top, 0, 0, 0, 0); setBox(els.bottom, 0, 0, 0, 0); setBox(els.left, 0, 0, 0, 0); setBox(els.right, 0, 0, 0, 0);
+    els.ring.style.width = '0'; els.ring.style.height = '0';
+    els.tip.querySelector('#mpst-count').textContent = 'STEP ' + (i + 1) + ' OF ' + steps.length;
+    els.tip.querySelector('#mpst-text').innerHTML = step.text;
+    els.tip.querySelector('#mpst-next').style.display = 'none';
+    var tw = els.tip.offsetWidth || 300, th = els.tip.offsetHeight || 120;
+    els.tip.style.left = Math.max(12, (window.innerWidth - tw) / 2) + 'px';
+    els.tip.style.top = (window.innerHeight - th - 18) + 'px';
+    var se = document.scrollingElement || document.documentElement;
+    try { se.scrollTop = 0; } catch (e) {}
+    var max = Math.max(0, se.scrollHeight - se.clientHeight);
+    var done = function () { panning = false; if (idx === i) next(); };
+    if (max < 30) return setTimeout(done, 1900);
+    var dur = Math.min(9000, Math.max(5000, max * 8)), t0 = null;
+    function frame(ts) {
+      if (idx !== i || !els.top) { panning = false; return; }
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      se.scrollTop = max * p;
+      if (p < 1) requestAnimationFrame(frame); else setTimeout(done, 800);
+    }
+    requestAnimationFrame(frame);
+  }
+
   function show(i) {
     idx = i;
     var step = steps[i];
     if (!step) return end();
     clearHook();
+    if (step.pan) return panStep(i, step);
+    panning = false;
     centerMode = !!step.center;
     target = centerMode ? null : resolve(step);
     if (!centerMode && !target) {   // element not ready (e.g. a tab just switched) — wait, then skip if still gone
@@ -171,8 +202,10 @@
     window.removeEventListener('scroll', place, true);
     window.removeEventListener('resize', place);
     ['top', 'bottom', 'left', 'right', 'ring', 'tip'].forEach(function (k) { if (els[k] && els[k].parentNode) els[k].parentNode.removeChild(els[k]); });
-    els = {}; target = null;
+    els = {}; target = null; panning = false;
     try { localStorage.setItem('mps_tour_' + (appKey() || 'app'), '1'); } catch (e) {}
+    // tell the hub the tour is over so it can wipe the sample data + reset the app to empty
+    try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'mps-tour-done', app: appKey() }, '*'); } catch (e) {}
   }
 
   window.startMpsTour = function () {
