@@ -100,6 +100,12 @@
   .starbar { position:relative; display:inline-block; font-size:19px; letter-spacing:3px; line-height:1; white-space:nowrap; }
   .starbar-bg { color:#33373f; }
   .starbar-fill { position:absolute; left:0; top:0; color:#f0b65a; overflow:hidden; white-space:nowrap; }
+  /* star-level distribution (how many gave 5, 4, 3, 2, 1) */
+  .dist-row { display:flex; align-items:center; gap:11px; padding:6px 0; }
+  .dist-star { font-size:13px; color:#f0b65a; font-weight:700; width:32px; white-space:nowrap; }
+  .dist-bar { flex:1; height:11px; background:#1a1d24; border-radius:6px; overflow:hidden; }
+  .dist-fill { display:block; height:100%; background:#f0b65a; border-radius:6px; }
+  .dist-ct { font-size:13px; color:#cdd2da; font-family:'Courier New',monospace; width:26px; text-align:right; }
   .stars { display:flex; gap:6px; font-size:30px; }
   .stars span { cursor:pointer; color:#33373f; transition:.1s; }
   .stars span.on { color:#f0b65a; }
@@ -534,13 +540,33 @@ function adminFeedback(){
   var blocks=ALLQ.map(function(q,idx){
     var answers=done.map(function(x){var v=(x.survey||{})[q.k];return {v:v,name:x.name||x.email};})
       .filter(function(a){return a.v!=null&&String(a.v).trim()!=='';});
-    var n=answers.length, tally='';
-    if(q.type==='rating'&&n){var nums=answers.map(function(a){return +a.v;}).filter(function(x){return x>0;});var avg=nums.length?(nums.reduce(function(a,b){return a+b;},0)/nums.length).toFixed(1):'—';tally='Average '+avg+' ★   ·   '+nums.length+' rating'+(nums.length===1?'':'s');}
-    else if(q.type==='choice'&&n){var c={};answers.forEach(function(a){c[a.v]=(c[a.v]||0)+1;});tally=Object.keys(c).map(function(k){return esc(k)+' ×'+c[k];}).join('     ');}
-    var body;
-    if(!n){body='<div class="qacc-empty">No answers yet.</div>';}
-    else{var list=answers.map(function(a){var disp=(q.type==='rating')?('★'.repeat(+a.v||0)):esc(a.v);return '<div class="qacc-ans"><span>'+disp+'</span><span class="who">— '+esc(a.name)+'</span></div>';}).join('');body=(tally?'<div class="qacc-tally">'+tally+'</div>':'')+list;}
-    return '<div class="qacc" id="qacc-'+idx+'"><div class="qacc-head" onclick="toggleQ('+idx+')"><span class="qacc-arrow">▶</span><span class="qacc-q">'+esc(q.label)+'</span><span class="qacc-count">'+n+'</span></div><div class="qacc-body" id="qbody-'+idx+'" style="display:none">'+body+'</div></div>';
+    var n=answers.length, headRight, body;
+
+    if(q.type==='rating'){
+      // collapsed: average star bar + number. open: how many gave 5/4/3/2/1.
+      var nums=answers.map(function(a){return +a.v;}).filter(function(v){return v>=1&&v<=5;});
+      var avg=nums.length?(nums.reduce(function(a,b){return a+b;},0)/nums.length):0;
+      var pct=avg>0?(avg/5*100):0;
+      var disp=nums.length?avg.toFixed(1):'—';
+      headRight='<span class="starbar"><span class="starbar-bg">★★★★★</span><span class="starbar-fill" style="width:'+pct.toFixed(1)+'%">★★★★★</span></span><b style="font-family:\'Courier New\',monospace;color:#00d4ff;margin-left:10px;min-width:28px;text-align:right">'+disp+'</b>';
+      if(!nums.length){ body='<div class="qacc-empty">No ratings yet.</div>'; }
+      else {
+        var dist={1:0,2:0,3:0,4:0,5:0}; nums.forEach(function(v){ dist[v]++; });
+        var maxc=Math.max(1,dist[1],dist[2],dist[3],dist[4],dist[5]);
+        var rows=''; for(var sx=5;sx>=1;sx--){ var ct=dist[sx]; var w=Math.round(ct/maxc*100); rows+='<div class="dist-row"><span class="dist-star">'+sx+'★</span><span class="dist-bar"><span class="dist-fill" style="width:'+w+'%"></span></span><span class="dist-ct">'+ct+'</span></div>'; }
+        body=rows;
+      }
+    } else {
+      headRight='<span class="qacc-count">'+n+'</span>';
+      if(!n){ body='<div class="qacc-empty">No answers yet.</div>'; }
+      else {
+        var tally='';
+        if(q.type==='choice'){var c={};answers.forEach(function(a){c[a.v]=(c[a.v]||0)+1;});tally=Object.keys(c).map(function(k){return esc(k)+' ×'+c[k];}).join('     ');}
+        var list=answers.map(function(a){return '<div class="qacc-ans"><span>'+esc(a.v)+'</span><span class="who">— '+esc(a.name)+'</span></div>';}).join('');
+        body=(tally?'<div class="qacc-tally">'+tally+'</div>':'')+list;
+      }
+    }
+    return '<div class="qacc" id="qacc-'+idx+'"><div class="qacc-head" onclick="toggleQ('+idx+')"><span class="qacc-arrow">▶</span><span class="qacc-q">'+esc(q.label)+'</span><span style="display:flex;align-items:center;gap:4px;margin-left:auto">'+headRight+'</span></div><div class="qacc-body" id="qbody-'+idx+'" style="display:none">'+body+'</div></div>';
   }).join('');
   $('#adminBody').innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h2>Feedback by question</h2>'
     +(done.length?'<button class="btn ghost sm" onclick="exportFeedback()">Export CSV</button>':'')+'</div>'
