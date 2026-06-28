@@ -1550,12 +1550,24 @@
     // Track auth state for smart buy redirects
     let _mpsAuthUser = null;
 
-    // goToBuy(): send everyone to the NEW unified app (different domain → its own Firebase sign-in).
-    // The unified app now lives on this same domain (replaced the old North Star).
+    // Capture a beta invite if someone hits the landing page directly with ?beta (backup to index.html),
+    // so the tester stays flagged through sign-in → agreement → app and gets the free-Premium welcome.
+    (function() {
+      try {
+        var bp = new URLSearchParams(location.search), b = bp.get('beta');
+        if (b === 'mps-beta-2026') {
+          localStorage.setItem('mps_beta', b);
+          var r = bp.get('ref');  if (r) localStorage.setItem('mps_beta_ref', r);
+          var f = bp.get('from'); if (f) localStorage.setItem('mps_beta_from', f);
+        }
+      } catch(e){}
+    })();
+
+    // goToBuy(): new order — sign in FIRST (Google/email), then the 3-box agreement, then the app.
+    // Signed-in users skip straight to the app. Preserve ?beta&ref so beta status carries forward.
     function goToBuy() {
-      // New order: sign in FIRST (Google/email), then the 3-box agreement, then the app.
-      // Signed-in users skip straight to the app.
-      window.location.href = _mpsAuthUser ? '/hub.html' : '/auth.html';
+      var qs = location.search || '';
+      window.location.href = (_mpsAuthUser ? '/hub.html' : '/auth.html') + qs;
     }
 
     try {

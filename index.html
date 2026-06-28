@@ -195,15 +195,23 @@
       (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
       window.navigator.standalone === true;
 
-    // FAST PATH: a plain website visitor (not the installed app, not a ?beta link) can ONLY
-    // go to the landing page, and that decision depends on nothing async. So jump there
-    // instantly — no 2.4s splash, no waiting on Firebase. The splash below only runs for the
-    // installed-app / beta paths, which genuinely need the auth state to pick a destination.
+    // FAST PATH: every website visitor (the installed app is the only exception) goes to the
+    // landing page FIRST — including beta invites, which used to skip straight to sign-in and
+    // lost the landing + pricing steps. We capture the beta code into localStorage here so the
+    // tester stays flagged through the whole funnel (landing → sign-in → agreement → app) and
+    // still gets the free-Premium welcome popup, even though they now see the marketing first.
     (function() {
       var qs = location.search || '';
-      var isBeta = false; try { isBeta = new URLSearchParams(qs).has('beta'); } catch(e){}
-      if (!isInstalledApp && !isBeta) {
-        window.location.replace('/landing.html' + qs);
+      try {
+        var bp = new URLSearchParams(qs), b = bp.get('beta');
+        if (b === 'mps-beta-2026') {
+          localStorage.setItem('mps_beta', b);
+          var r = bp.get('ref');  if (r) localStorage.setItem('mps_beta_ref', r);
+          var f = bp.get('from'); if (f) localStorage.setItem('mps_beta_from', f);
+        }
+      } catch(e){}
+      if (!isInstalledApp) {
+        window.location.replace('/landing.html' + qs);   // instant, no 2.4s splash
       }
     })();
 
@@ -217,8 +225,9 @@
         if (isInstalledApp) {
           dest = authUser ? '/hub.html' : '/auth.html'; // app: signed-in → app, else → sign in
         } else {
-          // website: a beta link goes straight into the app (sign-in → hub); everyone else sees marketing
-          dest = isBeta ? (authUser ? '/hub.html' : '/auth.html') : '/landing.html';
+          // website (incl. beta invites): always land on marketing first (fast-path above
+          // already handles this; kept here for safety).
+          dest = '/landing.html';
         }
         window.location.replace(dest + qs);
       }, 480);
