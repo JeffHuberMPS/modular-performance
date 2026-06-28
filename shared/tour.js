@@ -20,10 +20,13 @@
   var TOURS = {
     workout: [
       { sel: '.tab[data-tab="today"]',     text: "This is <b>Today</b> — where you log the session you're doing right now. Tap it.", click: true },
-      { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b>. A “split” is a group of exercises — like Push, Pull, or Legs.", click: true },
-      { sel: '#split-picker-select',       text: "<b>This dropdown is the key part.</b> Pick which split you're training — it loads that day's exercises for you. Choose one, then tap Next.", click: false },
-      { sel: '#split-picker-confirm',      text: "Now tap <b>Add</b> to drop those exercises into your session.", click: true },
-      { center: true,                       text: "Every exercise gives you a <b>Weight</b> and <b>Reps</b> box for each set. Type your numbers, then tap <b>+ Set</b> under an exercise to add another set. That's the heart of logging a lift.", click: false },
+      { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b>. A “split” is a muscle group / training day — like Push, Pull, or Legs.", click: true },
+      { sel: '#split-picker-select',       text: "Pick which split you're training from this dropdown, then tap Next.", click: false },
+      { sel: '#split-picker-confirm',      text: "Tap <b>Add</b> to create that split.", click: true },
+      { sel: '.ex-dropdown',               text: "<b>This is how you add exercises.</b> Use this dropdown to drop an exercise into the split — pick one (or type a custom one). Add one, then tap Next.", click: false },
+      { sel: '.sets-grid input[type="number"]', text: "For each set, type the <b>Weight</b> you lifted here.", click: false },
+      { sel: '.sets-grid input[type="text"]',   text: "And type your <b>Reps</b> right next to it.", click: false },
+      { txt: '+ Set', txtTag: 'button',    text: "Tap <b>+ Set</b> under an exercise to log another set. That's the core loop — add exercise, enter weight + reps, repeat.", click: false },
       { sel: '#add-skill-btn',             text: "<b>+ Add Skill</b> logs skill work — mobility, technique, drills. Same idea as splits.", click: false },
       { sel: '#cond-cat-row',              text: "<b>Conditioning</b> — log your cardio here: running, sprints, or a cardio machine.", click: false },
       { sel: '#end-workout',               text: "When you're finished, <b>End Workout &amp; Save</b> logs the entire session at once.", click: false },
@@ -91,7 +94,7 @@
     [els.top, els.bottom, els.left, els.right].forEach(function (p) {
       p.addEventListener('click', function (ev) { ev.stopPropagation(); ev.preventDefault(); }, true);
     });
-    els.ring = mk('position:fixed;z-index:2147483601;border:2px solid #C9A020;border-radius:10px;box-shadow:0 0 0 3px rgba(201,160,32,0.30),0 0 22px rgba(201,160,32,0.55);pointer-events:none;transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease;');
+    els.ring = mk('position:fixed;z-index:2147483601;border:2px solid #ffffff;border-radius:10px;box-shadow:0 0 0 3px rgba(255,255,255,0.30),0 0 22px rgba(255,255,255,0.55);pointer-events:none;transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease;');
     els.tip = mk('position:fixed;z-index:2147483602;width:300px;max-width:calc(100vw - 24px);background:linear-gradient(180deg,#1c1b17,#0e0e0e);border:1px solid rgba(201,160,32,0.45);border-radius:14px;padding:15px 16px 14px;box-shadow:0 16px 44px rgba(0,0,0,0.7);font-family:Inter,system-ui,-apple-system,sans-serif;color:#ededed;');
     els.tip.innerHTML =
         '<div id="mpst-count" style="font-family:\'Bebas Neue\',sans-serif;letter-spacing:.12em;font-size:.66rem;color:#C9A020;margin-bottom:5px;"></div>'
