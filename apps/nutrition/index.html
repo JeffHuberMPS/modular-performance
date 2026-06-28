@@ -1065,11 +1065,12 @@ function resetAll(){
 /* ============================== ONBOARDING ============================== */
 const OB=[
   {step:'Profile', q:'How much do you weigh?', type:'num', key:'weight', ph:'180'},
+  {step:'Target', q:'What\'s your target weight?', type:'num', key:'targetWeight', ph:'170'},
   {step:'Goal', q:'What\'s your goal?', type:'choice', key:'goal', opts:[['maintain','Maintain'],['lose','Lose Weight'],['gain','Build Muscle / Gain Strength']]},
   {step:'Meals', q:'How many meals & snacks per day?', type:'mealsnacks'},
   {step:'Activity', q:'How active are you?', type:'choice', key:'activity', opts:[['sedentary','Sedentary - little or no exercise'],['light','Light - 1-3 days a week'],['moderate','Moderate - 3-5 days a week'],['active','Active - 6-7 days a week']]},
 ];
-let obIdx=0, obData={weight:180, goal:'maintain', mealsN:3, snacksN:0, activity:'light'};
+let obIdx=0, obData={weight:180, targetWeight:170, goal:'maintain', mealsN:3, snacksN:0, activity:'light'};
 function startOnboarding(){ obIdx=0; renderOB(); }
 function renderOB(){
   var step=OB[obIdx];
@@ -1102,6 +1103,7 @@ function obNext(){
   if(step.type==='num'){ var val=parseFloat(document.getElementById('obIn').value); if(val) obData[step.key]=val; }
   if(obIdx<OB.length-1){ obIdx++; renderOB(); return; }
   S.profile.weight=obData.weight||180;
+  S.profile.targetWeight=obData.targetWeight||obData.weight||180;
   S.profile.goal=obData.goal||'maintain';
   S.profile.activity=obData.activity||'light';
   var mn=obData.mealsN||3, sn=obData.snacksN||0;
