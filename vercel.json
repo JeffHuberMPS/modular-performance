@@ -15,7 +15,6 @@
       ]
     },
     {
-      "comment": "Never cache the HTML entry points. In-app browsers (Instagram/Facebook) were serving a stale index/landing and sending visitors to the wrong screen. no-store forces a fresh fetch every time.",
       "source": "/:page(|index.html|landing.html|auth.html|agreement.html|hub.html|beta_preview.html)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
