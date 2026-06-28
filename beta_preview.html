@@ -96,6 +96,10 @@
   .qacc-ans:last-child { border-bottom:none; }
   .qacc-ans .who { color:#6a7280; font-size:12px; white-space:nowrap; }
   .qacc-empty { font-size:13px; color:#5f6671; padding:4px 0; }
+  /* average-rating star bar (fractional fill, matches the survey's gold stars) */
+  .starbar { position:relative; display:inline-block; font-size:19px; letter-spacing:3px; line-height:1; white-space:nowrap; }
+  .starbar-bg { color:#33373f; }
+  .starbar-fill { position:absolute; left:0; top:0; color:#f0b65a; overflow:hidden; white-space:nowrap; }
   .stars { display:flex; gap:6px; font-size:30px; }
   .stars span { cursor:pointer; color:#33373f; transition:.1s; }
   .stars span.on { color:#f0b65a; }
@@ -492,8 +496,18 @@ function adminDash(){
      +stat(tierMode||'—','Most-chosen pricing','','small')
      +stat(wouldPay+' / '+lifetime,'Would pay (Elite/Premium)')
     +'</div></div>'
-    +'<div class="card" style="--a:#00d4ff"><h2>How they rate MPS</h2><div style="margin-top:10px">'
-     + RATINGS.map(function(r){ var nums=surveys.map(function(x){return +((x.survey||{})[r.k]);}).filter(function(n){return n>0;}); var a=nums.length?(nums.reduce(function(x,y){return x+y;},0)/nums.length).toFixed(1):'—'; var full=Math.round(nums.length?+a:0); return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #1c1c1c"><span style="font-size:13px;color:#cdd2da">'+esc(r.t)+'</span><span><span style="color:#f0b65a;letter-spacing:1px">'+('★'.repeat(full)+'☆'.repeat(5-full))+'</span> <b style="font-family:\'Courier New\',monospace;color:#00d4ff;margin-left:8px">'+a+'</b></span></div>'; }).join('')
+    +'<div class="card" style="--a:#00d4ff"><h2>How they rate MPS</h2><p class="hint" style="margin:4px 0 12px">Average stars per category, filling in as ratings come in.</p>'
+     + RATINGS.map(function(r){
+         var nums=surveys.map(function(x){return +((x.survey||{})[r.k]);}).filter(function(n){return n>0;});
+         var a=nums.length?(nums.reduce(function(x,y){return x+y;},0)/nums.length):0;
+         var pct=a>0?(a/5*100):0;
+         var disp=nums.length?a.toFixed(1):'—';
+         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #1c1c1c">'
+           +'<span style="font-size:14px;color:#cdd2da;font-weight:600">'+esc(r.t)+'</span>'
+           +'<span style="display:flex;align-items:center;gap:12px">'
+             +'<span class="starbar"><span class="starbar-bg">★★★★★</span><span class="starbar-fill" style="width:'+pct.toFixed(1)+'%">★★★★★</span></span>'
+             +'<b style="font-family:\'Courier New\',monospace;color:#00d4ff;min-width:30px;text-align:right">'+disp+'</b></span></div>';
+       }).join('')
     +'</div></div>'
     +'<div class="card" style="--a:#f0b65a"><h2>What testers are telling you</h2>'
      +topList('If they could change ONE thing', surveys.map(function(x){return (x.survey||{}).change;}))
