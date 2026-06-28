@@ -186,10 +186,14 @@
 
     // Installed app (added to home screen) launches straight into the app —
     // never the marketing landing page. The website still shows landing to visitors.
+    // NOTE: do NOT use an `android-app://` referrer to detect the installed app.
+    // In-app browsers (Instagram, Facebook, Messenger) set the referrer to
+    // android-app://com.instagram.android etc., which falsely flagged real
+    // visitors as the installed app and skipped them past the landing page
+    // straight to sign-in. display-mode/standalone are the reliable signals.
     var isInstalledApp =
       (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-      window.navigator.standalone === true ||
-      (document.referrer || '').indexOf('android-app://') === 0;
+      window.navigator.standalone === true;
 
     function tryProceed() {
       if (authUser === undefined || !minTimeDone) return;
