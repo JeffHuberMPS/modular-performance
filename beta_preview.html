@@ -492,6 +492,9 @@ function adminDash(){
      +stat(tierMode||'—','Most-chosen pricing','','small')
      +stat(wouldPay+' / '+lifetime,'Would pay (Elite/Premium)')
     +'</div></div>'
+    +'<div class="card" style="--a:#00d4ff"><h2>How they rate MPS</h2><div style="margin-top:10px">'
+     + RATINGS.map(function(r){ var nums=surveys.map(function(x){return +((x.survey||{})[r.k]);}).filter(function(n){return n>0;}); var a=nums.length?(nums.reduce(function(x,y){return x+y;},0)/nums.length).toFixed(1):'—'; var full=Math.round(nums.length?+a:0); return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #1c1c1c"><span style="font-size:13px;color:#cdd2da">'+esc(r.t)+'</span><span><span style="color:#f0b65a;letter-spacing:1px">'+('★'.repeat(full)+'☆'.repeat(5-full))+'</span> <b style="font-family:\'Courier New\',monospace;color:#00d4ff;margin-left:8px">'+a+'</b></span></div>'; }).join('')
+    +'</div></div>'
     +'<div class="card" style="--a:#f0b65a"><h2>What testers are telling you</h2>'
      +topList('If they could change ONE thing', surveys.map(function(x){return (x.survey||{}).change;}))
      +topList('What almost made them quit', surveys.map(function(x){return (x.survey||{}).quit;}))
