@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>MPS — Sign In</title>
-  <script>/* Require accepting the CURRENT User Agreement before sign-up/sign-in (re-prompts after a material change). */(function(){try{if(localStorage.getItem('mps_terms_version')!=='2026-06-25'){location.replace('/agreement.html?next='+encodeURIComponent(location.pathname));}}catch(e){}})();</script>
+  <script>/* Require accepting the CURRENT User Agreement before sign-up/sign-in (re-prompts after a material change). */(function(){try{if(localStorage.getItem('mps_terms_version')!=='2026-06-25'){location.replace('/agreement.html?next='+encodeURIComponent(location.pathname + location.search));}}catch(e){}})();</script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -803,7 +803,7 @@
         await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         // Redirect to hub
-        window.location.href = '/hub.html';
+        window.location.href = '/hub.html' + (window.location.search || '');
 
       } catch (err) {
         setLoading(false);
@@ -891,14 +891,14 @@
             });
           }
         } catch(e) { console.warn('post-redirect Firestore error:', e); }
-        window.location.href = '/hub.html';
+        window.location.href = '/hub.html' + (window.location.search || '');
       }
     }).catch(function(e) { console.warn('getRedirectResult error:', e); });
 
     /* ── On load: if already signed in, skip to hub ─────── */
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
-        window.location.href = '/hub.html';
+        window.location.href = '/hub.html' + (window.location.search || '');
         return;
       }
       // Bounced here from an in-app browser with a ?signin= flag → auto-start it

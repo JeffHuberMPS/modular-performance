@@ -195,13 +195,16 @@
       if (authUser === undefined || !minTimeDone) return;
       splashEl.classList.add('fade-out');
       setTimeout(function() {
+        var qs = location.search || '';                  // preserve ?beta & ?ref through the splash
+        var isBeta = false; try { isBeta = new URLSearchParams(qs).has('beta'); } catch(e){}
         var dest;
         if (isInstalledApp) {
           dest = authUser ? '/hub.html' : '/auth.html'; // app: signed-in → app, else → sign in
         } else {
-          dest = '/landing.html';                        // website: marketing landing
+          // website: a beta link goes straight into the app (sign-in → hub); everyone else sees marketing
+          dest = isBeta ? (authUser ? '/hub.html' : '/auth.html') : '/landing.html';
         }
-        window.location.replace(dest);
+        window.location.replace(dest + qs);
       }, 480);
     }
 
