@@ -298,6 +298,10 @@
     </div>
   </div>
 
+  <!-- Test-only: wipe this test account + on-screen progress and start over as a brand-new user.
+       Hidden by default; only revealed for test accounts (owner / +aliases / @mps.test). -->
+  <button id="mps-reset-test" onclick="mpsResetTestAccount()" style="display:none;position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:300;background:#7a1f1f;color:#fff;border:1px solid #c0504a;border-radius:999px;padding:9px 18px;font-family:'Bebas Neue',sans-serif;letter-spacing:0.1em;font-size:0.82rem;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.55);">RESET TEST ACCOUNT</button>
+
   <div class="tier-tester" id="tier-tester">
     <div class="tester-head">
       <span class="tester-head__title">Dev tools</span>
@@ -392,7 +396,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '267';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '268';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1002,9 +1006,41 @@
       }
     }
 
+    /* ── Test-account reset (for repeatable new-user testing) ── */
+    function mpsIsTestEmail(email) {
+      var e = (email || '').toLowerCase();
+      return e === 'jeffreyhuber86@gmail.com'
+        || /^jeffreyhuber86\+.*@gmail\.com$/.test(e)
+        || /@mps\.test$/.test(e);
+    }
+    async function mpsResetTestAccount() {
+      var u = firebase.auth().currentUser;
+      if (!u || !mpsIsTestEmail(u.email)) return;   // safety: only ever test accounts
+      if (!confirm('Delete this TEST account and start over as a brand-new user?')) return;
+      var uid = u.uid;
+      var k = (u.email || u.uid || '').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 80);
+      try { await firebase.firestore().collection('users').doc(uid).delete(); } catch (e) {}
+      try { await firebase.firestore().collection('beta_signups').doc(k).delete(); } catch (e) {}
+      // wipe the on-screen funnel progress so terms + welcome show fresh next time
+      ['mps_terms_version','mps_terms_accepted_at','mps_agreed_v1','mps_onboarded_v1','mps_consent_logged',
+       'mps_beta','mps_beta_ref','mps_beta_from','mps_beta_start','mps_beta_welcomed','mps_beta_survey_done',
+       'mps_beta_lifetime','mps_beta_refcode','mps_beta_recorded']
+        .forEach(function (key) { try { localStorage.removeItem(key); sessionStorage.removeItem(key); } catch (e) {} });
+      // delete the auth login so the email/phone counts as "never registered" again
+      try { await u.delete(); } catch (e) { try { await firebase.auth().signOut(); } catch (e2) {} }
+      window.location.replace('/');   // back to the landing page, fully reset
+    }
+
     /* ── Auth ─────────────────────────────────────────────── */
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) { location.replace('/auth.html'); return; }
+
+      // Test accounts get a "Reset Test Account" button so Jeff can run the new-user flow
+      // unlimited times. Real customers never match this, so they never see it.
+      if (mpsIsTestEmail(user.email)) {
+        var _rb = document.getElementById('mps-reset-test');
+        if (_rb) _rb.style.display = 'block';
+      }
 
       // Proof-of-consent: terms are now accepted AFTER sign-in, so log the accepted version here
       // (covers every sign-in path). Idempotent merge, once per session, never blocks the app.
