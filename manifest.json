@@ -2,7 +2,7 @@
   "name": "Modular Performance",
   "short_name": "MPS",
   "description": "Every system. One platform. Built for the ones who don't quit.",
-  "start_url": "/",
+  "start_url": "/splash.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

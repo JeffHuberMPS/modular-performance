@@ -3,6 +3,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- The root URL now serves THIS landing page directly (no redirect → no in-app-browser
+       "continue to a new page?" prompt). The installed app is the only thing that should skip
+       marketing, so if we're running as the installed PWA, jump straight into the app. This is
+       a no-op for every normal web/Instagram visitor (they are never in standalone display mode). -->
+  <script>try{if((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true){window.location.replace('/hub.html'+(window.location.search||''));}}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#C9A020" />
   <meta name="description" content="Every system. One platform. Built for the ones who don't quit. Track workouts, habits, sleep, expenses, and more." />

@@ -1,11 +1,11 @@
 // MPS Service Worker — offline support + update notification
-const CACHE_VERSION = 'mps-v264';
+const CACHE_VERSION = 'mps-v265';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const FONT_CACHE    = CACHE_VERSION + '-fonts';
 
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
+  '/splash.html',
   '/landing.html',
   '/hub.html',
   '/auth.html',
@@ -98,7 +98,7 @@ self.addEventListener('fetch', event => {
         caches.match(event.request).then(cached => {
           if (cached) return cached;
           if (event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/index.html');
+            return caches.match('/landing.html');
           }
           return undefined;
         })

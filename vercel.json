@@ -15,7 +15,7 @@
       ]
     },
     {
-      "source": "/:page(|index.html|landing.html|auth.html|agreement.html|hub.html|beta_preview.html)",
+      "source": "/:page(|splash.html|landing.html|auth.html|agreement.html|hub.html|beta_preview.html)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
