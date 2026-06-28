@@ -69,8 +69,7 @@
   /* ---------- 1. WELCOME ---------- */
   function welcome() {
     var ov = overlay(
-      ICON_SPARK
-      + '<div class="beta-eyebrow">You’re in the beta</div>'
+      '<div class="beta-eyebrow">You’re in the beta</div>'
       + '<div class="beta-h">Free <span class="gold">MPS Premium</span> — here’s the deal</div>'
       + '<p class="beta-p">Use the whole app free for a few days. No card.</p>'
       + '<p class="beta-p"><b>Day 4, a quick survey pops up. Finish it → <span class="gold">yours for life</span>. Skip it → access ends.</b></p>'
@@ -86,8 +85,7 @@
       return '<div class="beta-row"><label>' + c + '</label><span class="beta-stars" data-crit="' + i + '" data-val="0">☆☆☆☆☆</span></div>';
     }).join('');
     var ov = overlay(
-      ICON_SPARK
-      + '<div class="beta-h">Lock in your access</div>'
+      '<div class="beta-h">Lock in your access</div>'
       + '<div class="beta-sub">A few taps, a few honest words, and Premium is yours forever.</div>'
       + '<div class="beta-sec s1">Rate MPS</div>' + rows
       + '<div class="beta-sec s2">Pricing</div>'
@@ -135,8 +133,7 @@
   /* ---------- 3. CONGRATS ---------- */
   function congrats() {
     var ov = overlay(
-      ICON_SPARK
-      + '<div class="beta-eyebrow">Congratulations</div>'
+      '<div class="beta-eyebrow">Congratulations</div>'
       + '<div class="beta-h">Premium is <span class="gold">yours for life</span></div>'
       + '<div class="beta-h" style="font-size:1.4rem;margin-top:14px;">Now send it to <span class="gold">one person.</span></div>'
       + '<p class="beta-p">You earned 1 invite. Make it count.</p>'
