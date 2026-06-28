@@ -19,11 +19,18 @@
 
   var TOURS = {
     workout: [
-      { sel: '.tab[data-tab="today"]',     text: "Start here — tap <b>Today</b> to open today's session.", click: true },
-      { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b> to add your first lift, then pick the exercise.", click: true },
-      { sel: '#end-workout',               text: "When you're done lifting, <b>End Workout &amp; Save</b> logs the whole session at once.", click: false },
-      { sel: '.tab[data-tab="prs"]',       text: "Your <b>PRs</b> update here automatically every time you go heavier. Tap to look.", click: true },
-      { sel: '.tab[data-tab="dashboard"]', text: "And your <b>Dashboard</b> tracks volume, streak &amp; progress over time. That's it — go log a set.", click: true }
+      { sel: '.tab[data-tab="today"]',     text: "This is <b>Today</b> — where you log the session you're doing right now. Tap it.", click: true },
+      { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b>. A “split” is a group of exercises — like Push, Pull, or Legs.", click: true },
+      { sel: '#split-picker-select',       text: "<b>This dropdown is the key part.</b> Pick which split you're training — it loads that day's exercises for you. Choose one, then tap Next.", click: false },
+      { sel: '#split-picker-confirm',      text: "Now tap <b>Add</b> to drop those exercises into your session.", click: true },
+      { center: true,                       text: "Every exercise gives you a <b>Weight</b> and <b>Reps</b> box for each set. Type your numbers, then tap <b>+ Set</b> under an exercise to add another set. That's the heart of logging a lift.", click: false },
+      { sel: '#add-skill-btn',             text: "<b>+ Add Skill</b> logs skill work — mobility, technique, drills. Same idea as splits.", click: false },
+      { sel: '#cond-cat-row',              text: "<b>Conditioning</b> — log your cardio here: running, sprints, or a cardio machine.", click: false },
+      { sel: '#end-workout',               text: "When you're finished, <b>End Workout &amp; Save</b> logs the entire session at once.", click: false },
+      { sel: '.tab[data-tab="prs"]',       text: "Your <b>PRs</b> tab — every personal record, tracked automatically as you get stronger. Tap it.", click: true },
+      { sel: '.tab[data-tab="history"]',   text: "<b>History</b> — every past session, saved to look back on.", click: true },
+      { sel: '.tab[data-tab="plan"]',      text: "<b>Plan</b> — build or follow a full training program here.", click: true },
+      { sel: '.tab[data-tab="dashboard"]', text: "And your <b>Dashboard</b> — your whole training at a glance: volume, streak and progress. That's the full tour.", click: true }
     ],
     habits: [
       { txt: 'Track', sel: '.log-tab',     text: "Tap <b>Track</b> to pull up today's habits.", click: true },
