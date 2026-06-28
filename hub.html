@@ -407,7 +407,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '275';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '276';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -669,8 +669,18 @@
       setTimeout(function () { document.getElementById('tutorial-overlay').classList.add('show'); }, 350);
     }
     function dismissTutorial() {
-      if (_tutAppId) { try { localStorage.setItem('mps_tut_' + _tutAppId, '1'); } catch (e) {} }
+      var id = _tutAppId;
+      if (id) { try { localStorage.setItem('mps_tut_' + id, '1'); } catch (e) {} }
       document.getElementById('tutorial-overlay').classList.remove('show');
+      // After the intro popup, kick off the interactive in-app walkthrough (runs inside the app frame).
+      if (id) {
+        setTimeout(function () {
+          try {
+            var f = document.getElementById('frame-' + id);
+            if (f && f.contentWindow && typeof f.contentWindow.startMpsTour === 'function') f.contentWindow.startMpsTour();
+          } catch (e) {}
+        }, 300);
+      }
     }
 
     /* First-time onboarding — shows ONCE for a brand-new user. Anyone who already has tracker data
@@ -1076,8 +1086,8 @@
        'mps_beta','mps_beta_ref','mps_beta_from','mps_beta_start','mps_beta_welcomed','mps_beta_survey_done',
        'mps_beta_lifetime','mps_beta_refcode','mps_beta_recorded']
         .forEach(function (key) { try { localStorage.removeItem(key); sessionStorage.removeItem(key); } catch (e) {} });
-      // also clear every per-app tutorial flag so the tutorials re-show on the next test run
-      try { Object.keys(localStorage).forEach(function (key) { if (key.indexOf('mps_tut_') === 0) localStorage.removeItem(key); }); } catch (e) {}
+      // also clear every per-app tutorial + tour flag so they re-show on the next test run
+      try { Object.keys(localStorage).forEach(function (key) { if (key.indexOf('mps_tut_') === 0 || key.indexOf('mps_tour_') === 0) localStorage.removeItem(key); }); } catch (e) {}
       // 2) Best-effort cleanup of the test login + docs (don't let a slow/blocked delete stall the reset).
       if (u) {
         var uid = u.uid;
