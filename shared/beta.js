@@ -75,7 +75,13 @@
       + '<p class="beta-p"><b>Day 4, a quick survey pops up. Finish it → <span class="gold">yours for life</span>. Skip it → access ends.</b></p>'
       + '<p class="beta-p" style="font-size:.82rem;color:#9a9a9a;margin-bottom:2px;">Premium in exchange for honest feedback. That’s the trade.</p>'
       + '<button class="beta-btn" id="beta-go">Got it — start exploring</button>', false, false);
-    ov.querySelector('#beta-go').onclick = function () { ov.remove(); };
+    ov.querySelector('#beta-go').onclick = function () {
+      ov.remove();
+      // After the beta welcome, show the app onboarding next (beta message first, onboarding second).
+      setTimeout(function () {
+        try { if (typeof window.mpsShowOnboardingAfterBeta === 'function') window.mpsShowOnboardingAfterBeta(); } catch (e) {}
+      }, 220);
+    };
   }
 
   /* ---------- 2. SURVEY ---------- */
