@@ -392,7 +392,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '262';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '263';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1003,6 +1003,24 @@
     /* ── Auth ─────────────────────────────────────────────── */
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) { location.replace('/auth.html'); return; }
+
+      // Proof-of-consent: terms are now accepted AFTER sign-in, so log the accepted version here
+      // (covers every sign-in path). Idempotent merge, once per session, never blocks the app.
+      try {
+        if (localStorage.getItem('mps_terms_version') === '2026-06-25' && !sessionStorage.getItem('mps_consent_logged')) {
+          var _taAt = localStorage.getItem('mps_terms_accepted_at') || null;
+          var _method = (user.providerData && user.providerData[0] ? user.providerData[0].providerId : 'unknown');
+          firebase.firestore().collection('users').doc(user.uid).collection('settings').doc('terms_consent').set({
+            terms_version: '2026-06-25',
+            terms_accepted_at: _taAt,
+            recorded_at: firebase.firestore.FieldValue.serverTimestamp(),
+            method: _method,
+            user_agent: (navigator.userAgent || '').slice(0, 300),
+            history: firebase.firestore.FieldValue.arrayUnion({ terms_version: '2026-06-25', accepted_at: _taAt, method: _method })
+          }, { merge: true }).then(function(){ try { sessionStorage.setItem('mps_consent_logged','1'); } catch(e){} }).catch(function(){});
+        }
+      } catch (e) {}
+
       if (DEV_EMAILS.includes((user.email || '').toLowerCase())) {
         unlockedApps = APPS.map(a => a.id);
         renderUser(user.displayName || 'Jeff', user.email, user.photoURL, 'All-Access');

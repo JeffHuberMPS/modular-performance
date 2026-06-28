@@ -7,7 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>MPS — Sign In</title>
-  <script>/* Require accepting the CURRENT User Agreement before sign-up/sign-in (re-prompts after a material change). */(function(){try{if(localStorage.getItem('mps_terms_version')!=='2026-06-25'){location.replace('/agreement.html?next='+encodeURIComponent(location.pathname + location.search));}}catch(e){}})();</script>
+  <!-- Terms are accepted AFTER sign-in now (sign in → agreement → app), so no pre-sign-in guard here.
+       The post-sign-in handlers send the user to the agreement if they haven't accepted the current version. -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -537,6 +538,20 @@
 
     let confirmationResult = null;
 
+    /* After a successful sign-in: if the user hasn't accepted the CURRENT agreement,
+       send them to the 3-box agreement (then on to the app). Otherwise straight to the app.
+       This is what puts the terms AFTER Google/email in the flow. */
+    function gotoAfterAuth() {
+      var qs = window.location.search || '';
+      var accepted = false;
+      try { accepted = localStorage.getItem('mps_terms_version') === '2026-06-25'; } catch (e) {}
+      if (accepted) {
+        window.location.href = '/hub.html' + qs;
+      } else {
+        window.location.href = '/agreement.html?next=' + encodeURIComponent('/hub.html' + qs);
+      }
+    }
+
     // Screen transitions
     function showChooseScreen() {
       setScreen('screen-choose');
@@ -819,7 +834,7 @@
         await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         // Redirect to hub
-        window.location.href = '/hub.html' + (window.location.search || '');
+        gotoAfterAuth();
 
       } catch (err) {
         setLoading(false);
@@ -909,14 +924,14 @@
             });
           }
         } catch(e) { console.warn('post-redirect Firestore error:', e); }
-        window.location.href = '/hub.html' + (window.location.search || '');
+        gotoAfterAuth();
       }
     }).catch(function(e) { console.warn('getRedirectResult error:', e); });
 
     /* ── On load: if already signed in, skip to hub ─────── */
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
-        window.location.href = '/hub.html' + (window.location.search || '');
+        gotoAfterAuth();
         return;
       }
       // Bounced here from an in-app browser with a ?signin= flag → auto-start it

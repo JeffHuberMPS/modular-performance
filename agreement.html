@@ -91,7 +91,7 @@
   <script>
   /* If already accepted on this device, skip straight to sign-in (no re-nag).
      Add ?view to the URL to ALWAYS read the terms (review/preview), even when signed in or already agreed. */
-  (function(){ try { var q = new URLSearchParams(location.search); if (!q.has('view') && localStorage.getItem('mps_terms_version') === '2026-06-25') { location.replace(q.get('next') || '/auth.html'); } } catch(e){} })();
+  (function(){ try { var q = new URLSearchParams(location.search); if (!q.has('view') && localStorage.getItem('mps_terms_version') === '2026-06-25') { location.replace(q.get('next') || '/hub.html'); } } catch(e){} })();
   /* ── Legal content (contact emails on the MPS domain) ───────────── */
   const SECTIONS = {
     terms: {
@@ -342,7 +342,8 @@ TO THE MAXIMUM EXTENT PERMITTED BY LAW, YOU HEREBY RELEASE, WAIVE, AND DISCHARGE
       localStorage.setItem('mps_terms_version', MPS_TERMS_VERSION);          // which version they accepted
       localStorage.setItem('mps_terms_accepted_at', new Date().toISOString()); // when they accepted (client time)
     } catch(e){}
-    const next = new URLSearchParams(location.search).get('next') || '/auth.html';
+    // New order: sign-in happens BEFORE the agreement, so after accepting go to the app.
+    const next = new URLSearchParams(location.search).get('next') || '/hub.html';
     window.location.href = next;
   }
 
