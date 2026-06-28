@@ -17,6 +17,13 @@ window.MPS_GUARD = (function() {
   // ── Protect an app route ────────────────────────────────────
   // appSlug: 'workout' | 'habits' | 'sleep' | 'expenses' | 'journal'
   function protect(appSlug) {
+    // EMBEDDED IN THE HUB (iframe): the hub already handles auth + which apps are unlocked
+    // (incl. beta/all-access, which isn't reflected in the Firestore `apps` list). Redirecting
+    // from here would load /hub.html *inside* the iframe — recursive hub, stacked headers,
+    // "app never opens". So when embedded, never guard/redirect; just let the app render.
+    try { if (window.top !== window.self) { _hideLoader(); return; } }
+    catch (e) { _hideLoader(); return; }   // cross-origin top access blocked → treat as embedded
+
     // Show loading screen while auth resolves
     _showLoader();
 
