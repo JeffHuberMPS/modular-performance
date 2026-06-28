@@ -14,7 +14,12 @@
   <link rel="stylesheet" href="/shared/styles.css" />
 
   <style>
-    html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: 64px; font-size: 81%; }
+    html { scroll-behavior: smooth; scroll-padding-top: 64px; font-size: 81%; -webkit-text-size-adjust: 100%; }
+    /* Free, buttery scrolling everywhere. Mandatory scroll-snap was removed:
+       it locked every swipe to a section, fought the finger, and froze/jumped
+       inside in-app browsers (Instagram/Facebook). Sections still fill the
+       screen via min-height, but the user scrolls freely with zero resistance. */
+    body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     /* GLOBAL ~75-80% SCALE — shrink the entire spacing system + base font at once so the page
        reads like 80% zoom and each section fits one screen (instead of piecemeal element tweaks). */
     :root {
@@ -24,14 +29,20 @@
     /* Hard auto-snap. scroll-padding-top clears the fixed nav so each section's top label is never hidden.
        min-height = screen minus nav, and content is centered so the WHOLE section shows in one snap.
        (If a section is still taller than the screen, the browser relaxes the snap so you can scroll through it — nothing is ever clipped.) */
-    .hero, .section, .diff-section, .final-cta { min-height: calc(100vh - 64px); box-sizing: border-box; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }
-    /* Founder story is long on purpose — left as a free, manual-scroll snap area. */
-    .founder-section { box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: normal; }
+    /* min-height uses dvh (dynamic viewport height) so sections fit the REAL visible
+       area on mobile — 100vh sits behind the address bar and caused content cutoff +
+       jumps when the toolbar showed/hid. vh is the fallback for old browsers. */
+    .hero, .section, .diff-section, .final-cta { min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
+    .founder-section { box-sizing: border-box; }
 
     body {
       background: var(--ns-black);
       overflow-x: hidden;
+      animation: mpsPageIn 0.3s ease both;
     }
+    /* Smooth page entrance; self-resolving so the page can never get stuck hidden. */
+    @keyframes mpsPageIn { from { opacity: 0; } to { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { body { animation: none !important; } }
 
     /* ── NAV ─────────────────────────────────────────────────── */
     .landing-nav {
@@ -42,8 +53,9 @@
       align-items: center;
       justify-content: space-between;
       padding: 16px var(--space-xl);
-      background: rgba(10,10,10,0.92);
-      backdrop-filter: blur(12px);
+      /* Solid bg instead of blur(): backdrop-filter repaints the whole header on
+         every scroll frame and was a major source of scroll jank on mobile. */
+      background: rgba(10,10,10,0.97);
       border-bottom: 1px solid var(--border-subtle);
     }
     .nav-logo {
@@ -75,6 +87,7 @@
     /* ── HERO ────────────────────────────────────────────────── */
     .hero {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -355,6 +368,9 @@
       padding-bottom: 6px;
       scrollbar-width: thin;
       scrollbar-color: var(--border-subtle) transparent;
+      -webkit-overflow-scrolling: touch;   /* momentum scrolling on iOS/in-app webviews */
+      overscroll-behavior-x: contain;       /* sideways swipes stay in this row, don't bleed into the page or trigger browser-back */
+      touch-action: pan-x pan-y;
     }
     .suite-scroll::-webkit-scrollbar { height: 4px; }
     .suite-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -400,16 +416,21 @@
     .tile-header::after {
       content: '';
       position: absolute;
-      top: 0; left: -100%; width: 60%; height: 100%;
+      top: 0; left: 0; width: 60%; height: 100%;
       background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      /* Animate transform (GPU-composited) instead of `left` — animating `left`
+         forced a layout recalc every frame on every tile and made the whole
+         page stutter while scrolling. */
+      transform: translateX(-167%);
+      will-change: transform;
       animation: tileShimmer 4.5s ease-in-out infinite;
       pointer-events: none;
     }
     @keyframes tileShimmer {
-      0%   { left: -100%; opacity: 0; }
+      0%   { transform: translateX(-167%); opacity: 0; }
       10%  { opacity: 1; }
       90%  { opacity: 1; }
-      100% { left: 160%; opacity: 0; }
+      100% { transform: translateX(267%); opacity: 0; }
     }
 
     .tile-mps {
@@ -624,6 +645,16 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: var(--space-md);
+    }
+
+    /* Smooth fade when switching One-Time / Monthly panels (no hard pop). */
+    @keyframes pricingPanelIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+    #panel-onetime, #panel-monthly { animation: pricingPanelIn 0.26s ease both; }
+    @media (prefers-reduced-motion: reduce) {
+      #panel-onetime, #panel-monthly { animation: none; }
     }
 
     .pricing-card {
@@ -1541,7 +1572,15 @@
     (function generateHeroBg() {
       const container = document.getElementById('hero-bg');
       if (!container) return;
-      for (let i = 0; i < 18; i++) {
+      // Skip the animated background entirely if the device asks for reduced motion
+      // (also kills the GPU cost of continuous rotation on weak phones).
+      try {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      } catch(e) {}
+      // Far fewer shapes on phones — 18 rotating layers was a real source of freezes
+      // inside in-app browsers. 6 on mobile, 12 on desktop keeps it alive but light.
+      const COUNT = (window.innerWidth || 1024) < 700 ? 6 : 12;
+      for (let i = 0; i < COUNT; i++) {
         const el = document.createElement('div');
         el.className = 'hero-shape';
         const size = 30 + Math.random() * 120;
@@ -1558,8 +1597,14 @@
       const isOnetime = mode === 'onetime';
       document.getElementById('btn-onetime').classList.toggle('active', isOnetime);
       document.getElementById('btn-monthly').classList.toggle('active', !isOnetime);
-      document.getElementById('panel-onetime').style.display = isOnetime ? 'block' : 'none';
-      document.getElementById('panel-monthly').style.display = isOnetime ? 'none' : 'block';
+      const show = document.getElementById(isOnetime ? 'panel-onetime' : 'panel-monthly');
+      const hide = document.getElementById(isOnetime ? 'panel-monthly' : 'panel-onetime');
+      hide.style.display = 'none';
+      show.style.display = 'block';
+      // restart the fade-in each time the panel is shown
+      show.style.animation = 'none';
+      void show.offsetWidth;
+      show.style.animation = '';
     }
     // Default: one-time panel shown
     setPricingMode('onetime');

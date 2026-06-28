@@ -15,6 +15,11 @@
   <link rel="stylesheet" href="/shared/styles.css" />
 
   <style>
+    /* Smooth page entrance (no white flash between funnel screens).
+       Self-resolving: always ends at opacity 1, so content can never get stuck hidden. */
+    @keyframes mpsPageIn { from { opacity: 0; } to { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { body { animation: none !important; } }
+
     /* ── Auth Page ─────────────────────────────────────────── */
     body {
       background: var(--ns-black);
@@ -25,6 +30,7 @@
       justify-content: center;
       overflow: hidden;
       position: relative;
+      animation: mpsPageIn 0.3s ease both;
     }
 
     /* Animated background */
@@ -100,7 +106,11 @@
 
     /* Screens */
     .auth-screen { display: none; }
-    .auth-screen.active { display: block; }
+    /* Smooth fade-slide when moving between sign-in / phone / email sub-screens
+       (was an instant display swap that felt like a hard jump). */
+    .auth-screen.active { display: block; animation: authScreenIn 0.24s ease both; }
+    @keyframes authScreenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .auth-screen.active { animation: none; } }
 
     /* Sign-in buttons */
     .auth-btn {
@@ -409,12 +419,18 @@
       </button>
 
       <button class="auth-btn auth-btn--phone" onclick="showPhoneScreen()">
-        <span style="font-size:1.1rem;">📱</span>
+        <svg class="auth-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <rect x="7" y="2" width="10" height="20" rx="2.5"/>
+          <line x1="11" y1="18" x2="13" y2="18"/>
+        </svg>
         Continue with Phone Number
       </button>
 
       <button class="auth-btn auth-btn--phone" onclick="showEmailScreen()">
-        <span style="font-size:1.1rem;">✉️</span>
+        <svg class="auth-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+          <path d="M3.5 7.5l8.5 5.5 8.5-5.5"/>
+        </svg>
         Continue with Email
       </button>
 
@@ -426,12 +442,12 @@
       <div class="auth-input-group">
         <div class="auth-input-row">
           <select class="auth-country-select" id="country-code">
-            <option value="+1">🇺🇸 +1</option>
-            <option value="+44">🇬🇧 +44</option>
-            <option value="+61">🇦🇺 +61</option>
-            <option value="+91">🇮🇳 +91</option>
-            <option value="+52">🇲🇽 +52</option>
-            <option value="+55">🇧🇷 +55</option>
+            <option value="+1">US +1</option>
+            <option value="+44">UK +44</option>
+            <option value="+61">AU +61</option>
+            <option value="+91">IN +91</option>
+            <option value="+52">MX +52</option>
+            <option value="+55">BR +55</option>
           </select>
           <input
             class="auth-input"
@@ -835,7 +851,9 @@
     /* ── Background Shapes ─────────────────────────────────── */
     (function generateBg() {
       const bg = document.getElementById('auth-bg');
-      for (let i = 0; i < 12; i++) {
+      try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch(e){}
+      const COUNT = (window.innerWidth || 1024) < 700 ? 5 : 12;  // fewer drifting shapes on phones
+      for (let i = 0; i < COUNT; i++) {
         const el = document.createElement('div');
         el.className = 'auth-bg__shape';
         const size  = 20 + Math.random() * 80;
