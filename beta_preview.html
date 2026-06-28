@@ -310,29 +310,38 @@ function renderDashboard(){
   if(phase==='final' && !me.surveyCompleted){ setTimeout(function(){ if(loadMe() && !loadMe().surveyCompleted) renderSurvey(); }, 1600); }
 }
 
-// Tighter, sharper set — concrete questions that are hard to dodge. The required
-// open-text ones enforce a minimum real answer (min) so "good"/"nothing" can't pass.
+// FINAL locked survey: 5 star-rating criteria, then the written/choice questions
+// in the anchored order (pricing, then 3 negatives, then 2 positives last).
+var RATINGS = [
+  { k:'r_ease',    t:'Ease of use' },
+  { k:'r_look',    t:'Look & feel' },
+  { k:'r_useful',  t:'Usefulness' },
+  { k:'r_worth',   t:'Worth the price' },
+  { k:'r_overall', t:'Overall' }
+];
 var SURVEY_Q = [
-  { k:'does',   t:'In one honest sentence — what does MPS actually do?', type:'text', min:15 },
-  { k:'tier',   t:'Which plan would you actually pay for?', type:'tier' },
-  { k:'buy',    t:'Be real — would you actually pay for this?', type:'buy' },
-  { k:'price',  t:'What price feels genuinely fair to you?', type:'short' },
-  { k:'change', t:'If you could change ONE thing, what would it be?', type:'text', min:15 },
-  { k:'quit',   t:'What almost made you stop using it?', type:'text', min:12 },
-  { k:'other',  t:'Anything else you want us to know? (optional)', type:'text', opt:true }
+  { k:'tier',    t:'Which plan would you actually pay for?', type:'tier' },
+  { k:'price',   t:'What price feels fair?', type:'short' },
+  { k:'change',  t:'If you could change ONE thing, what would it be?', type:'text', min:12 },
+  { k:'quit',    t:'What almost made you stop using it?', type:'text', min:12 },
+  { k:'feature', t:'What\'s one feature you\'d love to see added?', type:'text', min:12 },
+  { k:'liked',   t:'What did you like most?', type:'text', min:12 },
+  { k:'keep',    t:'What makes you want to keep using it?', type:'text', min:12 }
 ];
 // answers we refuse to accept on the required text questions
 var JUNK = ['good','great','nothing','none','n/a','na','idk','dunno','nope','yes','no','ok','okay','fine','cool','nice','meh','nada','same','all good','looks good','everything','nope nothing','its good','it\'s good'];
 function isJunk(v){ v=v.toLowerCase().trim().replace(/[.!\s]+$/,''); return JUNK.indexOf(v)>=0; }
 function renderSurvey(){
   setPill('Feedback');
-  var fields = '<div class="field"><label>Overall, how would you rate MPS so far?</label><div class="stars" id="stars">'+[1,2,3,4,5].map(function(i){return '<span data-v="'+i+'">★</span>';}).join('')+'</div><input type="hidden" id="rating" value=""></div>';
-  fields += '<div class="field"><label>Your background (helps us read your answers)</label><select id="f_bg"><option value="">Choose one…</option>'+['Fitness','Business','Tech','General'].map(function(o){return '<option>'+o+'</option>';}).join('')+'</select></div>';
+  var fields = '<div class="label">Rate MPS</div>';
+  RATINGS.forEach(function(r){
+    fields += '<div class="field"><label>'+esc(r.t)+'</label><div class="stars" data-k="'+r.k+'">'+[1,2,3,4,5].map(function(i){return '<span data-v="'+i+'">★</span>';}).join('')+'</div><input type="hidden" id="f_'+r.k+'" value=""></div>';
+  });
+  fields += '<div class="label">In your own words</div>';
   SURVEY_Q.forEach(function(q){
     fields += '<div class="field"><label>'+esc(q.t)+'</label>';
     if(q.type==='tier') fields += '<select id="f_'+q.k+'"><option value="">Choose one…</option>'+shuffle(CONFIG.PRICING_TIERS).map(function(o){return '<option>'+esc(o)+'</option>';}).join('')+'</select>';
-    else if(q.type==='buy') fields += '<select id="f_'+q.k+'"><option value="">Choose one…</option><option>Yes</option><option>Maybe</option><option>No</option></select>';
-    else if(q.type==='short') fields += '<input id="f_'+q.k+'" placeholder="e.g. $19/mo, $99 one-time…">';
+    else if(q.type==='short') fields += '<input id="f_'+q.k+'" placeholder="e.g. $19/mo, $99 once…">';
     else fields += '<textarea id="f_'+q.k+'" placeholder="Type your honest answer…"></textarea>';
     fields += '</div>';
   });
@@ -341,13 +350,17 @@ function renderSurvey(){
     +'<div class="card" style="--a:#f0b65a;margin:0 0 18px;background:#16120a;border-color:#3a2f14;padding:16px 18px"><b style="color:#f0b65a">⚠ Real answers only.</b> <span class="lead">One-word answers like “good” or “nothing” won\'t be accepted — and we read every single one. Be honest; it\'s the whole point.</span></div>'
     + fields + '<button class="btn block" style="margin-top:8px" id="submitSurvey">Submit & unlock lifetime →</button>'
     +'<button class="btn ghost sm block" style="margin-top:10px" onclick="renderDashboard()">Back</button></div></div>';
-  var stars=document.querySelectorAll('#stars span');
-  stars.forEach(function(s){ s.onclick=function(){ var v=+s.getAttribute('data-v'); $('#rating').value=v; stars.forEach(function(x){ x.classList.toggle('on',+x.getAttribute('data-v')<=v); }); }; });
+  document.querySelectorAll('.stars').forEach(function(grp){
+    var k=grp.getAttribute('data-k');
+    grp.querySelectorAll('span').forEach(function(s){
+      s.onclick=function(){ var v=+s.getAttribute('data-v'); var inp=document.getElementById('f_'+k); if(inp) inp.value=v; grp.querySelectorAll('span').forEach(function(x){ x.classList.toggle('on',+x.getAttribute('data-v')<=v); }); };
+    });
+  });
   $('#submitSurvey').onclick=submitSurvey;
 }
 async function submitSurvey(){
   var ans={}, missing=false, weak=false;
-  ans.rating=$('#rating').value; ans.bg=$('#f_bg').value;
+  RATINGS.forEach(function(r){ var inp=$('#f_'+r.k); var v=inp?inp.value:''; ans[r.k]=v; if(!v) missing=true; });
   SURVEY_Q.forEach(function(q){
     var el=$('#f_'+q.k); var v=el?el.value.trim():''; ans[q.k]=v;
     if(el) el.style.borderColor='';
@@ -358,15 +371,14 @@ async function submitSurvey(){
       if(isJunk(v) || (q.min && v.length<q.min)){ weak=true; if(el) el.style.borderColor='#ff6b6b'; }
     }
   });
-  if(!ans.rating){ missing=true; }
-  if(missing){ toast('Please answer every question (only the last one is optional).'); return; }
-  if(weak){ toast('A couple answers need a real sentence — we read every one, so be honest 🙂'); return; }
+  if(missing){ toast('Please rate everything and answer every question.'); return; }
+  if(weak){ toast('A couple answers need a real sentence. We read every one.'); return; }
   var btn=$('#submitSurvey'); btn.disabled=true; btn.textContent='Saving…';
   var me=loadMe();
-  me.survey=ans; me.bg=ans.bg; me.surveyCompleted=true; me.surveyDate=Date.now(); me.lifetime=true; me.rating=ans.rating;
+  me.survey=ans; me.surveyCompleted=true; me.surveyDate=Date.now(); me.lifetime=true; me.rating=ans.r_overall;
   // write back to Firestore (lands in Jeff's dashboard automatically)
   try{
-    await SIGNUPS.doc(emailKey(me.email)).update({ surveyCompleted:true, surveyDate:me.surveyDate, survey:ans, lifetime:true, rating:ans.rating, bg:ans.bg });
+    await SIGNUPS.doc(emailKey(me.email)).update({ surveyCompleted:true, surveyDate:me.surveyDate, survey:ans, lifetime:true, rating:ans.r_overall });
   }catch(e){ /* keep local lifetime even if the write hiccups */ }
   saveMe(me);
   renderComplete(me);
@@ -468,7 +480,7 @@ function adminDash(){
   var conv=claimed?Math.round(lifetime/claimed*100):0;
   var surveyPct=claimed?Math.round(lifetime/claimed*100):0;
   var tierMode=mode(surveys.map(function(x){return (x.survey||{}).tier;}));
-  var buyYes=surveys.filter(function(x){return (x.survey||{}).buy==='Yes';}).length;
+  var wouldPay=surveys.filter(function(x){var t=(x.survey||{}).tier;return t&&t!=='Free';}).length;
   $('#adminBody').innerHTML=
     '<div class="card"><h2>Program at a glance</h2><div class="stats" style="margin-top:14px">'
      +stat(claimed+' / '+c.cap,'Beta users',Math.max(0,c.cap-claimed)+' free spots left')
@@ -478,7 +490,7 @@ function adminDash(){
      +stat(conv+'%','Conversion to lifetime')
      +stat(lifetime,'Lifetime members')
      +stat(tierMode||'—','Most-chosen pricing','','small')
-     +stat(buyYes+' / '+lifetime,'Would purchase (Yes)')
+     +stat(wouldPay+' / '+lifetime,'Would pay (Elite/Premium)')
     +'</div></div>'
     +'<div class="card" style="--a:#f0b65a"><h2>What testers are telling you</h2>'
      +topList('If they could change ONE thing', surveys.map(function(x){return (x.survey||{}).change;}))
@@ -500,11 +512,10 @@ function adminSignups(){
 function adminFeedback(){
   var done=ADMIN_DATA.signups.filter(function(x){return x.surveyCompleted&&x.survey;});
   // one dropdown per question: question on top, every tester's answer to it below
-  var ALLQ=[{k:'rating',label:'Overall rating of MPS (1 to 5 stars)',type:'rating'},
-            {k:'bg',label:'Their background (Fitness / Business / Tech / General)',type:'choice'}]
+  var ALLQ=RATINGS.map(function(r){return {k:r.k,label:r.t+' (1 to 5 stars)',type:'rating'};})
     .concat(SURVEY_Q.map(function(q){return {k:q.k,label:q.t,type:(q.type==='tier'||q.type==='buy')?'choice':'text'};}));
   var blocks=ALLQ.map(function(q,idx){
-    var answers=done.map(function(x){var v=(q.k==='rating')?(x.rating||(x.survey||{}).rating):((x.survey||{})[q.k]);return {v:v,name:x.name||x.email};})
+    var answers=done.map(function(x){var v=(x.survey||{})[q.k];return {v:v,name:x.name||x.email};})
       .filter(function(a){return a.v!=null&&String(a.v).trim()!=='';});
     var n=answers.length, tally='';
     if(q.type==='rating'&&n){var nums=answers.map(function(a){return +a.v;}).filter(function(x){return x>0;});var avg=nums.length?(nums.reduce(function(a,b){return a+b;},0)/nums.length).toFixed(1):'—';tally='Average '+avg+' ★   ·   '+nums.length+' rating'+(nums.length===1?'':'s');}
@@ -549,7 +560,7 @@ function publicLink(){ return location.origin + location.pathname; }
 /* CSV */
 function downloadCSV(name,rows){ var csv=rows.map(function(r){return r.map(function(c){c=String(c==null?'':c); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(',');}).join('\n'); var b=new Blob([csv],{type:'text/csv'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u); }
 function exportSignups(){ var rows=[['Name','Email','Status','SurveyDone','SurveyDate','Joined']]; ADMIN_DATA.signups.forEach(function(x){ rows.push([x.name||'',x.email,x.lifetime?'lifetime':'trial',x.surveyCompleted?'Yes':'No',fmtDate(x.surveyDate),fmtDate(x.joinedAt)]); }); downloadCSV('mps_beta_signups.csv',rows); }
-function exportFeedback(){ var rows=[['Name','Email','Background','Rating','WhatItDoes','PlanWouldPayFor','WouldPay','FairPrice','ChangeOneThing','AlmostQuit','Other','SurveyDate']]; ADMIN_DATA.signups.filter(function(x){return x.survey;}).forEach(function(i){var s=i.survey;rows.push([i.name||'',i.email,s.bg||'',s.rating||'',s.does||'',s.tier||'',s.buy||'',s.price||'',s.change||'',s.quit||'',s.other||'',fmtDate(i.surveyDate)]);}); downloadCSV('mps_beta_feedback.csv',rows); }
+function exportFeedback(){ var rows=[['Name','Email','EaseOfUse','LookFeel','Usefulness','WorthThePrice','Overall','PlanWouldPayFor','FairPrice','ChangeOneThing','AlmostQuit','FeatureToAdd','LikedMost','KeepUsing','SurveyDate']]; ADMIN_DATA.signups.filter(function(x){return x.survey;}).forEach(function(i){var s=i.survey;rows.push([i.name||'',i.email,s.r_ease||'',s.r_look||'',s.r_useful||'',s.r_worth||'',s.r_overall||'',s.tier||'',s.price||'',s.change||'',s.quit||'',s.feature||'',s.liked||'',s.keep||'',fmtDate(i.surveyDate)]);}); downloadCSV('mps_beta_feedback.csv',rows); }
 
 /* chrome */
 $('#adminToggle').onclick=function(){ location.href=location.pathname+'?admin=1'; };
