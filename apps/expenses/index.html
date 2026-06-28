@@ -1366,5 +1366,6 @@ renderMonthSelect(); renderDashboard();                                         
 requestAnimationFrame(function(){ renderLog(); renderBudget(); renderRules(); renderInsights(); loadSyncSettings(); }); // defer the heavy hidden tabs off the first paint
 setTimeout(autoSyncOnLoad, 900);                                                                                        // let the UI paint before any network sheet-sync + re-render
 </script>
+<script src="/shared/tour.js" defer></script>
 </body>
 </html>
