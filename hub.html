@@ -384,7 +384,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '254';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '255';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1008,15 +1008,22 @@
         return;
       }
       if (IS_BETA) {
-        // VIP / beta tester — full Premium, free, no dev tools.
-        unlockedApps = APPS.map(a => a.id);
-        currentTier = 'all';
-        renderUser(user.displayName || user.email, user.email, user.photoURL, TIER_LABEL.all);
-        applyTheme();
-        updateTierBadge();
-        refreshTabLocks();
-        if (activeId === 'home') loadDashboard();
-        return;
+        // Beta tester — full Premium during the 7-day trial, or for life once the survey is done.
+        var _bStart = parseInt(localStorage.getItem('mps_beta_start') || '0', 10);
+        if (!_bStart) { _bStart = Date.now(); try { localStorage.setItem('mps_beta_start', String(_bStart)); } catch (e) {} }
+        var _bLife = localStorage.getItem('mps_beta_lifetime') === '1';
+        var _bDays = Math.floor((Date.now() - _bStart) / 86400000);
+        if (_bLife || _bDays < 7) {
+          unlockedApps = APPS.map(a => a.id);
+          currentTier = 'all';
+          renderUser(user.displayName || user.email, user.email, user.photoURL, TIER_LABEL.all);
+          applyTheme();
+          updateTierBadge();
+          refreshTabLocks();
+          if (activeId === 'home') loadDashboard();
+          return;
+        }
+        // trial expired + no lifetime → fall through to normal (free) tier; beta.js shows "access pulled".
       }
       let tier = 'free';
       try {
@@ -1074,6 +1081,7 @@
 
   <!-- Install-as-app prompt (Android/Chrome native + iOS instructions) -->
   <script src="/shared/install-prompt.js" defer></script>
+  <script src="/shared/beta.js" defer></script>
 
 </body>
 </html>
