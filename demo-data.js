@@ -20,7 +20,7 @@ window.MPS_DEMO = (function () {
   'use strict';
 
   const MANIFEST_KEY = 'mps_demo_v1';
-  const DAYS = 14;                 // two weeks, ending today
+  const DAYS = 21;                 // three weeks, ending today
   const SEED = 20260618;          // fixed → the demo is identical every load
   const SUBCOLLECTIONS = ['workout_history', 'sleep_logs', 'expense_logs', 'journal_entries'];
   const BACKUP_DOCS = {           // settings/<doc> : the localStorage keys it mirrors
@@ -91,9 +91,11 @@ window.MPS_DEMO = (function () {
     const prs = {};       // mps_v3_prs map
     const docs = [];      // workout_history subcollection
     dates.forEach((date, idx) => {
-      const plan = WORKOUT_PLAN[idx];
+      const plan = WORKOUT_PLAN[idx % WORKOUT_PLAN.length];   // cycle the split plan across 3 weeks
       if (plan === 'Rest') return;
-      const week = Math.floor(idx / 7);             // small progressive overload over 2 weeks
+      const week = Math.floor(idx / 7);             // progressive overload over 3 weeks
+      // Ebb & flow: not every day is heavier. Some are deload (lighter), some are PR days.
+      const dayMul = chance(0.22) ? 0.82 : (chance(0.28) ? 1.13 : (0.95 + rng() * 0.12));
       const detail = [];
       let liftRounds = 0, skillRounds = 0, volume = 0, exerciseCount = 0, setCount = 0;
       const splits = [], skills = [];
@@ -106,7 +108,8 @@ window.MPS_DEMO = (function () {
       } else {
         splits.push(plan);
         LIFTS[plan].forEach(([name, base, reps]) => {
-          const w = base + week * 5 + between(0, 2) * 2.5;        // climbs slightly across the fortnight
+          // weekly climb + per-day ebb/flow, snapped to 2.5 lb increments
+          const w = Math.max(base * 0.7, Math.round(((base + week * 5) * dayMul) / 2.5) * 2.5);
           const sets = [];
           for (let s = 0; s < 3; s++) {
             const r = Math.max(4, reps - s - (chance(0.3) ? 1 : 0));   // reps taper on later sets

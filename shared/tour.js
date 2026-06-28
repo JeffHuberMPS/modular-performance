@@ -83,6 +83,24 @@
 
   var els = {}, steps = [], idx = 0, target = null, clickHook = null, centerMode = false, panning = false;
 
+  // Find the element that actually scrolls (apps often scroll an inner container, not the
+  // document — scrolling the wrong one just "glitches in place"). Picks the biggest scrollable.
+  function findScroller() {
+    var doc = document.scrollingElement || document.documentElement;
+    var best = doc, bestMax = Math.max(0, (doc.scrollHeight - doc.clientHeight) || 0);
+    var nodes = document.querySelectorAll('div,main,section,[class*="scroll"],[class*="content"],[class*="tab"],[id*="tab"]');
+    for (var i = 0; i < nodes.length && i < 4000; i++) {
+      var el = nodes[i];
+      if (el.clientHeight < 200) continue;
+      var max = el.scrollHeight - el.clientHeight;
+      if (max > bestMax + 30) {
+        var oy = getComputedStyle(el).overflowY;
+        if (oy === 'auto' || oy === 'scroll' || oy === 'overlay') { best = el; bestMax = max; }
+      }
+    }
+    return best;
+  }
+
   function mk(css) { var e = document.createElement('div'); e.style.cssText = css; document.body.appendChild(e); return e; }
   function setBox(e, x, y, w, h) { e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.width = Math.max(0, w) + 'px'; e.style.height = Math.max(0, h) + 'px'; }
 
@@ -156,7 +174,7 @@
     var tw = els.tip.offsetWidth || 300, th = els.tip.offsetHeight || 120;
     els.tip.style.left = Math.max(12, (window.innerWidth - tw) / 2) + 'px';
     els.tip.style.top = (window.innerHeight - th - 18) + 'px';
-    var se = document.scrollingElement || document.documentElement;
+    var se = findScroller();
     try { se.scrollTop = 0; } catch (e) {}
     var max = Math.max(0, se.scrollHeight - se.clientHeight);
     var done = function () { panning = false; if (idx === i) next(); };
