@@ -71,10 +71,11 @@
     var ov = overlay(
       ICON_SPARK
       + '<div class="beta-eyebrow">You’re in the beta</div>'
-      + '<div class="beta-h">Free full access to <span class="gold">MPS Premium</span></div>'
-      + '<p class="beta-p">Everything’s unlocked. Use it like it’s yours. No card, no catch.</p>'
-      + '<p class="beta-p">Just <b>try it out for a few days</b>. On <span class="gold">day 4</span>, a quick survey pops up — finish it, and your access is <b>yours forever</b>.</p>'
-      + '<button class="beta-btn" id="beta-go">Start exploring</button>', false, false);
+      + '<div class="beta-h">Free <span class="gold">MPS Premium</span> — here’s the deal</div>'
+      + '<p class="beta-p">Use the whole app free for a few days. No card.</p>'
+      + '<p class="beta-p"><b>Day 4, a quick survey pops up. Finish it → <span class="gold">yours for life</span>. Skip it → access ends.</b></p>'
+      + '<p class="beta-p" style="font-size:.82rem;color:#9a9a9a;margin-bottom:2px;">Premium in exchange for honest feedback. That’s the trade.</p>'
+      + '<button class="beta-btn" id="beta-go">Got it — start exploring</button>', false, false);
     ov.querySelector('#beta-go').onclick = function () { ov.remove(); };
   }
 
