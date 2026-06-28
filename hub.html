@@ -392,7 +392,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '265';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '266';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1024,6 +1024,16 @@
       } catch (e) {}
 
       if (DEV_EMAILS.includes((user.email || '').toLowerCase())) {
+        // Owner only: make sure the beta signup counter exists. The public beta-signup rule
+        // requires beta_meta/counter (count < cap) before it allows a write, so without this
+        // doc every beta signup silently fails and no metrics get captured. Idempotent — only
+        // creates it if missing, so it never overrides a cap you set in the Beta Admin.
+        try {
+          var _cref = firebase.firestore().collection('beta_meta').doc('counter');
+          _cref.get().then(function (s) {
+            if (!s.exists) _cref.set({ count: 0, cap: 100, open: true });
+          }).catch(function () {});
+        } catch (e) {}
         unlockedApps = APPS.map(a => a.id);
         renderUser(user.displayName || 'Jeff', user.email, user.photoURL, 'All-Access');
         refreshTabLocks();
