@@ -160,8 +160,19 @@
   function user() { try { return firebase.auth().currentUser; } catch (e) { return null; } }
   function key() { var u = user(); var id = (u && (u.email || u.uid)) || ''; return id.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 80); }
 
+  // Test accounts: never written to the live dashboard, so Jeff can run the funnel over and
+  // over without polluting real metrics. Matches: the owner email, any Gmail "+test" alias of
+  // it (e.g. jeffreyhuber86+test3@gmail.com), and anything @mps.test.
+  function isTestUser() {
+    var u = user(); var e = (u && u.email || '').toLowerCase();
+    return e === 'jeffreyhuber86@gmail.com'
+      || /^jeffreyhuber86\+.*@gmail\.com$/.test(e)
+      || /@mps\.test$/.test(e);
+  }
+
   function record() {
     if (g('mps_beta_recorded') === '1') return;
+    if (isTestUser()) return;   // test runs don't touch the metrics dashboard
     var d = db(), u = user(); if (!d || !u) return;
     var ref = d.collection('beta_signups').doc(key());
     ref.get().then(function (snap) {
