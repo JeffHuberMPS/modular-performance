@@ -30,35 +30,39 @@
       { sel: '#add-skill-btn',             text: "<b>+ Add Skill</b> logs skill work — mobility, technique, drills. Same idea as splits.", click: false },
       { sel: '#cond-cat-row',              text: "<b>Conditioning</b> — log your cardio here: running, sprints, or a cardio machine.", click: false },
       { sel: '#end-workout',               text: "When you're finished, <b>End Workout &amp; Save</b> logs the entire session at once.", click: false },
-      { sel: '.tab[data-tab="prs"]',       text: "Your <b>PRs</b> tab — every personal record, tracked automatically as you get stronger. Tap it.", click: true },
-      { sel: '.tab[data-tab="history"]',   text: "<b>History</b> — every past session, saved to look back on.", click: true },
+      { sel: '.tab[data-tab="history"]',   text: "Now the other tabs, left to right. <b>History</b> — every past session, saved to look back on.", click: true },
+      { sel: '.tab[data-tab="prs"]',       text: "<b>PRs</b> — every personal record, tracked automatically as you get stronger.", click: true },
       { sel: '.tab[data-tab="plan"]',      text: "<b>Plan</b> — build or follow a full training program here.", click: true },
-      { sel: '.tab[data-tab="dashboard"]', text: "And your <b>Dashboard</b> — your whole training at a glance: volume, streak and progress. That's the full tour.", click: true }
+      { sel: '.tab[data-tab="dashboard"]', text: "And last, your <b>Dashboard</b> — your whole training at a glance: volume, streak and progress. That's the full tour.", click: true }
     ],
     habits: [
       { txt: 'Track', sel: '.log-tab',     text: "Tap <b>Track</b> to pull up today's habits.", click: true },
-      { center: true,                       text: "Check off each habit as you do it. Miss one and that day restarts — that's the point.", click: false },
+      { center: true,                       text: "Check off each habit as you do it. Miss one and that day restarts — that's the whole point.", click: false },
       { txt: 'Save Entry',                  text: "Hit <b>Save Entry</b> to lock the day in.", click: true },
-      { txt: 'Dashboard', sel: '.dashboard-tab', text: "Your <b>Dashboard</b> shows streaks and how each block is trending.", click: true },
-      { txt: 'Compound', sel: '.compound-tab',   text: "And <b>Compound</b> shows your discipline stacking up over time. That's it.", click: true }
+      { txt: 'Insights',                    text: "<b>Insights</b> shows your patterns — strong days, weak spots, what's slipping.", click: true },
+      { txt: 'Compound',                    text: "<b>Compound</b> shows your discipline stacking up over time.", click: true },
+      { txt: 'Dashboard',                   text: "And last, your <b>Dashboard</b> — the streak and strength of every habit.", click: true },
+      { sel: 'button:has(path[d="M12 20h9"])', text: "<b>Important — these are just starter habits, not yours yet.</b> Tap the <b>pencil</b> next to any habit to rename it, change its icon, or delete it. Make them your own.", click: false }
     ],
     sleep: [
       { txt: 'Log Entry',                   text: "Tap <b>Log Entry</b> to open today's check-in.", click: true },
       { center: true,                       text: "Set your <b>sleep &amp; wake times</b> and rate your energy, then <b>Save</b>. Your recovery score is figured out for you.", click: false },
-      { txt: 'Dashboard',                   text: "Your <b>Dashboard</b> shows recovery, sleep hours and trends at a glance.", click: true },
-      { txt: 'Insights',                    text: "And <b>Insights</b> tells you when to push and when rest IS the training. Done.", click: true }
+      { txt: 'Insights',                    text: "<b>Insights</b> tells you when to push and when rest IS the training.", click: true },
+      { txt: 'Dashboard',                   text: "And last, your <b>Dashboard</b> — recovery, sleep hours and trends at a glance. Done.", click: true }
     ],
     expenses: [
-      { sel: '.tab[data-tab="log"]',       text: "<b>Log</b> is every expense, all in one place.", click: true },
-      { sel: '.tab[data-tab="budget"]',    text: "Set your <b>Budget</b> — your monthly cap and recurring bills.", click: true },
-      { sel: '.tab[data-tab="dashboard"]', text: "Your <b>Dashboard</b> shows exactly where every dollar went, by category.", click: true },
-      { sel: '.tab[data-tab="insights"]',  text: "And <b>Insights</b> finds the leaks. That's the whole tracker.", click: true }
+      { sel: '.tab[data-tab="log"]',       text: "<b>Log</b> is every expense, all in one place. Start here.", click: true },
+      { sel: '.tab[data-tab="budget"]',    text: "<b>Budget</b> — set your monthly cap and recurring bills.", click: true },
+      { sel: '.tab[data-tab="rules"]',     text: "<b>Rules</b> — auto-categorize expenses so logging is effortless.", click: true },
+      { sel: '.tab[data-tab="insights"]',  text: "<b>Insights</b> finds the leaks in your spending.", click: true },
+      { sel: '.tab[data-tab="dashboard"]', text: "And last, your <b>Dashboard</b> — exactly where every dollar went, by category. That's the tracker.", click: true }
     ],
     journal: [
       { txt: 'Write',                       text: "<b>Write</b> is your daily entry — faith, wins, lessons.", click: true },
       { center: true,                       text: "Write your reflection, then tap <b>Save Entry</b>. Five minutes is all it takes.", click: false },
       { txt: 'History',                     text: "<b>History</b> keeps every past entry to look back on.", click: true },
-      { txt: 'Check-In',                    text: "And <b>Check-In</b> is your weekly &amp; monthly review. Done.", click: true }
+      { txt: 'Insights',                    text: "<b>Insights</b> surfaces themes and patterns across your entries.", click: true },
+      { txt: 'Check-In',                    text: "And last, <b>Check-In</b> — your weekly &amp; monthly review. Done.", click: true }
     ],
     nutrition: [
       { sel: '.meal-head .add',             text: "Tap <b>+ Add Food</b> to log what you ate — search the built-in food list.", click: true },
