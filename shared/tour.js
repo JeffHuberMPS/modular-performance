@@ -19,57 +19,38 @@
 
   var TOURS = {
     workout: [
-      { sel: '.tab[data-tab="dashboard"]', text: "First, your <b>Dashboard</b>. Here's what a couple weeks of training looks like — watch it scroll.", click: true },
-      { pan: true,                          text: "Volume, your streak, recent lifts, trends — your whole training at a glance. This is your data once you've logged a while.", },
-      { sel: '.tab[data-tab="today"]',     text: "Now here's how you build that. <b>Today</b> is where you log the session you're doing right now. Tap it.", click: true },
-      { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b>. A “split” is a muscle group / training day — like Push, Pull, or Legs.", click: true },
-      { sel: '#split-picker-select',       text: "Pick which split you're training from this dropdown, then tap Next.", click: false },
-      { sel: '#split-picker-confirm',      text: "Tap <b>Add</b> to create that split.", click: true },
-      { sel: '.ex-dropdown',               text: "<b>This is how you add exercises.</b> Use this dropdown to drop an exercise into the split — pick one (or type a custom one). Add one, then tap Next.", click: false },
-      { sel: '.sets-grid input[type="number"]', text: "For each set, type the <b>Weight</b> you lifted here.", click: false },
-      { sel: '.sets-grid input[type="text"]',   text: "And type your <b>Reps</b> right next to it.", click: false },
-      { txt: '+ Set', txtTag: 'button',    text: "Tap <b>+ Set</b> under an exercise to log another set. That's the core loop — add exercise, enter weight + reps, repeat.", click: false },
-      { sel: '#add-skill-btn',             text: "<b>+ Add Skill</b> logs skill work — mobility, technique, drills. Same idea as splits.", click: false },
-      { sel: '#cond-cat-row',              text: "<b>Conditioning</b> — log your cardio here: running, sprints, or a cardio machine.", click: false },
-      { sel: '#end-workout',               text: "When you're finished, <b>End Workout &amp; Save</b> logs the entire session at once.", click: false },
-      { sel: '.tab[data-tab="history"]',   text: "Now the rest, left to right. <b>History</b> — every past session, saved to look back on.", click: true },
-      { sel: '.tab[data-tab="prs"]',       text: "<b>PRs</b> — every personal record, tracked automatically as you get stronger.", click: true },
-      { sel: '.tab[data-tab="plan"]',      text: "And <b>Plan</b> — build or follow a full training program here. That's the whole app — go log a set.", click: true }
+      { pan: true,                          text: "This is your <b>Dashboard</b> — three weeks of training. Watch it roll by." },
+      { sel: '.tab[data-tab="today"]',     text: "Now the part you'll use daily. <b>Today</b> is where you log your session — tap it.", click: true },
+      { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b> to add your exercises — Push, Pull, Legs, and so on.", click: false },
+      { center: true,                       text: "Pick a split, then each exercise gives you a <b>Weight</b> and <b>Reps</b> box for every set. Fill them in and tap <b>+ Set</b> for another. That's logging a workout.", click: false },
+      { sel: '#end-workout',               text: "When you're done, <b>End Workout &amp; Save</b> logs the whole session. That's it — you're set.", click: false }
     ],
     habits: [
-      { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — every habit's streak and strength. Watch it scroll.", click: true },
-      { pan: true,                          text: "Your discipline at a glance: streaks, momentum, how each block is trending. This is what a couple weeks of checking the box looks like." },
-      { sel: 'button:has(path[d="M12 20h9"])', text: "<b>These are just starter habits, not yours yet.</b> Tap the <b>pencil</b> on any habit to rename it, change its icon, or delete it. Make them your own.", click: false },
-      { txt: 'Track', sel: '.log-tab',     text: "Now the <b>Track</b> tab — your daily check-in. Tap it.", click: true },
-      { center: true,                       text: "Tap each habit to check it off as you do it. Miss one and that day restarts — that's the whole point.", click: false },
-      { txt: 'Save Entry',                  text: "Hit <b>Save Entry</b> to lock the day in.", click: true },
-      { txt: 'Insights',                    text: "<b>Insights</b> — your patterns: best days, weak spots, what's slipping.", click: true },
-      { txt: 'Compound',                    text: "And <b>Compound</b> — how small daily reps stack into real change over time. That's the app.", click: true }
+      { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — every habit's streak and strength. Watch it roll by.", click: true },
+      { pan: true,                          text: "Your discipline at a glance: streaks, momentum, how each habit is trending." },
+      { sel: 'button:has(path[d="M12 20h9"])', text: "These are <b>starter</b> habits — tap the <b>pencil</b> on any one to rename it, change its icon, or delete it. Make them your own.", click: false },
+      { txt: 'Track', sel: '.log-tab',     text: "Now tap <b>Track</b> — your daily check-in.", click: true },
+      { center: true,                       text: "Tap each habit to check it off, then hit <b>Save Entry</b> to lock the day in. That's the whole thing.", click: false }
     ],
     sleep: [
-      { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — recovery score, sleep hours and trends. Watch it scroll.", click: true },
-      { pan: true,                          text: "Your recovery at a glance: how you've slept and how recovered you are. This is a couple weeks of check-ins." },
-      { txt: 'Insights',                    text: "<b>Insights</b> tells you when to push hard and when rest IS the training. Tap it.", click: true },
-      { txt: 'Log',                         text: "And <b>Log</b> is where you check in each day. Tap it.", click: true },
+      { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — recovery score, sleep and trends. Watch it roll by.", click: true },
+      { pan: true,                          text: "Your recovery at a glance: how you've slept and how recovered you are." },
+      { txt: 'Log',                         text: "Now the daily part. Tap <b>Log</b> to check in.", click: true },
       { txt: 'Log Entry',                   text: "Tap <b>Log Entry</b> to open today's form.", click: true },
-      { center: true,                       text: "Set your <b>sleep &amp; wake times</b>, rate your <b>energy</b> and soreness, then <b>Save</b>. Your recovery score is figured out for you. That's it." }
+      { center: true,                       text: "Set your <b>sleep &amp; wake times</b>, rate your energy, and <b>Save</b>. Your recovery score is figured out for you. That's it.", click: false }
     ],
     expenses: [
-      { sel: '.tab[data-tab="dashboard"]', text: "First, your <b>Dashboard</b> — exactly where every dollar went, by category. Watch it scroll.", click: true },
-      { pan: true,                          text: "Spending by category, your daily burn, the trend — a couple weeks of expenses at a glance." },
-      { sel: '.tab[data-tab="log"]',       text: "<b>Log</b> — every expense in one place. Tap it.", click: true },
-      { center: true,                       text: "Add an expense and it lands here, auto-sorted. Everything you spend, tracked in one list." },
-      { sel: '.tab[data-tab="budget"]',    text: "<b>Budget</b> — set your monthly cap and recurring bills.", click: true },
-      { sel: '.tab[data-tab="rules"]',     text: "<b>Rules</b> — auto-categorize expenses so logging is effortless.", click: true },
-      { sel: '.tab[data-tab="insights"]',  text: "And <b>Insights</b> — finds the leaks in your spending. That's the tracker.", click: true }
+      { sel: '.tab[data-tab="dashboard"]', text: "First, your <b>Dashboard</b> — where every dollar went. Watch it roll by.", click: true },
+      { pan: true,                          text: "Spending by category, your daily burn, the trend — at a glance." },
+      { sel: '.tab[data-tab="log"]',       text: "Now the daily part. <b>Log</b> is every expense — tap it.", click: true },
+      { center: true,                       text: "Add an expense — amount and category — and it lands here, auto-sorted.", click: false },
+      { sel: '.tab[data-tab="budget"]',    text: "And <b>Budget</b> — set your monthly cap and bills. That's it.", click: true }
     ],
     journal: [
-      { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons. (Journal has no dashboard — your data lives in History.)", click: true },
-      { center: true,                       text: "Write your reflection — five minutes is all it takes — then tap <b>Save Entry</b>.", click: false },
-      { txt: 'History',                     text: "<b>History</b> keeps every past entry. Tap it — watch it scroll.", click: true },
-      { pan: true,                          text: "Every entry you've written, saved to look back on. This is a couple weeks of journaling." },
-      { txt: 'Insights',                    text: "<b>Insights</b> surfaces themes and patterns across your entries.", click: true },
-      { txt: 'Check-In',                    text: "And <b>Check-In</b> — your weekly &amp; monthly review. That's the journal.", click: true }
+      { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons.", click: true },
+      { center: true,                       text: "Write your reflection — five minutes — then tap <b>Save Entry</b>.", click: false },
+      { txt: 'History',                     text: "Tap <b>History</b> to see your past entries — watch it roll by.", click: true },
+      { pan: true,                          text: "Every entry you've written, saved to look back on." }
     ],
     nutrition: [
       { sel: '.meal-head .add',             text: "Tap <b>+ Add Food</b> to log what you ate — search the built-in food list.", click: true },
