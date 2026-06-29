@@ -130,7 +130,26 @@ window.MPS_DEMO = (function () {
       history.push(rec);
       docs.push({ date, data: Object.assign({ _demo: true }, rec) });
     });
-    return { local: { mps_v3_history: history, mps_v3_prs: prs }, docs };
+
+    // Cardio conditioning sessions (runs + machine) sprinkled across the weeks so the dashboard
+    // Conditioning widget isn't empty — the demo shows lifting + kickboxing + cardio.
+    const conditioning = [];
+    const MACHINES = ['treadmill', 'bike', 'rower'];
+    dates.forEach((date) => {
+      if (!chance(0.4)) return;                         // ~40% of days get a cardio session
+      if (chance(0.55)) {                               // a run
+        const miles = pick([2, 3, 3, 4, 5]);
+        const pace = between(8, 10);                    // min/mile
+        conditioning.push({ _demo: true, conditioning_date: date, conditioning_type: 'distance',
+          conditioning_subtype: String(miles), conditioning_value: Math.round(miles * pace * 60) });
+      } else {                                          // a cardio machine
+        const mi = 2 + rng() * 6;
+        conditioning.push({ _demo: true, conditioning_date: date, conditioning_type: 'machine',
+          conditioning_subtype: pick(MACHINES), conditioning_distance: mi.toFixed(2),
+          conditioning_value: between(20, 45) * 60 });
+      }
+    });
+    return { local: { mps_v3_history: history, mps_v3_prs: prs, mps_v3_conditioning: conditioning }, docs };
   }
 
   // ── HABITS ───────────────────────────────────────────────────────────────
@@ -294,6 +313,8 @@ window.MPS_DEMO = (function () {
     lsSet('mps_v3_history', JSON.stringify(histExisting.concat(w.local.mps_v3_history)));
     const prsExisting = jget('mps_v3_prs', {});
     lsSet('mps_v3_prs', JSON.stringify(Object.assign({}, prsExisting, w.local.mps_v3_prs)));
+    const condExisting = jget('mps_v3_conditioning', []);
+    lsSet('mps_v3_conditioning', JSON.stringify(condExisting.concat(w.local.mps_v3_conditioning || [])));
 
     lsSet('habits_v4', JSON.stringify(Object.assign(jget('habits_v4', {}), h.local.habits_v4)));
     lsSet('gym_v4',    JSON.stringify(Object.assign(jget('gym_v4', {}),    h.local.gym_v4)));
@@ -345,6 +366,8 @@ window.MPS_DEMO = (function () {
     // 1) localStorage — surgical removal
     // workout history: drop demo dates
     lsSet('mps_v3_history', JSON.stringify(jget('mps_v3_history', []).filter(r => !dateSet.has(r.date))));
+    // workout cardio conditioning: drop demo dates
+    lsSet('mps_v3_conditioning', JSON.stringify(jget('mps_v3_conditioning', []).filter(c => !dateSet.has(c.conditioning_date))));
     // workout PRs: drop the keys we created whose date is a demo date
     const prs = jget('mps_v3_prs', {});
     (m.prKeys || []).forEach(k => { if (prs[k] && dateSet.has(prs[k].date)) delete prs[k]; });

@@ -163,6 +163,39 @@
     .today-item__txt { flex: 1; color: #e8e8e8; font-size: 0.92rem; }
     .today-item__go { color: #6a6a6a; font-size: 1rem; }
     .today-alldone { color: #C9A020; font-size: 0.95rem; letter-spacing: 0.03em; padding: 10px 0; }
+
+    /* ── Redesigned home dashboard (card layout) ── */
+    .home-screen--hero { justify-content: flex-start; }
+    .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 760px; margin: 22px auto 0; }
+    .dcard { position: relative; overflow: hidden; text-align: left; background: linear-gradient(180deg, rgba(28,28,28,0.72) 0%, rgba(13,13,13,0.72) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 22px rgba(0,0,0,0.4); padding: 16px 18px 18px; display: flex; flex-direction: column; }
+    .dcard__label { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8a8472; margin-bottom: 6px; }
+    .dcard__score { font-family: 'Bebas Neue',sans-serif; font-size: 3.4rem; line-height: 0.95; color: #C9A020; letter-spacing: 0.01em; text-shadow: 0 0 22px rgba(201,160,32,0.3); }
+    .dcard__score small { font-size: 1.15rem; color: #6a6a6a; letter-spacing: 0; }
+    .dcard__delta { font-size: 0.72rem; margin-top: 4px; color: #8a8a8a; }
+    .dcard__delta.up { color: #5fc27e; }
+    .dcard__delta.down { color: #d97a6a; }
+    .dcard__spark { margin: 10px 0 8px; height: 34px; }
+    .dcard__cap { font-size: 0.68rem; color: #7a7a7a; line-height: 1.35; margin-top: auto; }
+    .dbar { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.10); overflow: hidden; margin: 14px 0 8px; }
+    .dbar__fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg,#C9A020,#e8c44a); box-shadow: 0 0 10px rgba(201,160,32,0.5); transition: width 0.6s ease; }
+    .dcard__sub { font-size: 0.66rem; letter-spacing: 0.04em; color: #9a9a9a; margin-bottom: 8px; }
+    .focus-h { font-family: 'Bebas Neue',sans-serif; font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase; color: #8a8472; text-align: center; margin: 26px 0 12px; width: 100%; }
+    .focus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 760px; margin: 0 auto; }
+    .focus-card { display: flex; align-items: center; gap: 11px; padding: 14px; background: rgba(28,28,28,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; cursor: pointer; text-align: left; transition: border-color 0.15s, transform 0.15s; font-family: inherit; }
+    .focus-card:hover { border-color: rgba(201,160,32,0.5); transform: translateY(-1px); }
+    .focus-card__check { flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; color: #0a0a0a; }
+    .focus-card.done .focus-card__check { background: #C9A020; border-color: #C9A020; }
+    .focus-card__check svg { width: 12px; height: 12px; }
+    .focus-card__icon { flex: 0 0 20px; width: 20px; height: 20px; color: #C9A020; display: flex; }
+    .focus-card__icon svg { width: 20px; height: 20px; }
+    .focus-card__label { flex: 1; color: #e8e8e8; font-size: 0.86rem; }
+    .focus-card__pct { color: #8a8a8a; font-size: 0.78rem; font-weight: 600; }
+    .focus-card.done .focus-card__pct { color: #C9A020; }
+    .home-fulldash { position: static; transform: none; animation: none; margin: 26px auto 6px; display: inline-flex; flex-direction: row; align-items: center; gap: 8px; background: rgba(28,28,28,0.6); border: 1px solid rgba(201,160,32,0.4); color: #C9A020; font-family: 'Bebas Neue',sans-serif; letter-spacing: 0.14em; font-size: 0.85rem; text-transform: uppercase; padding: 11px 22px; border-radius: 999px; cursor: pointer; }
+    .home-fulldash:hover { background: rgba(201,160,32,0.12); }
+    .home-fulldash svg { width: 16px; height: 16px; }
+    .home-fulldash .fd-chev { opacity: 0.7; font-size: 1.05rem; }
+    @media (max-width: 380px) { .home-cards, .focus-grid { grid-template-columns: 1fr; } }
     .back-home { background: transparent; border: 1px solid rgba(255,255,255,0.16); color: #cfcfcf; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 13px; border-radius: 8px; cursor: pointer; margin-right: 14px; font-family: inherit; }
     .back-home:hover { border-color: rgba(201,160,32,0.55); color: #fff; }
     .home-greeting { font-family: 'Bebas Neue',sans-serif; font-size: 1.9rem; letter-spacing: 0.04em; color: #fff; }
@@ -269,7 +302,7 @@
         <div class="home-greeting" id="home-greeting">Welcome back</div>
         <div class="home-date" id="home-date"></div>
         <div class="home-hero" id="home-hero"></div>
-        <button class="home-scrollcue" onclick="document.getElementById('home-systems').scrollIntoView({behavior:'smooth'})">Your six systems<span class="cue-chev">⌄</span></button>
+        <button class="home-fulldash" onclick="document.getElementById('home-systems').scrollIntoView({behavior:'smooth'})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>View Full Dashboard<span class="fd-chev">›</span></button>
       </div>
       <div class="home-screen home-screen--systems" id="home-systems">
         <div class="home-section-label">Your six systems</div>
@@ -407,7 +440,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '290';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '291';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -798,6 +831,25 @@
         return '<div class="mini"><div class="mini__val">' + v + '</div><div class="mini__lbl">' + l + '</div></div>';
       }).join('');
     }
+    /* Wireframe (line) icons for the Today's Focus cards — never emoji. */
+    const FOCUS_ICONS = {
+      dumbbell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8v8M4 9.5v5M17.5 8v8M20 9.5v5M6.5 12h11"/></svg>',
+      apple: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.6c-1.2-1.7-3.5-2.1-5.1-0.8-1.9 1.5-1.8 4.8 0 7.5 0.9 1.4 2 2.5 3 2.5 0.7 0 1.1-0.4 2.1-0.4s1.4 0.4 2.1 0.4c1 0 2.1-1.1 3-2.5 1.1-1.7 1.4-3.6 0.8-5.1"/><path d="M12 8.6c0.2-1.9 1.5-3.1 3.3-3.4"/></svg>',
+      brain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.4V18.5"/><path d="M12 7a2.5 2.5 0 0 0-4.9-0.6A2.5 2.5 0 0 0 5 11a2.5 2.5 0 0 0 0.8 4.3A2.4 2.4 0 0 0 8 18a2.4 2.4 0 0 0 4 0"/><path d="M12 7a2.5 2.5 0 0 1 4.9-0.6A2.5 2.5 0 0 1 19 11a2.5 2.5 0 0 1-0.8 4.3A2.4 2.4 0 0 1 16 18a2.4 2.4 0 0 1-4 0"/></svg>',
+      moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5A8 8 0 1 1 10.5 4a6.3 6.3 0 0 0 9.5 9.5z"/></svg>'
+    };
+    /* Tiny inline sparkline from an array of 0-100 daily scores (oldest → newest). */
+    function buildSpark(vals) {
+      if (!vals || !vals.length) return '';
+      const w = 150, h = 34, pad = 3, n = vals.length;
+      const x = i => pad + (n > 1 ? i * (w - 2 * pad) / (n - 1) : 0);
+      const y = v => pad + (1 - Math.max(0, Math.min(100, v)) / 100) * (h - 2 * pad);
+      const pts = vals.map((v, i) => x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
+      const lx = x(n - 1).toFixed(1), ly = y(vals[n - 1]).toFixed(1);
+      return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" width="100%" height="' + h + '" style="overflow:visible">'
+        + '<polyline points="' + pts + '" fill="none" stroke="#C9A020" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>'
+        + '<circle cx="' + lx + '" cy="' + ly + '" r="2.6" fill="#C9A020"/></svg>';
+    }
     function buildDashCards() {
       const grid = document.getElementById('home-grid'); grid.innerHTML = '';
       APPS.forEach(app => {
@@ -965,28 +1017,82 @@
         ]);
       } catch(e){ setCardMetrics('nutrition', []); }
 
-      /* ── Calm home: Discipline Score + today's 3 things ── */
+      /* ── Home dashboard: Overall Discipline Score + Today's Score + Today's Focus ── */
       try {
-        const hPct = sig.habitsTotal>0 ? sig.habitsDone/sig.habitsTotal*100 : 0;
-        const score = Math.round((hPct + (sig.workout?100:0) + (sig.sleep?100:0) + (sig.journal?100:0))/4);
-        const todos = [];
-        const left = Math.max(0, sig.habitsTotal - sig.habitsDone);
-        if (left>0) todos.push(['Finish your habits — '+left+' left','habits']);
-        if (!sig.workout) todos.push(['Log a workout','workout']);
-        if (!sig.sleep) todos.push(['Log last night’s sleep','sleep']);
-        if (!sig.nutrition) todos.push(['Track your macros','nutrition']);
-        if (!sig.journal) todos.push(['Write your journal','journal']);
-        if (!sig.expense) todos.push(['Log your spending','expenses']);
-        const top = todos.slice(0,4);
-        const list = top.length
-          ? top.map(t => '<button class="today-item" onclick="selectTab(\''+t[1]+'\')"><span class="today-item__dot"></span><span class="today-item__txt">'+t[0]+'</span><span class="today-item__go">›</span></button>').join('')
-          : '<div class="today-alldone"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><polyline points="20 6 9 17 4 12"/></svg>All your disciplines are done today. Well done.</div>';
+        /* Per-category percentage for TODAY (drives the focus cards + Today's Score). */
+        const habitsPctToday = sig.habitsTotal>0 ? Math.min(100, Math.round(sig.habitsDone/sig.habitsTotal*100)) : 0;
+        const cats = [
+          { label:'Track your workouts',    tab:'workout',   pct: sig.workout?100:0,   icon: FOCUS_ICONS.dumbbell },
+          { label:'Log your nutrition',     tab:'nutrition', pct: sig.nutrition?100:0, icon: FOCUS_ICONS.apple },
+          { label:'Mental discipline',      tab:'habits',    pct: habitsPctToday,      icon: FOCUS_ICONS.brain },
+          { label:'Optimize your recovery', tab:'sleep',     pct: sig.sleep?100:0,     icon: FOCUS_ICONS.moon }
+        ];
+        const todayScore = Math.round(cats.reduce((a,c)=>a+c.pct,0)/cats.length);
+        const completed = cats.filter(c=>c.pct>=100).length;
+
+        /* Overall Discipline Score — rolling average of how complete you are on the days you show up.
+           Same 4 systems as the focus cards, scored per day over the active days in the last 30. */
+        const wSet = new Set((sget('mps_v3_history')||[]).filter(d=>d&&d.date).map(d=>d.date));
+        const hl = sget('habits_v4')||{};
+        const slSet = new Set(Object.keys(localStorage)
+          .filter(k=>k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest')
+          .map(k=>sget(k)).filter(Boolean).map(l=>l&&l.date).filter(Boolean));
+        const nlog2 = (sget('mps_nutrition')||{}).log || {};
+        const dayActive = dk => wSet.has(dk) || slSet.has(dk) || (nlog2[dk]||[]).length>0 || Object.values(hl[dk]||{}).some(Boolean);
+        const dayScore = dk => {
+          const w = wSet.has(dk)?100:0;
+          const hd = Object.values(hl[dk]||{}).filter(Boolean).length;
+          const h = sig.habitsTotal>0 ? Math.min(100, Math.round(hd/sig.habitsTotal*100)) : 0;
+          const s = slSet.has(dk)?100:0;
+          const nu = (nlog2[dk]||[]).length>0?100:0;
+          return Math.round((w+h+s+nu)/4);
+        };
+        const wkAvg = (start,end) => { let s=0,c=0; for(let i=start;i<end;i++){ const dk=ymd(daysAgo(i)); if(dayActive(dk)){ s+=dayScore(dk); c++; } } return c?s/c:null; };
+        let sumA=0, cntA=0; for(let i=0;i<30;i++){ const dk=ymd(daysAgo(i)); if(dayActive(dk)){ sumA+=dayScore(dk); cntA++; } }
+        const overall = cntA ? Math.round(sumA/cntA) : 0;
+        const thisWk = wkAvg(0,7), lastWk = wkAvg(7,14);
+        const delta = (thisWk!=null && lastWk!=null) ? Math.round(thisWk-lastWk) : null;
+        const spark = []; for(let i=13;i>=0;i--) spark.push(dayScore(ymd(daysAgo(i))));
+
+        const overallCap = overall>=80 ? 'Elite consistency. Keep it locked in.'
+          : overall>=50 ? 'Keep building. Consistency compounds.'
+          : overall>0 ? 'Every rep counts. Stack the days.'
+          : 'Start today. One log builds the streak.';
+        const todayCap = completed===cats.length ? 'All locked in today. Outstanding.'
+          : todayScore>0 ? 'Good start. Finish strong.'
+          : 'You’ve got this. Let’s lock in.';
+        const deltaHtml = delta!=null
+          ? '<div class="dcard__delta '+(delta>=0?'up':'down')+'">'+(delta>=0?'↑ ':'↓ ')+Math.abs(delta)+' pts this week</div>'
+          : '<div class="dcard__delta">New this week</div>';
+        const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        const focusHtml = cats.map(c =>
+          '<button class="focus-card'+(c.pct>=100?' done':'')+'" onclick="selectTab(\''+c.tab+'\')">'
+          + '<span class="focus-card__check">'+(c.pct>=100?check:'')+'</span>'
+          + '<span class="focus-card__icon">'+c.icon+'</span>'
+          + '<span class="focus-card__label">'+c.label+'</span>'
+          + '<span class="focus-card__pct">'+c.pct+'%</span>'
+          + '</button>').join('');
+
         const hero = document.getElementById('home-hero');
         if (hero) hero.innerHTML =
-          '<div class="home-hero__score">'+score+'<small>%</small></div>'
-          + '<div class="home-hero__label">Discipline · Today</div>'
-          + '<div class="home-hero__today-h">Today’s focus</div>'
-          + list;
+          '<div class="home-cards">'
+          +   '<div class="dcard dcard--overall">'
+          +     '<div class="dcard__label">Overall Discipline Score</div>'
+          +     '<div class="dcard__score">'+overall+'<small>/100</small></div>'
+          +     deltaHtml
+          +     '<div class="dcard__spark">'+buildSpark(spark)+'</div>'
+          +     '<div class="dcard__cap">'+overallCap+'</div>'
+          +   '</div>'
+          +   '<div class="dcard dcard--today">'
+          +     '<div class="dcard__label">Today’s Score</div>'
+          +     '<div class="dcard__score">'+todayScore+'<small>%</small></div>'
+          +     '<div class="dbar"><span class="dbar__fill" style="width:'+todayScore+'%"></span></div>'
+          +     '<div class="dcard__sub">'+completed+' / '+cats.length+' completed</div>'
+          +     '<div class="dcard__cap">'+todayCap+'</div>'
+          +   '</div>'
+          + '</div>'
+          + '<div class="focus-h">Today’s Focus</div>'
+          + '<div class="focus-grid">'+focusHtml+'</div>';
       } catch(e){}
       if (!_prewarmed) { _prewarmed = true; prewarmFrames(); maybeShowOnboarding(); }   // warm all app frames + first-time welcome
     }
