@@ -54,10 +54,13 @@ window.MPS_DEMO = (function () {
   const between = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));   // inclusive int
   const chance = (p) => rng() < p;
 
-  // The 14 calendar dates, oldest → newest (last = today)
+  // Calendar dates, oldest → newest. End on THIS WEEK'S SATURDAY (not today) so the weekly
+  // daily charts are fully filled even when today is early in the week.
   function buildDates() {
     const out = [];
-    for (let i = DAYS - 1; i >= 0; i--) out.push(ymd(dateNDaysAgo(i)));
+    const sat = new Date(); sat.setHours(12, 0, 0, 0);
+    sat.setDate(sat.getDate() + (6 - sat.getDay()));   // getDay: 0=Sun..6=Sat → advance to Saturday
+    for (let i = DAYS - 1; i >= 0; i--) { const d = new Date(sat); d.setDate(sat.getDate() - i); out.push(ymd(d)); }
     return out;
   }
 
@@ -75,10 +78,9 @@ window.MPS_DEMO = (function () {
   // ── WORKOUT ──────────────────────────────────────────────────────────────
   // 14-day plan; last day (today) is always a training day so the dashboard
   // shows a workout logged "today".
-  const WORKOUT_PLAN = [
-    'Push','Pull','Legs','Rest','Upper','Conditioning','Rest',
-    'Push','Pull','Legs','Rest','Upper','Conditioning','Push'
-  ];
+  // A lift every single day (no rest gaps) so the daily charts are fully filled for the demo.
+  // Kickboxing + cardio are layered on top in genWorkout.
+  const WORKOUT_PLAN = ['Push','Pull','Legs','Upper','Push','Pull','Legs'];
   const LIFTS = {
     Push:  [['Bench Press',45,9],['Overhead Press',30,8],['Incline DB Press',25,10],['Triceps Pushdown',20,12]],
     Pull:  [['Deadlift',95,5],['Barbell Row',50,8],['Lat Pulldown',45,10],['Barbell Curl',15,12]],
@@ -91,8 +93,7 @@ window.MPS_DEMO = (function () {
     const prs = {};       // mps_v3_prs map
     const docs = [];      // workout_history subcollection
     dates.forEach((date, idx) => {
-      const plan = WORKOUT_PLAN[idx % WORKOUT_PLAN.length];   // cycle the split plan across 3 weeks
-      if (plan === 'Rest') return;
+      const plan = WORKOUT_PLAN[idx % WORKOUT_PLAN.length];   // a lift every day (no rest gaps)
       const week = Math.floor(idx / 7);             // progressive overload over 3 weeks
       // Ebb & flow: not every day is heavier. Some are deload (lighter), some are PR days.
       const dayMul = chance(0.22) ? 0.82 : (chance(0.28) ? 1.13 : (0.95 + rng() * 0.12));
@@ -100,27 +101,26 @@ window.MPS_DEMO = (function () {
       let liftRounds = 0, skillRounds = 0, volume = 0, exerciseCount = 0, setCount = 0;
       const splits = [], skills = [];
 
-      if (plan === 'Conditioning') {
+      // every day has lifting → every day shows on the weight/reps charts
+      splits.push(plan);
+      LIFTS[plan].forEach(([name, base, reps]) => {
+        const w = Math.max(base * 0.7, Math.round(((base + week * 5) * dayMul) / 2.5) * 2.5);
+        const sets = [];
+        for (let s = 0; s < 3; s++) {
+          const r = Math.max(4, reps - s - (chance(0.3) ? 1 : 0));   // reps taper on later sets
+          sets.push({ weight: String(w), reps: String(r), done: true });
+          volume += w * r; setCount += 1; liftRounds += 1;
+        }
+        detail.push({ blockName: plan, name, isSkill: false, targetSets: 3, targetReps: reps, sets });
+        exerciseCount += 1;
+        if (!prs[name] || w > prs[name].weight) prs[name] = { weight: w, date };
+      });
+      // kickboxing skill layered on ~1 in 3 days for variety
+      if (chance(0.34)) {
         const rounds = between(4, 6);
-        detail.push({ blockName:'Kickboxing', name:'Kickboxing', isSkill:true, targetSets:rounds, targetReps:3,
-          sets: Array.from({length:rounds}, () => ({ weight:'', reps:'3', done:true })) });
+        detail.push({ blockName: 'Kickboxing', name: 'Kickboxing', isSkill: true, targetSets: rounds, targetReps: 3,
+          sets: Array.from({ length: rounds }, () => ({ weight: '', reps: '3', done: true })) });
         skills.push('Kickboxing'); skillRounds += rounds; exerciseCount += 1; setCount += rounds;
-      } else {
-        splits.push(plan);
-        LIFTS[plan].forEach(([name, base, reps]) => {
-          // weekly climb + per-day ebb/flow, snapped to 2.5 lb increments
-          const w = Math.max(base * 0.7, Math.round(((base + week * 5) * dayMul) / 2.5) * 2.5);
-          const sets = [];
-          for (let s = 0; s < 3; s++) {
-            const r = Math.max(4, reps - s - (chance(0.3) ? 1 : 0));   // reps taper on later sets
-            sets.push({ weight: String(w), reps: String(r), done: true });
-            volume += w * r; setCount += 1; liftRounds += 1;
-          }
-          detail.push({ blockName: plan, name, isSkill:false, targetSets:3, targetReps:reps, sets });
-          exerciseCount += 1;
-          // PR = heaviest single working weight for that lift
-          if (!prs[name] || w > prs[name].weight) prs[name] = { weight: w, date };
-        });
       }
 
       const splitName = splits.concat(skills).join(' + ');
