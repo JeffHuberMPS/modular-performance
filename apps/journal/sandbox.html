@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MPS Journal — Sandbox</title>
+  <!-- ============================================================
+       JOURNAL SANDBOX BRANCH  (Weapon 0 — Dry Dock)
+       This is an ISOLATED copy of apps/journal/index.html.
+       Every storage path below is namespaced so nothing here can
+       ever touch the real Journal's data. Live Journal = untouched.
+       ============================================================ -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Saira+Condensed:ital,wght@1,900&display=swap" rel="stylesheet" />
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+  <script src="/shared/auth-guard.js"></script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #080808; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    #root { min-height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a2018; border-radius: 2px; }
+    textarea { resize: none; }
+    #loading-screen {
+      position: fixed; inset: 0; background: #080808;
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .loading-pulse {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 52px;
+      color: #999999; letter-spacing: 0.12em;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .mps-logo-rsp { font-size: 96px; }
+    @media (max-width: 640px) { .mps-logo-rsp { font-size: 78px; } }
+  </style>
+<script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
+<style>html.mps-embedded a[href="/hub.html"],html.mps-embedded #mps-hub-nav,html.mps-embedded #hub-nav,html.mps-embedded .nav-title,html.mps-embedded .brand-block,html.mps-embedded .mps-header{display:none!important}html.mps-embedded *:has(> .mps-logo-rsp){display:none!important}html.mps-embedded nav:first-of-type{display:none!important}html.mps-embedded body{padding-top:0!important}</style>
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="loading-pulse">MPS</div>
+  </div>
+  <div id="root"></div>
+
+  <!-- Weapon 0: persistent sandbox label so this is never confused with the live Journal -->
+  <div id="sandbox-flag" style="position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:10000;
+       background:#1a1407;border:1px solid #C9A020;border-top:none;color:#C9A020;
+       font:600 11px/1 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;
+       padding:6px 14px;border-radius:0 0 8px 8px;pointer-events:none;white-space:nowrap;
+       box-shadow:0 2px 10px rgba(0,0,0,.5);">Journal Sandbox Branch</div>
+
+  <script>
+    window.addEventListener('load', function () {
+      MPS_GUARD.protect('journal');
+
+      firebase.auth().onAuthStateChanged(function (user) {
+        if (!user) return;
+
+        var db = firebase.firestore();
+        var uid = user.uid;
+        var COLL = 'users/' + uid + '/app_storage';
+        window.currentUser = user;
+
+        // localStorage fallback so the app never hangs when Firestore (app_storage) is blocked.
+        var LS = function (key) { return 'mps_jnls_' + uid + '_' + key; };
+        window.storage = {
+          get: function (key) {
+            return db.doc(COLL + '/jnls__' + key).get().then(function (snap) {
+              if (snap.exists && snap.data().value !== undefined) return snap.data().value;
+              try { var l = localStorage.getItem(LS(key)); return l ? JSON.parse(l) : null; } catch (e) { return null; }
+            }).catch(function () {
+              try { var l = localStorage.getItem(LS(key)); return l ? JSON.parse(l) : null; } catch (e) { return null; }
+            });
+          },
+          set: function (key, value) {
+            try { localStorage.setItem(LS(key), JSON.stringify(value)); } catch (e) {}
+            try { window.journalScheduleBackup && window.journalScheduleBackup(); } catch (e) {}
+            return db.doc(COLL + '/jnls__' + key).set({ value: value }).then(function () { return true; }).catch(function () { return true; });
+          },
+          delete: function (key) {
+            try { localStorage.removeItem(LS(key)); } catch (e) {}
+            try { window.journalScheduleBackup && window.journalScheduleBackup(); } catch (e) {}
+            return db.doc(COLL + '/jnls__' + key).delete().catch(function () {});
+          },
+          list: function () {
+            return db.collection(COLL).get().then(function (snap) {
+              return snap.docs.map(function (d) { return d.id; })
+                .filter(function (k) { return k.startsWith('jnls__'); })
+                .map(function (k) { return k.slice(6); });
+            }).catch(function () {
+              var out = [], p = 'mps_jnls_' + uid + '_';
+              try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(p) === 0) out.push(k.slice(p.length)); } } catch (e) {}
+              return out;
+            });
+          }
+        };
+
+        // ===== SILENT CLOUD BACKUP (journal) =====
+        // Mirrors localStorage (mps_jnls_<uid>_*) to users/{uid}/settings/journal_sandbox_backup
+        // (an allowed Firestore location) so entries sync across devices. Restores on a
+        // fresh device. Fire-and-forget — never blocks UI.
+        var _bDoc = db.doc('users/' + uid + '/settings/journal_sandbox_backup');
+        var _bPfx = 'mps_jnls_' + uid + '_';
+        function _bMatch(k){ return !!k && k.indexOf(_bPfx) === 0; }
+        function _bCollect(){ var d={}; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(_bMatch(k)) d[k]=localStorage.getItem(k); } }catch(e){} return d; }
+        function _bHasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_bMatch(localStorage.key(i))) return true; } }catch(e){} return false; }
+        var _bTimer=null,_bBusy=false;
+        window.journalScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
+        var _TS_KEY='journal_sandbox_synced_ts';   // ts of the cloud state this device is synced to (enables safe delete propagation)
+        function _bNow(){ if(_bBusy) return; _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_bCollect(),ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+        function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
+        // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (journal) =====
+        // ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
+        function _bWatchLive(){ try{ _bDoc.onSnapshot(function(s){
+          if(!s.exists||!s.data()) return;
+          var d=(s.data().data)||{};
+          var cloudTs=s.data().ts||0;
+          var localTs=0; try{ localTs=parseInt(localStorage.getItem(_TS_KEY)||'0',10)||0; }catch(e){}
+          if(cloudTs<=localTs) return;
+          var localKeys=[]; try{ for(var i=0;i<localStorage.length;i++){ var lk=localStorage.key(i); if(_bMatch(lk)) localKeys.push(lk); } }catch(e){}
+          var changed=false;
+          localKeys.forEach(function(k){ if(!(k in d)) changed=true; });
+          for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }
+          try{ localStorage.setItem(_TS_KEY, String(cloudTs)); }catch(e){}
+          if(!changed) return;
+          localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });
+          Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
+          location.reload();
+        }); }catch(e){} }
+
+        // Restore first (download on fresh device), then mount; seed cloud on open.
+        var _mounted=false;
+        function _go(){ if(_mounted) return; _mounted=true; document.getElementById('loading-screen').style.display='none'; tryMount(); window.journalScheduleBackup(); _bWatchLive(); }
+        setTimeout(_go, 3000);   // safety: never stay stuck on the loading screen
+        _bRestoreIfEmpty().then(function(restored){
+          var _alreadyRestored = false;
+          try { _alreadyRestored = sessionStorage.getItem('jnl_restored') === '1'; } catch(e){}
+          if(restored && !_alreadyRestored){ try { sessionStorage.setItem('jnl_restored','1'); } catch(e){} location.reload(); return; }
+          _go();
+        });
+      });
+    });
+
+    function tryMount() {
+      if (window.storage) {
+        var container = document.getElementById('root');
+        var root = ReactDOM.createRoot(container);
+        root.render(React.createElement(window.JournalApp));
+      } else {
+        setTimeout(tryMount, 100);
+      }
+    }
+  </script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    // ── THEME ─────────────────────────────────────────────────────
+    const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+    const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
+    // Premium = full history. Elite sees only the last 60 days of entries (Core has Journal locked entirely).
+    const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+    const HISTORY_CAP_CUTOFF = (()=>{ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
+    const NAVY   = __GRAY ? '#f5f5f5' : '#4a6fa5';
+    const NAVYL  = __GRAY ? '#C9A020' : '#6b8fc5';
+    const GOLD   = '#C9A020';
+    const CREAM  = '#f5f5f5';
+    const BG     = '#080808';
+    const C1     = '#0e0c0a';
+    const C2     = '#141210';
+    const BR     = __GRAY ? 'rgba(255,255,255,0.08)' : 'rgba(150,150,150,0.14)';
+    const BRG    = 'rgba(201,160,32,0.18)';
+    const BRB    = __GRAY ? 'rgba(201,160,32,0.32)' : 'rgba(150,150,150,0.30)';
+
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    const todayStr = () => ciFmt(new Date());
+    const monthKey = d => d.slice(0, 7);
+    const monthLbl = k => { const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; };
+
+    // ── STORAGE ───────────────────────────────────────────────────
+    const KEY = 'journal_v1';
+    const load = () => window.storage.get(KEY).then(d => (d && typeof d === 'object' && !Array.isArray(d)) ? d : {});
+    const save = data => window.storage.set(KEY, data);
+
+    // ── SHARED ────────────────────────────────────────────────────
+    const Label = ({ children, style }) => (
+      <div style={{ display:'inline-block', color:NAVYL, fontSize:14, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:800, marginBottom:10, padding:'5px 12px', border:`2px solid ${NAVYL}`, borderRadius:7, background:'rgba(150,150,150,0.04)', ...style }}>
+        {children}
+      </div>
+    );
+
+    const Card = ({ children, style }) => (
+      <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, ...style }}>
+        {children}
+      </div>
+    );
+
+    // ── NAV ────────────────────────────────────────────────────────
+    function Nav() {
+      return (
+        <nav style={{
+          display:'flex', alignItems:'center', padding:'13px 18px',
+          borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.95)',
+          position:'sticky', top:0, zIndex:100, backdropFilter:'blur(14px)'
+        }}>
+          <a href="/hub.html" style={{ color:NAVY, fontSize:10, fontWeight:700, letterSpacing:'0.12em', textDecoration:'none', textTransform:'uppercase' }}>← Hub</a>
+          <span style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:17, color:NAVYL, letterSpacing:'0.1em', flex:1, textAlign:'center' }}>
+            MPS JOURNAL
+          </span>
+          <span style={{ width:48 }} />
+        </nav>
+      );
+    }
+
+    function Tabs({ tab, setTab }) {
+      return (
+        <div style={{ display:'flex', borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.9)', position:'sticky', top:0, zIndex:90 }}>
+          {['WRITE','HISTORY','INSIGHTS','CHECK-IN'].map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex:1, padding:'11px 4px', background:'none', border:'none',
+              borderBottom: tab===t ? `2px solid ${NAVY}` : '2px solid transparent',
+              color: tab===t ? NAVYL : '#374151',
+              fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:12, letterSpacing:'0.08em', cursor:'pointer'
+            }}>{t}</button>
+          ))}
+        </div>
+      );
+    }
+
+    // ── WRITE VIEW ─────────────────────────────────────────────────
+    function WriteView({ entries, onSave }) {
+      const today = todayStr();
+      const existing = entries[today] || {};
+      const arr3 = (v) => Array.isArray(v) ? [v[0]||'', v[1]||'', v[2]||''] : ['','',''];
+      const [draft, setDraft] = useState(() => ({
+        workout: existing.workout || '',
+        gratitude: arr3(existing.gratitude),
+        accomplishment: arr3(existing.accomplishment),
+        affBecoming: existing.affBecoming || '',
+        affLearning: existing.affLearning || '',
+        affIHave: existing.affIHave || '',
+        anticipation: existing.anticipation || '',
+        emotion: existing.emotion || '',
+        wastedTime: existing.wastedTime || '',
+      }));
+      const [saving, setSaving] = useState(false);
+      const [saved, setSaved] = useState(false);
+      const [td, setTd] = useState(null);
+      useEffect(() => { let on=true; loadTrackerData().then(d=>{ if(on) setTd(d); }).catch(()=>{}); return ()=>{on=false;}; }, []);
+      const A = td ? ciAggregate(td, [today]) : null;
+
+      const upd = (k, v) => setDraft(p => ({ ...p, [k]: v }));
+      const updArr = (k, i, v) => setDraft(p => { const a = Array.isArray(p[k]) ? p[k].slice() : ['','','']; a[i]=v; return { ...p, [k]: a }; });
+      const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.wastedTime||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x);
+
+      const handleSave = async () => {
+        if (!hasContent) return;
+        setSaving(true);
+        const updated = { ...entries, [today]: { ...existing, date:today, ...draft, updatedAt:new Date().toISOString(), createdAt: existing.createdAt || new Date().toISOString() } };
+        await onSave(updated);
+        setSaving(false); setSaved(true); setTimeout(()=>setSaved(false), 2000);
+      };
+
+      const dt = new Date();
+      const dayName = DAYS[dt.getDay()], moName = MONTHS[dt.getMonth()], yr = dt.getFullYear(), dayNum = dt.getDate();
+      const inp = { width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(107,143,197,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const ta = { ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
+      const stat = (label, v) => (<div style={{ flex:1, textAlign:'center', minWidth:0 }}><div style={{ fontSize:17, fontWeight:800, color:'#fff', whiteSpace:'nowrap' }}>{v}</div><div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div></div>);
+      const field = (label, key, multi) => (
+        <div style={{ marginBottom:38 }} key={key}>
+          <Label>{label}</Label>
+          {multi
+            ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={ta} />
+            : <input value={draft[key]||''} onChange={e=>upd(key,e.target.value)} style={inp} />}
+        </div>
+      );
+      const numRow = (key, i) => (
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={key+i}>
+          <span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span>
+          <input value={(draft[key]||[])[i]||''} onChange={e=>updArr(key,i,e.target.value)} style={{ ...inp, flex:1 }} />
+        </div>
+      );
+
+      return (
+        <div style={{ padding:'18px 20px' }}>
+          {/* Date header */}
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:32, fontWeight:800, color:'#fff', lineHeight:1.05 }}>{dayName.toUpperCase()}</div>
+            <div style={{ color:'#6b7280', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600, marginTop:3 }}>{moName} {dayNum}, {yr}</div>
+          </div>
+
+          {/* Auto-pulled day stats */}
+          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:34 }}>
+            <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
+            <div style={{ display:'flex', gap:6, marginBottom:10 }}>
+              {stat('MRN', A?A.mrn+'/5':'—')}{stat('WRK', A?A.wrk+'/5':'—')}{stat('NGT', A?A.ngt+'/5':'—')}{stat('DAY', A?A.dayTotal+'/15':'—')}
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              {stat('Wake', A?A.avgWake:'—')}{stat('Sleep', A?A.avgSleep:'—')}{stat('Spent', A?ciMoney(A.spending):'—')}
+            </div>
+          </div>
+
+          {field('Workout', 'workout')}
+
+          <div style={{ marginBottom:38 }}>
+            <Label>Gratitude</Label>
+            {numRow('gratitude',0)}{numRow('gratitude',1)}{numRow('gratitude',2)}
+          </div>
+
+          <div style={{ marginBottom:38 }}>
+            <Label>Accomplishments</Label>
+            {numRow('accomplishment',0)}{numRow('accomplishment',1)}{numRow('accomplishment',2)}
+          </div>
+
+          <div style={{ marginBottom:38 }}>
+            <Label>Affirmation</Label>
+            <div style={{ marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={inp} /></div>
+            <div style={{ marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={inp} /></div>
+            <div><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={inp} /></div>
+          </div>
+
+          {field('Anticipation', 'anticipation', true)}
+          {field('Emotion', 'emotion')}
+          {field('Wasted Time', 'wastedTime', true)}
+
+          <button onClick={handleSave} disabled={!hasContent||saving} style={{
+            width:'100%', padding:'14px', marginTop:8,
+            background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#2a4a80'},${NAVY})` : C1,
+            border: saved ? `1px solid ${NAVY}` : 'none', borderRadius:10, color: saved ? NAVYL : '#fff',
+            fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em',
+            cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
+          }}>
+            {saved ? (<span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>SAVED</span>) : saving ? 'SAVING...' : 'SAVE ENTRY'}
+          </button>
+        </div>
+      );
+    }
+
+    // ── HISTORY VIEW ───────────────────────────────────────────────
+    function HistoryView({ entries }) {
+      const now = new Date();
+      const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const [selMonth, setSelMonth] = useState(curM);
+      const [expanded, setExpanded] = useState(null);
+
+      const __allDatesRaw = Object.keys(entries).sort((a,b) => b.localeCompare(a));
+      // 60-day history cap for Elite (Premium sees all; Core has Journal locked entirely).
+      const allDates   = __PREMIUM ? __allDatesRaw : __allDatesRaw.filter(d => d >= HISTORY_CAP_CUTOFF);
+      const capHidden  = __allDatesRaw.length - allDates.length;
+      const allMonths  = [...new Set(allDates.map(d => monthKey(d)))].sort((a,b) => b.localeCompare(a));
+      const monthDates = allDates.filter(d => monthKey(d) === selMonth);
+
+      return (
+        <div style={{ padding:'18px 20px' }}>
+          {/* Month pills */}
+          <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:4, marginBottom:16 }}>
+            {allMonths.length === 0 && <div style={{ color:'#374151', fontSize:12 }}>No entries yet</div>}
+            {allMonths.map(m => (
+              <button key={m} onClick={() => setSelMonth(m)} style={{
+                flexShrink:0, padding:'5px 11px',
+                background: selMonth===m ? 'rgba(150,150,150,0.14)' : C1,
+                border:`1px solid ${selMonth===m ? NAVY : BR}`,
+                borderRadius:6, color: selMonth===m ? NAVYL : '#374151',
+                fontSize:10, fontWeight:700, letterSpacing:'0.06em', cursor:'pointer'
+              }}>{monthLbl(m)}</button>
+            ))}
+          </div>
+
+          {capHidden > 0 && (
+            <div style={{ textAlign:'center', padding:'14px 18px', marginBottom:16, background:'rgba(201,160,32,0.08)', border:'1px solid rgba(201,160,32,0.35)', borderRadius:12 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'#C9A020', letterSpacing:'0.04em' }}>Showing your last 60 days</div>
+              <div style={{ fontSize:11, color:'#9a9a9a', marginTop:4, lineHeight:1.5 }}>Upgrade to <b style={{ color:'#C9A020' }}>Premium</b> to revisit your full journal.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', marginTop:8, padding:'7px 18px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:11, letterSpacing:'0.04em', borderRadius:8, textDecoration:'none' }}>↑ Unlock full history</a>
+            </div>
+          )}
+
+          {monthDates.length === 0
+            ? <div style={{ textAlign:'center', padding:'34px 18px' }}><div style={{ fontSize:30, marginBottom:8 }}>📓</div><div style={{ fontSize:15, fontWeight:700, color:'#e8e4df', marginBottom:4 }}>No entries this month</div><div style={{ fontSize:13, color:'#8a8276', marginBottom:16 }}>A few honest lines is all it takes.</div><button onClick={() => { const b=[...document.querySelectorAll('button')].find(x=>/^write$/i.test((x.textContent||'').trim())); if(b)b.click(); }} style={{ padding:'11px 20px', borderRadius:10, border:'1px solid #C9A020', background:'rgba(201,160,32,0.14)', color:'#C9A020', fontWeight:700, fontSize:13, cursor:'pointer' }}>Write your first entry →</button></div>
+            : monthDates.map(dateStr => {
+                const e = entries[dateStr] || {};
+                const [yr,mo,dd] = dateStr.split('-');
+                const dt = new Date(+yr,+mo-1,+dd);
+                const lbl = DAYS[dt.getDay()]+', '+MONTHS[dt.getMonth()]+' '+dd;
+                const isOpen = expanded === dateStr;
+
+                return (
+                  <div key={dateStr} style={{ marginBottom:10 }}>
+                    <button onClick={() => setExpanded(isOpen ? null : dateStr)} style={{
+                      width:'100%', background: isOpen ? 'rgba(150,150,150,0.08)' : C1,
+                      border:`1px solid ${isOpen ? BRB : BR}`, borderRadius: isOpen ? '12px 12px 0 0' : 12,
+                      padding:'13px 15px', cursor:'pointer', textAlign:'left',
+                      display:'flex', alignItems:'center', gap:12, transition:'all 0.2s'
+                    }}>
+                      <div style={{
+                        width:38, height:38, borderRadius:8, background:'rgba(150,150,150,0.07)',
+                        border:`1px solid ${BR}`, display:'flex', flexDirection:'column',
+                        alignItems:'center', justifyContent:'center', flexShrink:0
+                      }}>
+                        <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:18, color:NAVYL, lineHeight:1 }}>{dd}</div>
+                        <div style={{ fontSize:8, color:'#374151', fontWeight:600, letterSpacing:'0.06em' }}>{MONTHS[+mo-1].toUpperCase()}</div>
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ color:'#d1d5db', fontSize:13, fontWeight:500 }}>{lbl}</div>
+                        <div style={{ color:'#4b5563', fontSize:11, marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          {(() => { const g=Array.isArray(e.gratitude)?e.gratitude.filter(Boolean)[0]:(typeof e.gratitude==='string'?e.gratitude:''); const p=e.workout||g||e.emotion||e.entry||''; return p ? (p.slice(0,60)+(p.length>60?'…':'')) : 'Tap to view'; })()}
+                        </div>
+                      </div>
+                      <span style={{ color:'#374151', fontSize:12 }}>{isOpen?'▲':'▼'}</span>
+                    </button>
+
+                    {isOpen && (
+                      <div style={{ background:'rgba(8,8,8,0.8)', border:`1px solid ${BRB}`, borderTop:'none', borderRadius:'0 0 12px 12px', padding:'16px 15px' }}>
+                        {(() => {
+                          const g = Array.isArray(e.gratitude) ? e.gratitude.filter(Boolean) : (typeof e.gratitude==='string' && e.gratitude ? [e.gratitude] : []);
+                          const acc = Array.isArray(e.accomplishment) ? e.accomplishment.filter(Boolean) : [];
+                          const aff = [e.affBecoming, e.affLearning, e.affIHave].some(Boolean);
+                          const text = (label, val) => val ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label><div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{val}</div></div>) : null;
+                          const list = (label, items) => items.length ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label>{items.map((x,i)=>(<div key={i} style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{i+1}</span>{x}</div>))}</div>) : null;
+                          const affLine = (k,v) => v ? (<div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }} key={k}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{k}</span>{v}</div>) : null;
+                          const anyNew = e.workout||g.length||acc.length||aff||e.anticipation||e.emotion||e.wastedTime;
+                          const anyOld = e.entry||e.wins||e.scripture;
+                          return (<>
+                            {text('Workout', e.workout)}
+                            {list('Gratitude', g)}
+                            {list('Accomplishments', acc)}
+                            {aff && (<div style={{ marginBottom:14 }}><Label>Affirmation</Label>{affLine('Becoming', e.affBecoming)}{affLine('Learning', e.affLearning)}{affLine('I Have', e.affIHave)}</div>)}
+                            {text('Anticipation', e.anticipation)}
+                            {text('Emotion', e.emotion)}
+                            {text('Wasted Time', e.wastedTime)}
+                            {text('Entry', e.entry)}
+                            {text('Win', e.wins)}
+                            {text('Scripture', e.scripture)}
+                            {!anyNew && !anyOld && (<div style={{ color:'#6b7280', fontSize:12 }}>No details saved for this day.</div>)}
+                          </>);
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+          }
+        </div>
+      );
+    }
+
+    // ── INSIGHTS VIEW ──────────────────────────────────────────────
+    function InsightsView({ entries }) {
+      const allDates = Object.keys(entries).sort((a,b) => a.localeCompare(b));
+      const total    = allDates.length;
+
+      // Streak calc
+      let streak     = 0;
+      let d          = new Date();
+      while (true) {
+        const key = ciFmt(d);
+        if (entries[key]) { streak++; d.setDate(d.getDate()-1); }
+        else break;
+      }
+
+      // Longest streak
+      let longest = 0, cur = 0;
+      allDates.forEach((dt, i) => {
+        if (i === 0) { cur = 1; return; }
+        const [py,pm,pd] = allDates[i-1].split('-');
+        const [cy,cm,cd] = dt.split('-');
+        const prev = new Date(+py,+pm-1,+pd);
+        const curr = new Date(+cy,+cm-1,+cd);
+        const diff = (curr - prev) / 86400000;
+        if (diff === 1) { cur++; longest = Math.max(longest, cur); }
+        else { cur = 1; }
+      });
+      longest = Math.max(longest, cur, streak);
+
+      // Top feeling (from the emotion field on entries)
+      const emoCount = {};
+      allDates.forEach(d => { const ee=entries[d]||{}; const em=(ee.emotion||'').trim(); if(em) emoCount[em.toLowerCase()]=(emoCount[em.toLowerCase()]||0)+1; });
+      const topEmo = Object.entries(emoCount).sort((a,b)=>b[1]-a[1])[0];
+      const topFeeling = topEmo ? (topEmo[0].charAt(0).toUpperCase()+topEmo[0].slice(1)) : '—';
+
+      // This month
+      const now  = new Date();
+      const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const thisMonthCount = allDates.filter(d=>d.startsWith(curM)).length;
+      const daysInMonth    = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+      const daysSoFar      = now.getDate();
+
+      // Last 30 days heatmap
+      const last30 = Array.from({length:30},(_,i)=>{
+        const dt = new Date(); dt.setDate(dt.getDate()-29+i);
+        const key = ciFmt(dt);
+        return { key, has: !!entries[key], day: dt.getDate() };
+      });
+
+      return (
+        <div style={{ padding:'18px 20px' }}>
+
+          {/* Streak hero */}
+          <div style={{
+            background:`linear-gradient(135deg,${C1},#0d0c10)`,
+            border:`1px solid ${BRB}`, borderRadius:14, padding:'22px 20px',
+            marginBottom:14, textAlign:'center', position:'relative', overflow:'hidden'
+          }}>
+            <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'rgba(150,150,150,0.05)' }} />
+            <div style={{ color:'#374151', fontSize:9, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:8 }}>Current Streak</div>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:72, color:'#fff', lineHeight:1 }}>{streak}</div>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, color:NAVYL, letterSpacing:'0.1em', marginTop:2 }}>
+              {streak === 1 ? 'DAY' : 'DAYS'}
+            </div>
+            {streak > 0 && (
+              <div style={{ marginTop:10, color:GOLD, fontSize:11, fontStyle:'italic', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
+                {streak >= 30 ? '"Consistency is the currency of mastery."' : streak >= 7 ? '"One week in. Keep going."' : '"Every day counts."'}
+              </div>
+            )}
+          </div>
+
+          {/* Stat grid */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:14 }}>
+            {[
+              { lbl:'Total Entries',    val:total },
+              { lbl:'Longest Streak',   val:longest + (longest===1?' Day':' Days') },
+              { lbl:'This Month',       val:`${thisMonthCount} / ${daysSoFar}` },
+              { lbl:'Top Feeling',      val:topFeeling },
+            ].map(s => (
+              <div key={s.lbl} style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:'12px 13px' }}>
+                <Label style={{ marginBottom:4 }}>{s.lbl}</Label>
+                <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:22, color:NAVYL }}>{s.val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 30-day heatmap */}
+          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'15px', marginBottom:14 }}>
+            <Label>Last 30 Days</Label>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:10 }}>
+              {last30.map(({ key, has, day }) => (
+                <div key={key} title={key} style={{
+                  width:28, height:28, borderRadius:5,
+                  background: has ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#2a4a80'},${NAVY})` : '#0e0e0e',
+                  border:`1px solid ${has ? NAVY : '#1a1a1a'}`,
+                  display:'flex', alignItems:'center', justifyContent:'center'
+                }}>
+                  <span style={{ fontSize:9, color: has ? '#fff' : '#2a2a2a', fontWeight:600 }}>{day}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // ── ROOT ───────────────────────────────────────────────────────
+    function JournalApp() {
+      const [tab,     setTab]     = useState('WRITE');
+      const [entries, setEntries] = useState({});
+      const [ready,   setReady]   = useState(false);
+
+      useEffect(() => { load().then(d => { setEntries(d); setReady(true); }).catch(() => setReady(true)); }, []);
+
+      const saveEntries = useCallback(async (updated) => {
+        setEntries(updated);
+        await save(updated);
+      }, []);
+
+      if (!ready) return (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
+          <div style={{ color:NAVY, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em' }}>LOADING...</div>
+        </div>
+      );
+
+      if (__CORE) return (
+        <div style={{ background:BG, minHeight:'100vh' }}>
+          <Nav />
+          <div style={{ textAlign:'center', padding:'80px 24px', maxWidth:'420px', margin:'0 auto' }}>
+            <div style={{ fontSize:'46px', marginBottom:'14px' }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div style={{ fontSize:'20px', fontWeight:800, color:'#f5f5f5', letterSpacing:'1px', marginBottom:'12px' }}>JOURNAL IS AN ELITE FEATURE</div>
+            <div style={{ fontSize:'14px', color:'#9a9a9a', lineHeight:1.6, marginBottom:'26px' }}>Private daily journaling, guided prompts, and mood tracking. Upgrade to Elite to unlock the journal — Premium unlocks the upgraded version.</div>
+            <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'14px 30px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:'14px', letterSpacing:'1px', borderRadius:'12px', textDecoration:'none' }}>↑ UPGRADE TO UNLOCK</a>
+          </div>
+        </div>
+      );
+
+      return (
+        <div style={{ background:BG, minHeight:'100vh' }}>
+          <Nav />
+
+          {/* ── Big Hero Card — matches Habits style, navy/gold theme ── */}
+          <div style={{ padding:'16px 20px 0' }}>
+            <div style={{
+              background: '#000000',
+              backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(150,150,150,0.20) 0%, rgba(150,150,150,0.06) 45%, transparent 75%)',
+              border: '3px solid transparent',
+              borderRadius: '22px',
+              padding: '38px 20px 28px',
+              textAlign: 'center',
+              marginBottom: '16px',
+              position: 'relative',
+              overflow: 'hidden',
+              backgroundClip: 'padding-box',
+              boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(150,150,150,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+            }}>
+              <div className="mps-logo-rsp" style={{
+                fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                fontWeight: 900, fontStyle: 'italic',
+                letterSpacing: '4px', lineHeight: 1,
+                background: __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #c8d8f0 18%, #6b8fc5 38%, #3a5a8a 65%, #1a3060 95%, #0a1830 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
+              }}>MPS</div>
+              <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(150,150,150,0.6) 25%, rgba(201,160,32,0.8) 50%, rgba(150,150,150,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
+              <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
+              <div style={{ fontSize: '20px', letterSpacing: '6px', color: GOLD, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
+                <span>MPS</span><span>JOURNAL</span>
+              </div>
+            </div>
+          </div>
+
+          <Tabs tab={tab} setTab={setTab} />
+          {tab==='WRITE'    && <WriteView    entries={entries} onSave={saveEntries} />}
+          {tab==='HISTORY'  && <HistoryView  entries={entries} />}
+          {tab==='INSIGHTS' && (__CORE ? (
+            <div style={{ textAlign:'center', padding:'48px 22px', background:C1, border:`1px solid ${BR}`, borderRadius:14, marginTop:8 }}>
+              <div style={{ fontSize:34, marginBottom:10 }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#f5f5f5', letterSpacing:1, marginBottom:8 }}>INSIGHTS ARE AN ELITE FEATURE</div>
+              <div style={{ fontSize:13, color:'#9a9a9a', lineHeight:1.6, marginBottom:20, maxWidth:300, marginLeft:'auto', marginRight:'auto' }}>Unlock mood trends, streaks, and writing patterns. Journaling stays free — upgrade to see the insights.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ UNLOCK WITH ELITE</a>
+            </div>
+          ) : <InsightsView entries={entries} />)}
+          {tab==='CHECK-IN' && (__PREMIUM ? <CheckInView /> : (
+            <div style={{ textAlign:'center', padding:'48px 22px', background:C1, border:`1px solid ${BR}`, borderRadius:14, margin:'16px 20px' }}>
+              <div style={{ fontSize:34, marginBottom:10, color:NAVYL }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#f5f5f5', letterSpacing:1, marginBottom:8 }}>CHECK-IN IS A PREMIUM FEATURE</div>
+              <div style={{ fontSize:13, color:'#9a9a9a', lineHeight:1.6, marginBottom:20, maxWidth:300, marginLeft:'auto', marginRight:'auto' }}>Weekly &amp; monthly check-ins that auto-pull your habits, workouts, spending and sleep.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ Unlock with Premium</a>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ═══ CHECK-IN: auto-pull from the other 4 trackers (Premium) ═══
+    const CI_BLOCKS = {
+      MRN: ['h_wake','h_gymtr','h_breath','h_read','h_cold'],
+      WRK: ['h_mind','h_course','h_outr','h_chess','h_auto'],
+      NGT: ['h_journ','h_pray','h_bible','h_guit','h_sleep'],
+    };
+    const ciP = (v) => { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch(e){ return null; } };
+    const ciLS = (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } };
+    // Reads the cloud backups (users/{uid}/settings/<app>_backup) the trackers write, with
+    // localStorage as the fresher fallback. Returns raw data; aggregation happens per period.
+    async function loadTrackerData(){
+      const out = { habits:{}, blocks:null, expenses:[], workout:[], sleep:{} };
+      let H={}, E={}, W={}, S={};
+      try {
+        const db = firebase.firestore();
+        const uid = (window.currentUser && window.currentUser.uid) || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+        if (uid){
+          const base = db.collection('users').doc(uid).collection('settings');
+          const snaps = await Promise.all([
+            base.doc('habits_backup').get().catch(()=>null),
+            base.doc('expenses_backup').get().catch(()=>null),
+            base.doc('workout_backup').get().catch(()=>null),
+            base.doc('sleep_backup').get().catch(()=>null),
+          ]);
+          const dataOf = (s) => (s && s.exists && s.data() && s.data().data) ? s.data().data : {};
+          H=dataOf(snaps[0]); E=dataOf(snaps[1]); W=dataOf(snaps[2]); S=dataOf(snaps[3]);
+        }
+      } catch(e){}
+      out.habits   = ciLS('habits_v4')            || ciP(H['habits_v4'])            || {};
+      out.blocks   = ciLS('blocks_v4')            || ciP(H['blocks_v4'])            || null;
+      out.expenses = ciLS('mps_expense:entries')  || ciP(E['mps_expense:entries'])  || [];
+      out.workout  = ciLS('mps_v3_history')       || ciP(W['mps_v3_history'])       || [];
+      const sleep = {};
+      Object.keys(S).forEach(k => { if (k.indexOf('rr_sleep:')===0){ const v=ciP(S[k]); if(v) sleep[k.slice(9)]=v; } });
+      try { for (let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if (k && k.indexOf('rr_sleep:')===0){ const v=ciLS(k); if(v) sleep[k.slice(9)]=v; } } } catch(e){}
+      out.sleep = sleep;
+      return out;
+    }
+    function ciFmt(d){ const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
+    function ciWeekKeys(offset){ const now=new Date(); now.setHours(0,0,0,0); const dow=(now.getDay()+6)%7; const mon=new Date(now); mon.setDate(now.getDate()-dow+offset*7); const keys=[]; for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); keys.push(ciFmt(d)); } return keys; }
+    function ciMonthKeys(offset){ const now=new Date(); now.setHours(0,0,0,0); const base=new Date(now.getFullYear(), now.getMonth()+offset, 1); const dim=new Date(base.getFullYear(), base.getMonth()+1, 0).getDate(); const keys=[]; for(let i=1;i<=dim;i++) keys.push(ciFmt(new Date(base.getFullYear(), base.getMonth(), i))); return keys; }
+    function ciMonthLabel(offset){ const now=new Date(); const base=new Date(now.getFullYear(), now.getMonth()+offset, 1); return MONTHS[base.getMonth()]+' '+base.getFullYear(); }
+    function ciHmToMin(t){ if(!t || String(t).indexOf(':')<0) return null; const p=String(t).split(':'); const h=+p[0], m=+p[1]; if(isNaN(h)) return null; return h*60+(m||0); }
+    function ciAvgTime(arr){ if(!arr.length) return '—'; const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); const h=Math.floor(avg/60), m=avg%60; const ap=h>=12?'PM':'AM'; const h12=((h+11)%12)+1; return h12+':'+String(m).padStart(2,'0')+' '+ap; }
+    function ciMoney(n){ const v=Math.round(Number(n)||0); return '$'+v.toLocaleString(); }
+    function ciRange(a,b){ const A=a.split('-'), B=b.split('-'); return MONTHS[+A[1]-1]+' '+(+A[2])+' – '+MONTHS[+B[1]-1]+' '+(+B[2]); }
+    function ciAggregate(data, dateKeys){
+      const bl = (data.blocks && data.blocks.MRN && data.blocks.MRN.habits) ? {
+        MRN:(data.blocks.MRN.habits||[]).map(h=>h.id), WRK:(data.blocks.WRK.habits||[]).map(h=>h.id), NGT:(data.blocks.NGT.habits||[]).map(h=>h.id)
+      } : CI_BLOCKS;
+      let mrn=0,wrk=0,ngt=0;
+      dateKeys.forEach(dk=>{ const dd=data.habits[dk]||{}; mrn+=bl.MRN.filter(id=>dd[id]).length; wrk+=bl.WRK.filter(id=>dd[id]).length; ngt+=bl.NGT.filter(id=>dd[id]).length; });
+      const dayTotal=mrn+wrk+ngt;
+      const inR=(d)=> d && dateKeys.indexOf(String(d).slice(0,10))>=0;
+      const purch=(data.expenses||[]).filter(e=>e && e.item==='Purchase' && inR(e.date));
+      const spending=purch.reduce((s,e)=>s+Math.abs(Number(e.amount)||0),0);
+      const income=(data.expenses||[]).filter(e=>e && (e.item==='Income'||e.item==='Paycheck') && inR(e.date)).reduce((s,e)=>s+Math.abs(Number(e.amount)||0),0);
+      const workouts=(data.workout||[]).filter(w=>w && inR(w.date)).length;
+      const wake=[],slp=[];
+      dateKeys.forEach(dk=>{ const s=data.sleep[dk]; if(s){ const wm=ciHmToMin(s.wakeTime); const sm=ciHmToMin(s.sleepTime); if(wm!=null) wake.push(wm); if(sm!=null) slp.push(sm); } });
+      const today=todayStr();
+      const elapsed=Math.max(1, dateKeys.filter(dk=>dk<=today).length || dateKeys.length);
+      return { mrn,wrk,ngt,dayTotal, mrnAvg:Math.round(mrn/elapsed), wrkAvg:Math.round(wrk/elapsed), ngtAvg:Math.round(ngt/elapsed), dayAvg:Math.round(dayTotal/elapsed), spending, income, net:income-spending, workouts, avgWake:ciAvgTime(wake), avgSleep:ciAvgTime(slp) };
+    }
+    // Hoisted to module scope so it isn't re-created on every CheckInView render.
+    const Stat=({label,value,sub})=>(
+      <div style={{ flex:1, textAlign:'center' }}>
+        <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{value}</div>
+        <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div>
+        {sub && <div style={{ fontSize:9, color:NAVYL, marginTop:2 }}>{sub}</div>}
+      </div>
+    );
+    function CheckInView(){
+      const [data,setData]=useState(null); const [loading,setLoading]=useState(true);
+      const [period,setPeriod]=useState('week'); const [wOff,setWOff]=useState(0); const [mOff,setMOff]=useState(0);
+      const [refl,setRefl]=useState({}); const [draft,setDraft]=useState({}); const [savedFlash,setSavedFlash]=useState(false);
+      useEffect(()=>{ let on=true; loadTrackerData().then(d=>{ if(on){ setData(d); setLoading(false); } }).catch(()=>{ if(on) setLoading(false); }); return ()=>{on=false;}; },[]);
+      const isMonth=period==='month'; const offset=isMonth?mOff:wOff;
+      const setOff=(v)=>{ const nv=Math.min(0,v); if(isMonth) setMOff(nv); else setWOff(nv); };
+      const keys=isMonth?ciMonthKeys(mOff):ciWeekKeys(wOff);
+      const A=data?ciAggregate(data,keys):null;
+      const rKey = isMonth ? ('m_'+keys[0].slice(0,7)) : ('w_'+keys[0]);
+      useEffect(()=>{ (async()=>{ try{ const v=await window.storage.get('checkin_reflections'); if(v&&typeof v==='object'){ setRefl(v); setDraft(v[rKey]||{}); } }catch(e){} })(); },[]);
+      // Load the saved reflection for the current period when navigating (rKey only — must NOT
+      // depend on `refl`, or every save/async-load would wipe the in-progress draft mid-typing).
+      useEffect(()=>{ setDraft(refl[rKey]||{}); },[rKey]);
+      const title=isMonth?(ciMonthLabel(mOff).toUpperCase()+' CHECK-IN'):'WEEKLY CHECK-IN';
+      const rangeLbl=isMonth?(keys.length+' days'):ciRange(keys[0],keys[6]);
+      const pctOf=(a,b)=> b>0?Math.round(a/b*100):0;
+      const box={ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 16px', marginBottom:12 };
+      const lbl={ fontSize:10, letterSpacing:'0.14em', color:NAVYL, textTransform:'uppercase', marginBottom:8 };
+      const navBtn={ background:'transparent', color:NAVYL, border:`1px solid ${BR}`, borderRadius:8, padding:'2px 12px', fontSize:18, cursor:'pointer', lineHeight:1.4 };
+      const note=(<div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>);
+      const inp={ width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(107,143,197,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const ta={ ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
+      const upd=(k,v)=>setDraft(p=>({...p,[k]:v}));
+      const updArr=(k,i,v)=>setDraft(p=>{ const a=Array.isArray(p[k])?p[k].slice():[]; a[i]=v; return {...p,[k]:a}; });
+      const rfield=(label,k,multi)=>(<div style={{ marginBottom:11 }} key={k}><div style={lbl}>{label}</div>{multi?<textarea value={draft[k]||''} onChange={e=>upd(k,e.target.value)} rows={2} style={ta}/>:<input value={draft[k]||''} onChange={e=>upd(k,e.target.value)} style={inp}/>}</div>);
+      const rnum=(k,i)=>(<div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={k+i}><span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span><input value={(draft[k]||[])[i]||''} onChange={e=>updArr(k,i,e.target.value)} style={{ ...inp, flex:1 }}/></div>);
+      const twoCol=(a,b)=>(<div style={{ display:'flex', gap:10 }}><div style={{ flex:1 }}>{a}</div><div style={{ flex:1 }}>{b}</div></div>);
+      const saveRefl=async()=>{ const next={...refl,[rKey]:draft}; setRefl(next); try{ await window.storage.set('checkin_reflections',next); }catch(e){} setSavedFlash(true); setTimeout(()=>setSavedFlash(false),1500); };
+      const saveBtn=(<button onClick={saveRefl} style={{ width:'100%', padding:'13px', marginTop:14, background:savedFlash?GOLD:'transparent', color:savedFlash?'#0a0a0a':NAVYL, border:`2px solid ${savedFlash?GOLD:NAVY}`, borderRadius:11, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:13, letterSpacing:'2px', fontWeight:700, cursor:'pointer' }}>{savedFlash?(<span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>SAVED</span>):'SAVE CHECK-IN'}</button>);
+      return (
+        <div style={{ padding:'18px 20px' }}>
+          <div style={{ display:'flex', gap:6, marginBottom:14, background:C2, border:`1px solid ${BR}`, borderRadius:10, padding:4 }}>
+            {[['week','WEEKLY'],['month','MONTHLY']].map(pr=>(
+              <button key={pr[0]} onClick={()=>setPeriod(pr[0])} style={{ flex:1, padding:'9px', background:period===pr[0]?NAVY:'transparent', color:period===pr[0]?(__GRAY?'#0a0a0a':'#fff'):NAVYL, border:'none', borderRadius:7, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:11, letterSpacing:'0.12em', fontWeight:700, cursor:'pointer' }}>{pr[1]}</button>
+            ))}
+          </div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+            <div>
+              <div style={{ fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'0.04em' }}>{title}</div>
+              <div style={{ fontSize:11, color:NAVYL, marginTop:2 }}>{rangeLbl}</div>
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              <button onClick={()=>setOff(offset-1)} style={navBtn}>‹</button>
+              <button onClick={()=>setOff(offset+1)} disabled={offset>=0} style={{ ...navBtn, opacity:offset>=0?0.4:1, cursor:offset>=0?'default':'pointer' }}>›</button>
+            </div>
+          </div>
+          {loading ? (
+            <div style={{ textAlign:'center', padding:'40px 0', color:NAVYL, fontSize:13 }}>Pulling your data…</div>
+          ) : isMonth ? (
+            <>
+              {note}
+              <div style={box}>
+                <div style={lbl}>Financial Summary</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Income" value={ciMoney(A.income)} />
+                  <Stat label="Spent" value={ciMoney(A.spending)} sub={A.income>0?pctOf(A.spending,A.income)+'% of inc':null} />
+                  <Stat label="Net" value={ciMoney(A.net)} sub={A.income>0?pctOf(A.net,A.income)+'%':null} />
+                </div>
+              </div>
+              <div style={box}>
+                <div style={lbl}>Routines</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Total Done" value={A.dayTotal+'/'+(keys.length*15)} />
+                  <Stat label="Avg / Day" value={A.dayAvg+'/15'} />
+                  <Stat label="Completion" value={pctOf(A.dayTotal, keys.length*15)+'%'} />
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:12, marginBottom:12 }}>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Physical</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{A.workouts}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>workouts this month</div>
+                </div>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Sleep</div>
+                  <div style={{ fontSize:13, color:'#fff', marginTop:4 }}>Wake · {A.avgWake}</div>
+                  <div style={{ fontSize:13, color:'#fff', marginTop:3 }}>Sleep · {A.avgSleep}</div>
+                </div>
+              </div>
+              <div style={box}><div style={lbl}>Jobs</div>{twoCol(rfield('Tasks','tasks'), rfield('Revenue','revenue'))}</div>
+              <div style={box}><div style={lbl}>Learned</div>{twoCol(rfield('Book','book'), rfield('AI','ai'))}</div>
+              <div style={box}><div style={lbl}>Workflows</div>{twoCol(rfield('Automation','automation'), rfield('Improved','improved'))}</div>
+              <div style={box}><div style={lbl}>Top Accomplishments</div>{rnum('acc',0)}{rnum('acc',1)}{rnum('acc',2)}{rnum('acc',3)}</div>
+              <div style={box}>{rfield('Next Month Target','target',true)}{rfield('Biggest Lesson','lesson',true)}</div>
+              {saveBtn}
+            </>
+          ) : (
+            <>
+              {note}
+              <div style={box}>
+                <div style={lbl}>Habits</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="MRN" value={A.mrn+'/35'} sub={'avg '+A.mrnAvg+'/5'} />
+                  <Stat label="WRK" value={A.wrk+'/35'} sub={'avg '+A.wrkAvg+'/5'} />
+                  <Stat label="NGT" value={A.ngt+'/35'} sub={'avg '+A.ngtAvg+'/5'} />
+                  <Stat label="DAY" value={A.dayTotal+'/105'} sub={'avg '+A.dayAvg+'/15'} />
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:12, marginBottom:12 }}>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Spending</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{ciMoney(A.spending)}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>Income {ciMoney(A.income)} · Net {ciMoney(A.net)}</div>
+                </div>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Physical</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{A.workouts}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>workouts this week</div>
+                </div>
+              </div>
+              <div style={box}>
+                <div style={lbl}>Sleep</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Avg Wake" value={A.avgWake} />
+                  <Stat label="Avg Sleep" value={A.avgSleep} />
+                </div>
+              </div>
+              <div style={box}><div style={lbl}>Jobs</div>{twoCol(rfield('Tasks','tasks'), rfield('Revenue','revenue'))}</div>
+              <div style={box}><div style={lbl}>Top 3 Accomplishments</div>{rnum('acc',0)}{rnum('acc',1)}{rnum('acc',2)}</div>
+              <div style={box}>{rfield('Next Week Focus','focus',true)}</div>
+              <div style={box}><div style={lbl}>Adjustments</div>{rfield('To Stop','stop')}{rfield('To Start','start')}{rfield('To Continue','continue')}</div>
+              {saveBtn}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    window.JournalApp = JournalApp;
+  </script>
+<script src="/shared/tour.js" defer></script>
+</body>
+</html>
