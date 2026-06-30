@@ -282,7 +282,7 @@
       <button type="button" onMouseDown={(e)=>e.preventDefault()} onClick={onClick}
         className={active ? 'mps-mic mps-mic-on' : 'mps-mic'}
         title={active ? 'Listening… tap to stop' : 'Tap to talk'}
-        style={{ position:'absolute', right:7, top: multi ? 8 : '50%', transform: multi ? 'none' : 'translateY(-50%)', zIndex:2 }}>
+        style={{ position:'absolute', left:7, top: multi ? 8 : '50%', transform: multi ? 'none' : 'translateY(-50%)', zIndex:2 }}>
         <MicIcon />
       </button>
     );
@@ -420,8 +420,8 @@
           <Label>{label}</Label>
           <div style={{ position:'relative' }}>
             {multi
-              ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={{ ...ta, paddingRight:44 }} />
-              : <input value={draft[key]||''} onChange={e=>upd(key,e.target.value)} style={{ ...inp, paddingRight:44 }} />}
+              ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={{ ...ta, paddingLeft:44 }} />
+              : <input value={draft[key]||''} onChange={e=>upd(key,e.target.value)} style={{ ...inp, paddingLeft:44 }} />}
             <MicButton multi={multi} active={recKey===key} onClick={()=>toggleVoice(key, ()=>draft[key]||'', t=>upd(key,t))} />
           </div>
         </div>
@@ -430,7 +430,7 @@
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={key+i}>
           <span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span>
           <div style={{ position:'relative', flex:1 }}>
-            <input value={(draft[key]||[])[i]||''} onChange={e=>updArr(key,i,e.target.value)} style={{ ...inp, width:'100%', paddingRight:44 }} />
+            <input value={(draft[key]||[])[i]||''} onChange={e=>updArr(key,i,e.target.value)} style={{ ...inp, width:'100%', paddingLeft:44 }} />
             <MicButton active={recKey===key+i} onClick={()=>toggleVoice(key+i, ()=>(draft[key]||[])[i]||'', t=>updArr(key,i,t))} />
           </div>
         </div>
@@ -503,9 +503,9 @@
 
           <div style={{ marginBottom:38 }}>
             <Label>Affirmation</Label>
-            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={{ ...inp, paddingRight:44 }} /><MicButton active={recKey==='affBecoming'} onClick={()=>toggleVoice('affBecoming', ()=>draft.affBecoming||'', t=>upd('affBecoming',t))} /></div>
-            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={{ ...inp, paddingRight:44 }} /><MicButton active={recKey==='affLearning'} onClick={()=>toggleVoice('affLearning', ()=>draft.affLearning||'', t=>upd('affLearning',t))} /></div>
-            <div style={{ position:'relative' }}><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={{ ...inp, paddingRight:44 }} /><MicButton active={recKey==='affIHave'} onClick={()=>toggleVoice('affIHave', ()=>draft.affIHave||'', t=>upd('affIHave',t))} /></div>
+            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affBecoming'} onClick={()=>toggleVoice('affBecoming', ()=>draft.affBecoming||'', t=>upd('affBecoming',t))} /></div>
+            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affLearning'} onClick={()=>toggleVoice('affLearning', ()=>draft.affLearning||'', t=>upd('affLearning',t))} /></div>
+            <div style={{ position:'relative' }}><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affIHave'} onClick={()=>toggleVoice('affIHave', ()=>draft.affIHave||'', t=>upd('affIHave',t))} /></div>
           </div>
 
           {field('Anticipation', 'anticipation', true)}
