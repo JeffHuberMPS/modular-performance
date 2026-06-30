@@ -768,6 +768,19 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
 </div>
 
 <script>
+// === EXPENSES SANDBOX BUILD (expenses-sandbox branch only) ===
+// Shows the CUSTOMER experience to anyone, and fully isolates from the owner's real
+// Google Sheet + cloud backup. Nothing done here can reach Jeff's real tracker data.
+const MPS_SANDBOX = true;
+try { window.MPS_SANDBOX = true; } catch(e){}
+window.addEventListener('DOMContentLoaded', function(){
+  try {
+    var b=document.createElement('div');
+    b.textContent='SANDBOX · CUSTOMER PREVIEW';
+    b.style.cssText='position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:99999;background:#C9A020;color:#0a0a0a;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:1px;padding:7px 14px;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;';
+    document.body.appendChild(b);
+  } catch(e){}
+});
 // Gray/Gold theme (Free/Medium): SVG/JS colors can't read CSS vars — resolve here.
 const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
 // Premium = full history. Core/Elite see only the last 60 days of the log (insights/totals are unaffected).
@@ -863,6 +876,7 @@ function save(key, val) {
 // (an allowed Firestore location) so expenses sync across devices. Restores on a
 // fresh device. Fire-and-forget — never blocks the UI.
 (function(){
+  if (window.MPS_SANDBOX) { window.expenseScheduleBackup=function(){}; return; }  // sandbox: never touch the owner's cloud data
   function _db(){ try{ return firebase.firestore(); }catch(e){ return null; } }
   function _uid(){ try{ return firebase.auth().currentUser.uid; }catch(e){ return null; } }
   function _doc(){ var db=_db(), uid=_uid(); return (db&&uid)? db.doc('users/'+uid+'/settings/expenses_backup') : null; }
@@ -1361,7 +1375,7 @@ async function syncFromSheet(){
 function updateSyncStatus(status,msg){const statusEl=document.getElementById('sync-status-text');const lastEl=document.getElementById('sync-last');if(!statusEl)return;statusEl.textContent=msg;if(status==='ok')statusEl.style.color='var(--mps-mint)';else if(status==='error')statusEl.style.color='var(--mps-danger)';else if(status==='syncing')statusEl.style.color='var(--mps-warning)';else statusEl.style.color='var(--mps-text)';if(state.syncMeta.lastSync){const d=new Date(state.syncMeta.lastSync);lastEl.textContent=`Last synced: ${d.toLocaleString()}`;}}
 function loadSyncSettings(){const el=document.getElementById('set-webhook');if(el)el.value=state.sync.webhook||'';updateSyncStatus(state.syncMeta.status,state.syncMeta.status==='ok'?'Connected':'Not connected');
   // Sheet sync is the owner's setup (Make→Sheet). Customers log manually — hide the mirror UI unless a sheet is connected.
-  const connected=!!(state.sync&&state.sync.webhook);
+  const connected=!MPS_SANDBOX&&!!(state.sync&&state.sync.webhook);
   const mb=document.getElementById('log-mirror-banner');if(mb)mb.style.display=connected?'':'none';
   const rb=document.getElementById('btn-refresh-log');if(rb)rb.style.display=connected?'':'none';}
 document.getElementById('btn-save-sync')?.addEventListener('click',async()=>{state.sync={webhook:document.getElementById('set-webhook').value.trim()};save(STORE.sync,state.sync);flash('Saved');await syncFromSheet();});
@@ -1453,7 +1467,7 @@ document.getElementById('btn-clear-expenses')?.addEventListener('click',clearAll
 // INIT
 // =================================================================
 function renderAll(){renderMonthSelect();renderDashboard();renderLog();renderBudget();renderRules();renderInsights();loadSyncSettings();}
-async function autoSyncOnLoad(){if(state.sync.webhook)await syncFromSheet();}
+async function autoSyncOnLoad(){if(MPS_SANDBOX)return;if(state.sync.webhook)await syncFromSheet();}
 renderMonthSelect(); renderDashboard();                                                                                // paint the visible Dashboard tab immediately
 requestAnimationFrame(function(){ renderLog(); renderBudget(); renderRules(); renderInsights(); loadSyncSettings(); }); // defer the heavy hidden tabs off the first paint
 setTimeout(autoSyncOnLoad, 900);                                                                                        // let the UI paint before any network sheet-sync + re-render
