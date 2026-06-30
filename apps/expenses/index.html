@@ -773,6 +773,11 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
 // Google Sheet + cloud backup. Nothing done here can reach Jeff's real tracker data.
 const MPS_SANDBOX = true;
 try { window.MPS_SANDBOX = true; } catch(e){}
+// Always-fresh: drop any service worker + cached files so a refresh always shows the newest build.
+try {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); }).catch(function(){});
+  if (window.caches && caches.keys) caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }).catch(function(){});
+} catch(e){}
 window.addEventListener('DOMContentLoaded', function(){
   try {
     var b=document.createElement('div');
@@ -1480,22 +1485,20 @@ renderMonthSelect(); renderDashboard();                                         
 requestAnimationFrame(function(){ renderLog(); renderBudget(); renderRules(); renderInsights(); loadSyncSettings(); }); // defer the heavy hidden tabs off the first paint
 setTimeout(autoSyncOnLoad, 900);                                                                                        // let the UI paint before any network sheet-sync + re-render
 
-// === SANDBOX AUTO-DEMO: fill sample data + auto-play the guided tour (customer preview) ===
+// === SANDBOX AUTO-DEMO: reset to fresh sample data + auto-play the guided tour ON EVERY REFRESH ===
+// Jeff wants every refresh to show the latest demo from the top — so we always wipe and reload.
 if (MPS_SANDBOX) (function(){
-  if (!state.entries.length) {
-    const M=[["Hy-Vee","Essentials",[35,120]],["Casey's","Essentials",[30,65]],["Amazon","Lifestyle",[12,90]],["Chipotle","Lifestyle",[11,24]],["Netflix","Recurring",[16,16]],["Spotify","Recurring",[12,12]],["Vanguard","Investment",[100,300]],["Starbucks","Lifestyle",[5,9]],["Shell","Essentials",[28,55]]];
-    const out=[]; let n=0; const t=new Date();
-    for(let d=20;d>=0;d--){const dt=new Date(t.getFullYear(),t.getMonth(),t.getDate()-d);const iso=dt.toISOString().slice(0,10);const cnt=[0,1,1,2,2,3][Math.floor(Math.random()*6)];for(let i=0;i<cnt;i++){const m=M[Math.floor(Math.random()*M.length)];const amt=Math.round((m[2][0]+Math.random()*(m[2][1]-m[2][0]))*100)/100;out.push({id:'demo_'+(n++),date:iso,item:'Purchase',merchant:m[0],amount:amt,category:m[1],source:'Checking'});}}
-    out.push({id:'demo_'+(n++),date:(out[1]?out[1].date:todayISO()),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
-    state.entries=out; save(STORE.entries,state.entries); renderAll();
-  }
-  let ran=false; try{ ran=sessionStorage.getItem('mps_sbx_tour')==='1'; }catch(e){}
-  if(!ran){ try{sessionStorage.setItem('mps_sbx_tour','1');}catch(e){}
-    let tries=0; const iv=setInterval(function(){ tries++;
-      if(typeof window.startMpsTour==='function'){ clearInterval(iv); const d=document.querySelector('.tab[data-tab="dashboard"]'); if(d)d.click(); window.startMpsTour(); }
-      else if(tries>40){ clearInterval(iv); }
-    },150);
-  }
+  // Always regenerate fresh sample data (don't keep last visit's poking-around state).
+  const M=[["Hy-Vee","Essentials",[35,120]],["Casey's","Essentials",[30,65]],["Amazon","Lifestyle",[12,90]],["Chipotle","Lifestyle",[11,24]],["Netflix","Recurring",[16,16]],["Spotify","Recurring",[12,12]],["Vanguard","Investment",[100,300]],["Starbucks","Lifestyle",[5,9]],["Shell","Essentials",[28,55]]];
+  const out=[]; let n=0; const t=new Date();
+  for(let d=20;d>=0;d--){const dt=new Date(t.getFullYear(),t.getMonth(),t.getDate()-d);const iso=dt.toISOString().slice(0,10);const cnt=[0,1,1,2,2,3][Math.floor(Math.random()*6)];for(let i=0;i<cnt;i++){const m=M[Math.floor(Math.random()*M.length)];const amt=Math.round((m[2][0]+Math.random()*(m[2][1]-m[2][0]))*100)/100;out.push({id:'demo_'+(n++),date:iso,item:'Purchase',merchant:m[0],amount:amt,category:m[1],source:'Checking'});}}
+  out.push({id:'demo_'+(n++),date:(out[1]?out[1].date:todayISO()),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
+  state.entries=out; save(STORE.entries,state.entries); renderAll();
+  // Always play the tour from the top (no once-per-session guard).
+  let tries=0; const iv=setInterval(function(){ tries++;
+    if(typeof window.startMpsTour==='function'){ clearInterval(iv); const d=document.querySelector('.tab[data-tab="dashboard"]'); if(d)d.click(); window.startMpsTour(); }
+    else if(tries>40){ clearInterval(iv); }
+  },150);
 })();
 </script>
 <script src="/shared/tour.js" defer></script>
