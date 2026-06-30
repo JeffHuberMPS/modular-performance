@@ -58,10 +58,10 @@
     button.mps-mic { width:30px; height:30px; display:flex; align-items:center; justify-content:center;
       background:rgba(255,255,255,0.04); border:1px solid rgba(150,150,150,0.25); border-radius:8px;
       color:#8a8f98; cursor:pointer; padding:0; transition:color .15s, border-color .15s, background .15s; }
-    button.mps-mic:hover { color:#C9A020; border-color:rgba(201,160,32,0.5); }
-    button.mps-mic-on { color:#0e0c0a; background:#C9A020; border-color:#C9A020;
+    button.mps-mic:hover { color:#e6c98c; border-color:rgba(230,201,140,0.5); }
+    button.mps-mic-on { color:#0e0c0a; background:#e6c98c; border-color:#e6c98c;
       animation:mpsMicPulse 1.3s ease-in-out infinite; }
-    @keyframes mpsMicPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(201,160,32,0.5);} 50%{ box-shadow:0 0 0 6px rgba(201,160,32,0);} }
+    @keyframes mpsMicPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(230,201,140,0.5);} 50%{ box-shadow:0 0 0 6px rgba(230,201,140,0);} }
     @keyframes mpsToastIn { from{ opacity:0; transform:translate(-50%,10px);} to{ opacity:1; transform:translate(-50%,0);} }
   </style>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
@@ -192,8 +192,9 @@
     // Premium = full history. Elite sees only the last 60 days of entries (Core has Journal locked entirely).
     const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
     const HISTORY_CAP_CUTOFF = (()=>{ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
-    const NAVY   = __GRAY ? '#f5f5f5' : '#4a6fa5';
-    const NAVYL  = __GRAY ? '#C9A020' : '#6b8fc5';
+    /* Journal accent: TAN (this app is the tan one; the blue app is separate). Bright so it pops on the dark UI. */
+    const NAVY   = __GRAY ? '#f5f5f5' : '#c8a35d';
+    const NAVYL  = __GRAY ? '#C9A020' : '#e6c98c';
     const GOLD   = '#C9A020';
     const CREAM  = '#f5f5f5';
     const BG     = '#080808';
@@ -412,7 +413,7 @@
 
       const dt = new Date();
       const dayName = DAYS[dt.getDay()], moName = MONTHS[dt.getMonth()], yr = dt.getFullYear(), dayNum = dt.getDate();
-      const inp = { width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(107,143,197,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const inp = { width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(230,201,140,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
       const ta = { ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
       const stat = (label, v) => (<div style={{ flex:1, textAlign:'center', minWidth:0 }}><div style={{ fontSize:17, fontWeight:800, color:'#fff', whiteSpace:'nowrap' }}>{v}</div><div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div></div>);
       const field = (label, key, multi) => (
@@ -554,7 +555,7 @@
 
           <button onClick={handleSave} disabled={!hasContent||saving} style={{
             width:'100%', padding:'14px', marginTop:8,
-            background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#2a4a80'},${NAVY})` : C1,
+            background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#7a5d22'},${NAVY})` : C1,
             border: saved ? `1px solid ${NAVY}` : 'none', borderRadius:10, color: saved ? NAVYL : '#fff',
             fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em',
             cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
@@ -771,7 +772,7 @@
               {last30.map(({ key, has, day }) => (
                 <div key={key} title={key} style={{
                   width:28, height:28, borderRadius:5,
-                  background: has ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#2a4a80'},${NAVY})` : '#0e0e0e',
+                  background: has ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#7a5d22'},${NAVY})` : '#0e0e0e',
                   border:`1px solid ${has ? NAVY : '#1a1a1a'}`,
                   display:'flex', alignItems:'center', justifyContent:'center'
                 }}>
@@ -839,7 +840,7 @@
                 fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
                 fontWeight: 900, fontStyle: 'italic',
                 letterSpacing: '4px', lineHeight: 1,
-                background: __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #c8d8f0 18%, #6b8fc5 38%, #3a5a8a 65%, #1a3060 95%, #0a1830 100%)',
+                background: __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f3e6c6 18%, #e6c98c 38%, #b8923f 65%, #7a5d22 95%, #3a2c10 100%)',
                 WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
               }}>MPS</div>
@@ -967,7 +968,7 @@
       const lbl={ fontSize:10, letterSpacing:'0.14em', color:NAVYL, textTransform:'uppercase', marginBottom:8 };
       const navBtn={ background:'transparent', color:NAVYL, border:`1px solid ${BR}`, borderRadius:8, padding:'2px 12px', fontSize:18, cursor:'pointer', lineHeight:1.4 };
       const note=(<div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>);
-      const inp={ width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(107,143,197,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const inp={ width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(230,201,140,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
       const ta={ ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
       const upd=(k,v)=>setDraft(p=>({...p,[k]:v}));
       const updArr=(k,i,v)=>setDraft(p=>{ const a=Array.isArray(p[k])?p[k].slice():[]; a[i]=v; return {...p,[k]:a}; });
