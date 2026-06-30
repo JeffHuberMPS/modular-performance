@@ -471,19 +471,19 @@
             </div>
           </div>
 
-          {/* Weapon 1: Today's Biggest Win — gold ribbon with 45° notched ends */}
-          <div style={{ position:'relative', marginBottom:38, filter:'drop-shadow(0 3px 12px rgba(201,160,32,0.14))' }}>
-            <div style={{ position:'absolute', inset:0, background:GOLD, clipPath:RIBBON }} />
-            <div style={{ position:'absolute', inset:2, background:'linear-gradient(135deg,#16120a,#0e0c0a)', clipPath:RIBBON }} />
-            <div style={{ position:'relative', padding:'14px 30px 16px' }}>
+          {/* Weapon 1: Today's Biggest Win — tan banner, 45° slanted ends (parallelogram) */}
+          <div style={{ position:'relative', marginBottom:38 }}>
+            <div style={{ position:'absolute', inset:0, background:'rgba(194,173,134,0.40)', clipPath:'polygon(40px 0, 100% 0, calc(100% - 40px) 100%, 0 100%)' }} />
+            <div style={{ position:'absolute', inset:1.5, background:'linear-gradient(135deg,#15130f,#0e0c0a)', clipPath:'polygon(40px 0, 100% 0, calc(100% - 40px) 100%, 0 100%)' }} />
+            <div style={{ position:'relative', padding:'14px 48px 16px' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:11 }}>
-                <TrophyIcon size={16} />
-                <span style={{ color:GOLD, fontSize:13, fontWeight:800, letterSpacing:'0.14em', textTransform:'uppercase' }}>Today's Biggest Win</span>
+                <TrophyIcon size={16} color="#c2ad86" />
+                <span style={{ color:'#c2ad86', fontSize:13, fontWeight:800, letterSpacing:'0.14em', textTransform:'uppercase' }}>Today's Biggest Win</span>
               </div>
               <div style={{ position:'relative' }}>
                 <input value={draft.biggestWin} onChange={e=>upd('biggestWin',e.target.value)}
                   placeholder="The headline of your day"
-                  style={{ width:'100%', background:'rgba(0,0,0,0.35)', border:`1px solid ${BRG}`, borderRadius:8, padding:'14px 44px', color:'#f1e7c8', fontSize:14, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:GOLD, textAlign:'center' }} />
+                  style={{ width:'100%', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(194,173,134,0.28)', borderRadius:8, padding:'14px 44px', color:'#e8ddc8', fontSize:14, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:'#c2ad86', textAlign:'center' }} />
                 <MicButton active={recKey==='biggestWin'} onClick={()=>toggleVoice('biggestWin', ()=>draft.biggestWin||'', t=>upd('biggestWin',t))} />
               </div>
             </div>
