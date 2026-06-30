@@ -595,6 +595,7 @@
       frame.className = 'shell-frame';
       frame.id = 'frame-' + app.id;
       frame.setAttribute('title', app.label);
+      frame.setAttribute('allow', 'microphone'); /* SANDBOX: lets Journal voice entry use the mic inside the iframe */
       // EAGER load: frames are now created only when you open the app, so load immediately.
       // (loading="lazy" could decide this absolutely-positioned overlay was "offscreen" and
       // never load it — that was the infinite spinner / "never loads" bug.)

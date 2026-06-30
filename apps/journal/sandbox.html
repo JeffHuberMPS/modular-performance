@@ -54,6 +54,15 @@
       border:2px solid #0e0c0a; box-shadow:0 0 0 1px #C9A020; cursor:pointer; }
     /* Sandbox flag overlaps the in-hub tab bar; show it only when opened standalone */
     html.mps-embedded #sandbox-flag { display:none !important; }
+    /* Weapon 2: voice mic buttons */
+    button.mps-mic { width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,0.04); border:1px solid rgba(150,150,150,0.25); border-radius:8px;
+      color:#8a8f98; cursor:pointer; padding:0; transition:color .15s, border-color .15s, background .15s; }
+    button.mps-mic:hover { color:#C9A020; border-color:rgba(201,160,32,0.5); }
+    button.mps-mic-on { color:#0e0c0a; background:#C9A020; border-color:#C9A020;
+      animation:mpsMicPulse 1.3s ease-in-out infinite; }
+    @keyframes mpsMicPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(201,160,32,0.5);} 50%{ box-shadow:0 0 0 6px rgba(201,160,32,0);} }
+    @keyframes mpsToastIn { from{ opacity:0; transform:translate(-50%,10px);} to{ opacity:1; transform:translate(-50%,0);} }
   </style>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
 <style>html.mps-embedded a[href="/hub.html"],html.mps-embedded #mps-hub-nav,html.mps-embedded #hub-nav,html.mps-embedded .nav-title,html.mps-embedded .brand-block,html.mps-embedded .mps-header{display:none!important}html.mps-embedded *:has(> .mps-logo-rsp){display:none!important}html.mps-embedded nav:first-of-type{display:none!important}html.mps-embedded body{padding-top:0!important}</style>
@@ -258,6 +267,26 @@
     const dayOfYear = (d) => { const s=new Date(d.getFullYear(),0,0); return Math.floor((d-s)/86400000); };
     const quoteOfDay = () => DAILY_QUOTES[dayOfYear(new Date()) % DAILY_QUOTES.length];
 
+    // ── WEAPON 2: SMART VOICE ENTRY ───────────────────────────────
+    const SpeechRec = (typeof window !== 'undefined') && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    const MicIcon = ({ size=15 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="2" width="6" height="11" rx="3" />
+        <path d="M5 10a7 7 0 0 0 14 0" />
+        <line x1="12" y1="17" x2="12" y2="21" />
+        <line x1="8" y1="21" x2="16" y2="21" />
+      </svg>
+    );
+    // Mic pinned to the right edge of a field; pulses gold while listening
+    const MicButton = ({ active, onClick, multi }) => (
+      <button type="button" onMouseDown={(e)=>e.preventDefault()} onClick={onClick}
+        className={active ? 'mps-mic mps-mic-on' : 'mps-mic'}
+        title={active ? 'Listening… tap to stop' : 'Tap to talk'}
+        style={{ position:'absolute', right:7, top: multi ? 8 : '50%', transform: multi ? 'none' : 'translateY(-50%)', zIndex:2 }}>
+        <MicIcon />
+      </button>
+    );
+
     // ── NAV ────────────────────────────────────────────────────────
     function Nav() {
       return (
@@ -321,6 +350,56 @@
 
       const upd = (k, v) => setDraft(p => ({ ...p, [k]: v }));
       const updArr = (k, i, v) => setDraft(p => { const a = Array.isArray(p[k]) ? p[k].slice() : ['','','']; a[i]=v; return { ...p, [k]: a }; });
+
+      // ── Weapon 2: Smart Voice Entry ──
+      const [recKey, setRecKey] = useState(null);   // which field id is currently recording
+      const [recErr, setRecErr] = useState('');      // small error popup text
+      const recRef = useRef(null);                    // active SpeechRecognition
+      const silRef = useRef(null);                    // 4s silence timer
+      useEffect(() => () => { try { if (recRef.current) { recRef.current.onend = null; recRef.current.abort(); } } catch(e){} if (silRef.current) clearTimeout(silRef.current); }, []);
+      useEffect(() => { if (!recErr) return; const t = setTimeout(() => setRecErr(''), 3600); return () => clearTimeout(t); }, [recErr]);
+
+      const stopVoice = () => { try { if (recRef.current) recRef.current.stop(); } catch(e){} };
+      const startVoice = (fieldId, getBase, setText) => {
+        if (!SpeechRec) { setRecErr('Voice typing is not supported in this browser. Try Chrome.'); return; }
+        // Tapping any mic instantly stops the current recording and starts the new one.
+        try { if (recRef.current) { recRef.current.onend = null; recRef.current.abort(); } } catch(e){}
+        if (silRef.current) clearTimeout(silRef.current);
+        let recog;
+        try { recog = new SpeechRec(); } catch(e){ setRecErr('Could not start voice. Try again.'); return; }
+        recog.continuous = true; recog.interimResults = true; recog.lang = 'en-US';
+        const base = (getBase() || '');   // existing text is preserved; dictation appends to it
+        let finalText = '';
+        const armSilence = () => { if (silRef.current) clearTimeout(silRef.current); silRef.current = setTimeout(() => { try { recog.stop(); } catch(e){} }, 4000); };
+        const compose = (interim) => {
+          const dictated = (finalText + interim).replace(/\s+/g,' ').trim();
+          if (!dictated) return base;
+          if (!base) return dictated.charAt(0).toUpperCase() + dictated.slice(1);
+          return base + (/\s$/.test(base) ? '' : ' ') + dictated;
+        };
+        recog.onstart  = () => { armSilence(); };
+        recog.onresult = (e) => {
+          let interim = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const tr = e.results[i][0].transcript;
+            if (e.results[i].isFinal) finalText += tr + ' '; else interim += tr;
+          }
+          setText(compose(interim));
+          armSilence();
+        };
+        recog.onerror  = (e) => {
+          const err = e && e.error;
+          if (err === 'not-allowed' || err === 'service-not-allowed') setRecErr('Microphone is blocked. Allow mic access in your browser, then try again.');
+          else if (err === 'audio-capture') setRecErr('No microphone found.');
+          else if (err === 'network') setRecErr('Voice needs a connection. Check your internet.');
+          // 'no-speech' and 'aborted' are silent (typed text is never erased)
+        };
+        recog.onend    = () => { if (recRef.current === recog) { recRef.current = null; setRecKey(null); if (silRef.current) clearTimeout(silRef.current); } };
+        recRef.current = recog;
+        setRecKey(fieldId);
+        try { recog.start(); } catch(e){}
+      };
+      const toggleVoice = (fieldId, getBase, setText) => { if (recKey === fieldId) stopVoice(); else startVoice(fieldId, getBase, setText); };
       const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.biggestDistraction||draft.biggestWin||draft.biggestLesson||draft.quoteVault||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x)||draft.top3.some(x=>x);
 
       const handleSave = async () => {
@@ -339,20 +418,36 @@
       const field = (label, key, multi) => (
         <div style={{ marginBottom:38 }} key={key}>
           <Label>{label}</Label>
-          {multi
-            ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={ta} />
-            : <input value={draft[key]||''} onChange={e=>upd(key,e.target.value)} style={inp} />}
+          <div style={{ position:'relative' }}>
+            {multi
+              ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={{ ...ta, paddingRight:44 }} />
+              : <input value={draft[key]||''} onChange={e=>upd(key,e.target.value)} style={{ ...inp, paddingRight:44 }} />}
+            <MicButton multi={multi} active={recKey===key} onClick={()=>toggleVoice(key, ()=>draft[key]||'', t=>upd(key,t))} />
+          </div>
         </div>
       );
       const numRow = (key, i) => (
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={key+i}>
           <span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span>
-          <input value={(draft[key]||[])[i]||''} onChange={e=>updArr(key,i,e.target.value)} style={{ ...inp, flex:1 }} />
+          <div style={{ position:'relative', flex:1 }}>
+            <input value={(draft[key]||[])[i]||''} onChange={e=>updArr(key,i,e.target.value)} style={{ ...inp, width:'100%', paddingRight:44 }} />
+            <MicButton active={recKey===key+i} onClick={()=>toggleVoice(key+i, ()=>(draft[key]||[])[i]||'', t=>updArr(key,i,t))} />
+          </div>
         </div>
       );
 
       return (
         <div style={{ padding:'18px 20px' }}>
+          {/* Weapon 2: voice error popup */}
+          {recErr && (
+            <div style={{ position:'fixed', left:'50%', bottom:24, transform:'translateX(-50%)', zIndex:10001,
+              maxWidth:'88%', background:'#1a1207', border:'1px solid rgba(201,160,32,0.6)', color:'#f1e7c8',
+              padding:'11px 16px', borderRadius:10, fontSize:12.5, lineHeight:1.4, textAlign:'center',
+              boxShadow:'0 6px 24px rgba(0,0,0,.6)', animation:'mpsToastIn .2s ease' }}>
+              {recErr}
+            </div>
+          )}
+
           {/* Date header */}
           <div style={{ marginBottom:14 }}>
             <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:32, fontWeight:800, color:'#fff', lineHeight:1.05 }}>{dayName.toUpperCase()}</div>
@@ -385,9 +480,12 @@
                 <TrophyIcon size={16} />
                 <span style={{ color:GOLD, fontSize:13, fontWeight:800, letterSpacing:'0.14em', textTransform:'uppercase' }}>Today's Biggest Win</span>
               </div>
-              <input value={draft.biggestWin} onChange={e=>upd('biggestWin',e.target.value)}
-                placeholder="The headline of your day"
-                style={{ width:'100%', background:'rgba(0,0,0,0.35)', border:`1px solid ${BRG}`, borderRadius:8, padding:'14px 14px', color:'#f1e7c8', fontSize:14, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:GOLD, textAlign:'center' }} />
+              <div style={{ position:'relative' }}>
+                <input value={draft.biggestWin} onChange={e=>upd('biggestWin',e.target.value)}
+                  placeholder="The headline of your day"
+                  style={{ width:'100%', background:'rgba(0,0,0,0.35)', border:`1px solid ${BRG}`, borderRadius:8, padding:'14px 44px', color:'#f1e7c8', fontSize:14, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:GOLD, textAlign:'center' }} />
+                <MicButton active={recKey==='biggestWin'} onClick={()=>toggleVoice('biggestWin', ()=>draft.biggestWin||'', t=>upd('biggestWin',t))} />
+              </div>
             </div>
           </div>
 
@@ -405,9 +503,9 @@
 
           <div style={{ marginBottom:38 }}>
             <Label>Affirmation</Label>
-            <div style={{ marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={inp} /></div>
-            <div style={{ marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={inp} /></div>
-            <div><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={inp} /></div>
+            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={{ ...inp, paddingRight:44 }} /><MicButton active={recKey==='affBecoming'} onClick={()=>toggleVoice('affBecoming', ()=>draft.affBecoming||'', t=>upd('affBecoming',t))} /></div>
+            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={{ ...inp, paddingRight:44 }} /><MicButton active={recKey==='affLearning'} onClick={()=>toggleVoice('affLearning', ()=>draft.affLearning||'', t=>upd('affLearning',t))} /></div>
+            <div style={{ position:'relative' }}><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={{ ...inp, paddingRight:44 }} /><MicButton active={recKey==='affIHave'} onClick={()=>toggleVoice('affIHave', ()=>draft.affIHave||'', t=>upd('affIHave',t))} /></div>
           </div>
 
           {field('Anticipation', 'anticipation', true)}
