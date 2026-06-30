@@ -584,13 +584,16 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
   </div>
   <!-- ============ LOG ============ -->
   <div class="view" id="view-log">
-    <div style="background: var(--mps-card-2); border: 1px solid var(--mps-mint-border-soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: var(--mps-text-dim);">
+    <div id="log-mirror-banner" style="display:none; background: var(--mps-card-2); border: 1px solid var(--mps-mint-border-soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: var(--mps-text-dim);">
       <span style="color: var(--mps-mint);">●</span> Mirror mode — data syncs from your Google Sheet. Edit in the sheet, refresh here.
     </div>
     <div class="log-controls">
-      <button class="btn primary" id="btn-refresh-log">Refresh from Sheet</button>
+      <button class="btn primary" id="btn-add-expense">+ Add Expense</button>
+      <button class="btn ghost" id="btn-import-csv">Import CSV</button>
       <button class="btn ghost" id="btn-export">Export CSV</button>
+      <button class="btn ghost" id="btn-refresh-log" style="display:none;">Refresh from Sheet</button>
     </div>
+    <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display:none;">
     <div id="log-cap-note"></div>
     <div class="card">
       <div class="log-table-wrap">
@@ -607,10 +610,10 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
           <tbody id="log-body"></tbody>
         </table>
         <div class="empty" id="log-empty" style="text-align:center;padding:34px 18px;">
-          <div style="font-size:2rem;margin-bottom:8px;">🧾</div>
+          <div style="margin-bottom:10px;display:flex;justify-content:center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--mps-text-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2-1.2 2 1.2 2-1.2 2 1.2 2-1.2 2 1.2V3l-2 1.2L14 3l-2 1.2L10 3 8 4.2 5 3z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
           <div class="empty-title">No expenses yet</div>
-          <div class="empty-sub" style="margin-bottom:16px;">Connect your spending sheet once — it syncs automatically after that.</div>
-          <button onclick="document.querySelector('.tab[data-tab=&quot;settings&quot;]').click()" style="display:inline-block;padding:11px 20px;border-radius:10px;border:1px solid var(--mps-mint);background:rgba(var(--mps-mint-rgb),0.12);color:var(--mps-mint);font-weight:700;font-size:0.85rem;cursor:pointer;">Connect in Settings →</button>
+          <div class="empty-sub" style="margin-bottom:16px;">Tap <b style="color:var(--mps-mint);">+ Add Expense</b> to log your first purchase. It saves right here on your device.</div>
+          <button id="btn-empty-add" style="display:inline-block;padding:11px 20px;border-radius:10px;border:1px solid var(--mps-mint);background:rgba(var(--mps-mint-rgb),0.12);color:var(--mps-mint);font-weight:700;font-size:0.85rem;cursor:pointer;">+ Add your first expense</button>
         </div>
       </div>
     </div>
@@ -723,7 +726,8 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
   <!-- ============ SETTINGS ============ -->
   <div class="view" id="view-settings">
     <div class="card">
-      <div class="dash-section-title">Connect Your Sheet</div>
+      <div class="dash-section-title">Connect Your Sheet <span style="color:var(--mps-text-mute);font-weight:600;letter-spacing:1px;">· Optional / Advanced</span></div>
+      <div style="font-size:12px;color:var(--mps-text-dim);line-height:1.6;margin-bottom:14px;">Most people just use <b style="color:var(--mps-mint);">+ Add Expense</b> on the Log tab. Only connect a sheet if you already pipe transactions into Google Sheets automatically.</div>
       <div id="sync-status" style="padding: 12px 14px; border-radius: 10px; background: var(--mps-card-2); margin-bottom: 16px; font-size: 13px;">
         <div style="color: var(--mps-text-dim); font-size: 11px; letter-spacing: 1.5px; margin-bottom: 4px;">STATUS</div>
         <div id="sync-status-text" style="color: var(--mps-text);">Not connected</div>
@@ -754,6 +758,11 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
         <div>Your Wells&nbsp;Fargo&nbsp;→&nbsp;Make&nbsp;→&nbsp;Sheet automation is untouched. This just reads the result.</div>
         <div style="color: var(--mps-text-mute); font-size: 11px; margin-top: 8px;">Setup: Sheet → File → Share → Publish to web → Log tab → CSV → paste that link above.</div>
       </div>
+    </div>
+    <div class="card" style="margin-top: 14px; border-color: rgba(239,68,68,0.3);">
+      <div class="dash-section-title">Start Fresh</div>
+      <div style="font-size: 13px; line-height: 1.6; color: var(--mps-text-dim); margin-bottom: 14px;">Clear every expense and start with a clean tracker. Your budget, bills, and category rules stay. This can’t be undone.</div>
+      <button class="btn danger" id="btn-clear-expenses" style="width:100%;">Clear All Expenses</button>
     </div>
   </div>
 </div>
@@ -1092,10 +1101,12 @@ function renderLog() {
   sorted.forEach(e=>{
     const tr=document.createElement('tr');const isIncome=e.item==='Income'||e.item==='Paycheck';
     const catKey=(e.category||'Other').toLowerCase().replace(/\s+/g,'');
+    tr.dataset.id=e.id;tr.style.cursor='pointer';tr.title='Tap to edit or delete';
     tr.innerHTML=`<td>${fmtDate(e.date)}</td><td>${escapeHtml(e.merchant||'')}</td><td><span class="log-amount ${isIncome?'income':'expense'}">${isIncome?'+':'-'}${fmt$(Math.abs(Number(e.amount)||0))}</span></td><td><span class="cat-tag cat-${catKey}">${e.category||'Other'}</span></td><td style="color:var(--mps-text-dim);">${escapeHtml(e.source||'')}</td>`;
     frag.appendChild(tr);
   });
   body.appendChild(frag);
+  body.querySelectorAll('tr[data-id]').forEach(tr=>tr.addEventListener('click',()=>{const en=state.entries.find(x=>x.id===tr.dataset.id);if(en)openExpenseModal(en);}));
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function showOverlay({title,body,confirmText='Confirm',cancelText='Cancel',confirmClass='primary',onConfirm}) {
@@ -1332,7 +1343,7 @@ async function syncFromSheet(){
       const idx={date:headers.findIndex(h=>h.includes('date')),item:headers.findIndex(h=>h.includes('item')),merchant:headers.findIndex(h=>h.includes('merchant')),amount:headers.findIndex(h=>h.includes('amount')),category:headers.findIndex(h=>h.includes('category')),source:headers.findIndex(h=>h.includes('source')),uniqueId:headers.findIndex(h=>h.includes('unique')||h.includes('id'))};
       const entries=[];
       for(let i=1;i<data.log.length;i++){const r=data.log[i];if(!r||r.length===0)continue;const date=parseSheetDate(r[idx.date]);const merchant=String(r[idx.merchant]||'').trim();const amount=parseSheetAmount(r[idx.amount]);if(!date||!merchant)continue;entries.push({id:String(r[idx.uniqueId]||`sync_${i}_${date}`),date,item:String(r[idx.item]||'Purchase').trim(),merchant,amount,category:String(r[idx.category]||'Other').trim(),source:String(r[idx.source]||'').trim()});}
-      state.entries=entries;save(STORE.entries,state.entries);logCount=entries.length;syncLog(`Log: ${logCount} entries`);
+      const _manual=state.entries.filter(e=>e.manual);state.entries=entries.concat(_manual);save(STORE.entries,state.entries);logCount=entries.length;syncLog(`Log: ${logCount} entries`+(_manual.length?` (+${_manual.length} manual kept)`:''));
     }else{syncLog('No log data in response',true);}
     if(data.rules&&Array.isArray(data.rules)&&data.rules.length>=2){
       const headers=data.rules[0].map(h=>String(h).trim().toLowerCase());const pairs=[];
@@ -1348,7 +1359,11 @@ async function syncFromSheet(){
   }catch(e){syncLog(`Error: ${e.message}`,true);state.syncMeta={lastSync:Date.now(),status:'error'};save(STORE.syncMeta,state.syncMeta);updateSyncStatus('error',`Failed: ${e.message}`);return false;}
 }
 function updateSyncStatus(status,msg){const statusEl=document.getElementById('sync-status-text');const lastEl=document.getElementById('sync-last');if(!statusEl)return;statusEl.textContent=msg;if(status==='ok')statusEl.style.color='var(--mps-mint)';else if(status==='error')statusEl.style.color='var(--mps-danger)';else if(status==='syncing')statusEl.style.color='var(--mps-warning)';else statusEl.style.color='var(--mps-text)';if(state.syncMeta.lastSync){const d=new Date(state.syncMeta.lastSync);lastEl.textContent=`Last synced: ${d.toLocaleString()}`;}}
-function loadSyncSettings(){const el=document.getElementById('set-webhook');if(el)el.value=state.sync.webhook||'';updateSyncStatus(state.syncMeta.status,state.syncMeta.status==='ok'?'Connected':'Not connected');}
+function loadSyncSettings(){const el=document.getElementById('set-webhook');if(el)el.value=state.sync.webhook||'';updateSyncStatus(state.syncMeta.status,state.syncMeta.status==='ok'?'Connected':'Not connected');
+  // Sheet sync is the owner's setup (Make→Sheet). Customers log manually — hide the mirror UI unless a sheet is connected.
+  const connected=!!(state.sync&&state.sync.webhook);
+  const mb=document.getElementById('log-mirror-banner');if(mb)mb.style.display=connected?'':'none';
+  const rb=document.getElementById('btn-refresh-log');if(rb)rb.style.display=connected?'':'none';}
 document.getElementById('btn-save-sync')?.addEventListener('click',async()=>{state.sync={webhook:document.getElementById('set-webhook').value.trim()};save(STORE.sync,state.sync);flash('Saved');await syncFromSheet();});
 document.getElementById('btn-refresh-sync')?.addEventListener('click',async()=>{await syncFromSheet();});
 document.getElementById('btn-test-sync')?.addEventListener('click',async()=>{
@@ -1357,6 +1372,83 @@ document.getElementById('btn-test-sync')?.addEventListener('click',async()=>{
   try{const data=await fetchSyncData(webhook);syncLog('Connected. Keys: '+Object.keys(data).join(', '));if(data.log)syncLog(`Log rows: ${data.log.length}`);if(data.budget)syncLog(`Budget rows: ${data.budget.length}`);if(data.rules)syncLog(`Rules rows: ${data.rules.length}`);}
   catch(e){syncLog(`FAILED: ${e.message}`,true);}
 });
+// =================================================================
+// MANUAL ENTRY  (customer mode — owner uses the Make → Sheet sync above)
+// =================================================================
+const EXP_CATS=['Essentials','Lifestyle','Recurring','Investment','Income','Other'];
+function uid(){return 'm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);}
+// Suggest a category from the merchant using the same auto-tag rules the dashboard uses.
+function categorizeByRules(merchant){const m=String(merchant||'').toLowerCase();for(const r of state.rules){if(r.k&&m.includes(String(r.k).toLowerCase()))return r.c;}return '';}
+// Add / edit one expense by hand. Pass an existing entry to edit it (shows Delete), or null to add.
+function openExpenseModal(entry){
+  const isEdit=!!entry;
+  const e=entry||{date:todayISO(),merchant:'',amount:'',category:'',source:'Manual'};
+  document.querySelectorAll('.mps-dynamic-overlay').forEach(el=>el.remove());
+  const backdrop=document.createElement('div');backdrop.className='modal-backdrop show mps-dynamic-overlay';
+  const amtVal=(e.amount!==''&&e.amount!=null)?String(Math.abs(Number(e.amount))||''):'';
+  const catOpts=EXP_CATS.map(c=>`<option value="${c}" ${c===e.category?'selected':''}>${c}</option>`).join('');
+  backdrop.innerHTML=`<div class="modal"><h2>${isEdit?'Edit Expense':'Add Expense'}</h2>
+    <div class="form-row-2">
+      <div class="form-row"><label class="form-label">Date</label><input type="date" class="form-input" id="exp-date" value="${escapeHtml(e.date||todayISO())}"></div>
+      <div class="form-row"><label class="form-label">Amount</label><input type="number" step="any" inputmode="decimal" class="form-input" id="exp-amount" placeholder="0.00" value="${escapeHtml(amtVal)}"></div>
+    </div>
+    <div class="form-row"><label class="form-label">Merchant / Description</label><input type="text" class="form-input" id="exp-merchant" placeholder="e.g. Hy-Vee, Netflix, Gas" value="${escapeHtml(e.merchant||'')}"></div>
+    <div class="form-row"><label class="form-label">Category</label><select class="form-select" id="exp-cat">${catOpts}</select></div>
+    <div class="form-row"><label class="form-label">Source / Account (optional)</label><input type="text" class="form-input" id="exp-source" placeholder="Checking, Credit, Cash" value="${escapeHtml(e.source||'')}"></div>
+    <div class="modal-actions">${isEdit?'<button class="btn danger" data-role="delete" style="margin-right:auto;">Delete</button>':''}<button class="btn ghost" data-role="cancel">Cancel</button><button class="btn primary" data-role="save">${isEdit?'Save':'Add Expense'}</button></div>
+  </div>`;
+  document.body.appendChild(backdrop);
+  const close=()=>backdrop.remove();
+  const merchEl=backdrop.querySelector('#exp-merchant');const catEl=backdrop.querySelector('#exp-cat');
+  let catTouched=isEdit&&!!e.category;
+  catEl.addEventListener('change',()=>{catTouched=true;});
+  merchEl.addEventListener('blur',()=>{if(catTouched)return;const g=categorizeByRules(merchEl.value);if(g)catEl.value=g;});
+  backdrop.querySelector('[data-role=cancel]').addEventListener('click',close);
+  backdrop.addEventListener('click',ev=>{if(ev.target===backdrop)close();});
+  const delBtn=backdrop.querySelector('[data-role=delete]');
+  if(delBtn)delBtn.addEventListener('click',()=>{close();showOverlay({title:'Delete Expense',body:'Remove this expense?',confirmText:'Delete',confirmClass:'danger',onConfirm:()=>{state.entries=state.entries.filter(x=>x.id!==entry.id);save(STORE.entries,state.entries);renderAll();flash('Expense deleted');}});});
+  backdrop.querySelector('[data-role=save]').addEventListener('click',()=>{
+    const date=backdrop.querySelector('#exp-date').value||todayISO();
+    const amount=Math.abs(parseFloat(backdrop.querySelector('#exp-amount').value))||0;
+    const merchant=merchEl.value.trim();
+    const category=catEl.value||'Other';
+    const source=backdrop.querySelector('#exp-source').value.trim()||'Manual';
+    if(!merchant){flash('Add a merchant or description');return;}
+    if(!amount){flash('Enter an amount');return;}
+    const item=(category==='Income')?'Income':'Purchase';
+    if(isEdit){Object.assign(entry,{date,amount,merchant,category,source,item});}
+    else{state.entries.push({id:uid(),date,item,merchant,amount,category,source,manual:true});}
+    save(STORE.entries,state.entries);renderAll();flash(isEdit?'Expense updated':'Expense added');close();
+  });
+  setTimeout(()=>{(isEdit?backdrop.querySelector('#exp-amount'):merchEl).focus();},50);
+}
+// Bulk import a bank/spreadsheet CSV (needs at least Date + Amount columns).
+function importCSVText(text){
+  const rows=parseCSV(text);if(!rows||rows.length<2){flash('No rows found in that file');return;}
+  const headers=rows[0].map(h=>String(h).trim().toLowerCase());
+  const find=(...keys)=>headers.findIndex(h=>keys.some(k=>h.includes(k)));
+  const idx={date:find('date'),merchant:find('merchant','description','name','payee'),amount:find('amount','total','price'),category:find('category','cat'),source:find('source','account')};
+  if(idx.date<0||idx.amount<0){flash('CSV needs at least Date and Amount columns');return;}
+  let added=0;
+  for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||r.length===0||(r.length===1&&!String(r[0]).trim()))continue;
+    const date=parseSheetDate(r[idx.date])||String(r[idx.date]||'').trim();const amount=parseSheetAmount(r[idx.amount]);
+    const merchant=idx.merchant>=0?String(r[idx.merchant]||'').trim():'Imported';
+    if(!date||!amount)continue;
+    let category=idx.category>=0?String(r[idx.category]||'').trim():'';if(!category)category=categorizeByRules(merchant)||'Other';
+    const source=idx.source>=0?String(r[idx.source]||'').trim():'Imported';
+    const item=(category==='Income')?'Income':'Purchase';
+    state.entries.push({id:uid(),date,item,merchant:merchant||'Imported',amount,category,source,manual:true});added++;
+  }
+  if(added){save(STORE.entries,state.entries);renderAll();flash(`Imported ${added} expense${added===1?'':'s'}`);}
+  else flash('Nothing to import — check the Date/Amount columns');
+}
+function clearAllExpenses(){showOverlay({title:'Clear All Expenses',body:'Delete <b>every</b> expense and start fresh? Your budget, bills and rules stay. This can’t be undone.',confirmText:'Clear All',confirmClass:'danger',onConfirm:()=>{state.entries=[];save(STORE.entries,state.entries);renderAll();flash('All expenses cleared');const d=document.querySelector('.tab[data-tab="dashboard"]');if(d)d.click();}});}
+document.getElementById('btn-add-expense')?.addEventListener('click',()=>openExpenseModal(null));
+document.getElementById('btn-empty-add')?.addEventListener('click',()=>openExpenseModal(null));
+document.getElementById('btn-import-csv')?.addEventListener('click',()=>document.getElementById('csv-file-input').click());
+document.getElementById('csv-file-input')?.addEventListener('change',ev=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{importCSVText(String(rd.result||''));ev.target.value='';};rd.readAsText(f);});
+document.getElementById('btn-clear-expenses')?.addEventListener('click',clearAllExpenses);
+
 // =================================================================
 // INIT
 // =================================================================
