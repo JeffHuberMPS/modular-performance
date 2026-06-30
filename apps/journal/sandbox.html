@@ -45,6 +45,15 @@
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     .mps-logo-rsp { font-size: 96px; }
     @media (max-width: 640px) { .mps-logo-rsp { font-size: 78px; } }
+    /* Weapon 1: Daily Discipline Score slider */
+    input.mps-disc { -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:6px;
+      background:#26221a; outline:none; cursor:pointer; }
+    input.mps-disc::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:22px; height:22px;
+      border-radius:50%; background:#C9A020; border:2px solid #0e0c0a; box-shadow:0 0 0 1px #C9A020, 0 2px 6px rgba(0,0,0,.5); cursor:pointer; }
+    input.mps-disc::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:#C9A020;
+      border:2px solid #0e0c0a; box-shadow:0 0 0 1px #C9A020; cursor:pointer; }
+    /* Sandbox flag overlaps the in-hub tab bar; show it only when opened standalone */
+    html.mps-embedded #sandbox-flag { display:none !important; }
   </style>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
 <style>html.mps-embedded a[href="/hub.html"],html.mps-embedded #mps-hub-nav,html.mps-embedded #hub-nav,html.mps-embedded .nav-title,html.mps-embedded .brand-block,html.mps-embedded .mps-header{display:none!important}html.mps-embedded *:has(> .mps-logo-rsp){display:none!important}html.mps-embedded nav:first-of-type{display:none!important}html.mps-embedded body{padding-top:0!important}</style>
@@ -210,6 +219,45 @@
       </div>
     );
 
+    // ── WEAPON 1 SHARED ───────────────────────────────────────────
+    // Wireframe trophy (no emoji, per MPS icon standard)
+    const TrophyIcon = ({ size=15, color=GOLD }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+        <path d="M6 9a6 6 0 0 0 12 0V3H6z" />
+        <path d="M6 4H3v2a3 3 0 0 0 3 3" />
+        <path d="M18 4h3v2a3 3 0 0 1-3 3" />
+        <line x1="12" y1="15" x2="12" y2="19" />
+        <path d="M8.5 22h7" /><path d="M9.5 19h5" />
+      </svg>
+    );
+    // Ribbon outline shape with 45° notebook-style notched ends
+    const RIBBON = 'polygon(0 0, 100% 0, calc(100% - 16px) 50%, 100% 100%, 0 100%, 16px 50%)';
+    // One short quote per day (MPS tone, no em dashes)
+    const DAILY_QUOTES = [
+      "Discipline is choosing what you want most over what you want now.",
+      "You do not rise to your goals. You fall to your systems.",
+      "Win the morning, win the day.",
+      "Small habits, repeated, become who you are.",
+      "The work you avoid is usually the work that matters.",
+      "Motivation gets you started. Discipline keeps you going.",
+      "Show up before you feel like it.",
+      "Your future is built by what you do today.",
+      "Hard now, easy later. Easy now, hard later.",
+      "Do the boring reps. That is where the growth hides.",
+      "Comfort is the enemy of progress.",
+      "Be the person your goals require.",
+      "Consistency beats intensity.",
+      "What gets measured gets improved.",
+      "Protect your mornings and your focus follows.",
+      "Excellence is a habit, not an event.",
+      "You can rest when the work is done.",
+      "Become 1 percent better than yesterday.",
+      "The standard you walk past is the standard you accept.",
+      "Earn your evening.",
+    ];
+    const dayOfYear = (d) => { const s=new Date(d.getFullYear(),0,0); return Math.floor((d-s)/86400000); };
+    const quoteOfDay = () => DAILY_QUOTES[dayOfYear(new Date()) % DAILY_QUOTES.length];
+
     // ── NAV ────────────────────────────────────────────────────────
     function Nav() {
       return (
@@ -256,7 +304,14 @@
         affIHave: existing.affIHave || '',
         anticipation: existing.anticipation || '',
         emotion: existing.emotion || '',
-        wastedTime: existing.wastedTime || '',
+        // Weapon 1: Biggest Distraction replaces Wasted Time (old wastedTime maps in)
+        biggestDistraction: existing.biggestDistraction || existing.wastedTime || '',
+        // Weapon 1: new sections
+        biggestWin: existing.biggestWin || '',
+        biggestLesson: existing.biggestLesson || '',
+        top3: arr3(existing.top3),
+        quoteVault: existing.quoteVault || '',
+        disciplineScore: (typeof existing.disciplineScore === 'number') ? existing.disciplineScore : 5,
       }));
       const [saving, setSaving] = useState(false);
       const [saved, setSaved] = useState(false);
@@ -266,7 +321,7 @@
 
       const upd = (k, v) => setDraft(p => ({ ...p, [k]: v }));
       const updArr = (k, i, v) => setDraft(p => { const a = Array.isArray(p[k]) ? p[k].slice() : ['','','']; a[i]=v; return { ...p, [k]: a }; });
-      const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.wastedTime||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x);
+      const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.biggestDistraction||draft.biggestWin||draft.biggestLesson||draft.quoteVault||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x)||draft.top3.some(x=>x);
 
       const handleSave = async () => {
         if (!hasContent) return;
@@ -304,6 +359,12 @@
             <div style={{ color:'#6b7280', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600, marginTop:3 }}>{moName} {dayNum}, {yr}</div>
           </div>
 
+          {/* Weapon 1: Daily quote */}
+          <div style={{ display:'flex', alignItems:'flex-start', gap:9, margin:'0 2px 22px', padding:'10px 13px', background:'rgba(201,160,32,0.05)', border:`1px solid ${BRG}`, borderRadius:9 }}>
+            <span style={{ color:GOLD, fontSize:18, lineHeight:1, fontFamily:'Georgia, serif', marginTop:-2 }}>&ldquo;</span>
+            <span style={{ color:'#cdb56a', fontSize:12.5, fontStyle:'italic', lineHeight:1.5, fontFamily:"'Playfair Display', Georgia, serif" }}>{quoteOfDay()}</span>
+          </div>
+
           {/* Auto-pulled day stats */}
           <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:34 }}>
             <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
@@ -312,6 +373,21 @@
             </div>
             <div style={{ display:'flex', gap:6 }}>
               {stat('Wake', A?A.avgWake:'—')}{stat('Sleep', A?A.avgSleep:'—')}{stat('Spent', A?ciMoney(A.spending):'—')}
+            </div>
+          </div>
+
+          {/* Weapon 1: Today's Biggest Win — gold ribbon with 45° notched ends */}
+          <div style={{ position:'relative', marginBottom:38, filter:'drop-shadow(0 3px 12px rgba(201,160,32,0.14))' }}>
+            <div style={{ position:'absolute', inset:0, background:GOLD, clipPath:RIBBON }} />
+            <div style={{ position:'absolute', inset:2, background:'linear-gradient(135deg,#16120a,#0e0c0a)', clipPath:RIBBON }} />
+            <div style={{ position:'relative', padding:'14px 30px 16px' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:11 }}>
+                <TrophyIcon size={16} />
+                <span style={{ color:GOLD, fontSize:13, fontWeight:800, letterSpacing:'0.14em', textTransform:'uppercase' }}>Today's Biggest Win</span>
+              </div>
+              <input value={draft.biggestWin} onChange={e=>upd('biggestWin',e.target.value)}
+                placeholder="The headline of your day"
+                style={{ width:'100%', background:'rgba(0,0,0,0.35)', border:`1px solid ${BRG}`, borderRadius:8, padding:'14px 14px', color:'#f1e7c8', fontSize:14, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:GOLD, textAlign:'center' }} />
             </div>
           </div>
 
@@ -336,7 +412,44 @@
 
           {field('Anticipation', 'anticipation', true)}
           {field('Emotion', 'emotion')}
-          {field('Wasted Time', 'wastedTime', true)}
+          {field('Biggest Distraction', 'biggestDistraction', true)}
+
+          {/* Weapon 1: Reflection section */}
+          <div style={{ display:'flex', alignItems:'center', gap:12, margin:'6px 0 26px' }}>
+            <div style={{ flex:1, height:1, background:BR }} />
+            <span style={{ color:'#6b7280', fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase', fontWeight:700 }}>Reflection</span>
+            <div style={{ flex:1, height:1, background:BR }} />
+          </div>
+
+          {field('Biggest Lesson', 'biggestLesson', true)}
+
+          <div style={{ marginBottom:38 }}>
+            <Label>Tomorrow's Top 3</Label>
+            {numRow('top3',0)}{numRow('top3',1)}{numRow('top3',2)}
+            <div style={{ color:'#6b7280', fontSize:11.5, marginTop:8, fontStyle:'italic' }}>Choose only your three highest-impact priorities.</div>
+          </div>
+
+          {field('Quote / Idea Vault', 'quoteVault', true)}
+
+          {/* Weapon 1: Daily Discipline Score slider */}
+          <div style={{ marginBottom:38 }}>
+            <Label>Daily Discipline Score</Label>
+            <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'18px 16px 16px' }}>
+              <div style={{ color:'#d1d5db', fontSize:13.5, fontWeight:600, textAlign:'center', marginBottom:14 }}>How disciplined was I today?</div>
+              <div style={{ textAlign:'center', marginBottom:14 }}>
+                <span style={{ color:GOLD, fontSize:34, fontWeight:800, lineHeight:1 }}>{draft.disciplineScore}</span>
+                <span style={{ color:'#6b7280', fontSize:16, fontWeight:600 }}> / 10</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <span style={{ color:'#6b7280', fontSize:12, fontWeight:700, width:12, textAlign:'center' }}>1</span>
+                <input className="mps-disc" type="range" min={1} max={10} step={1}
+                  value={draft.disciplineScore}
+                  onChange={e=>upd('disciplineScore', parseInt(e.target.value,10))} style={{ flex:1 }} />
+                <span style={{ color:'#6b7280', fontSize:12, fontWeight:700, width:14, textAlign:'center' }}>10</span>
+              </div>
+              <div style={{ color:'#6b7280', fontSize:11.5, marginTop:13, textAlign:'center' }}>Did I keep the promises I made to myself today?</div>
+            </div>
+          </div>
 
           <button onClick={handleSave} disabled={!hasContent||saving} style={{
             width:'100%', padding:'14px', marginTop:8,
@@ -417,7 +530,7 @@
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ color:'#d1d5db', fontSize:13, fontWeight:500 }}>{lbl}</div>
                         <div style={{ color:'#4b5563', fontSize:11, marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                          {(() => { const g=Array.isArray(e.gratitude)?e.gratitude.filter(Boolean)[0]:(typeof e.gratitude==='string'?e.gratitude:''); const p=e.workout||g||e.emotion||e.entry||''; return p ? (p.slice(0,60)+(p.length>60?'…':'')) : 'Tap to view'; })()}
+                          {(() => { const g=Array.isArray(e.gratitude)?e.gratitude.filter(Boolean)[0]:(typeof e.gratitude==='string'?e.gratitude:''); const p=e.biggestWin||e.workout||g||e.emotion||e.entry||''; return p ? (p.slice(0,60)+(p.length>60?'…':'')) : 'Tap to view'; })()}
                         </div>
                       </div>
                       <span style={{ color:'#374151', fontSize:12 }}>{isOpen?'▲':'▼'}</span>
@@ -432,16 +545,23 @@
                           const text = (label, val) => val ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label><div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{val}</div></div>) : null;
                           const list = (label, items) => items.length ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label>{items.map((x,i)=>(<div key={i} style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{i+1}</span>{x}</div>))}</div>) : null;
                           const affLine = (k,v) => v ? (<div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }} key={k}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{k}</span>{v}</div>) : null;
-                          const anyNew = e.workout||g.length||acc.length||aff||e.anticipation||e.emotion||e.wastedTime;
+                          const top3 = Array.isArray(e.top3) ? e.top3.filter(Boolean) : [];
+                          const distraction = e.biggestDistraction || e.wastedTime;
+                          const anyNew = e.biggestWin||e.workout||g.length||acc.length||aff||e.anticipation||e.emotion||distraction||e.biggestLesson||top3.length||e.quoteVault||(typeof e.disciplineScore==='number');
                           const anyOld = e.entry||e.wins||e.scripture;
                           return (<>
+                            {text("Today's Biggest Win", e.biggestWin)}
                             {text('Workout', e.workout)}
                             {list('Gratitude', g)}
                             {list('Accomplishments', acc)}
                             {aff && (<div style={{ marginBottom:14 }}><Label>Affirmation</Label>{affLine('Becoming', e.affBecoming)}{affLine('Learning', e.affLearning)}{affLine('I Have', e.affIHave)}</div>)}
                             {text('Anticipation', e.anticipation)}
                             {text('Emotion', e.emotion)}
-                            {text('Wasted Time', e.wastedTime)}
+                            {text('Biggest Distraction', distraction)}
+                            {text('Biggest Lesson', e.biggestLesson)}
+                            {list("Tomorrow's Top 3", top3)}
+                            {text('Quote / Idea Vault', e.quoteVault)}
+                            {(typeof e.disciplineScore==='number') && text('Daily Discipline Score', e.disciplineScore + ' / 10')}
                             {text('Entry', e.entry)}
                             {text('Win', e.wins)}
                             {text('Scripture', e.scripture)}
