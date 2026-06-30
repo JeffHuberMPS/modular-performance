@@ -1463,6 +1463,13 @@ document.getElementById('btn-empty-add')?.addEventListener('click',()=>openExpen
 document.getElementById('btn-import-csv')?.addEventListener('click',()=>document.getElementById('csv-file-input').click());
 document.getElementById('csv-file-input')?.addEventListener('change',ev=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{importCSVText(String(rd.result||''));ev.target.value='';};rd.readAsText(f);});
 document.getElementById('btn-clear-expenses')?.addEventListener('click',clearAllExpenses);
+// Demo hook: the guided tour calls this to prefill the open Add-Expense modal with a realistic sample
+// so it can spotlight each field (amount → merchant → category) and the Save button actually works.
+window.demoFillExpense=function(){ try{
+  var m=document.querySelector('.mps-dynamic-overlay'); if(!m) return;
+  var a=m.querySelector('#exp-amount'), me=m.querySelector('#exp-merchant'), c=m.querySelector('#exp-cat');
+  if(a)a.value='42.50'; if(me)me.value='Hy-Vee'; if(c)c.value='Essentials';
+}catch(e){} };
 
 // =================================================================
 // INIT

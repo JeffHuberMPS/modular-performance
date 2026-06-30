@@ -41,11 +41,15 @@
     ],
     expenses: [
       { pan: true,                          text: "First, your <b>Dashboard</b> — weekly pace, what's left to spend, and where your money goes by category. Watch it roll by." },
-      { sel: '.tab[data-tab="log"]',       text: "Now the part you'll use daily. Tap <b>Log</b> — every expense lives here.", click: true },
-      { sel: '#btn-add-expense',           text: "Tap <b>+ Add Expense</b> to log a purchase in seconds — amount, merchant, and a <b>category</b> so it's tracked correctly.", click: false },
+      { sel: '.tab[data-tab="log"]',       text: "Now the one thing you'll do every day. Tap <b>Log</b> — every expense lives here.", click: true },
+      { sel: '#btn-add-expense',           text: "This is the heart of it. Tap <b>+ Add Expense</b> to log a purchase.", click: true },
+      { run: 'demoFillExpense', sel: '#exp-amount', text: "Enter the <b>amount</b> you spent. Quick — a few seconds.", click: false },
+      { sel: '#exp-merchant',              text: "Type the <b>merchant</b> — what you bought, or where.", click: false },
+      { sel: '#exp-cat',                    text: "Pick a <b>category</b>. This one choice is what powers your dashboard, budget, and breakdown.", click: false },
+      { sel: '[data-role="save"]',         text: "Now tap <b>Add Expense</b>. It's logged and your totals update instantly. That's the whole habit.", click: true },
       { sel: '.tab[data-tab="budget"]',    text: "<b>Budget</b> — set your monthly cap and bills so you always know what's left.", click: true },
       { sel: '.tab[data-tab="settings"]',  text: "Last thing — tap <b>Settings</b>.", click: true },
-      { sel: '#btn-clear-expenses',        text: "When you're done exploring, <b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
+      { sel: '#btn-clear-expenses',        text: "<b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
     ],
     journal: [
       { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons.", click: true },
@@ -178,6 +182,8 @@
     if (!step) return end();
     clearHook();
     if (step.pan) return panStep(i, step);
+    // optional app hook: run a window function before spotlighting (e.g. open + prefill a modal)
+    if (step.run) { try { if (typeof window[step.run] === 'function') window[step.run](); } catch (e) {} }
     panning = false;
     centerMode = !!step.center;
     target = centerMode ? null : resolve(step);
