@@ -1475,6 +1475,16 @@ window.demoFillExpense=function(){ try{
   var a=m.querySelector('#exp-amount'), me=m.querySelector('#exp-merchant'), c=m.querySelector('#exp-cat');
   if(a)a.value='42.50'; if(me)me.value='Hy-Vee'; if(c)c.value='Essentials';
 }catch(e){} };
+// Demo hooks: open an inline budget-amount editor with a sample number (demoEditBudget),
+// then commit it so the card re-renders for the rename/add steps (demoCommitBudget).
+window.demoEditBudget=function(){ try{
+  var v=document.querySelector('#view-budget .budget-card-value[data-bf="m"]'); if(!v) return;
+  v.click();   // -> activateValueEdit replaces it with an <input class="budget-card-input">
+  var inp=document.querySelector('#view-budget .budget-card-input'); if(inp){ inp.value='1100'; }
+}catch(e){} };
+window.demoCommitBudget=function(){ try{
+  var inp=document.querySelector('#view-budget .budget-card-input'); if(inp) inp.dispatchEvent(new Event('blur'));   // fire commit -> re-renders cards
+}catch(e){} };
 
 // =================================================================
 // INIT

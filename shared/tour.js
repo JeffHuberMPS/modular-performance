@@ -47,7 +47,10 @@
       { sel: '#exp-merchant',              text: "Type the <b>merchant</b> — what you bought, or where.", click: false },
       { sel: '#exp-cat',                    text: "Pick a <b>category</b>. This one choice is what powers your dashboard, budget, and breakdown.", click: false },
       { sel: '[data-role="save"]',         text: "Now tap <b>Add Expense</b>. It's logged and your totals update instantly. That's the whole habit.", click: true },
-      { sel: '.tab[data-tab="budget"]',    text: "<b>Budget</b> — set your monthly cap and bills so you always know what's left.", click: true },
+      { sel: '.tab[data-tab="budget"]',    text: "Now your <b>Budget</b> — every bill, and what's left over.", click: true },
+      { run: 'demoEditBudget', sel: '.budget-card-input', text: "To change a bill, just tap its amount and type the new number. It <b>saves the second you tap away</b> — no save button.", click: false },
+      { run: 'demoCommitBudget', sel: '.pen-icon[data-role="edit"]', text: "The <b>pencil</b> renames a bill. The trash next to it removes one.", click: false },
+      { sel: '#btn-add-bill',              text: "And <b>+ Add Bill</b> adds a new line. That's your whole budget — set it once, adjust anytime.", click: false },
       { sel: '.tab[data-tab="settings"]',  text: "Last thing — tap <b>Settings</b>.", click: true },
       { sel: '#btn-clear-expenses',        text: "<b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
     ],
