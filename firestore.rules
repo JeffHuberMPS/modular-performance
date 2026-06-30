@@ -107,6 +107,15 @@ service cloud.firestore {
       match /settings/{settingDoc} {
         allow read, write: if isOwner(uid);
       }
+
+      // ── Catch-all for the user's OWN tracker sub-collections ──
+      // The trackers write to various sub-collections (sleep_entries, etc.) that
+      // weren't all listed above — a denied write means data silently fails to save.
+      // It's the user's own data under their own uid, so allow full read/write.
+      // (The specific matches above stay for clarity; this just closes the gaps.)
+      match /{coll}/{docId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // ── CLOSED BETA (public, capped, self-serve) ──────────────
