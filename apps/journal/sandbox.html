@@ -489,6 +489,8 @@
             </div>
           </div>
 
+          {/* Weapon 1: body indented to start at the bottom point of the Win banner's left 45° slant */}
+          <div style={{ paddingLeft:40 }}>
           {field('Workout', 'workout')}
 
           <div style={{ marginBottom:38 }}>
@@ -548,6 +550,7 @@
               <div style={{ color:'#6b7280', fontSize:11.5, marginTop:13, textAlign:'center' }}>Did I keep the promises I made to myself today?</div>
             </div>
           </div>
+          </div>{/* end indented body */}
 
           <button onClick={handleSave} disabled={!hasContent||saving} style={{
             width:'100%', padding:'14px', marginTop:8,
