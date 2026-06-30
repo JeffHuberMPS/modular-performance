@@ -472,11 +472,11 @@
             </div>
           </div>
 
-          {/* Weapon 1: Today's Biggest Win — tan banner, 45° slanted ends (parallelogram) */}
-          <div style={{ position:'relative', marginBottom:38 }}>
-            <div style={{ position:'absolute', inset:0, background:'rgba(194,173,134,0.40)', clipPath:'polygon(0 0, 100% 0, calc(100% - 40px) 100%, 40px 100%)' }} />
-            <div style={{ position:'absolute', inset:1.5, background:'linear-gradient(135deg,#15130f,#0e0c0a)', clipPath:'polygon(0 0, 100% 0, calc(100% - 40px) 100%, 40px 100%)' }} />
-            <div style={{ position:'relative', padding:'14px 48px 16px' }}>
+          {/* Weapon 1: Today's Biggest Win — prominent tan banner, deep 45° slanted ends */}
+          <div style={{ position:'relative', marginBottom:42, filter:'drop-shadow(0 4px 16px rgba(230,201,140,0.18))' }}>
+            <div style={{ position:'absolute', inset:0, background:'rgba(230,201,140,0.85)', clipPath:'polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%)' }} />
+            <div style={{ position:'absolute', inset:2.5, background:'linear-gradient(135deg,#1a160d,#0e0c0a)', clipPath:'polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%)' }} />
+            <div style={{ position:'relative', padding:'22px 76px 24px' }}>
               <div style={{ textAlign:'center' }}>
                 <Label style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
                   <TrophyIcon size={15} color={NAVYL} />Today's Biggest Win
@@ -485,14 +485,14 @@
               <div style={{ position:'relative' }}>
                 <input value={draft.biggestWin} onChange={e=>upd('biggestWin',e.target.value)}
                   placeholder="The headline of your day"
-                  style={{ width:'100%', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(194,173,134,0.28)', borderRadius:8, padding:'14px 44px', color:'#e8ddc8', fontSize:14, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:'#c2ad86', textAlign:'center' }} />
+                  style={{ width:'100%', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(230,201,140,0.45)', borderRadius:8, padding:'16px 44px', color:'#f3e8cf', fontSize:15.5, fontWeight:500, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:'#e6c98c', textAlign:'center' }} />
                 <MicButton active={recKey==='biggestWin'} onClick={()=>toggleVoice('biggestWin', ()=>draft.biggestWin||'', t=>upd('biggestWin',t))} />
               </div>
             </div>
           </div>
 
           {/* Weapon 1: body indented to start at the bottom point of the Win banner's left 45° slant */}
-          <div style={{ paddingLeft:40 }}>
+          <div style={{ paddingLeft:70 }}>
           {field('Workout', 'workout')}
 
           <div style={{ marginBottom:38 }}>
