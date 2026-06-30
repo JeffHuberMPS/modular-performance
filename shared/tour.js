@@ -40,11 +40,12 @@
       { center: true,                       text: "Set your <b>sleep &amp; wake times</b>, rate your energy, and <b>Save</b>. Your recovery score is figured out for you. That's it.", click: false }
     ],
     expenses: [
-      { sel: '.tab[data-tab="dashboard"]', text: "First, your <b>Dashboard</b> — where every dollar went. Watch it roll by.", click: true },
-      { pan: true,                          text: "Spending by category, your daily burn, the trend — at a glance." },
-      { sel: '.tab[data-tab="log"]',       text: "Now the daily part. <b>Log</b> is every expense — tap it.", click: true },
-      { center: true,                       text: "Add an expense — amount and category — and it lands here, auto-sorted.", click: false },
-      { sel: '.tab[data-tab="budget"]',    text: "And <b>Budget</b> — set your monthly cap and bills. That's it.", click: true }
+      { pan: true,                          text: "First, your <b>Dashboard</b> — weekly pace, what's left to spend, and where your money goes by category. Watch it roll by." },
+      { sel: '.tab[data-tab="log"]',       text: "Now the part you'll use daily. Tap <b>Log</b> — every expense lives here.", click: true },
+      { sel: '#btn-add-expense',           text: "Tap <b>+ Add Expense</b> to log a purchase in seconds — amount, merchant, and a <b>category</b> so it's tracked correctly.", click: false },
+      { sel: '.tab[data-tab="budget"]',    text: "<b>Budget</b> — set your monthly cap and bills so you always know what's left.", click: true },
+      { sel: '.tab[data-tab="settings"]',  text: "Last thing — tap <b>Settings</b>.", click: true },
+      { sel: '#btn-clear-expenses',        text: "When you're done exploring, <b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
     ],
     journal: [
       { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons.", click: true },
