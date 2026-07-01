@@ -323,7 +323,7 @@
     }
 
     // ── WRITE VIEW ─────────────────────────────────────────────────
-    function WriteView({ entries, onSave }) {
+    function WriteView({ entries, onSave, tdOverride }) {
       const today = todayStr();
       const existing = entries[today] || {};
       const arr3 = (v) => Array.isArray(v) ? [v[0]||'', v[1]||'', v[2]||''] : ['','',''];
@@ -352,8 +352,9 @@
       const [mode, setMode] = useState(() => { try { const m=localStorage.getItem('mps_jnls_journal_mode'); return (m==='light'||m==='intense')?m:'intense'; } catch(e){ return 'intense'; } });
       const setModePersist = (m) => { setMode(m); try { localStorage.setItem('mps_jnls_journal_mode', m); } catch(e){} };
       const isLight = __PREMIUM && mode === 'light';   // Light shows only: Biggest Win, Emotion, Tomorrow's Top 3, Discipline
-      useEffect(() => { let on=true; loadTrackerData().then(d=>{ if(on) setTd(d); }).catch(()=>{}); return ()=>{on=false;}; }, []);
-      const A = td ? ciAggregate(td, [today]) : null;
+      useEffect(() => { if (tdOverride) { setTd(tdOverride); return; } let on=true; loadTrackerData().then(d=>{ if(on) setTd(d); }).catch(()=>{}); return ()=>{on=false;}; }, [tdOverride]);
+      const effTd = tdOverride || td;
+      const A = effTd ? ciAggregate(effTd, [today]) : null;
 
       const upd = (k, v) => setDraft(p => ({ ...p, [k]: v }));
       const updArr = (k, i, v) => setDraft(p => { const a = Array.isArray(p[k]) ? p[k].slice() : ['','','']; a[i]=v; return { ...p, [k]: a }; });
@@ -541,7 +542,7 @@
           </div>
 
           {/* Auto-pulled day stats */}
-          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:34 }}>
+          <div data-tour="dash" style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:34 }}>
             <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
             <div style={{ display:'flex', gap:6, marginBottom:10 }}>
               {stat('MRN', A?A.mrn+'/5':'—')}{stat('WRK', A?A.wrk+'/5':'—')}{stat('NGT', A?A.ngt+'/5':'—')}{stat('DAY', A?A.dayTotal+'/15':'—')}
@@ -552,7 +553,7 @@
           </div>
 
           {/* Weapon 1: Today's Biggest Win — prominent tan banner, deep 45° slanted ends */}
-          <div style={{ position:'relative', marginBottom:42, filter:'drop-shadow(0 5px 14px rgba(230,201,140,0.16))' }}>
+          <div data-tour="win" style={{ position:'relative', marginBottom:42, filter:'drop-shadow(0 5px 14px rgba(230,201,140,0.16))' }}>
             <div style={{ position:'absolute', inset:0, background:'rgba(230,201,140,0.85)', clipPath:'polygon(0 0, 100% 0, calc(100% - 36px) 100%, 36px 100%)' }} />
             {/* inner dark layer extends past the TOP (top:-1) so no tan top edge shows — only the 45° sides + bottom outline remain */}
             <div style={{ position:'absolute', top:-1, left:2.5, right:2.5, bottom:2.5, background:'linear-gradient(135deg,#1a160d,#0e0c0a)', clipPath:'polygon(0 0, 100% 0, calc(100% - 36px) 100%, 36px 100%)' }} />
@@ -622,7 +623,7 @@
           {!isLight && field('Quote / Idea Vault', 'quoteVault', true)}
 
           {/* Weapon 1: Daily Discipline Score slider */}
-          <div style={{ marginBottom:38 }}>
+          <div data-tour="disc" style={{ marginBottom:38 }}>
             <Label>Daily Discipline Score</Label>
             <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'18px 16px 16px' }}>
               <div style={{ color:'#d1d5db', fontSize:13.5, fontWeight:600, textAlign:'center', marginBottom:14 }}>How disciplined was I today?</div>
@@ -770,14 +771,14 @@
     }
 
     // ── INSIGHTS VIEW ──────────────────────────────────────────────
-    function InsightsView({ entries }) {
+    function InsightsView({ entries, tdOverride }) {
       const allDates = Object.keys(entries).sort((a,b) => a.localeCompare(b));
       const total    = allDates.length;   // Total Journal Entries — only grows
 
       // ── Weapon 4: load tracker data + run the Performance Insights engine ──
-      const [ptd, setPtd] = useState(null);
-      const [ptdLoading, setPtdLoading] = useState(true);
-      useEffect(() => { let on=true; loadTrackerData().then(d=>{ if(on){ setPtd(d); setPtdLoading(false); } }).catch(()=>{ if(on) setPtdLoading(false); }); return ()=>{on=false;}; }, []);
+      const [ptd, setPtd] = useState(tdOverride || null);
+      const [ptdLoading, setPtdLoading] = useState(!tdOverride);
+      useEffect(() => { if (tdOverride) { setPtd(tdOverride); setPtdLoading(false); return; } let on=true; loadTrackerData().then(d=>{ if(on){ setPtd(d); setPtdLoading(false); } }).catch(()=>{ if(on) setPtdLoading(false); }); return ()=>{on=false;}; }, [tdOverride]);
       const perf = ptdLoading ? null : computePerf(entries, ptd);
 
       // ── Weapon 3: Journal Consistency % (days journaled ÷ days available; no streaks, no reset) ──
@@ -837,7 +838,7 @@
         <div style={{ padding:'18px 20px' }}>
 
           {/* Weapon 4: Performance Insights engine */}
-          <div style={{ textAlign:'center', marginBottom:16 }}>
+          <div data-tour="perf" style={{ textAlign:'center', marginBottom:16 }}>
             <div style={{ fontSize:20, fontWeight:800, color:NAVYL, letterSpacing:'0.08em' }}>PERFORMANCE INSIGHTS</div>
             <div style={{ fontSize:11.5, color:'#6b7280', marginTop:4 }}>What behaviors produce your best days</div>
           </div>
@@ -969,6 +970,91 @@
       );
     }
 
+    // ── WEAPON 6: DEMO MODE ──────────────────────────────────────
+    // Builds ~18 days of realistic sample data IN MEMORY (entries + matching tracker
+    // data engineered so Performance Insights lights up). Never touches storage, so real
+    // data is safe; exiting the demo discards everything instantly.
+    function makeDemoData() {
+      const entries = {}, sleep = {}, habits = {}, workout = [], expenses = [];
+      const allHab = [...CI_BLOCKS.MRN, ...CI_BLOCKS.WRK, ...CI_BLOCKS.NGT];
+      const wins = ['Closed the client deal','Hit a squat PR','Finished the course module','Trained before sunrise','Shipped the landing page','Called mom, long overdue','Meal prepped the week','Read 40 pages before work','Cold plunge + gym done','Inbox zero by 9am','Deep work, zero distractions','Ran 5 miles','Wrote 1,000 words','Rebuilt the budget','Helped a teammate win','Meditated 20 minutes','No phone until noon','Planned the whole month'];
+      const emotions = ['Focused','Grateful','Driven','Calm','Tired','Proud','Locked in','Restless','Content','Energized'];
+      const lessons = ['Sleep is the multiplier.','Mornings decide the day.','Say no more often.','Small reps compound.','Protect deep work.'];
+      const N = 18;
+      for (let i=N-1; i>=0; i--) {
+        const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+        const k = ciFmt(d);
+        const idx = N-1-i;                       // 0 (oldest) .. N-1 (today)
+        const q = (i>12) ? 'rough' : (i>6) ? 'med' : 'good';   // improves over time
+        let disc, wake, bed, workoutDone, habDone, spend, hour;
+        if (q==='good')      { disc=8+(idx%2); wake='05:15'; bed='21:15'; workoutDone=true;          habDone=allHab.length;                 spend=12+(idx%3)*6;  hour=6; }
+        else if (q==='med')  { disc=6+(idx%2); wake='06:45'; bed='23:00'; workoutDone=(idx%2===0);   habDone=Math.round(allHab.length*0.7); spend=35+(idx%3)*10; hour=9; }
+        else                 { disc=3+(idx%3); wake='08:30'; bed='02:30'; workoutDone=false;         habDone=Math.round(allHab.length*0.35);spend=90+(idx%3)*25; hour=21; }
+        disc = Math.min(10, disc);
+        const stamp = new Date(d); stamp.setHours(hour, 12, 0, 0);
+        entries[k] = { date:k, biggestWin:wins[idx%wins.length], emotion:emotions[idx%emotions.length],
+          gratitude:['My health','My family','This system'], accomplishment:['','',''],
+          affBecoming:'', affLearning:'', affIHave:'', anticipation:'',
+          biggestDistraction: q==='rough' ? 'Phone and social media' : '',
+          biggestLesson: (idx%3===0) ? lessons[idx%lessons.length] : '',
+          top3:['Train','Deep work block','Sleep by 10'], quoteVault:'',
+          disciplineScore:disc, complete:true, completedAt:stamp.toISOString(), updatedAt:stamp.toISOString(), createdAt:stamp.toISOString(), __demo:true };
+        sleep[k] = { wakeTime:wake, sleepTime:bed };
+        const hobj = {}; for (let h=0; h<habDone; h++) hobj[allHab[h]] = true; habits[k] = hobj;
+        if (workoutDone) workout.push({ date:k });
+        expenses.push({ date:k, item:'Purchase', amount:spend });
+      }
+      return { entries, td:{ habits, blocks:null, expenses, workout, sleep } };
+    }
+
+    // Guided spotlight walkthrough: auto-scrolls to each element, white outline highlight, auto-advances.
+    function DemoTour({ steps, setTab, onExit }) {
+      const [i, setI] = useState(0);
+      const [rect, setRect] = useState(null);
+      const step = steps[i];
+      useEffect(() => {
+        if (!step) return;
+        setTab(step.tab); setRect(null);
+        let tries = 0;
+        const place = () => {
+          const el = document.querySelector(step.sel);
+          if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); setTimeout(()=>{ const r=el.getBoundingClientRect(); setRect({ top:r.top, left:r.left, width:r.width, height:r.height }); }, 400); }
+          else if (tries++ < 10) setTimeout(place, 130);
+        };
+        setTimeout(place, 280);
+      }, [i]);
+      useEffect(() => {
+        if (!step || !rect) return;
+        const t = setTimeout(() => { if (i < steps.length-1) setI(i+1); }, 4800);
+        return () => clearTimeout(t);
+      }, [i, rect]);
+      if (!step) return null;
+      const P = 8;
+      const bt = rect ? rect.top - P : 0, bl = rect ? rect.left - P : 0, bw = rect ? rect.width + P*2 : 0, bh = rect ? rect.height + P*2 : 0;
+      const below = rect ? (rect.top + rect.height + 170 < window.innerHeight) : true;
+      const ghost = { background:'transparent', border:`1px solid ${BR}`, color:'#9aa0a8', borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:700, cursor:'pointer' };
+      const gold  = { background:'#e6c98c', border:'none', color:'#1a1206', borderRadius:8, padding:'7px 16px', fontSize:12, fontWeight:800, cursor:'pointer' };
+      return (
+        <div style={{ position:'fixed', inset:0, zIndex:11000 }}>
+          {rect && <div style={{ position:'fixed', top:bt, left:bl, width:bw, height:bh, borderRadius:12, boxShadow:'0 0 0 9999px rgba(0,0,0,0.74)', border:'2px solid #fff', transition:'all .3s ease', pointerEvents:'none' }} />}
+          <div style={{ position:'fixed', left:'50%', transform:'translateX(-50%)', width:'86%', maxWidth:360,
+            top: rect ? (below ? Math.min(window.innerHeight-170, bt+bh+14) : Math.max(14, bt-150)) : '38%',
+            background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', borderRadius:14, padding:'16px 18px', boxShadow:'0 12px 40px rgba(0,0,0,.7)', transition:'top .3s ease' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
+              <div style={{ color:'#e6c98c', fontSize:11, letterSpacing:'0.14em', fontWeight:800 }}>DEMO · {i+1}/{steps.length}</div>
+              <button onClick={onExit} style={{ background:'none', border:'none', color:'#8a8f98', fontSize:12, cursor:'pointer' }}>Skip ✕</button>
+            </div>
+            <div style={{ color:'#f3e8cf', fontSize:15, fontWeight:800, marginBottom:5 }}>{step.title}</div>
+            <div style={{ color:'#cbb48a', fontSize:12.5, lineHeight:1.55, marginBottom:12 }}>{step.body}</div>
+            <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+              {i>0 && <button onClick={()=>setI(i-1)} style={ghost}>Back</button>}
+              {i < steps.length-1 ? <button onClick={()=>setI(i+1)} style={gold}>Next</button> : <button onClick={onExit} style={gold}>Finish</button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ── ROOT ───────────────────────────────────────────────────────
     function JournalApp() {
       const [tab,     setTab]     = useState('WRITE');
@@ -981,6 +1067,21 @@
         setEntries(updated);
         await save(updated);
       }, []);
+
+      // ── Weapon 6: Demo Mode (in-memory only; never persisted) ──
+      const [demo, setDemo] = useState(null);   // null = off; else { entries, td }
+      const [tourOn, setTourOn] = useState(false);   // guided walkthrough overlay (demo can outlive the tour)
+      const startDemo = () => { setDemo(makeDemoData()); setTourOn(true); setTab('WRITE'); };
+      const exitDemo  = () => { setDemo(null); setTourOn(false); setTab('WRITE'); };
+      const viewEntries = demo ? demo.entries : entries;
+      const viewSave    = demo ? ((updated)=>setDemo(d=>({ ...d, entries:updated }))) : saveEntries;
+      const viewTd      = demo ? demo.td : null;
+      const DEMO_STEPS  = [
+        { tab:'WRITE',    sel:'[data-tour="dash"]', title:'Your day, auto-filled', body:'Sleep, wake time, habits and spending flow in from your other MPS trackers. No typing.' },
+        { tab:'WRITE',    sel:'[data-tour="win"]',  title:"Today's Biggest Win",   body:'Every entry starts with the headline of your day, so the win comes first.' },
+        { tab:'WRITE',    sel:'[data-tour="disc"]', title:'Daily Discipline Score', body:'One honest score at the end. This single number is what powers your Performance Insights.' },
+        { tab:'INSIGHTS', sel:'[data-tour="perf"]', title:'Performance Insights',   body:'MPS connects your behaviors to your best days and coaches you on what to repeat.' },
+      ];
 
       if (!ready) return (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
@@ -1036,16 +1137,16 @@
           </div>
 
           <Tabs tab={tab} setTab={setTab} />
-          {tab==='WRITE'    && <WriteView    entries={entries} onSave={saveEntries} />}
-          {tab==='HISTORY'  && <HistoryView  entries={entries} />}
-          {tab==='INSIGHTS' && (__CORE ? (
+          {tab==='WRITE'    && <WriteView    key={demo?'demo':'real'} entries={viewEntries} onSave={viewSave} tdOverride={viewTd} />}
+          {tab==='HISTORY'  && <HistoryView  key={demo?'demo':'real'} entries={viewEntries} />}
+          {tab==='INSIGHTS' && (__CORE && !demo ? (
             <div style={{ textAlign:'center', padding:'48px 22px', background:C1, border:`1px solid ${BR}`, borderRadius:14, marginTop:8 }}>
               <div style={{ fontSize:34, marginBottom:10 }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
               <div style={{ fontSize:16, fontWeight:800, color:'#f5f5f5', letterSpacing:1, marginBottom:8 }}>INSIGHTS ARE AN ELITE FEATURE</div>
               <div style={{ fontSize:13, color:'#9a9a9a', lineHeight:1.6, marginBottom:20, maxWidth:300, marginLeft:'auto', marginRight:'auto' }}>Unlock mood trends, streaks, and writing patterns. Journaling stays free — upgrade to see the insights.</div>
               <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ UNLOCK WITH ELITE</a>
             </div>
-          ) : <InsightsView entries={entries} />)}
+          ) : <InsightsView key={demo?'demo':'real'} entries={viewEntries} tdOverride={viewTd} />)}
           {tab==='CHECK-IN' && (__PREMIUM ? <CheckInView /> : (
             <div style={{ textAlign:'center', padding:'48px 22px', background:C1, border:`1px solid ${BR}`, borderRadius:14, margin:'16px 20px' }}>
               <div style={{ fontSize:34, marginBottom:10, color:NAVYL }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
@@ -1054,6 +1155,25 @@
               <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ Unlock with Premium</a>
             </div>
           ))}
+
+          {/* Weapon 6: Demo launcher */}
+          {!demo && (
+            <button onClick={startDemo} style={{ position:'fixed', left:16, bottom:'calc(16px + env(safe-area-inset-bottom))', zIndex:8000,
+              display:'inline-flex', alignItems:'center', gap:8, background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', color:'#e6c98c',
+              borderRadius:999, padding:'9px 16px', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:12, fontWeight:800, letterSpacing:'0.08em', cursor:'pointer', boxShadow:'0 6px 20px rgba(0,0,0,.55)' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              WATCH DEMO
+            </button>
+          )}
+
+          {/* Weapon 6: Demo banner + guided tour */}
+          {demo && (
+            <div style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:10500, background:'linear-gradient(135deg,#1a160d,#0e0c0a)', borderTop:'1px solid rgba(230,201,140,0.5)', padding:'11px 16px calc(11px + env(safe-area-inset-bottom))', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+              <div style={{ color:'#cbb48a', fontSize:12, lineHeight:1.4 }}><b style={{ color:'#e6c98c', letterSpacing:'0.08em' }}>DEMO MODE</b> · sample data. Nothing here is saved.</div>
+              <button onClick={exitDemo} style={{ flexShrink:0, background:'#e6c98c', border:'none', color:'#1a1206', borderRadius:999, padding:'8px 16px', fontSize:12, fontWeight:800, letterSpacing:'0.06em', cursor:'pointer' }}>EXIT DEMO</button>
+            </div>
+          )}
+          {demo && tourOn && <DemoTour steps={DEMO_STEPS} setTab={setTab} onExit={()=>setTourOn(false)} />}
         </div>
       );
     }
