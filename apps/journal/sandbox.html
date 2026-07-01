@@ -190,7 +190,9 @@
     const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
     const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
     // Premium = full history. Elite sees only the last 60 days of entries (Core has Journal locked entirely).
-    const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+    // SANDBOX: opened directly (not inside the hub) = preview as Premium so every Premium feature is testable on the link.
+    const __STANDALONE = (()=>{ try { return window.parent === window; } catch(e){ return true; } })();
+    const __PREMIUM = __STANDALONE || (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
     const HISTORY_CAP_CUTOFF = (()=>{ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
     /* Journal accent: TAN (this app is the tan one; the blue app is separate). Bright so it pops on the dark UI. */
     const NAVY   = __GRAY ? '#f5f5f5' : '#c8a35d';
