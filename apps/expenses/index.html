@@ -405,7 +405,7 @@ body.mps-gray .cat-other { background: rgba(150,150,150,0.12); }
 .budget-card-label-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .budget-card-label { font-size: 14px; font-weight: 500; color: var(--mps-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .budget-card-label-input { background: transparent; border: none; border-bottom: 1px solid var(--mps-mint); color: var(--mps-text); font-family: inherit; font-size: 14px; font-weight: 500; padding: 2px 0; width: 100%; outline: none; }
-.pen-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; color: var(--mps-text-mute); opacity: 0; transition: all 0.15s; flex-shrink: 0; }
+.pen-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; color: var(--mps-text-dim); opacity: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09); transition: all 0.15s; flex-shrink: 0; }
 .budget-card:hover .pen-icon, .budget-card.editing .pen-icon { opacity: 1; }
 .pen-icon:hover { background: rgba(var(--mps-mint-rgb),0.12); color: var(--mps-mint); }
 .pen-icon svg { width: 12px; height: 12px; }
@@ -725,6 +725,8 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
   </div>
   <!-- ============ SETTINGS ============ -->
   <div class="view" id="view-settings">
+    <!-- OWNER ONLY: Google Sheet / Make sync is Jeff's personal pipeline. Hidden from customers (see applyOwnerVisibility). -->
+    <div id="owner-sheet-settings" style="display:none;">
     <div class="card">
       <div class="dash-section-title">Connect Your Sheet <span style="color:var(--mps-text-mute);font-weight:600;letter-spacing:1px;">· Optional / Advanced</span></div>
       <div style="font-size:12px;color:var(--mps-text-dim);line-height:1.6;margin-bottom:14px;">Most people just use <b style="color:var(--mps-mint);">+ Add Expense</b> on the Log tab. Only connect a sheet if you already pipe transactions into Google Sheets automatically.</div>
@@ -759,6 +761,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
         <div style="color: var(--mps-text-mute); font-size: 11px; margin-top: 8px;">Setup: Sheet → File → Share → Publish to web → Log tab → CSV → paste that link above.</div>
       </div>
     </div>
+    </div><!-- /owner-sheet-settings -->
     <div class="card" style="margin-top: 14px; border-color: rgba(239,68,68,0.3);">
       <div class="dash-section-title">Start Fresh</div>
       <div style="font-size: 13px; line-height: 1.6; color: var(--mps-text-dim); margin-bottom: 14px;">Clear every expense and start with a clean tracker. Your budget, bills, and category rules stay. This can’t be undone.</div>
@@ -1468,6 +1471,12 @@ document.getElementById('btn-empty-add')?.addEventListener('click',()=>openExpen
 document.getElementById('btn-import-csv')?.addEventListener('click',()=>document.getElementById('csv-file-input').click());
 document.getElementById('csv-file-input')?.addEventListener('change',ev=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{importCSVText(String(rd.result||''));ev.target.value='';};rd.readAsText(f);});
 document.getElementById('btn-clear-expenses')?.addEventListener('click',clearAllExpenses);
+// Sheet/Make sync is the OWNER's personal pipeline — show that Settings section only to Jeff, never customers.
+function applyOwnerVisibility(){ var el=document.getElementById('owner-sheet-settings'); if(!el) return; var show=false;
+  try{ if(!window.MPS_SANDBOX){ var u=firebase.auth().currentUser; show=!!(u&&u.email&&u.email.toLowerCase()==='jeffreyhuber86@gmail.com'); } }catch(e){}
+  el.style.display=show?'':'none'; }
+applyOwnerVisibility();
+try{ firebase.auth().onAuthStateChanged(function(){ applyOwnerVisibility(); }); }catch(e){}
 // Demo hook: the guided tour calls this to prefill the open Add-Expense modal with a realistic sample
 // so it can spotlight each field (amount → merchant → category) and the Save button actually works.
 window.demoFillExpense=function(){ try{
