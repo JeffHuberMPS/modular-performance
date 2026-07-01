@@ -403,12 +403,46 @@
       const toggleVoice = (fieldId, getBase, setText) => { if (recKey === fieldId) stopVoice(); else startVoice(fieldId, getBase, setText); };
       const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.biggestDistraction||draft.biggestWin||draft.biggestLesson||draft.quoteVault||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x)||draft.top3.some(x=>x);
 
+      // ── Weapon 3: build today's entry object (auto-save + Save Journal share this) ──
+      const buildUpdated = (extra) => ({ ...entries, [today]: { ...existing, date:today, ...draft, ...(extra||{}), updatedAt:new Date().toISOString(), createdAt: existing.createdAt || new Date().toISOString() } });
+
+      // ── Weapon 3: silent auto-save (background; no "Saving…" — only warns on failure) ──
+      const [autoErr, setAutoErr]         = useState('');
+      const [completeMsg, setCompleteMsg] = useState('');
+      const autoTimer  = useRef(null);
+      const skipFirst  = useRef(true);
+      useEffect(() => {
+        if (skipFirst.current) { skipFirst.current = false; return; }
+        if (!hasContent) return;
+        if (autoTimer.current) clearTimeout(autoTimer.current);
+        autoTimer.current = setTimeout(() => {
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) { setAutoErr('Offline. Changes will sync when connected.'); return; }
+          try {
+            Promise.resolve(onSave(buildUpdated()))
+              .then(() => { if (typeof navigator==='undefined' || navigator.onLine !== false) setAutoErr(''); })
+              .catch(() => setAutoErr('Unable to save. Retrying…'));
+          } catch(e) { setAutoErr('Unable to save. Retrying…'); }
+        }, 1200);
+        return () => { if (autoTimer.current) clearTimeout(autoTimer.current); };
+      }, [draft]);
+      useEffect(() => {
+        const goOn  = () => { setAutoErr(''); if (hasContent) { try { onSave(buildUpdated()); } catch(e){} } };
+        const goOff = () => setAutoErr('Offline. Changes will sync when connected.');
+        window.addEventListener('online', goOn); window.addEventListener('offline', goOff);
+        return () => { window.removeEventListener('online', goOn); window.removeEventListener('offline', goOff); };
+      });
+
+      // ── Weapon 3: SAVE JOURNAL (completion ritual) ──
       const handleSave = async () => {
         if (!hasContent) return;
         setSaving(true);
-        const updated = { ...entries, [today]: { ...existing, date:today, ...draft, updatedAt:new Date().toISOString(), createdAt: existing.createdAt || new Date().toISOString() } };
-        await onSave(updated);
-        setSaving(false); setSaved(true); setTimeout(()=>setSaved(false), 2000);
+        const now = new Date();
+        try { await onSave(buildUpdated({ complete:true, completedAt: now.toISOString() })); setAutoErr(''); } catch(e){}
+        setSaving(false); setSaved(true); setTimeout(()=>setSaved(false), 2600);
+        const hh = now.getHours(), mm = String(now.getMinutes()).padStart(2,'0');
+        const ampm = hh >= 12 ? 'PM' : 'AM', h12 = ((hh + 11) % 12) + 1;
+        setCompleteMsg(`${h12}:${mm} ${ampm}`);
+        setTimeout(() => setCompleteMsg(''), 2600);
       };
 
       const dt = new Date();
@@ -439,6 +473,30 @@
 
       return (
         <div style={{ padding:'18px 20px' }}>
+          {/* Weapon 3: silent auto-save warning (only on failure/offline) */}
+          {autoErr && (
+            <div style={{ position:'fixed', left:'50%', bottom:24, transform:'translateX(-50%)', zIndex:10001,
+              maxWidth:'88%', background:'#1a1207', border:'1px solid rgba(230,201,140,0.55)', color:'#e8ddc8',
+              padding:'10px 15px', borderRadius:10, fontSize:12.5, lineHeight:1.4, textAlign:'center',
+              boxShadow:'0 6px 24px rgba(0,0,0,.6)' }}>
+              {autoErr}
+            </div>
+          )}
+
+          {/* Weapon 3: SAVE JOURNAL completion popup (fades ~2.6s) */}
+          {completeMsg && (
+            <div style={{ position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', zIndex:10002, pointerEvents:'none' }}>
+              <div style={{ background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', borderRadius:16, padding:'26px 38px', textAlign:'center', boxShadow:'0 14px 44px rgba(0,0,0,.7)', animation:'mpsToastIn .25s ease' }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:7, color:NAVYL, fontSize:13, fontWeight:700, letterSpacing:'0.06em', marginBottom:12 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Saved {completeMsg}
+                </div>
+                <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:24, fontWeight:800, color:'#f3e8cf', letterSpacing:'0.02em', marginBottom:6 }}>Journal Complete</div>
+                <div style={{ fontSize:13, color:'#8a8172' }}>See you tomorrow.</div>
+              </div>
+            </div>
+          )}
+
           {/* Weapon 2: voice error popup */}
           {recErr && (
             <div style={{ position:'fixed', left:'50%', bottom:24, transform:'translateX(-50%)', zIndex:10001,
@@ -562,7 +620,7 @@
             fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em',
             cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
           }}>
-            {saved ? (<span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>SAVED</span>) : saving ? 'SAVING...' : 'SAVE ENTRY'}
+            {saved ? (<span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>SAVED</span>) : saving ? 'SAVING…' : 'SAVE JOURNAL'}
           </button>
         </div>
       );
@@ -685,7 +743,17 @@
     // ── INSIGHTS VIEW ──────────────────────────────────────────────
     function InsightsView({ entries }) {
       const allDates = Object.keys(entries).sort((a,b) => a.localeCompare(b));
-      const total    = allDates.length;
+      const total    = allDates.length;   // Total Journal Entries — only grows
+
+      // ── Weapon 3: Journal Consistency % (days journaled ÷ days available; no streaks, no reset) ──
+      let consistency = 0;
+      if (total) {
+        const [fy,fm,fd] = allDates[0].split('-').map(Number);
+        const first  = new Date(fy, fm-1, fd);
+        const today0 = new Date(); today0.setHours(0,0,0,0);
+        const span   = Math.max(1, Math.round((today0 - first)/86400000) + 1);
+        consistency  = Math.min(100, Math.round(total / span * 100));
+      }
 
       // Streak calc
       let streak     = 0;
@@ -732,6 +800,20 @@
 
       return (
         <div style={{ padding:'18px 20px' }}>
+
+          {/* Weapon 3: Consistency % + Total Entries */}
+          <div style={{ display:'flex', gap:12, marginBottom:14 }}>
+            <div style={{ flex:1, background:C1, border:`1px solid ${BR}`, borderRadius:14, padding:'16px 14px', textAlign:'center' }}>
+              <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:34, color:NAVYL, lineHeight:1 }}>{consistency}%</div>
+              <div style={{ color:'#6b7280', fontSize:9.5, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, marginTop:7 }}>Journal Consistency</div>
+              <div style={{ color:'#4b5563', fontSize:10, marginTop:2 }}>reward returning, not perfection</div>
+            </div>
+            <div style={{ flex:1, background:C1, border:`1px solid ${BR}`, borderRadius:14, padding:'16px 14px', textAlign:'center' }}>
+              <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:34, color:'#fff', lineHeight:1 }}>{total}</div>
+              <div style={{ color:'#6b7280', fontSize:9.5, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, marginTop:7 }}>Total Journal Entries</div>
+              <div style={{ color:'#4b5563', fontSize:10, marginTop:2 }}>every entry counts, forever</div>
+            </div>
+          </div>
 
           {/* Streak hero */}
           <div style={{
