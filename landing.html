@@ -40,9 +40,15 @@
     .hero, .section, .diff-section, .final-cta { min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
     .founder-section { box-sizing: border-box; }
 
+    /* Kill sideways scroll on mobile. body had overflow-x:hidden but html did NOT,
+       so decorative hero shapes escaped to the page and even stretched the fixed nav
+       to ~604px — dragging the whole page (pricing included) off the right edge.
+       Clipping BOTH html and body pins the page to the viewport width. */
+    html { overflow-x: hidden; }
     body {
       background: var(--ns-black);
       overflow-x: hidden;
+      max-width: 100%;
       animation: mpsPageIn 0.3s ease both;
     }
     /* Smooth page entrance; self-resolving so the page can never get stuck hidden. */

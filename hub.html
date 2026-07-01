@@ -461,7 +461,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '299';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '300';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1282,11 +1282,14 @@
       }
     }
 
-    /* ── Test-account reset (for repeatable new-user testing) ── */
+    /* ── Test-account reset (for repeatable new-user testing) ──
+       NOTE: Jeff's PRIMARY email (jeffreyhuber86@gmail.com) is deliberately NOT a
+       "test account" — it's his real, live customer account, so it must never show
+       the RESET TEST ACCOUNT button. Only throwaway +aliases and @mps.test addresses
+       are test accounts (used for repeatable new-user testing without touching his data). */
     function mpsIsTestEmail(email) {
       var e = (email || '').toLowerCase();
-      return e === 'jeffreyhuber86@gmail.com'
-        || /^jeffreyhuber86\+.*@gmail\.com$/.test(e)
+      return /^jeffreyhuber86\+.*@gmail\.com$/.test(e)
         || /@mps\.test$/.test(e);
     }
     async function mpsResetTestAccount() {
