@@ -1070,18 +1070,16 @@
 
       // ── Weapon 6: Demo Mode (in-memory only; never persisted) ──
       const [demo, setDemo] = useState(null);   // null = off; else { entries, td }
-      const [tourOn, setTourOn] = useState(false);   // guided walkthrough overlay (demo can outlive the tour)
-      const startDemo = () => { setDemo(makeDemoData()); setTourOn(true); setTab('WRITE'); };
-      const exitDemo  = () => { setDemo(null); setTourOn(false); setTab('WRITE'); };
+      // Uses the SHARED MPS tour engine (/shared/tour.js) so the walkthrough matches the other apps.
+      const startDemo = () => {
+        setDemo(makeDemoData()); setTab('WRITE');
+        // let React paint the sample data first, then play the shared tour (targets its data-tour anchors)
+        setTimeout(() => { try { if (window.startMpsTour) window.startMpsTour(); } catch(e){} }, 550);
+      };
+      const exitDemo  = () => { setDemo(null); setTab('WRITE'); };
       const viewEntries = demo ? demo.entries : entries;
       const viewSave    = demo ? ((updated)=>setDemo(d=>({ ...d, entries:updated }))) : saveEntries;
       const viewTd      = demo ? demo.td : null;
-      const DEMO_STEPS  = [
-        { tab:'WRITE',    sel:'[data-tour="dash"]', title:'Your day, auto-filled', body:'Sleep, wake time, habits and spending flow in from your other MPS trackers. No typing.' },
-        { tab:'WRITE',    sel:'[data-tour="win"]',  title:"Today's Biggest Win",   body:'Every entry starts with the headline of your day, so the win comes first.' },
-        { tab:'WRITE',    sel:'[data-tour="disc"]', title:'Daily Discipline Score', body:'One honest score at the end. This single number is what powers your Performance Insights.' },
-        { tab:'INSIGHTS', sel:'[data-tour="perf"]', title:'Performance Insights',   body:'MPS connects your behaviors to your best days and coaches you on what to repeat.' },
-      ];
 
       if (!ready) return (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
@@ -1173,7 +1171,6 @@
               <button onClick={exitDemo} style={{ flexShrink:0, background:'#e6c98c', border:'none', color:'#1a1206', borderRadius:999, padding:'8px 16px', fontSize:12, fontWeight:800, letterSpacing:'0.06em', cursor:'pointer' }}>EXIT DEMO</button>
             </div>
           )}
-          {demo && tourOn && <DemoTour steps={DEMO_STEPS} setTab={setTab} onExit={()=>setTourOn(false)} />}
         </div>
       );
     }

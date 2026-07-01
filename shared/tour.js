@@ -48,10 +48,11 @@
       { sel: '#btn-clear-expenses',        text: "When you're done exploring, <b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
     ],
     journal: [
-      { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons.", click: true },
-      { center: true,                       text: "Write your reflection — five minutes — then tap <b>Save Entry</b>.", click: false },
-      { txt: 'History',                     text: "Tap <b>History</b> to see your past entries — watch it roll by.", click: true },
-      { pan: true,                          text: "Every entry you've written, saved to look back on." }
+      { pan: true,                          text: "This is your <b>Journal</b> — your day auto-filled from your trackers up top. Watch it roll by." },
+      { sel: '[data-tour="win"]',           text: "Every entry opens with <b>Today's Biggest Win</b> — the headline of your day." },
+      { sel: '[data-tour="disc"]',          text: "End with your <b>Daily Discipline Score</b>. This one honest number is what powers your insights." },
+      { txt: 'Insights',                    text: "Now the payoff. Tap <b>Insights</b> — where MPS connects the dots.", click: true },
+      { sel: '[data-tour="perf"]',          text: "<b>Performance Insights</b> — MPS shows the exact behaviors behind your best days, and coaches you on what to repeat." }
     ],
     nutrition: [
       { sel: '.meal-head .add',             text: "Tap <b>+ Add Food</b> to log what you ate — search the built-in food list.", click: true },
