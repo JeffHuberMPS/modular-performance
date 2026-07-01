@@ -745,6 +745,12 @@
       const allDates = Object.keys(entries).sort((a,b) => a.localeCompare(b));
       const total    = allDates.length;   // Total Journal Entries — only grows
 
+      // ── Weapon 4: load tracker data + run the Performance Insights engine ──
+      const [ptd, setPtd] = useState(null);
+      const [ptdLoading, setPtdLoading] = useState(true);
+      useEffect(() => { let on=true; loadTrackerData().then(d=>{ if(on){ setPtd(d); setPtdLoading(false); } }).catch(()=>{ if(on) setPtdLoading(false); }); return ()=>{on=false;}; }, []);
+      const perf = ptdLoading ? null : computePerf(entries, ptd);
+
       // ── Weapon 3: Journal Consistency % (days journaled ÷ days available; no streaks, no reset) ──
       let consistency = 0;
       if (total) {
@@ -800,6 +806,70 @@
 
       return (
         <div style={{ padding:'18px 20px' }}>
+
+          {/* Weapon 4: Performance Insights engine */}
+          <div style={{ textAlign:'center', marginBottom:16 }}>
+            <div style={{ fontSize:20, fontWeight:800, color:NAVYL, letterSpacing:'0.08em' }}>PERFORMANCE INSIGHTS</div>
+            <div style={{ fontSize:11.5, color:'#6b7280', marginTop:4 }}>What behaviors produce your best days</div>
+          </div>
+
+          {ptdLoading ? (
+            <div style={{ textAlign:'center', padding:'24px 0', color:NAVYL, fontSize:13 }}>Analyzing your data…</div>
+          ) : !perf.ready ? (
+            <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:14, padding:'22px 18px', textAlign:'center', marginBottom:18 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'#e8e4df', marginBottom:6 }}>Building your Performance Insights</div>
+              <div style={{ fontSize:12.5, color:'#8a8276', lineHeight:1.6, maxWidth:330, margin:'0 auto 14px' }}>Journal and score a few more days. MPS will connect your sleep, wake time, workouts, habits and spending to your Daily Discipline Score.</div>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10 }}>
+                <div style={{ flex:'0 0 160px', height:6, background:'#26221a', borderRadius:6, overflow:'hidden' }}>
+                  <div style={{ width:`${Math.min(100, Math.round(perf.days/perf.need*100))}%`, height:'100%', background:NAVYL }} />
+                </div>
+                <div style={{ fontSize:12, color:NAVYL, fontWeight:700 }}>{perf.days}/{perf.need} days</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginBottom:18 }}>
+              {/* Growth Score */}
+              <div style={{ background:`linear-gradient(135deg,${C1},#0d0c10)`, border:`1px solid ${BRB}`, borderRadius:14, padding:'16px 14px', textAlign:'center', marginBottom:14 }}>
+                <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:38, color:NAVYL, lineHeight:1 }}>{perf.growthScore}</div>
+                <div style={{ color:'#6b7280', fontSize:9.5, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, marginTop:7 }}>Growth Score</div>
+                {perf.trend!=null && <div style={{ fontSize:10.5, marginTop:4, color: perf.trend>=0?'#8fbf8f':'#c98a8a' }}>{perf.trend>=0?'▲':'▼'} {Math.abs(perf.trend)} vs last week</div>}
+              </div>
+
+              {/* Correlation insights */}
+              {perf.insights.length>0 && (
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ color:NAVYL, fontSize:11, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:8 }}>What drives your days</div>
+                  {perf.insights.map(i=>(
+                    <div key={i.key} style={{ display:'flex', gap:11, background:C1, border:`1px solid ${BR}`, borderRadius:11, padding:'12px 13px', marginBottom:8 }}>
+                      <div style={{ width:3, borderRadius:3, background: i.good?NAVYL:'#a86b6b', flexShrink:0 }} />
+                      <div style={{ color:'#d1d5db', fontSize:12.5, lineHeight:1.55 }}>{i.text}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* AI Recommendation */}
+              {perf.best.length>0 && (
+                <div style={{ background:'linear-gradient(135deg, rgba(230,201,140,0.10), rgba(230,201,140,0.02))', border:`1px solid ${BRB}`, borderRadius:14, padding:'16px 15px', marginBottom:10 }}>
+                  <div style={{ color:NAVYL, fontSize:11, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:800, marginBottom:8 }}>AI Recommendation</div>
+                  <div style={{ color:'#e8ddc8', fontSize:13, lineHeight:1.6 }}>Your highest-performing days share {perf.best.length>1?'these behaviors':'this behavior'}:</div>
+                  <div style={{ marginTop:8 }}>
+                    {perf.best.map((b,idx)=>(<div key={idx} style={{ display:'flex', gap:8, alignItems:'center', color:'#f3e8cf', fontSize:12.5, marginBottom:4 }}><span style={{ color:NAVYL, fontWeight:800 }}>{idx+1}</span>{b}</div>))}
+                  </div>
+                </div>
+              )}
+
+              {/* Blind Spot */}
+              {perf.blindspot && (
+                <div style={{ background:C1, border:'1px solid rgba(168,107,107,0.35)', borderRadius:14, padding:'14px 15px', marginBottom:10 }}>
+                  <div style={{ color:'#c98a8a', fontSize:11, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:800, marginBottom:6 }}>Blind Spot</div>
+                  <div style={{ color:'#d1d5db', fontSize:12.5, lineHeight:1.55 }}>{perf.blindspot.text}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ height:1, background:BR, margin:'4px 0 18px' }} />
 
           {/* Weapon 3: Consistency % + Total Entries */}
           <div style={{ display:'flex', gap:12, marginBottom:14 }}>
@@ -1023,6 +1093,78 @@
       const elapsed=Math.max(1, dateKeys.filter(dk=>dk<=today).length || dateKeys.length);
       return { mrn,wrk,ngt,dayTotal, mrnAvg:Math.round(mrn/elapsed), wrkAvg:Math.round(wrk/elapsed), ngtAvg:Math.round(ngt/elapsed), dayAvg:Math.round(dayTotal/elapsed), spending, income, net:income-spending, workouts, avgWake:ciAvgTime(wake), avgSleep:ciAvgTime(slp) };
     }
+
+    // ── WEAPON 4: PERFORMANCE INSIGHTS ENGINE ────────────────────
+    // Correlates each day's Daily Discipline Score with that day's sleep, wake time,
+    // workout, habits, and spending, then turns the strongest links into plain-language
+    // insights + coaching. Returns {ready:false} until there's enough data to be honest.
+    function computePerf(entries, td) {
+      const MIN_DAYS = 5, MIN_GROUP = 2;
+      const blocks = (td && td.blocks && td.blocks.MRN && td.blocks.MRN.habits) ? {
+        MRN:(td.blocks.MRN.habits||[]).map(h=>h.id), WRK:(td.blocks.WRK.habits||[]).map(h=>h.id), NGT:(td.blocks.NGT.habits||[]).map(h=>h.id)
+      } : CI_BLOCKS;
+      const allHabitIds = [...blocks.MRN, ...blocks.WRK, ...blocks.NGT];
+
+      const recs = [];
+      Object.keys(entries).forEach(dk => {
+        const e = entries[dk] || {};
+        if (typeof e.disciplineScore !== 'number') return;
+        const s = (td && td.sleep && td.sleep[dk]) || null;
+        const wakeMin = s ? ciHmToMin(s.wakeTime) : null;
+        let sleepHrs = null;
+        if (s) { const wm=ciHmToMin(s.wakeTime), bm=ciHmToMin(s.sleepTime); if (wm!=null && bm!=null) sleepHrs = ((wm-bm+1440)%1440)/60; }
+        const workout = !!(td && (td.workout||[]).some(w => w && String(w.date).slice(0,10)===dk));
+        let habitPct = null;
+        if (td && td.habits && td.habits[dk]) { const dd=td.habits[dk]; const done=allHabitIds.filter(id=>dd[id]).length; habitPct = allHabitIds.length ? done/allHabitIds.length : null; }
+        const spend = (td ? (td.expenses||[]) : []).filter(x=>x && x.item==='Purchase' && String(x.date).slice(0,10)===dk).reduce((a,x)=>a+Math.abs(Number(x.amount)||0),0);
+        const stamp = e.completedAt || e.updatedAt; let hour=null; if (stamp){ const t=new Date(stamp); if(!isNaN(t)) hour=t.getHours(); }
+        recs.push({ dk, discipline:e.disciplineScore, wakeMin, sleepHrs, workout, habitPct, spend, hour });
+      });
+
+      const days = recs.length;
+      if (days < MIN_DAYS) return { ready:false, days, need:MIN_DAYS };
+
+      const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+      const cmp = (hiF, loF) => {
+        const hi = recs.filter(hiF).map(r=>r.discipline), lo = recs.filter(loF).map(r=>r.discipline);
+        if (hi.length < MIN_GROUP || lo.length < MIN_GROUP) return null;
+        const ah=avg(hi), al=avg(lo);
+        return { ah, al, delta:ah-al, pct: al>0 ? Math.round((ah-al)/al*100) : 0, hiN:hi.length, loN:lo.length };
+      };
+
+      const insights = [];
+      const cSleep = cmp(r=>r.sleepHrs!=null && r.sleepHrs>=8, r=>r.sleepHrs!=null && r.sleepHrs<7);
+      if (cSleep) insights.push({ key:'sleep', good:cSleep.delta>=0, strength:Math.abs(cSleep.delta), behavior:'Sleep 8+ hours', text:`When you sleep 8+ hours, your Daily Discipline Score averages ${cSleep.ah.toFixed(1)}/10, versus ${cSleep.al.toFixed(1)} on under 7.` });
+      const cWake = cmp(r=>r.wakeMin!=null && r.wakeMin<=330, r=>r.wakeMin!=null && r.wakeMin>=480);
+      if (cWake) insights.push({ key:'wake', good:cWake.delta>=0, strength:Math.abs(cWake.delta), behavior:'Wake before 5:30 AM', text:`Days you wake before 5:30 AM average ${Math.abs(cWake.pct)}% ${cWake.delta>=0?'higher':'lower'} discipline than days you wake after 8:00 AM.` });
+      const cWork = cmp(r=>r.workout===true, r=>r.workout===false);
+      if (cWork) insights.push({ key:'workout', good:cWork.delta>=0, strength:Math.abs(cWork.delta), behavior:'Finish a workout', text:`On workout days, your Daily Discipline Score is ${Math.abs(cWork.pct)}% ${cWork.delta>=0?'higher':'lower'} on average.` });
+      const cHab = cmp(r=>r.habitPct!=null && r.habitPct>=0.999, r=>r.habitPct!=null && r.habitPct<0.6);
+      if (cHab) insights.push({ key:'habits', good:cHab.delta>=0, strength:Math.abs(cHab.delta), behavior:'Complete every habit', text:`Completing every habit raises your average Daily Discipline Score from ${cHab.al.toFixed(1)} to ${cHab.ah.toFixed(1)}.` });
+      const spends = recs.map(r=>r.spend).filter(x=>x>0).sort((a,b)=>a-b);
+      if (spends.length >= 4) {
+        const med = spends[Math.floor(spends.length/2)];
+        const cSpend = cmp(r=>r.spend>0 && r.spend<=med, r=>r.spend>med);
+        if (cSpend) insights.push({ key:'spend', good:cSpend.delta>=0, strength:Math.abs(cSpend.delta), behavior:'Keep spending in check', text:`Higher-spending days are associated with ${cSpend.delta>=0?'higher':'lower'} Daily Discipline Scores.` });
+      }
+      const cNoon = cmp(r=>r.hour!=null && r.hour<12, r=>r.hour!=null && r.hour>=18);
+      if (cNoon) insights.push({ key:'noon', good:cNoon.delta>=0, strength:Math.abs(cNoon.delta), behavior:'Journal earlier in the day', text:`Days you complete your journal earlier tend to carry higher Daily Discipline Scores.` });
+
+      insights.sort((a,b)=>b.strength-a.strength);
+
+      const chron = recs.slice().sort((a,b)=>a.dk.localeCompare(b.dk));
+      const last7 = chron.slice(-7).map(r=>r.discipline), prev7 = chron.slice(-14,-7).map(r=>r.discipline);
+      const growthScore = Math.round(avg(last7)*10);
+      const trend = prev7.length ? Math.round((avg(last7)-avg(prev7))*10) : null;
+
+      const positives = insights.filter(i=>i.good && i.strength>=0.3);
+      const best = positives.slice(0,3).map(i=>i.behavior);
+      const pattern = positives[0] || null;
+      const blindspot = insights.filter(i=>!i.good).sort((a,b)=>b.strength-a.strength)[0] || null;
+
+      return { ready:true, days, insights, growthScore, trend, best, pattern, blindspot };
+    }
+
     // Hoisted to module scope so it isn't re-created on every CheckInView render.
     const Stat=({label,value,sub})=>(
       <div style={{ flex:1, textAlign:'center' }}>
