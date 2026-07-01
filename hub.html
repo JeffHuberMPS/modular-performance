@@ -137,6 +137,11 @@
          'always' + content taller than the screen; neither is true here). */
       .home-view { scroll-snap-type: y mandatory; }
       .home-screen { padding: 16px 13px 20px; }
+      /* Slim the header so PREMIUM + the profile avatar never get clipped on a phone:
+         drop the "Modular Performance" wordmark (the MPS mark is enough) and tighten padding. */
+      .shell-header { padding: 0 12px; }
+      .shell-logo small { display: none; }
+      .shell-right { gap: 9px; }
       /* Compact the dashboard so the whole hero fits one screen (precondition for a clean snap). */
       .home-cards { margin-top: 16px; gap: 11px; }
       .dcard { padding: 13px 14px 14px; }
@@ -181,7 +186,7 @@
 
     /* ── Redesigned home dashboard (card layout) ── */
     .home-screen--hero { justify-content: flex-start; }
-    .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 760px; margin: 22px auto 0; }
+    .home-cards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; width: 100%; max-width: 760px; margin: 22px auto 0; }
     .dcard { position: relative; overflow: hidden; text-align: left; background: linear-gradient(180deg, rgba(28,28,28,0.72) 0%, rgba(13,13,13,0.72) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 22px rgba(0,0,0,0.4); padding: 16px 18px 18px; display: flex; flex-direction: column; }
     .dcard__label { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8a8472; margin-bottom: 6px; }
     .dcard__score { font-family: 'Bebas Neue',sans-serif; font-size: 3.4rem; line-height: 0.95; color: #C9A020; letter-spacing: 0.01em; text-shadow: 0 0 22px rgba(201,160,32,0.3); }
@@ -195,8 +200,9 @@
     .dbar__fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg,#C9A020,#e8c44a); box-shadow: 0 0 10px rgba(201,160,32,0.5); transition: width 0.6s ease; }
     .dcard__sub { font-size: 0.66rem; letter-spacing: 0.04em; color: #9a9a9a; margin-bottom: 8px; }
     .focus-h { font-family: 'Bebas Neue',sans-serif; font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase; color: #8a8472; text-align: center; margin: 26px 0 12px; width: 100%; }
-    .focus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 760px; margin: 0 auto; }
-    .focus-card { display: flex; align-items: center; gap: 11px; padding: 14px; background: rgba(28,28,28,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; cursor: pointer; text-align: left; transition: border-color 0.15s, transform 0.15s; font-family: inherit; }
+    .focus-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; width: 100%; max-width: 760px; margin: 0 auto; }
+    .focus-card { display: flex; align-items: center; gap: 11px; padding: 14px; min-width: 0; background: rgba(28,28,28,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; cursor: pointer; text-align: left; transition: border-color 0.15s, transform 0.15s; font-family: inherit; }
+    .focus-card__label { min-width: 0; overflow-wrap: anywhere; }
     .focus-card:hover { border-color: rgba(201,160,32,0.5); transform: translateY(-1px); }
     .focus-card__check { flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; color: #0a0a0a; }
     .focus-card.done .focus-card__check { background: #C9A020; border-color: #C9A020; }
@@ -216,7 +222,7 @@
     .home-greeting { font-family: 'Bebas Neue',sans-serif; font-size: 1.9rem; letter-spacing: 0.04em; color: #fff; }
     .home-date { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
     .home-section-label { font-family: 'Bebas Neue',sans-serif; font-size: 0.85rem; letter-spacing: 0.22em; color: #8a8472; margin: 24px 2px 12px; }
-    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; max-width: 924px; margin: 0 auto; }
+    .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px; max-width: 924px; margin: 0 auto; }
     .metric-card:nth-child(5) { grid-column: 1 / -1; width: calc(50% - 22px); justify-self: center; }
     @media (max-width: 640px) { .home-grid { gap: 14px; } .metric-card:nth-child(5) { width: calc(50% - 7px); } }
     .metric-card { position: relative; overflow: hidden; cursor: pointer; background: linear-gradient(180deg, rgba(28,28,28,0.7) 0%, rgba(13,13,13,0.7) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 22px rgba(0,0,0,0.4); padding: 20px 22px 22px; transition: transform 0.18s ease, border-color 0.18s ease; }
@@ -229,7 +235,7 @@
     .metric-card__hl { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 18px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .hl-val { font-family: 'Saira Condensed','Bebas Neue',sans-serif; font-weight: 700; font-size: 2.7rem; line-height: 0.9; color: #fff; }
     .hl-lbl { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
-    .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
+    .mini-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 14px; }
     .mini__val { font-family: 'Saira Condensed','Bebas Neue',sans-serif; font-weight: 700; font-size: 1.55rem; line-height: 1; color: #fff; }
     .mini__lbl { font-size: 0.62rem; letter-spacing: 0.05em; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; }
 
@@ -455,7 +461,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '298';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '299';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
