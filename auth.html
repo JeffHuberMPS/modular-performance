@@ -669,27 +669,41 @@
       return /FBAN|FBAV|FB_IAB|Instagram|Line\/|Twitter|TikTok|musical_ly|Snapchat|Pinterest|; wv\)|GSA\//i.test(ua);
     }
 
-    // Use redirect on any mobile device OR installed PWA; popup only on desktop
+    // Popup vs redirect. We now PREFER popup everywhere — including mobile
+    // browsers — because Firebase's redirect flow bounces between
+    // modular-performance.com and the firebaseapp.com auth handler, and modern
+    // mobile browsers (Chrome storage partitioning / Safari ITP) drop the
+    // sign-in handoff in between, dumping the user back on the sign-in screen
+    // in an endless "Continue with Google" loop. Popup keeps the whole handshake
+    // in one window and returns the result on the same origin, so it works on
+    // mobile too. Only a truly INSTALLED PWA (where the OS blocks popups) still
+    // needs redirect.
     function shouldUseRedirect() {
-      return isMobileDevice() || isStandalonePWA();
+      return isStandalonePWA();
     }
 
-    // Google sign-in — popup on desktop, redirect on mobile/PWA
+    // Google sign-in — popup first (desktop + mobile browsers); redirect only
+    // for installed PWAs, or as a last resort if a popup is actually blocked.
     async function signInGoogle() {
       clearError();
       if (isInAppBrowser()) { escapeToRealBrowser('google'); return; }
       setLoading(true);
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
         if (shouldUseRedirect()) {
-          // Redirect flow — result handled by getRedirectResult on page load
+          // Installed PWA — result handled by getRedirectResult on page load
           await firebase.auth().signInWithRedirect(provider);
           return; // page will redirect to Google then back
         }
         const result = await firebase.auth().signInWithPopup(provider);
         await handlePostSignIn(result.user);
       } catch (err) {
+        // If the browser actually BLOCKED the popup, fall back to redirect once
+        // (not on user-cancel — that would just loop them straight back to Google).
+        if (err && err.code === 'auth/popup-blocked') {
+          try { await firebase.auth().signInWithRedirect(provider); return; } catch (e) {}
+        }
         setLoading(false);
         showError(friendlyError(err));
       }
