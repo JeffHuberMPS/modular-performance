@@ -346,6 +346,10 @@
       const [saving, setSaving] = useState(false);
       const [saved, setSaved] = useState(false);
       const [td, setTd] = useState(null);
+      // Weapon 5: Premium Light / Intense mode (remembered; Premium only — others always Intense)
+      const [mode, setMode] = useState(() => { try { const m=localStorage.getItem('mps_jnls_journal_mode'); return (m==='light'||m==='intense')?m:'intense'; } catch(e){ return 'intense'; } });
+      const setModePersist = (m) => { setMode(m); try { localStorage.setItem('mps_jnls_journal_mode', m); } catch(e){} };
+      const isLight = __PREMIUM && mode === 'light';   // Light shows only: Biggest Win, Emotion, Tomorrow's Top 3, Discipline
       useEffect(() => { let on=true; loadTrackerData().then(d=>{ if(on) setTd(d); }).catch(()=>{}); return ()=>{on=false;}; }, []);
       const A = td ? ciAggregate(td, [today]) : null;
 
@@ -513,6 +517,21 @@
             <div style={{ color:'#6b7280', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600, marginTop:3 }}>{moName} {dayNum}, {yr}</div>
           </div>
 
+          {/* Weapon 5: Premium Light / Intense toggle */}
+          {__PREMIUM && (
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
+              <div style={{ display:'inline-flex', background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:3, gap:3 }}>
+                {[['light','Light'],['intense','Intense']].map(([m,label]) => (
+                  <button key={m} onClick={()=>setModePersist(m)} style={{
+                    padding:'6px 18px', borderRadius:8, border:'none', cursor:'pointer',
+                    fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:11, fontWeight:800, letterSpacing:'0.1em', textTransform:'uppercase',
+                    background: mode===m ? NAVYL : 'transparent', color: mode===m ? '#1a1206' : '#8a8f98', transition:'all .15s'
+                  }}>{label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Weapon 1: Daily quote */}
           <div style={{ display:'flex', alignItems:'flex-start', gap:9, margin:'0 2px 22px', padding:'10px 13px', background:'rgba(201,160,32,0.05)', border:`1px solid ${BRG}`, borderRadius:9 }}>
             <span style={{ color:GOLD, fontSize:18, lineHeight:1, fontFamily:'Georgia, serif', marginTop:-2 }}>&ldquo;</span>
@@ -552,37 +571,45 @@
 
           {/* Weapon 1: body indented to start at the bottom point of the Win banner's left 45° slant */}
           <div style={{ paddingLeft:36 }}>
-          {field('Workout', 'workout')}
+          {!isLight && field('Workout', 'workout')}
 
+          {!isLight && (
           <div style={{ marginBottom:38 }}>
             <Label>Gratitude</Label>
             {numRow('gratitude',0)}{numRow('gratitude',1)}{numRow('gratitude',2)}
           </div>
+          )}
 
+          {!isLight && (
           <div style={{ marginBottom:38 }}>
             <Label>Accomplishments</Label>
             {numRow('accomplishment',0)}{numRow('accomplishment',1)}{numRow('accomplishment',2)}
           </div>
+          )}
 
+          {!isLight && (
           <div style={{ marginBottom:38 }}>
             <Label>Affirmation</Label>
             <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affBecoming'} onClick={()=>toggleVoice('affBecoming', ()=>draft.affBecoming||'', t=>upd('affBecoming',t))} /></div>
             <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affLearning'} onClick={()=>toggleVoice('affLearning', ()=>draft.affLearning||'', t=>upd('affLearning',t))} /></div>
             <div style={{ position:'relative' }}><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affIHave'} onClick={()=>toggleVoice('affIHave', ()=>draft.affIHave||'', t=>upd('affIHave',t))} /></div>
           </div>
+          )}
 
-          {field('Anticipation', 'anticipation', true)}
+          {!isLight && field('Anticipation', 'anticipation', true)}
           {field('Emotion', 'emotion')}
-          {field('Biggest Distraction', 'biggestDistraction', true)}
+          {!isLight && field('Biggest Distraction', 'biggestDistraction', true)}
 
           {/* Weapon 1: Reflection section */}
+          {!isLight && (
           <div style={{ display:'flex', alignItems:'center', gap:12, margin:'6px 0 26px' }}>
             <div style={{ flex:1, height:1, background:BR }} />
             <span style={{ color:'#6b7280', fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase', fontWeight:700 }}>Reflection</span>
             <div style={{ flex:1, height:1, background:BR }} />
           </div>
+          )}
 
-          {field('Biggest Lesson', 'biggestLesson', true)}
+          {!isLight && field('Biggest Lesson', 'biggestLesson', true)}
 
           <div style={{ marginBottom:38 }}>
             <Label>Tomorrow's Top 3</Label>
@@ -590,7 +617,7 @@
             <div style={{ color:'#6b7280', fontSize:11.5, marginTop:8, fontStyle:'italic' }}>Choose only your three highest-impact priorities.</div>
           </div>
 
-          {field('Quote / Idea Vault', 'quoteVault', true)}
+          {!isLight && field('Quote / Idea Vault', 'quoteVault', true)}
 
           {/* Weapon 1: Daily Discipline Score slider */}
           <div style={{ marginBottom:38 }}>
