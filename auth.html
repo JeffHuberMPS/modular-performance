@@ -669,40 +669,40 @@
       return /FBAN|FBAV|FB_IAB|Instagram|Line\/|Twitter|TikTok|musical_ly|Snapchat|Pinterest|; wv\)|GSA\//i.test(ua);
     }
 
-    // Popup vs redirect. We now PREFER popup everywhere — including mobile
-    // browsers — because Firebase's redirect flow bounces between
-    // modular-performance.com and the firebaseapp.com auth handler, and modern
-    // mobile browsers (Chrome storage partitioning / Safari ITP) drop the
-    // sign-in handoff in between, dumping the user back on the sign-in screen
-    // in an endless "Continue with Google" loop. Popup keeps the whole handshake
-    // in one window and returns the result on the same origin, so it works on
-    // mobile too. Only a truly INSTALLED PWA (where the OS blocks popups) still
-    // needs redirect.
-    function shouldUseRedirect() {
-      return isStandalonePWA();
-    }
+    // We NO LONGER use signInWithRedirect anywhere. Firebase's redirect flow
+    // bounces between modular-performance.com and the firebaseapp.com auth
+    // handler, and mobile browsers + INSTALLED APPS (PWAs) drop the sign-in
+    // handoff in between (Chrome storage partitioning / Safari ITP / standalone
+    // webview), dumping the user back on "Continue with Google" forever. That is
+    // the loop. Popup keeps the whole handshake in one window on the same origin.
+    // Kept only so any old code referencing it doesn't throw.
+    function shouldUseRedirect() { return false; }
 
-    // Google sign-in — popup first (desktop + mobile browsers); redirect only
-    // for installed PWAs, or as a last resort if a popup is actually blocked.
+    // Google sign-in.
+    //  • Desktop + mobile browsers → popup (works).
+    //  • Installed app (PWA): Android usually allows the popup (opens a tab);
+    //    iOS blocks it. If the popup can't open, we bounce OUT to the real
+    //    system browser and finish sign-in there. Never a redirect → never a loop.
     async function signInGoogle() {
       clearError();
+      // In-app webviews (Instagram, etc.) can't do Google OAuth at all → jump to browser.
       if (isInAppBrowser()) { escapeToRealBrowser('google'); return; }
       setLoading(true);
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       try {
-        if (shouldUseRedirect()) {
-          // Installed PWA — result handled by getRedirectResult on page load
-          await firebase.auth().signInWithRedirect(provider);
-          return; // page will redirect to Google then back
-        }
         const result = await firebase.auth().signInWithPopup(provider);
         await handlePostSignIn(result.user);
       } catch (err) {
-        // If the browser actually BLOCKED the popup, fall back to redirect once
-        // (not on user-cancel — that would just loop them straight back to Google).
-        if (err && err.code === 'auth/popup-blocked') {
-          try { await firebase.auth().signInWithRedirect(provider); return; } catch (e) {}
+        // Popup blocked / unsupported (typical inside an installed iOS app) →
+        // there is no popup and no loop, just an error. Escape to the real
+        // browser where the popup works. We do NOT fall back to redirect.
+        var c = err && err.code;
+        if (c === 'auth/popup-blocked'
+         || c === 'auth/operation-not-supported-in-this-environment'
+         || c === 'auth/cancelled-popup-request') {
+          escapeToRealBrowser('google');
+          return;
         }
         setLoading(false);
         showError(friendlyError(err));
