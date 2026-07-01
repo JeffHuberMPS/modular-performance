@@ -1314,9 +1314,10 @@
 
       // Test accounts get a "Reset Test Account" button so Jeff can run the new-user flow
       // unlimited times. Real customers never match this, so they never see it.
+      // SANDBOX: Reset Test Account button disabled (it overlapped the Journal). Kept hidden.
       if (mpsIsTestEmail(user.email)) {
         var _rb = document.getElementById('mps-reset-test');
-        if (_rb) _rb.style.display = 'block';
+        if (_rb) _rb.style.display = 'none';
       }
 
       // Proof-of-consent: terms are now accepted AFTER sign-in, so log the accepted version here
