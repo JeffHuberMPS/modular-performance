@@ -202,7 +202,7 @@
     .focus-h { font-family: 'Bebas Neue',sans-serif; font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase; color: #8a8472; text-align: center; margin: 26px 0 12px; width: 100%; }
     .focus-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; width: 100%; max-width: 760px; margin: 0 auto; }
     .focus-card { display: flex; align-items: center; gap: 11px; padding: 14px; min-width: 0; background: rgba(28,28,28,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; cursor: pointer; text-align: left; transition: border-color 0.15s, transform 0.15s; font-family: inherit; }
-    .focus-card__label { min-width: 0; overflow-wrap: anywhere; }
+    .focus-card__label { min-width: 0; }  /* wrap at spaces only — never break mid-word */
     .focus-card:hover { border-color: rgba(201,160,32,0.5); transform: translateY(-1px); }
     .focus-card__check { flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; color: #0a0a0a; }
     .focus-card.done .focus-card__check { background: #C9A020; border-color: #C9A020; }
@@ -461,7 +461,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '301';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '302';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1149,14 +1149,17 @@
     function showToast(msg) { const t = document.getElementById('shell-toast'); t.textContent = msg; t.classList.add('show'); if (toastTimer) clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000); }
 
     /* ── Tier preview (dev) ───────────────────────────────── */
-    function previewTier(tier) {
+    function previewTier(tier, silent) {
       currentTier = tier;
       document.querySelectorAll('.tier-opt').forEach(b => b.classList.toggle('active', b.dataset.tier === tier));
       document.getElementById('dd-plan').textContent = TIER_LABEL[tier];
       applyTheme();
       updateTierBanner();
       updateTierBadge();
-      showToast('Previewing ' + TIER_LABEL[tier] + ' tier');
+      // Only announce when a human taps a dev tier button — NOT on the automatic load-time
+      // call that just unlocks the account (that "Previewing Premium tier" popup was leaking
+      // onto live accounts and looked like a bug).
+      if (!silent) showToast('Previewing ' + TIER_LABEL[tier] + ' tier');
       try { document.querySelectorAll('iframe').forEach(function(f){ try{ f.contentWindow.postMessage({type:'mps-tier', tier:tier}, '*'); }catch(e){} }); } catch(e){}
     }
 
@@ -1316,6 +1319,24 @@
       window.location.replace('/?beta=mps-beta-2026');
     }
 
+    /* ── One-time demo-data purge for Jeff's own live account ──────────────
+       His account only ever held tutorial/sample data. wipeTrackers() clears ALL
+       tracker data (Workout/Habits/Recovery/Journal) local + cloud, and KEEPS Expenses.
+       Cloud-flagged (users/{uid}.demo_purged_v2) so it runs exactly ONCE, ever, across
+       every device — and never touches any real data he logs afterward. */
+    async function mpsPurgeDemoOnce(user) {
+      try {
+        if (!user || (user.email || '').toLowerCase() !== 'jeffreyhuber86@gmail.com') return;
+        var ref = firebase.firestore().collection('users').doc(user.uid);
+        var snap = await ref.get();
+        if (snap.exists && snap.data() && snap.data().demo_purged_v2) return;   // already cleaned
+        if (window.MPS_DEMO && MPS_DEMO.wipeTrackers) { await MPS_DEMO.wipeTrackers(); }
+        await ref.set({ demo_purged_v2: true }, { merge: true });
+        try { showToast('Cleared demo data — refreshing…'); } catch (e) {}
+        setTimeout(function () { location.reload(); }, 800);
+      } catch (e) { console.warn('[MPS] demo purge skipped:', e && e.message); }
+    }
+
     /* ── Auth ─────────────────────────────────────────────── */
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) { if (window._mpsResetting) return; location.replace('/auth.html'); return; }
@@ -1345,6 +1366,10 @@
       } catch (e) {}
 
       if (DEV_EMAILS.includes((user.email || '').toLowerCase())) {
+        // One-time: purge leftover tutorial/demo data from Jeff's own LIVE account. It only
+        // ever held sample data; wipeTrackers keeps Expenses. If this device still has the demo,
+        // wipe it and reload clean. (Runs from any device — phone included.)
+        mpsPurgeDemoOnce(user);
         // Owner only: make sure the beta signup counter exists. The public beta-signup rule
         // requires beta_meta/counter (count < cap) before it allows a write, so without this
         // doc every beta signup silently fails and no metrics get captured. Idempotent — only
@@ -1362,7 +1387,7 @@
           document.getElementById('tier-tester').classList.add('show');
           clampTesterIntoView();
         }
-        previewTier('all');
+        previewTier('all', true);
         if (activeId === 'home') loadDashboard();
         return;
       }
