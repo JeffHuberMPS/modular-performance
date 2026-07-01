@@ -174,19 +174,26 @@
     var tw = els.tip.offsetWidth || 300, th = els.tip.offsetHeight || 120;
     els.tip.style.left = Math.max(12, (window.innerWidth - tw) / 2) + 'px';
     els.tip.style.top = (window.innerHeight - th - 18) + 'px';
-    var se = findScroller();
+    var se = findScroller(), de = document.documentElement, bd = document.body;
+    // Anti-jank while WE drive the scroll:
+    //  • scroll-behavior:auto  → stop the browser from ALSO smooth-scrolling each frame (double motion = stutter)
+    //  • overflow-anchor:none  → stop scroll-anchoring from yanking scrollTop when charts settle mid-pan
+    var sv = [[se,'scrollBehavior'],[de,'scrollBehavior'],[bd,'scrollBehavior'],[se,'overflowAnchor']].map(function(pair){ return [pair[0], pair[1], pair[0] && pair[0].style[pair[1]]]; });
+    try { se.style.scrollBehavior='auto'; if(de)de.style.scrollBehavior='auto'; if(bd)bd.style.scrollBehavior='auto'; se.style.overflowAnchor='none'; } catch (e) {}
+    function restoreSB(){ sv.forEach(function(s){ try{ if(s[0]) s[0].style[s[1]] = s[2] || ''; }catch(e){} }); }
     try { se.scrollTop = 0; } catch (e) {}
     var max = Math.max(0, se.scrollHeight - se.clientHeight);
-    var done = function () { panning = false; if (idx === i) next(); };
-    if (max < 30) return setTimeout(done, 1900);
-    var dur = Math.min(9000, Math.max(5000, max * 8)), t0 = null;
+    var done = function () { restoreSB(); panning = false; if (idx === i) next(); };
+    if (max < 30) return setTimeout(done, 1500);
+    var dur = Math.min(8100, Math.max(4500, max * 7.2)), t0 = null, last = -1;   // 10% faster than before
     function frame(ts) {
-      if (idx !== i || !els.top) { panning = false; return; }
+      if (idx !== i || !els.top) { restoreSB(); panning = false; return; }
       if (t0 === null) t0 = ts;
       var p = Math.min(1, (ts - t0) / dur);
-      var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;   // easeInOutQuad — gentle start & stop
-      se.scrollTop = max * e;
-      if (p < 1) requestAnimationFrame(frame); else setTimeout(done, 800);
+      var e = -(Math.cos(Math.PI * p) - 1) / 2;   // easeInOutSine — silkiest accel/decel, no hard edges
+      var y = Math.round(max * e);                 // whole-pixel targets avoid sub-pixel shimmer
+      if (y !== last) { se.scrollTop = y; last = y; }
+      if (p < 1) requestAnimationFrame(frame); else setTimeout(done, 600);
     }
     requestAnimationFrame(frame);
   }
