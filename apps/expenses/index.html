@@ -787,12 +787,21 @@ window.addEventListener('DOMContentLoaded', function(){
     b.textContent='SANDBOX · CUSTOMER PREVIEW';
     b.style.cssText='position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:99999;background:#C9A020;color:#0a0a0a;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:1px;padding:7px 14px;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;';
     document.body.appendChild(b);
-    // RUN DEMO button (sandbox testing): instantly load 3 weeks of sample data + play the walkthrough.
+    // WATCH DEMO button — matches the Journal app. Loads sample data + plays the walkthrough,
+    // then restores your app on exit. Bottom-left, gold outline, hidden while a demo is running.
     var rb=document.createElement('button');
-    rb.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px;vertical-align:-1px;"><path d="M8 5v14l11-7z"/></svg>RUN DEMO';
-    rb.style.cssText='position:fixed;right:14px;bottom:12px;z-index:100000;display:inline-flex;align-items:center;background:#C9A020;color:#0a0a0a;font:800 12px/1 Inter,system-ui,sans-serif;letter-spacing:1px;padding:11px 18px;border:none;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.55);cursor:pointer;';
-    rb.addEventListener('click', function(){ try{ if(window.runExpensesDemo) window.runExpensesDemo(); }catch(e){} });
+    rb.id='exp-watch-demo';
+    rb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>WATCH DEMO';
+    rb.style.cssText='position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:8000;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1a160d,#0e0c0a);border:1px solid rgba(230,201,140,0.5);color:#e6c98c;border-radius:999px;padding:9px 16px;font:800 12px/1 Inter,system-ui,-apple-system,sans-serif;letter-spacing:0.08em;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.55);';
+    rb.addEventListener('click', function(){ try{ if(window.watchExpensesDemo) window.watchExpensesDemo(); }catch(e){} });
     document.body.appendChild(rb);
+    // DEMO MODE banner — matches the Journal app. Shown while a demo runs; EXIT DEMO restores the app.
+    var bn=document.createElement('div');
+    bn.id='exp-demo-banner';
+    bn.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:10500;display:none;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#1a160d,#0e0c0a);border-top:1px solid rgba(230,201,140,0.5);padding:11px 16px calc(11px + env(safe-area-inset-bottom));';
+    bn.innerHTML='<div style="color:#cbb48a;font:400 12px/1.4 Inter,system-ui,sans-serif;"><b style="color:#e6c98c;letter-spacing:0.08em;">DEMO MODE</b> &middot; sample data. Nothing here is saved.</div><button id="exp-demo-exit" style="flex-shrink:0;background:#e6c98c;border:none;color:#1a1206;border-radius:999px;padding:8px 16px;font:800 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.06em;cursor:pointer;">EXIT DEMO</button>';
+    document.body.appendChild(bn);
+    bn.querySelector('#exp-demo-exit').addEventListener('click', function(){ try{ if(window.exitExpensesDemo) window.exitExpensesDemo(); }catch(e){} });
   } catch(e){}
 });
 // Gray/Gold theme (Free/Medium): SVG/JS colors can't read CSS vars — resolve here.
@@ -1529,11 +1538,11 @@ function buildDemoData(){
   out.push({id:'demo_'+(n++),date:Y+'-'+mm+'-'+String(Math.max(startDay,lastDay-4)).padStart(2,'0'),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
   return { entries: out, month: MO, year: Y };
 }
-// runExpensesDemo(): instantly load the sample data + play the walkthrough from the top. Re-runnable
-// (this is what the RUN DEMO button calls). Cancels any pending "clean slate" wipe so the button never wipes.
-var __demoWipe=null;
-window.runExpensesDemo=function(){
-  try{ if(__demoWipe){ clearInterval(__demoWipe); __demoWipe=null; } }catch(e){}
+// ---- WATCH DEMO engine (matches the Journal app): load sample data + play the tour, then restore ----
+var __demoSnap=null, __demoWatch=null;
+function setExpDemoUI(on){ var b=document.getElementById('exp-watch-demo'), n=document.getElementById('exp-demo-banner'); if(b)b.style.display=on?'none':'inline-flex'; if(n)n.style.display=on?'flex':'none'; }
+// load the 3-week sample data + play the walkthrough, and watch for it to finish (then auto-exit)
+function playExpDemo(){
   try{ document.getElementById('mpst-skip')?.click(); }catch(e){}   // end any tour already running
   try{ localStorage.removeItem('mps_tour_expenses'); }catch(e){}
   var dd=buildDemoData();
@@ -1543,6 +1552,20 @@ window.runExpensesDemo=function(){
     if(typeof window.startMpsTour==='function'){ clearInterval(iv); var d=document.querySelector('.tab[data-tab="dashboard"]'); if(d)d.click(); window.startMpsTour(); }
     else if(tries>40) clearInterval(iv);
   },100);
+  if(__demoWatch) clearInterval(__demoWatch);
+  __demoWatch=setInterval(function(){ if(localStorage.getItem('mps_tour_expenses')==='1'){ clearInterval(__demoWatch); __demoWatch=null; window.exitExpensesDemo(); } },400);
+}
+// WATCH DEMO button: snapshot the real app, run the demo, restore it on exit (nothing kept).
+window.watchExpensesDemo=function(){ try{ __demoSnap={entries:JSON.parse(JSON.stringify(state.entries||[])),month:state.selectedMonth,year:state.selectedYear}; }catch(e){ __demoSnap=null; } setExpDemoUI(true); playExpDemo(); };
+// first-time flow: no snapshot, so exit lands on a clean slate (brand-new customer)
+window.runExpensesDemo=function(){ __demoSnap=null; setExpDemoUI(true); playExpDemo(); };
+// EXIT DEMO / tour end: restore the snapshot if we took one, else clean slate; hide the banner
+window.exitExpensesDemo=function(){
+  try{ document.getElementById('mpst-skip')?.click(); }catch(e){}
+  if(__demoWatch){ clearInterval(__demoWatch); __demoWatch=null; }
+  if(__demoSnap){ state.entries=__demoSnap.entries; state.selectedMonth=__demoSnap.month; state.selectedYear=__demoSnap.year; try{ save(STORE.selectedMonth,__demoSnap.month); }catch(e){} }
+  else { state.entries=[]; }
+  save(STORE.entries,state.entries); renderAll(); __demoSnap=null; setExpDemoUI(false);
 };
 // FIRST-TIME ONLY auto-play (mirrors the real customer experience). ?demo forces a replay.
 if (MPS_SANDBOX) (function(){
@@ -1554,9 +1577,6 @@ if (MPS_SANDBOX) (function(){
   if(seen) return;   // RETURNING customer → straight to the app with their saved data (no demo)
   try{ localStorage.setItem(FLAG,'1'); }catch(e){}
   window.runExpensesDemo();
-  // after the walkthrough ends, wipe the sample data → clean slate, like a real new customer
-  __demoWipe=setInterval(function(){ var done=false; try{ done=localStorage.getItem('mps_tour_expenses')==='1'; }catch(e){}
-    if(done){ clearInterval(__demoWipe); __demoWipe=null; state.entries=[]; save(STORE.entries,[]); renderAll(); } }, 400);
 })();
 </script>
 <script src="/shared/tour.js" defer></script>
