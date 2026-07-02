@@ -50,9 +50,8 @@
       { sel: '.tab[data-tab="budget"]',    text: "Now your <b>Budget</b> — every bill, and what's left over.", click: true },
       { run: 'demoEditBudget', sel: '.budget-card-input', text: "To change a bill, just tap its amount and type the new number. It <b>saves the second you tap away</b> — no save button.", click: false },
       { run: 'demoCommitBudget', sel: '.pen-icon[data-role="edit"]', text: "The <b>pencil</b> renames a bill. The trash next to it removes one.", click: false },
-      { sel: '#btn-add-bill',              text: "And <b>+ Add Bill</b> adds a new line. That's your whole budget — set it once, adjust anytime.", click: false },
-      { sel: '.tab[data-tab="settings"]',  text: "Last thing — tap <b>Settings</b>.", click: true },
-      { sel: '#btn-clear-expenses',        text: "<b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
+      { sel: '#btn-add-bill',              text: "And <b>+ Add Bill</b> adds a new line for any bill you want to track.", click: false },
+      { sel: '#btn-save-budget',           text: "Then tap <b>Save</b> to lock in your budget. That's it — you're all set.", click: false }
     ],
     journal: [
       { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons.", click: true },

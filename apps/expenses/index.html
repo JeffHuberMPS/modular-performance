@@ -652,6 +652,7 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
       </div>
       <button class="btn primary" id="btn-save-cap">Save Cap</button>
     </div>
+    <button class="btn primary" id="btn-save-budget" style="width:100%; margin-top:14px; padding:14px; font-size:15px;">Save</button>
   </div>
   <!-- ============ RULES ============ -->
   <div class="view" id="view-rules">
@@ -762,11 +763,6 @@ body.mps-gray .rules-cell button { background: rgba(150,150,150,0.1) !important;
       </div>
     </div>
     </div><!-- /owner-sheet-settings -->
-    <div class="card" style="margin-top: 14px; border-color: rgba(239,68,68,0.3);">
-      <div class="dash-section-title">Start Fresh</div>
-      <div style="font-size: 13px; line-height: 1.6; color: var(--mps-text-dim); margin-bottom: 14px;">Clear every expense and start with a clean tracker. Your budget, bills, and category rules stay. This can’t be undone.</div>
-      <button class="btn danger" id="btn-clear-expenses" style="width:100%;">Clear All Expenses</button>
-    </div>
   </div>
 </div>
 
@@ -1342,6 +1338,12 @@ document.getElementById('month-select').addEventListener('change',e=>{state.sele
 document.getElementById('btn-add-bill').addEventListener('click',()=>{state.budget.push({bill:'New Bill',m:0,w:0});saveBudgetLocal();renderBudget();setTimeout(()=>{const cards=document.querySelectorAll('.budget-card');const newCard=cards[cards.length-1];if(newCard){const i=state.budget.length-1;activateLabelEdit(newCard,i);}},50);});
 document.getElementById('btn-save-paycheck').addEventListener('click',()=>{state.paycheck=parseFloat(document.getElementById('paycheck-amount').value)||0;save(STORE.paycheck,state.paycheck);flash('Income saved');renderAll();});
 document.getElementById('btn-save-cap').addEventListener('click',()=>{state.cap=parseFloat(document.getElementById('monthly-cap').value)||0;save(STORE.cap,state.cap);flash('Monthly cap saved');renderAll();});
+// Green Save button at the bottom of the Budget page — commits bills, income, and cap in one tap.
+document.getElementById('btn-save-budget')?.addEventListener('click',()=>{
+  const pc=document.getElementById('paycheck-amount'); if(pc&&pc.value!==''){ state.paycheck=parseFloat(pc.value)||0; save(STORE.paycheck,state.paycheck); }
+  const cap=document.getElementById('monthly-cap'); if(cap&&cap.value!==''){ state.cap=parseFloat(cap.value)||0; save(STORE.cap,state.cap); }
+  saveBudgetLocal(); renderAll(); flash('Budget saved');
+});
 document.getElementById('rules-search').addEventListener('input',e=>{rulesFilter=e.target.value;renderRules();});
 document.getElementById('btn-add-rule').addEventListener('click',()=>{state.rules.unshift({k:'New Keyword',c:'Other'});save(STORE.rules,state.rules);renderRules();});
 document.getElementById('btn-reset-rules').addEventListener('click',()=>{showOverlay({title:'Reset Rules',body:'Reset all category rules to defaults?',confirmText:'Reset',onConfirm:()=>{state.rules=JSON.parse(JSON.stringify(DEFAULT_RULES));save(STORE.rules,state.rules);renderRules();}});});
@@ -1480,12 +1482,10 @@ function importCSVText(text){
   if(added){save(STORE.entries,state.entries);renderAll();flash(`Imported ${added} expense${added===1?'':'s'}`);}
   else flash('Nothing to import — check the Date/Amount columns');
 }
-function clearAllExpenses(){showOverlay({title:'Clear All Expenses',body:'Delete <b>every</b> expense and start fresh? Your budget, bills and rules stay. This can’t be undone.',confirmText:'Clear All',confirmClass:'danger',onConfirm:()=>{state.entries=[];save(STORE.entries,state.entries);renderAll();flash('All expenses cleared');const d=document.querySelector('.tab[data-tab="dashboard"]');if(d)d.click();}});}
 document.getElementById('btn-add-expense')?.addEventListener('click',()=>openExpenseModal(null));
 document.getElementById('btn-empty-add')?.addEventListener('click',()=>openExpenseModal(null));
 document.getElementById('btn-import-csv')?.addEventListener('click',()=>document.getElementById('csv-file-input').click());
 document.getElementById('csv-file-input')?.addEventListener('change',ev=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{importCSVText(String(rd.result||''));ev.target.value='';};rd.readAsText(f);});
-document.getElementById('btn-clear-expenses')?.addEventListener('click',clearAllExpenses);
 // Sheet/Make sync is the OWNER's personal pipeline — show that Settings section only to Jeff, never customers.
 function applyOwnerVisibility(){ var el=document.getElementById('owner-sheet-settings'); if(!el) return; var show=false;
   try{ if(!window.MPS_SANDBOX){ var u=firebase.auth().currentUser; show=!!(u&&u.email&&u.email.toLowerCase()==='jeffreyhuber86@gmail.com'); } }catch(e){}
