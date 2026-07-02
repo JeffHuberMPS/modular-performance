@@ -1504,19 +1504,33 @@ renderMonthSelect(); renderDashboard();                                         
 requestAnimationFrame(function(){ renderLog(); renderBudget(); renderRules(); renderInsights(); loadSyncSettings(); }); // defer the heavy hidden tabs off the first paint
 setTimeout(autoSyncOnLoad, 900);                                                                                        // let the UI paint before any network sheet-sync + re-render
 
-// === SANDBOX AUTO-DEMO: reset to fresh sample data + auto-play the guided tour ON EVERY REFRESH ===
-// Jeff wants every refresh to show the latest demo from the top — so we always wipe and reload.
+// === SANDBOX AUTO-DEMO: FIRST-TIME ONLY (mirrors the real customer experience) ===
+// A brand-new customer sees the demo ONCE on their first open. On every later open they go
+// straight into the app with whatever they saved last session. Add ?demo to the URL to replay
+// the first-time demo on purpose (for reviewing / showing buyers).
 if (MPS_SANDBOX) (function(){
-  // Always regenerate fresh sample data (don't keep last visit's poking-around state).
+  var FLAG='mps_sbx_demo_seen';
+  var force=false, seen=false;
+  try{ force=/[?&]demo\b/.test(location.search); }catch(e){}
+  try{ seen=localStorage.getItem(FLAG)==='1'; }catch(e){}
+  if(force){ try{ localStorage.removeItem(FLAG); localStorage.removeItem('mps_tour_expenses'); localStorage.removeItem('mps_expense:entries'); }catch(e){} seen=false; state.entries=[]; }
+  if(seen) return;   // RETURNING customer → straight to the app with their saved data (no demo)
+  try{ localStorage.setItem(FLAG,'1'); }catch(e){}   // mark as seen so a refresh/return skips the demo
+  // FIRST-TIME customer: load sample data so the demo looks real, then play the tour once.
   const M=[["Hy-Vee","Essentials",[35,120]],["Casey's","Essentials",[30,65]],["Amazon","Lifestyle",[12,90]],["Chipotle","Lifestyle",[11,24]],["Netflix","Recurring",[16,16]],["Spotify","Recurring",[12,12]],["Vanguard","Investment",[100,300]],["Starbucks","Lifestyle",[5,9]],["Shell","Essentials",[28,55]]];
   const out=[]; let n=0; const t=new Date();
   for(let d=20;d>=0;d--){const dt=new Date(t.getFullYear(),t.getMonth(),t.getDate()-d);const iso=dt.toISOString().slice(0,10);const cnt=[0,1,1,2,2,3][Math.floor(Math.random()*6)];for(let i=0;i<cnt;i++){const m=M[Math.floor(Math.random()*M.length)];const amt=Math.round((m[2][0]+Math.random()*(m[2][1]-m[2][0]))*100)/100;out.push({id:'demo_'+(n++),date:iso,item:'Purchase',merchant:m[0],amount:amt,category:m[1],source:'Checking'});}}
   out.push({id:'demo_'+(n++),date:(out[1]?out[1].date:todayISO()),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
   state.entries=out; save(STORE.entries,state.entries); renderAll();
-  // Always play the tour from the top (no once-per-session guard).
-  let tries=0; const iv=setInterval(function(){ tries++;
-    if(typeof window.startMpsTour==='function'){ clearInterval(iv); const d=document.querySelector('.tab[data-tab="dashboard"]'); if(d)d.click(); window.startMpsTour(); }
-    else if(tries>40){ clearInterval(iv); }
+  var started=false, tries=0;
+  var iv=setInterval(function(){ tries++;
+    if(typeof window.startMpsTour==='function' && !started){ started=true; clearInterval(iv);
+      var d=document.querySelector('.tab[data-tab="dashboard"]'); if(d)d.click(); window.startMpsTour();
+      // When the tour ends (tour.js sets mps_tour_expenses), wipe the sample data → clean slate,
+      // exactly like a real new customer who's just finished the walkthrough.
+      var w=setInterval(function(){ var done=false; try{ done=localStorage.getItem('mps_tour_expenses')==='1'; }catch(e){}
+        if(done){ clearInterval(w); state.entries=[]; save(STORE.entries,[]); renderAll(); } }, 400);
+    } else if(tries>40){ clearInterval(iv); }
   },150);
 })();
 </script>
