@@ -186,7 +186,7 @@
     if (!centerMode && !target) {   // element not ready (e.g. a tab just switched) — wait, then skip if still gone
       return setTimeout(function () { target = resolve(step); if (!target) return next(); show(i); }, 500);
     }
-    if (target) { try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
+    if (target) { try { target.scrollIntoView({ block: 'center' }); } catch (e) {} }  /* instant: smooth scrollIntoView silently no-ops inside the React journal */
     els.tip.querySelector('#mpst-count').textContent = 'STEP ' + (i + 1) + ' OF ' + steps.length;
     els.tip.querySelector('#mpst-text').innerHTML = step.text;
     var nextBtn = els.tip.querySelector('#mpst-next');
