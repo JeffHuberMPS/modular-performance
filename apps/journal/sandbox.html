@@ -574,7 +574,7 @@
 
           {/* Weapon 1: body indented to start at the bottom point of the Win banner's left 45° slant */}
           <div style={{ paddingLeft:36 }}>
-          {!isLight && field('Workout', 'workout')}
+          {!isLight && <div data-tour="mic">{field('Workout', 'workout')}</div>}
 
           {!isLight && (
           <div style={{ marginBottom:38 }}>
@@ -1085,7 +1085,7 @@
       const DEMO_STEPS  = [
         { tab:'WRITE',    sel:'[data-tour="dash"]',                title:'Auto-filled from your trackers', body:'Sleep, wake time, habits and spending flow in from your other MPS trackers. No typing.' },
         { tab:'WRITE',    sel:'[data-tour="win"]',                 title:"Today's Biggest Win",            body:'Every entry opens with the headline of your day.' },
-        { tab:'WRITE',    sel:'[data-tour="win"] button.mps-mic',  title:'Voice entry',                    body:'Hate typing? Tap the mic on any field and just talk. It fills the box and stops when you pause.' },
+        { tab:'WRITE',    sel:'[data-tour="mic"]',                 title:'Voice entry',                    body:'See the mic on the left of every field? Tap it and just talk. It fills the box for you and stops when you pause.' },
         { tab:'WRITE',    sel:'[data-tour="disc"]',                title:'Daily Discipline Score',         body:'End with one honest score. This single number powers your Performance Insights.' },
         { tab:'INSIGHTS', sel:'[data-tour="perf"]',                title:'Performance Insights',           body:'MPS connects your behaviors to your best days, and coaches you on what to repeat.' },
       ];
