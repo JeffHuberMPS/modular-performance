@@ -452,5 +452,9 @@ window.MPS_DEMO = (function () {
     return { wiped: true };
   }
 
-  return { load, clear, isLoaded, wipeTrackers };
+  // Standalone helper (no auth / no Firestore): the workout SANDBOX preview uses this to build the
+  // exact same realistic 3-week workout data as load(), but writes only localStorage itself.
+  function genWorkoutLocal() { return genWorkout(buildDates()).local; }
+
+  return { load, clear, isLoaded, wipeTrackers, genWorkoutLocal, buildDates };
 })();

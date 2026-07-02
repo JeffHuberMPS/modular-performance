@@ -973,6 +973,24 @@ function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');f.classL
 <div class="toast" id="toast"></div>
 <script>
 'use strict';
+// === WORKOUT SANDBOX BUILD (workout-sandbox branch only) ===
+// Standalone CUSTOMER PREVIEW: opens with no login, full features, isolated from any real cloud data.
+// On every refresh it wipes to fresh 3-week sample data and auto-plays the guided tour from the top.
+const MPS_SANDBOX = true;
+try { window.MPS_SANDBOX = true; } catch (e) {}
+// Always-fresh: drop any service worker + caches so a refresh always shows the newest build.
+try {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+  if (window.caches && caches.keys) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }).catch(function () {});
+} catch (e) {}
+window.addEventListener('DOMContentLoaded', function () {
+  try {
+    var b = document.createElement('div');
+    b.textContent = 'SANDBOX · CUSTOMER PREVIEW';
+    b.style.cssText = 'position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:99999;background:#C9A020;color:#0a0a0a;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:1px;padding:7px 14px;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;';
+    document.body.appendChild(b);
+  } catch (e) {}
+});
 // Gray/Gold theme (Free/Medium): charts use canvas (can't read CSS vars), so resolve here.
 const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
 const ACR = __GRAY ? '150,150,150' : '74, 179, 244';   // accent rgb for canvas fills
@@ -1275,6 +1293,7 @@ function _collectLocal() {
 }
 let _cloudTimer = null, _cloudBusy = false;
 function scheduleCloudBackup() {
+  if (window.MPS_SANDBOX) return;   // sandbox: never touch the owner's cloud data
   if (_cloudTimer) clearTimeout(_cloudTimer);
   _cloudTimer = setTimeout(cloudBackupNow, 1800);   // debounce so rapid saves = one write
 }
@@ -6750,8 +6769,55 @@ wireConditioningCats();
     document.body.innerHTML = '<div style="padding:20px;color:#fff;">Error loading: ' + e.message + '</div>';
   }
 })();
+
+// Demo hook: the guided tour calls this to make sure TODAY has one split + exercise + a set,
+// so the Weight / Reps / + Set controls actually EXIST on screen and can be spotlighted.
+window.demoEnsureToday = function () {
+  try {
+    var today = getTodayStr();
+    state.selectedDate = today;
+    var day = state.days[today] || (state.days[today] = { splits: [], skills: [], autoFilled: false });
+    var hasEx = day.splits && day.splits[0] && day.splits[0].exercises && day.splits[0].exercises.length;
+    if (!hasEx) {
+      day.splits = []; day.skills = day.skills || [];
+      doAddSplit('Push');                              // adds split[0] + renders
+      addExercise('splits', 0, 'Bench Press', 3, 9);   // 3 empty sets + renders
+      var ex = state.days[today].splits[0].exercises[0];
+      if (ex && ex.sets[0]) { ex.sets[0].weight = '135'; ex.sets[0].reps = '9'; ex.sets[0].done = true; }
+      saveState(); render();
+    }
+  } catch (e) { console.error('[sandbox] demoEnsureToday', e); }
+};
+
+// === SANDBOX AUTO-DEMO: fresh 3-week sample data + auto-play the guided tour ON EVERY REFRESH ===
+if (MPS_SANDBOX) (function () {
+  async function seedAndPlay() {
+    try {
+      var w = window.MPS_DEMO.genWorkoutLocal();   // { mps_v3_history, mps_v3_prs, mps_v3_conditioning }
+      localStorage.setItem(K_HISTORY, JSON.stringify(w.mps_v3_history || []));
+      localStorage.setItem(K_PRS, JSON.stringify(w.mps_v3_prs || {}));
+      localStorage.setItem('mps_v3_conditioning', JSON.stringify(w.mps_v3_conditioning || []));
+      localStorage.removeItem(K_STATE);            // drop any prior poking-around state
+      await loadAll();                             // repopulate in-memory globals from localStorage
+      window.demoEnsureToday();                    // prefill TODAY so the log controls exist
+      render(); renderDashboard();
+      if (typeof renderConditioningUI === 'function') renderConditioningUI();
+      var dt = document.querySelector('.tab[data-tab="dashboard"]'); if (dt) dt.click();  // start on Dashboard for the pan
+      window.startMpsTour();
+    } catch (e) { console.error('[sandbox] seedAndPlay', e); }
+  }
+  // Wait for the deferred scripts (demo-data.js + tour.js) to be ready, then play from the top.
+  var tries = 0;
+  var iv = setInterval(function () {
+    tries++;
+    if (window.MPS_DEMO && typeof window.MPS_DEMO.genWorkoutLocal === 'function' && typeof window.startMpsTour === 'function') {
+      clearInterval(iv); seedAndPlay();
+    } else if (tries > 80) { clearInterval(iv); }
+  }, 150);
+})();
 </script>
 <!-- MPS interactive first-open tour (hub calls window.startMpsTour() after the intro popup) -->
+<script src="/demo-data.js" defer></script>
 <script src="/shared/tour.js" defer></script>
 </body>
 </html>

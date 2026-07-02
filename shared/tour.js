@@ -19,11 +19,13 @@
 
   var TOURS = {
     workout: [
-      { pan: true,                          text: "This is your <b>Dashboard</b> — three weeks of training. Watch it roll by." },
-      { sel: '.tab[data-tab="today"]',     text: "Now the part you'll use daily. <b>Today</b> is where you log your session — tap it.", click: true },
-      { sel: '#add-split-btn',             text: "Tap <b>+ Add Split</b> to add your exercises — Push, Pull, Legs, and so on.", click: false },
-      { center: true,                       text: "Pick a split, then each exercise gives you a <b>Weight</b> and <b>Reps</b> box for every set. Fill them in and tap <b>+ Set</b> for another. That's logging a workout.", click: false },
-      { sel: '#end-workout',               text: "When you're done, <b>End Workout &amp; Save</b> logs the whole session. That's it — you're set.", click: false }
+      { pan: true,                          text: "This is your <b>Dashboard</b>. Three weeks of training at a glance. Watch it roll by." },
+      { sel: '.tab[data-tab="today"]',     text: "Now the part you'll use daily. <b>Today</b> is where you log your session. Tap it.", click: true },
+      { run: 'demoEnsureToday', sel: '#add-split-btn', text: "Start a session with <b>+ Add Split</b>. Push, Pull, Legs, and more.", click: false },
+      { run: 'demoEnsureToday', sel: '#splits-container .exercise .sets-grid input[type="number"]', text: "For every set, enter the <b>Weight</b> you lifted.", click: false },
+      { sel: '#splits-container .exercise .sets-grid input[type="text"]', text: "Then the <b>Reps</b> you got. That one line is a logged set.", click: false },
+      { sel: '#splits-container .exercise .btn-ghost.btn-small', text: "Tap <b>+ Set</b> to add another set below it.", click: false },
+      { sel: '#end-workout',               text: "When you're done, tap <b>End Workout &amp; Save</b>. That's the whole habit.", click: false }
     ],
     habits: [
       { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — every habit's streak and strength. Watch it roll by.", click: true },
@@ -41,11 +43,18 @@
     ],
     expenses: [
       { pan: true,                          text: "First, your <b>Dashboard</b> — weekly pace, what's left to spend, and where your money goes by category. Watch it roll by." },
-      { sel: '.tab[data-tab="log"]',       text: "Now the part you'll use daily. Tap <b>Log</b> — every expense lives here.", click: true },
-      { sel: '#btn-add-expense',           text: "Tap <b>+ Add Expense</b> to log a purchase in seconds — amount, merchant, and a <b>category</b> so it's tracked correctly.", click: false },
-      { sel: '.tab[data-tab="budget"]',    text: "<b>Budget</b> — set your monthly cap and bills so you always know what's left.", click: true },
+      { sel: '.tab[data-tab="log"]',       text: "Now the one thing you'll do every day. Tap <b>Log</b> — every expense lives here.", click: true },
+      { sel: '#btn-add-expense',           text: "This is the heart of it. Tap <b>+ Add Expense</b> to log a purchase.", click: true },
+      { run: 'demoFillExpense', sel: '#exp-amount', text: "Enter the <b>amount</b> you spent. Quick — a few seconds.", click: false },
+      { sel: '#exp-merchant',              text: "Type the <b>merchant</b> — what you bought, or where.", click: false },
+      { sel: '#exp-cat',                    text: "Pick a <b>category</b>. This one choice is what powers your dashboard, budget, and breakdown.", click: false },
+      { sel: '[data-role="save"]',         text: "Now tap <b>Add Expense</b>. It's logged and your totals update instantly. That's the whole habit.", click: true },
+      { sel: '.tab[data-tab="budget"]',    text: "Now your <b>Budget</b> — every bill, and what's left over.", click: true },
+      { run: 'demoEditBudget', sel: '.budget-card-input', text: "To change a bill, just tap its amount and type the new number. It <b>saves the second you tap away</b> — no save button.", click: false },
+      { run: 'demoCommitBudget', sel: '.pen-icon[data-role="edit"]', text: "The <b>pencil</b> renames a bill. The trash next to it removes one.", click: false },
+      { sel: '#btn-add-bill',              text: "And <b>+ Add Bill</b> adds a new line. That's your whole budget — set it once, adjust anytime.", click: false },
       { sel: '.tab[data-tab="settings"]',  text: "Last thing — tap <b>Settings</b>.", click: true },
-      { sel: '#btn-clear-expenses',        text: "When you're done exploring, <b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
+      { sel: '#btn-clear-expenses',        text: "<b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
     ],
     journal: [
       { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons.", click: true },
@@ -64,6 +73,16 @@
   function appKey() { var m = (location.pathname || '').match(/\/apps\/([^\/]+)/); return m ? m[1] : null; }
 
   var els = {}, steps = [], idx = 0, target = null, clickHook = null, centerMode = false, panning = false;
+  var onScroll = null, onResize = null, lastSpot = false;
+  // Smooth motion: the dark panels, the ring, and the tip GLIDE together between steps, but track
+  // INSTANTLY while the page scrolls (so the hole never lags behind the content).
+  var SMOOTH_BOX = 'left .34s cubic-bezier(.4,0,.2,1),top .34s cubic-bezier(.4,0,.2,1),width .34s cubic-bezier(.4,0,.2,1),height .34s cubic-bezier(.4,0,.2,1)';
+  var SMOOTH_TIP = 'left .34s cubic-bezier(.4,0,.2,1),top .34s cubic-bezier(.4,0,.2,1)';
+  function setAnim(on) {
+    var b = on ? SMOOTH_BOX : 'none';
+    ['top', 'bottom', 'left', 'right', 'ring'].forEach(function (k) { if (els[k]) els[k].style.transition = b; });
+    if (els.tip) els.tip.style.transition = on ? SMOOTH_TIP : 'none';
+  }
 
   // Find the element that actually scrolls (apps often scroll an inner container, not the
   // document — scrolling the wrong one just "glitches in place"). Picks the biggest scrollable.
@@ -118,8 +137,9 @@
     els.tip.querySelector('#mpst-next').addEventListener('click', next);
   }
 
-  function place() {
+  function place(animate) {
     if (!els.top || panning) return;
+    setAnim(!!animate);
     var W = window.innerWidth, H = window.innerHeight;
     if (centerMode || !target) {
       setBox(els.top, 0, 0, W, H); setBox(els.bottom, 0, 0, 0, 0); setBox(els.left, 0, 0, 0, 0); setBox(els.right, 0, 0, 0, 0);
@@ -147,7 +167,7 @@
   // A "pan" step: no spotlight — slowly auto-scroll the whole screen top→bottom so the user
   // watches their (sample) data scroll by, then advance. Moderate speed: readable, not slow.
   function panStep(i, step) {
-    panning = true; centerMode = true; target = null;
+    panning = true; centerMode = true; target = null; lastSpot = false;
     setBox(els.top, 0, 0, 0, 0); setBox(els.bottom, 0, 0, 0, 0); setBox(els.left, 0, 0, 0, 0); setBox(els.right, 0, 0, 0, 0);
     els.ring.style.width = '0'; els.ring.style.height = '0';
     els.tip.querySelector('#mpst-count').textContent = 'STEP ' + (i + 1) + ' OF ' + steps.length;
@@ -156,18 +176,26 @@
     var tw = els.tip.offsetWidth || 300, th = els.tip.offsetHeight || 120;
     els.tip.style.left = Math.max(12, (window.innerWidth - tw) / 2) + 'px';
     els.tip.style.top = (window.innerHeight - th - 18) + 'px';
-    var se = findScroller();
+    var se = findScroller(), de = document.documentElement, bd = document.body;
+    // Anti-jank while WE drive the scroll:
+    //  • scroll-behavior:auto  → stop the browser from ALSO smooth-scrolling each frame (double motion = stutter)
+    //  • overflow-anchor:none  → stop scroll-anchoring from yanking scrollTop when charts settle mid-pan
+    var sv = [[se,'scrollBehavior'],[de,'scrollBehavior'],[bd,'scrollBehavior'],[se,'overflowAnchor']].map(function(pair){ return [pair[0], pair[1], pair[0] && pair[0].style[pair[1]]]; });
+    try { se.style.scrollBehavior='auto'; if(de)de.style.scrollBehavior='auto'; if(bd)bd.style.scrollBehavior='auto'; se.style.overflowAnchor='none'; } catch (e) {}
+    function restoreSB(){ sv.forEach(function(s){ try{ if(s[0]) s[0].style[s[1]] = s[2] || ''; }catch(e){} }); }
     try { se.scrollTop = 0; } catch (e) {}
     var max = Math.max(0, se.scrollHeight - se.clientHeight);
-    var done = function () { panning = false; if (idx === i) next(); };
-    if (max < 30) return setTimeout(done, 1900);
-    var dur = Math.min(9000, Math.max(5000, max * 8)), t0 = null;
+    var done = function () { restoreSB(); panning = false; if (idx === i) next(); };
+    if (max < 30) return setTimeout(done, 1500);
+    var dur = Math.min(8100, Math.max(4500, max * 7.2)), t0 = null, last = -1;   // 10% faster than before
     function frame(ts) {
-      if (idx !== i || !els.top) { panning = false; return; }
+      if (idx !== i || !els.top) { restoreSB(); panning = false; return; }
       if (t0 === null) t0 = ts;
       var p = Math.min(1, (ts - t0) / dur);
-      se.scrollTop = max * p;
-      if (p < 1) requestAnimationFrame(frame); else setTimeout(done, 800);
+      var e = -(Math.cos(Math.PI * p) - 1) / 2;   // easeInOutSine — silkiest accel/decel, no hard edges
+      var y = Math.round(max * e);                 // whole-pixel targets avoid sub-pixel shimmer
+      if (y !== last) { se.scrollTop = y; last = y; }
+      if (p < 1) requestAnimationFrame(frame); else setTimeout(done, 600);
     }
     requestAnimationFrame(frame);
   }
@@ -178,13 +206,21 @@
     if (!step) return end();
     clearHook();
     if (step.pan) return panStep(i, step);
+    // optional app hook: run a window function before spotlighting (e.g. open + prefill a modal)
+    if (step.run) { try { if (typeof window[step.run] === 'function') window[step.run](); } catch (e) {} }
     panning = false;
     centerMode = !!step.center;
     target = centerMode ? null : resolve(step);
     if (!centerMode && !target) {   // element not ready (e.g. a tab just switched) — wait, then skip if still gone
       return setTimeout(function () { target = resolve(step); if (!target) return next(); show(i); }, 500);
     }
-    if (target) { try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
+    // Decide whether we need to scroll: skip it for elements inside a modal overlay (they're already
+    // in view and scrolling the page behind just jitters), and skip when the target is already visible.
+    var inOverlay = !!(target && target.closest && target.closest('.mps-dynamic-overlay'));
+    var r0 = target ? target.getBoundingClientRect() : null;
+    var inView = !!(r0 && r0.top >= 0 && r0.bottom <= window.innerHeight);
+    var willScroll = !!(target && !inOverlay && !inView);
+    if (willScroll) { try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
     els.tip.querySelector('#mpst-count').textContent = 'STEP ' + (i + 1) + ' OF ' + steps.length;
     els.tip.querySelector('#mpst-text').innerHTML = step.text;
     var nextBtn = els.tip.querySelector('#mpst-next');
@@ -198,15 +234,20 @@
       nextBtn.style.display = '';
       nextBtn.textContent = (i === steps.length - 1) ? 'Done' : 'Next';
     }
-    setTimeout(place, 90);
+    // Glide the spotlight when we're morphing between two on-screen steps; when we had to scroll,
+    // let the scroll handler track it instantly so the hole stays glued to the element as it moves.
+    var spot = !centerMode && !!target;
+    var animate = lastSpot && !willScroll;
+    lastSpot = spot;
+    setTimeout(function () { place(animate); }, inOverlay ? 20 : 60);
   }
 
   function next() { if (idx + 1 >= steps.length) return end(); show(idx + 1); }
 
   function end() {
     clearHook();
-    window.removeEventListener('scroll', place, true);
-    window.removeEventListener('resize', place);
+    if (onScroll) window.removeEventListener('scroll', onScroll, true);
+    if (onResize) window.removeEventListener('resize', onResize);
     ['top', 'bottom', 'left', 'right', 'ring', 'tip'].forEach(function (k) { if (els[k] && els[k].parentNode) els[k].parentNode.removeChild(els[k]); });
     els = {}; target = null; panning = false;
     try { localStorage.setItem('mps_tour_' + (appKey() || 'app'), '1'); } catch (e) {}
@@ -218,10 +259,12 @@
     var key = appKey(), list = key && TOURS[key];
     if (!list || !list.length) return;
     if (els.top) return;   // already running
-    steps = list; idx = 0;
+    steps = list; idx = 0; lastSpot = false;
     build();
-    window.addEventListener('scroll', place, true);
-    window.addEventListener('resize', place);
+    onScroll = function () { place(false); };   // track instantly during scroll (no lag)
+    onResize = function () { place(false); };
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
     show(0);
   };
 })();
