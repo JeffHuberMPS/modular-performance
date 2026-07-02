@@ -1036,7 +1036,7 @@
         const ease = (t) => (t < 0.5) ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;   // easeInOutQuad
         const run = (el) => {
           const from = lastRect.current || el.getBoundingClientRect();   // glide FROM the previous highlight
-          const start = performance.now(), DUR = 580, TAIL = 280;
+          const start = performance.now(), DUR = 667, TAIL = 322;   // 15% slower glide (Jeff's call)
           setShown(true);
           el.scrollIntoView({ block:'center', behavior:'smooth' });
           const tick = () => {
