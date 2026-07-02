@@ -1516,11 +1516,25 @@ if (MPS_SANDBOX) (function(){
   if(force){ try{ localStorage.removeItem(FLAG); localStorage.removeItem('mps_tour_expenses'); localStorage.removeItem('mps_expense:entries'); }catch(e){} seen=false; state.entries=[]; }
   if(seen) return;   // RETURNING customer → straight to the app with their saved data (no demo)
   try{ localStorage.setItem(FLAG,'1'); }catch(e){}   // mark as seen so a refresh/return skips the demo
-  // FIRST-TIME customer: load sample data so the demo looks real, then play the tour once.
+  // FIRST-TIME customer: load ~3 weeks of sample data so the demo looks real, then play the tour once.
+  // Build the 3 weeks INSIDE ONE month so the month-based dashboard shows it all. If today is early
+  // in the month (fewer than 21 days so far), anchor to the previous full month.
   const M=[["Hy-Vee","Essentials",[35,120]],["Casey's","Essentials",[30,65]],["Amazon","Lifestyle",[12,90]],["Chipotle","Lifestyle",[11,24]],["Netflix","Recurring",[16,16]],["Spotify","Recurring",[12,12]],["Vanguard","Investment",[100,300]],["Starbucks","Lifestyle",[5,9]],["Shell","Essentials",[28,55]]];
-  const out=[]; let n=0; const t=new Date();
-  for(let d=20;d>=0;d--){const dt=new Date(t.getFullYear(),t.getMonth(),t.getDate()-d);const iso=dt.toISOString().slice(0,10);const cnt=[0,1,1,2,2,3][Math.floor(Math.random()*6)];for(let i=0;i<cnt;i++){const m=M[Math.floor(Math.random()*M.length)];const amt=Math.round((m[2][0]+Math.random()*(m[2][1]-m[2][0]))*100)/100;out.push({id:'demo_'+(n++),date:iso,item:'Purchase',merchant:m[0],amount:amt,category:m[1],source:'Checking'});}}
-  out.push({id:'demo_'+(n++),date:(out[1]?out[1].date:todayISO()),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
+  const today=new Date();
+  const anchor = today.getDate()>=21 ? today : new Date(today.getFullYear(), today.getMonth(), 0); // 0 = last day of prev month
+  const Y=anchor.getFullYear(), MO=anchor.getMonth(), lastDay=anchor.getDate(), startDay=Math.max(1,lastDay-20);
+  const mm=String(MO+1).padStart(2,'0');
+  const out=[]; let n=0;
+  for(let day=startDay; day<=lastDay; day++){
+    const iso=Y+'-'+mm+'-'+String(day).padStart(2,'0');
+    const cnt=[0,1,1,2,2,3][Math.floor(Math.random()*6)];
+    for(let i=0;i<cnt;i++){const m=M[Math.floor(Math.random()*M.length)];const amt=Math.round((m[2][0]+Math.random()*(m[2][1]-m[2][0]))*100)/100;out.push({id:'demo_'+(n++),date:iso,item:'Purchase',merchant:m[0],amount:amt,category:m[1],source:'Checking'});}
+  }
+  // two bi-weekly paychecks inside the window
+  out.push({id:'demo_'+(n++),date:Y+'-'+mm+'-'+String(Math.min(lastDay,startDay+2)).padStart(2,'0'),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
+  out.push({id:'demo_'+(n++),date:Y+'-'+mm+'-'+String(Math.max(startDay,lastDay-4)).padStart(2,'0'),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
+  // point the dashboard at the month that actually holds the data
+  state.selectedMonth=MO; state.selectedYear=Y; try{ save(STORE.selectedMonth,MO); }catch(e){}
   state.entries=out; save(STORE.entries,state.entries); renderAll();
   var started=false, tries=0;
   var iv=setInterval(function(){ tries++;
