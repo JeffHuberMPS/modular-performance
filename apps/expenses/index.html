@@ -787,6 +787,12 @@ window.addEventListener('DOMContentLoaded', function(){
     b.textContent='SANDBOX · CUSTOMER PREVIEW';
     b.style.cssText='position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:99999;background:#C9A020;color:#0a0a0a;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:1px;padding:7px 14px;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;';
     document.body.appendChild(b);
+    // RUN DEMO button (sandbox testing): instantly load 3 weeks of sample data + play the walkthrough.
+    var rb=document.createElement('button');
+    rb.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px;vertical-align:-1px;"><path d="M8 5v14l11-7z"/></svg>RUN DEMO';
+    rb.style.cssText='position:fixed;right:14px;bottom:12px;z-index:100000;display:inline-flex;align-items:center;background:#C9A020;color:#0a0a0a;font:800 12px/1 Inter,system-ui,sans-serif;letter-spacing:1px;padding:11px 18px;border:none;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.55);cursor:pointer;';
+    rb.addEventListener('click', function(){ try{ if(window.runExpensesDemo) window.runExpensesDemo(); }catch(e){} });
+    document.body.appendChild(rb);
   } catch(e){}
 });
 // Gray/Gold theme (Free/Medium): SVG/JS colors can't read CSS vars — resolve here.
@@ -1504,48 +1510,53 @@ renderMonthSelect(); renderDashboard();                                         
 requestAnimationFrame(function(){ renderLog(); renderBudget(); renderRules(); renderInsights(); loadSyncSettings(); }); // defer the heavy hidden tabs off the first paint
 setTimeout(autoSyncOnLoad, 900);                                                                                        // let the UI paint before any network sheet-sync + re-render
 
-// === SANDBOX AUTO-DEMO: FIRST-TIME ONLY (mirrors the real customer experience) ===
-// A brand-new customer sees the demo ONCE on their first open. On every later open they go
-// straight into the app with whatever they saved last session. Add ?demo to the URL to replay
-// the first-time demo on purpose (for reviewing / showing buyers).
+// === SANDBOX DEMO ENGINE ===
+// buildDemoData(): ~3 weeks of realistic sample data built INSIDE ONE month so the month-based
+// dashboard shows it all (anchors to the previous full month when today is early in the month).
+function buildDemoData(){
+  var M=[["Hy-Vee","Essentials",[35,120]],["Casey's","Essentials",[30,65]],["Amazon","Lifestyle",[12,90]],["Chipotle","Lifestyle",[11,24]],["Netflix","Recurring",[16,16]],["Spotify","Recurring",[12,12]],["Vanguard","Investment",[100,300]],["Starbucks","Lifestyle",[5,9]],["Shell","Essentials",[28,55]]];
+  var today=new Date();
+  var anchor = today.getDate()>=21 ? today : new Date(today.getFullYear(), today.getMonth(), 0); // 0 = last day of prev month
+  var Y=anchor.getFullYear(), MO=anchor.getMonth(), lastDay=anchor.getDate(), startDay=Math.max(1,lastDay-20);
+  var mm=String(MO+1).padStart(2,'0');
+  var out=[], n=0;
+  for(var day=startDay; day<=lastDay; day++){
+    var iso=Y+'-'+mm+'-'+String(day).padStart(2,'0');
+    var cnt=[0,1,1,2,2,3][Math.floor(Math.random()*6)];
+    for(var i=0;i<cnt;i++){var m=M[Math.floor(Math.random()*M.length)];var amt=Math.round((m[2][0]+Math.random()*(m[2][1]-m[2][0]))*100)/100;out.push({id:'demo_'+(n++),date:iso,item:'Purchase',merchant:m[0],amount:amt,category:m[1],source:'Checking'});}
+  }
+  out.push({id:'demo_'+(n++),date:Y+'-'+mm+'-'+String(Math.min(lastDay,startDay+2)).padStart(2,'0'),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
+  out.push({id:'demo_'+(n++),date:Y+'-'+mm+'-'+String(Math.max(startDay,lastDay-4)).padStart(2,'0'),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
+  return { entries: out, month: MO, year: Y };
+}
+// runExpensesDemo(): instantly load the sample data + play the walkthrough from the top. Re-runnable
+// (this is what the RUN DEMO button calls). Cancels any pending "clean slate" wipe so the button never wipes.
+var __demoWipe=null;
+window.runExpensesDemo=function(){
+  try{ if(__demoWipe){ clearInterval(__demoWipe); __demoWipe=null; } }catch(e){}
+  try{ document.getElementById('mpst-skip')?.click(); }catch(e){}   // end any tour already running
+  try{ localStorage.removeItem('mps_tour_expenses'); }catch(e){}
+  var dd=buildDemoData();
+  state.entries=dd.entries; state.selectedMonth=dd.month; state.selectedYear=dd.year;
+  try{ save(STORE.selectedMonth,dd.month); }catch(e){} save(STORE.entries,state.entries); renderAll();
+  var tries=0, iv=setInterval(function(){ tries++;
+    if(typeof window.startMpsTour==='function'){ clearInterval(iv); var d=document.querySelector('.tab[data-tab="dashboard"]'); if(d)d.click(); window.startMpsTour(); }
+    else if(tries>40) clearInterval(iv);
+  },100);
+};
+// FIRST-TIME ONLY auto-play (mirrors the real customer experience). ?demo forces a replay.
 if (MPS_SANDBOX) (function(){
   var FLAG='mps_sbx_demo_seen';
   var force=false, seen=false;
   try{ force=/[?&]demo\b/.test(location.search); }catch(e){}
   try{ seen=localStorage.getItem(FLAG)==='1'; }catch(e){}
-  if(force){ try{ localStorage.removeItem(FLAG); localStorage.removeItem('mps_tour_expenses'); localStorage.removeItem('mps_expense:entries'); }catch(e){} seen=false; state.entries=[]; }
+  if(force){ try{ localStorage.removeItem(FLAG); localStorage.removeItem('mps_expense:entries'); }catch(e){} seen=false; }
   if(seen) return;   // RETURNING customer → straight to the app with their saved data (no demo)
-  try{ localStorage.setItem(FLAG,'1'); }catch(e){}   // mark as seen so a refresh/return skips the demo
-  // FIRST-TIME customer: load ~3 weeks of sample data so the demo looks real, then play the tour once.
-  // Build the 3 weeks INSIDE ONE month so the month-based dashboard shows it all. If today is early
-  // in the month (fewer than 21 days so far), anchor to the previous full month.
-  const M=[["Hy-Vee","Essentials",[35,120]],["Casey's","Essentials",[30,65]],["Amazon","Lifestyle",[12,90]],["Chipotle","Lifestyle",[11,24]],["Netflix","Recurring",[16,16]],["Spotify","Recurring",[12,12]],["Vanguard","Investment",[100,300]],["Starbucks","Lifestyle",[5,9]],["Shell","Essentials",[28,55]]];
-  const today=new Date();
-  const anchor = today.getDate()>=21 ? today : new Date(today.getFullYear(), today.getMonth(), 0); // 0 = last day of prev month
-  const Y=anchor.getFullYear(), MO=anchor.getMonth(), lastDay=anchor.getDate(), startDay=Math.max(1,lastDay-20);
-  const mm=String(MO+1).padStart(2,'0');
-  const out=[]; let n=0;
-  for(let day=startDay; day<=lastDay; day++){
-    const iso=Y+'-'+mm+'-'+String(day).padStart(2,'0');
-    const cnt=[0,1,1,2,2,3][Math.floor(Math.random()*6)];
-    for(let i=0;i<cnt;i++){const m=M[Math.floor(Math.random()*M.length)];const amt=Math.round((m[2][0]+Math.random()*(m[2][1]-m[2][0]))*100)/100;out.push({id:'demo_'+(n++),date:iso,item:'Purchase',merchant:m[0],amount:amt,category:m[1],source:'Checking'});}
-  }
-  // two bi-weekly paychecks inside the window
-  out.push({id:'demo_'+(n++),date:Y+'-'+mm+'-'+String(Math.min(lastDay,startDay+2)).padStart(2,'0'),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
-  out.push({id:'demo_'+(n++),date:Y+'-'+mm+'-'+String(Math.max(startDay,lastDay-4)).padStart(2,'0'),item:'Income',merchant:'Employer',amount:1850,category:'Income',source:'Direct Deposit'});
-  // point the dashboard at the month that actually holds the data
-  state.selectedMonth=MO; state.selectedYear=Y; try{ save(STORE.selectedMonth,MO); }catch(e){}
-  state.entries=out; save(STORE.entries,state.entries); renderAll();
-  var started=false, tries=0;
-  var iv=setInterval(function(){ tries++;
-    if(typeof window.startMpsTour==='function' && !started){ started=true; clearInterval(iv);
-      var d=document.querySelector('.tab[data-tab="dashboard"]'); if(d)d.click(); window.startMpsTour();
-      // When the tour ends (tour.js sets mps_tour_expenses), wipe the sample data → clean slate,
-      // exactly like a real new customer who's just finished the walkthrough.
-      var w=setInterval(function(){ var done=false; try{ done=localStorage.getItem('mps_tour_expenses')==='1'; }catch(e){}
-        if(done){ clearInterval(w); state.entries=[]; save(STORE.entries,[]); renderAll(); } }, 400);
-    } else if(tries>40){ clearInterval(iv); }
-  },150);
+  try{ localStorage.setItem(FLAG,'1'); }catch(e){}
+  window.runExpensesDemo();
+  // after the walkthrough ends, wipe the sample data → clean slate, like a real new customer
+  __demoWipe=setInterval(function(){ var done=false; try{ done=localStorage.getItem('mps_tour_expenses')==='1'; }catch(e){}
+    if(done){ clearInterval(__demoWipe); __demoWipe=null; state.entries=[]; save(STORE.entries,[]); renderAll(); } }, 400);
 })();
 </script>
 <script src="/shared/tour.js" defer></script>
