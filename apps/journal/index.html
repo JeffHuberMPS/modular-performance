@@ -1000,47 +1000,89 @@
 
     // Guided spotlight walkthrough: auto-scrolls to each element, white outline highlight, auto-advances.
     function DemoTour({ steps, setTab, onExit }) {
-      const [i, setI] = useState(0);
-      const [rect, setRect] = useState(null);
+      const [i, setI]       = useState(0);
+      const [shown, setShown] = useState(false);
+      const ringRef = useRef(null);
+      const noteRef = useRef(null);
+      const rafRef  = useRef(0);
+      const lastRect = useRef(null);   // last painted target rect (viewport coords, unpadded)
       const step = steps[i];
+      const P = 8;
+
+      // Paint the spotlight + note to a rect IMPERATIVELY (via refs, not React state) so we can
+      // update every animation frame with zero re-renders → buttery.
+      const paint = (r) => {
+        lastRect.current = r;
+        const ring = ringRef.current;
+        if (ring) {
+          ring.style.top    = (r.top - P) + 'px';
+          ring.style.left   = (r.left - P) + 'px';
+          ring.style.width  = (r.width + 2*P) + 'px';
+          ring.style.height = (r.height + 2*P) + 'px';
+        }
+        const note = noteRef.current;
+        if (note) {
+          const below = (r.top + r.height + 170 < window.innerHeight);
+          note.style.top = (below ? Math.min(window.innerHeight - 170, r.top + r.height + P + 14)
+                                  : Math.max(14, r.top - P - 150)) + 'px';
+        }
+      };
+
       useEffect(() => {
         if (!step) return;
-        setTab(step.tab);            // NOTE: do NOT null the spotlight here — keeping the old rect
-                                     // lets the ring + note GLIDE to the next target (CSS transition)
-                                     // instead of flickering off and on. That was the main glitch.
+        setTab(step.tab);
         let cancelled = false, tries = 0;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = (t) => (t < 0.5) ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;   // easeInOutQuad
+        const run = (el) => {
+          const from = lastRect.current || el.getBoundingClientRect();   // glide FROM the previous highlight
+          const start = performance.now(), DUR = 580, TAIL = 280;
+          setShown(true);
+          el.scrollIntoView({ block:'center', behavior:'smooth' });
+          const tick = () => {
+            if (cancelled) return;
+            const elapsed = performance.now() - start;
+            const to = el.getBoundingClientRect();      // element's LIVE position (it moves as we scroll)
+            if (elapsed < DUR) {
+              const e = ease(elapsed / DUR);
+              paint({ top:lerp(from.top,to.top,e), left:lerp(from.left,to.left,e),
+                      width:lerp(from.width,to.width,e), height:lerp(from.height,to.height,e) });
+            } else {
+              paint(to);                                // glue 1:1 to catch the tail of the smooth scroll
+            }
+            if (elapsed < DUR + TAIL) rafRef.current = requestAnimationFrame(tick);
+            else paint(el.getBoundingClientRect());     // final settle
+          };
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = requestAnimationFrame(tick);
+        };
         const place = () => {
-          if (cancelled) return;    // a newer step (or Skip) superseded us — drop this stale placement
+          if (cancelled) return;
           const el = document.querySelector(step.sel);
           if (!el) { if (tries++ < 25) setTimeout(place, 80); return; }
-          el.scrollIntoView({ block:'center', behavior:'smooth' });
-          // Measure ONCE, after the smooth scroll settles, then update the rect so the ring glides.
-          setTimeout(() => {
-            if (cancelled) return;
-            const r = el.getBoundingClientRect();
-            setRect({ top:r.top, left:r.left, width:r.width, height:r.height });
-          }, 430);
+          run(el);
         };
-        const t = setTimeout(place, 220);   // let a tab switch paint before we locate the target
-        return () => { cancelled = true; clearTimeout(t); };   // cancel on step change → no overlapping timers
+        const t = setTimeout(place, step.tab ? 240 : 40);   // let a tab switch paint first
+        return () => { cancelled = true; clearTimeout(t); cancelAnimationFrame(rafRef.current); };
       }, [i]);
+
+      // Gentle auto-advance once the highlight has landed.
       useEffect(() => {
-        if (!step || !rect) return;
-        const t = setTimeout(() => { if (i < steps.length-1) setI(i+1); }, 4800);
+        if (!step || !shown) return;
+        const t = setTimeout(() => { if (i < steps.length-1) setI(i+1); }, 5200);
         return () => clearTimeout(t);
-      }, [i, rect]);
+      }, [i, shown]);
+
       if (!step) return null;
-      const P = 8;
-      const bt = rect ? rect.top - P : 0, bl = rect ? rect.left - P : 0, bw = rect ? rect.width + P*2 : 0, bh = rect ? rect.height + P*2 : 0;
-      const below = rect ? (rect.top + rect.height + 170 < window.innerHeight) : true;
       const ghost = { background:'transparent', border:`1px solid ${BR}`, color:'#9aa0a8', borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:700, cursor:'pointer' };
       const gold  = { background:'#e6c98c', border:'none', color:'#1a1206', borderRadius:8, padding:'7px 16px', fontSize:12, fontWeight:800, cursor:'pointer' };
+      // NOTE: top/left/width/height are set imperatively in paint() and intentionally OMITTED from
+      // these style props, so a React re-render (step change) never resets the animated position.
       return (
-        <div style={{ position:'fixed', inset:0, zIndex:11000 }}>
-          {rect && <div style={{ position:'fixed', top:bt, left:bl, width:bw, height:bh, borderRadius:12, boxShadow:'0 0 0 9999px rgba(0,0,0,0.74)', border:'2px solid #fff', transition:'all .3s ease', pointerEvents:'none' }} />}
-          <div style={{ position:'fixed', left:'50%', transform:'translateX(-50%)', width:'86%', maxWidth:360,
-            top: rect ? (below ? Math.min(window.innerHeight-170, bt+bh+14) : Math.max(14, bt-150)) : '38%',
-            background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', borderRadius:14, padding:'16px 18px', boxShadow:'0 12px 40px rgba(0,0,0,.7)', transition:'top .3s ease' }}>
+        <div style={{ position:'fixed', inset:0, zIndex:11000, pointerEvents:'none' }}>
+          <div ref={ringRef} style={{ position:'fixed', borderRadius:12, boxShadow:'0 0 0 9999px rgba(0,0,0,0.74)', border:'2px solid #fff', pointerEvents:'none', opacity: shown?1:0, transition:'opacity .28s ease', willChange:'top,left,width,height' }} />
+          <div ref={noteRef} style={{ position:'fixed', left:'50%', transform:'translateX(-50%)', width:'86%', maxWidth:360, pointerEvents:'auto',
+            background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', borderRadius:14, padding:'16px 18px', boxShadow:'0 12px 40px rgba(0,0,0,.7)', opacity: shown?1:0, transition:'opacity .28s ease' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
               <div style={{ color:'#C9A020', fontFamily:"'Bebas Neue', sans-serif", fontSize:14, letterSpacing:'0.12em' }}>STEP {i+1} OF {steps.length}</div>
               <button onClick={onExit} style={{ background:'none', border:'none', color:'#8a8f98', fontSize:12.5, cursor:'pointer' }}>Skip tour</button>
