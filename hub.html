@@ -321,6 +321,11 @@
     <button class="back-home" id="back-home" onclick="selectTab('home')">← Home</button>
     <span class="tracker-title__bar" id="tracker-title-bar"></span>
     <span class="tracker-title__name" id="tracker-title-name"></span>
+    <!-- Journal-only: WATCH DEMO lives here in the title row (right side), out of the tab bar's way. -->
+    <button id="hub-journal-demo" onclick="startJournalDemoFromHub()" style="display:none;margin-left:auto;align-items:center;gap:6px;background:rgba(22,18,11,0.85);border:1px solid rgba(230,201,140,0.45);color:#e6c98c;border-radius:999px;padding:6px 14px;font-family:'Bebas Neue',sans-serif;font-size:0.82rem;letter-spacing:0.1em;cursor:pointer;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+      WATCH DEMO
+    </button>
   </div>
 
   <main class="shell-stage" id="stage">
@@ -468,7 +473,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '311';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '313';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -542,6 +547,18 @@
       });
     }
 
+    // Launch the Journal's guided demo from the hub title-bar button (same-origin iframe call).
+    function startJournalDemoFromHub() {
+      var f = document.getElementById('frame-journal');
+      try {
+        if (f && f.contentWindow && typeof f.contentWindow.startJournalDemo === 'function') {
+          f.contentWindow.startJournalDemo();
+          return;
+        }
+      } catch (e) {}
+      showToast('One sec — open the Journal, then try Watch Demo');
+    }
+
     function selectTab(id) {
       activeId = id;
       document.querySelectorAll('.shell-tab').forEach(t => t.classList.toggle('active', t.id === 'tab-' + id));
@@ -567,6 +584,8 @@
       titleBar.style.setProperty('--accent', app.accent);
       document.getElementById('tracker-title-name').textContent = app.title;
       titleBar.classList.add('show');
+      var _jdemo = document.getElementById('hub-journal-demo');
+      if (_jdemo) _jdemo.style.display = (id === 'journal') ? 'inline-flex' : 'none';
       updateTierBanner();
 
       if (isSoon(id)) {
