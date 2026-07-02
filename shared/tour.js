@@ -48,10 +48,12 @@
       { sel: '#btn-clear-expenses',        text: "When you're done exploring, <b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
     ],
     journal: [
-      { txt: 'Write',                       text: "This is <b>Write</b> — your daily entry. Faith, wins, lessons.", click: true },
-      { center: true,                       text: "Write your reflection — five minutes — then tap <b>Save Entry</b>.", click: false },
-      { txt: 'History',                     text: "Tap <b>History</b> to see your past entries — watch it roll by.", click: true },
-      { pan: true,                          text: "Every entry you've written, saved to look back on." }
+      { sel: '[data-tour="dash"]',               text: "This is your day, <b>auto-filled from your trackers</b>: sleep, wake time, habits and spending. No typing." },
+      { sel: '[data-tour="win"]',                text: "Every entry opens with <b>Today's Biggest Win</b>, the headline of your day." },
+      { sel: '[data-tour="win"] button.mps-mic', text: "Hate typing? Tap the <b>mic</b> on any field and just talk. It fills the box and stops when you pause. Every field has one." },
+      { sel: '[data-tour="disc"]',               text: "End with your <b>Daily Discipline Score</b>. This one honest number powers your insights." },
+      { txt: 'Insights',                         text: "Now the payoff. Tap <b>Insights</b>, where MPS connects the dots.", click: true },
+      { sel: '[data-tour="perf"]',               text: "<b>Performance Insights</b>: MPS shows the behaviors behind your best days, and coaches you on what to repeat." }
     ],
     nutrition: [
       { sel: '.meal-head .add',             text: "Tap <b>+ Add Food</b> to log what you ate — search the built-in food list.", click: true },
@@ -184,7 +186,7 @@
     if (!centerMode && !target) {   // element not ready (e.g. a tab just switched) — wait, then skip if still gone
       return setTimeout(function () { target = resolve(step); if (!target) return next(); show(i); }, 500);
     }
-    if (target) { try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
+    if (target) { try { target.scrollIntoView({ block: 'center' }); } catch (e) {} }  /* instant: smooth silently no-ops inside the React Journal */
     els.tip.querySelector('#mpst-count').textContent = 'STEP ' + (i + 1) + ' OF ' + steps.length;
     els.tip.querySelector('#mpst-text').innerHTML = step.text;
     var nextBtn = els.tip.querySelector('#mpst-next');
