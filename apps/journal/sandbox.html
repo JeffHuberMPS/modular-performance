@@ -1024,10 +1024,15 @@
         let tries = 0;
         const place = () => {
           const el = document.querySelector(step.sel);
-          if (el) { el.scrollIntoView({ block:'center' }); setTimeout(()=>{ const r=el.getBoundingClientRect(); setRect({ top:r.top, left:r.left, width:r.width, height:r.height }); }, 260); }
-          else if (tries++ < 10) setTimeout(place, 130);
+          if (el) {
+            el.scrollIntoView({ block:'center' });
+            setTimeout(()=>{
+              el.scrollIntoView({ block:'center' });   // re-assert in case a re-render moved the page
+              requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); setRect({ top:r.top, left:r.left, width:r.width, height:r.height }); });
+            }, 340);
+          } else if (tries++ < 12) setTimeout(place, 140);
         };
-        setTimeout(place, 280);
+        setTimeout(place, 300);
       }, [i]);
       useEffect(() => {
         if (!step || !rect) return;
