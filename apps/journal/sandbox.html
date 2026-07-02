@@ -1024,7 +1024,7 @@
         let tries = 0;
         const place = () => {
           const el = document.querySelector(step.sel);
-          if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); setTimeout(()=>{ const r=el.getBoundingClientRect(); setRect({ top:r.top, left:r.left, width:r.width, height:r.height }); }, 400); }
+          if (el) { el.scrollIntoView({ block:'center' }); setTimeout(()=>{ const r=el.getBoundingClientRect(); setRect({ top:r.top, left:r.left, width:r.width, height:r.height }); }, 260); }
           else if (tries++ < 10) setTimeout(place, 130);
         };
         setTimeout(place, 280);
@@ -1047,8 +1047,8 @@
             top: rect ? (below ? Math.min(window.innerHeight-170, bt+bh+14) : Math.max(14, bt-150)) : '38%',
             background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', borderRadius:14, padding:'16px 18px', boxShadow:'0 12px 40px rgba(0,0,0,.7)', transition:'top .3s ease' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
-              <div style={{ color:'#e6c98c', fontSize:11, letterSpacing:'0.14em', fontWeight:800 }}>DEMO · {i+1}/{steps.length}</div>
-              <button onClick={onExit} style={{ background:'none', border:'none', color:'#8a8f98', fontSize:12, cursor:'pointer' }}>Skip ✕</button>
+              <div style={{ color:'#C9A020', fontFamily:"'Bebas Neue', sans-serif", fontSize:14, letterSpacing:'0.12em' }}>STEP {i+1} OF {steps.length}</div>
+              <button onClick={onExit} style={{ background:'none', border:'none', color:'#8a8f98', fontSize:12.5, cursor:'pointer' }}>Skip tour</button>
             </div>
             <div style={{ color:'#f3e8cf', fontSize:15, fontWeight:800, marginBottom:5 }}>{step.title}</div>
             <div style={{ color:'#cbb48a', fontSize:12.5, lineHeight:1.55, marginBottom:12 }}>{step.body}</div>
@@ -1076,16 +1076,19 @@
 
       // ── Weapon 6: Demo Mode (in-memory only; never persisted) ──
       const [demo, setDemo] = useState(null);   // null = off; else { entries, td }
-      // Uses the SHARED MPS tour engine (/shared/tour.js) so the walkthrough matches the other apps.
-      const startDemo = () => {
-        setDemo(makeDemoData()); setTab('WRITE');
-        // let React paint the sample data first, then play the shared tour (targets its data-tour anchors)
-        setTimeout(() => { try { if (window.startMpsTour) window.startMpsTour(); } catch(e){} }, 550);
-      };
-      const exitDemo  = () => { setDemo(null); setTab('WRITE'); };
+      const [tourOn, setTourOn] = useState(false);   // guided walkthrough (demo can outlive the tour)
+      const startDemo = () => { setDemo(makeDemoData()); setTourOn(true); setTab('WRITE'); };
+      const exitDemo  = () => { setDemo(null); setTourOn(false); setTab('WRITE'); };
       const viewEntries = demo ? demo.entries : entries;
       const viewSave    = demo ? ((updated)=>setDemo(d=>({ ...d, entries:updated }))) : saveEntries;
       const viewTd      = demo ? demo.td : null;
+      const DEMO_STEPS  = [
+        { tab:'WRITE',    sel:'[data-tour="dash"]',                title:'Auto-filled from your trackers', body:'Sleep, wake time, habits and spending flow in from your other MPS trackers. No typing.' },
+        { tab:'WRITE',    sel:'[data-tour="win"]',                 title:"Today's Biggest Win",            body:'Every entry opens with the headline of your day.' },
+        { tab:'WRITE',    sel:'[data-tour="win"] button.mps-mic',  title:'Voice entry',                    body:'Hate typing? Tap the mic on any field and just talk. It fills the box and stops when you pause.' },
+        { tab:'WRITE',    sel:'[data-tour="disc"]',                title:'Daily Discipline Score',         body:'End with one honest score. This single number powers your Performance Insights.' },
+        { tab:'INSIGHTS', sel:'[data-tour="perf"]',                title:'Performance Insights',           body:'MPS connects your behaviors to your best days, and coaches you on what to repeat.' },
+      ];
 
       if (!ready) return (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
@@ -1177,6 +1180,7 @@
               <button onClick={exitDemo} style={{ flexShrink:0, background:'#e6c98c', border:'none', color:'#1a1206', borderRadius:999, padding:'8px 16px', fontSize:12, fontWeight:800, letterSpacing:'0.06em', cursor:'pointer' }}>EXIT DEMO</button>
             </div>
           )}
+          {demo && tourOn && <DemoTour steps={DEMO_STEPS} setTab={setTab} onExit={()=>setTourOn(false)} />}
         </div>
       );
     }
