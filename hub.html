@@ -285,6 +285,13 @@
 
 <body>
 
+  <!-- TEST SANDBOX badge — shown ONLY on the *.vercel.app preview (host-gated below), never on
+       modular-performance.com. Makes it obvious this is the safe testing copy, not the live site. -->
+  <div id="mps-sbx-badge" style="display:none;position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:400;background:#7a1f1f;color:#fff;border:1px solid #d4a017;border-radius:999px;padding:5px 14px;font-family:'Bebas Neue',sans-serif;letter-spacing:0.18em;font-size:0.72rem;box-shadow:0 4px 14px rgba(0,0,0,0.5);pointer-events:none;">TEST SANDBOX &middot; PREMIUM</div>
+  <script>
+    try { if (/vercel\.app$/i.test(location.hostname)) { var _sb=document.getElementById('mps-sbx-badge'); if(_sb) _sb.style.display='block'; } } catch(e){}
+  </script>
+
   <header class="shell-header">
     <div class="shell-logo" onclick="selectTab('home')">
       <span class="logo-mps">MPS</span><span class="bar"></span><small>Modular Performance</small>
@@ -461,7 +468,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '304';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '305';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
