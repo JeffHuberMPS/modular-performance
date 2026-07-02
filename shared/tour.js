@@ -50,6 +50,7 @@
     journal: [
       { pan: true,                          text: "This is your <b>Journal</b> — your day auto-filled from your trackers up top. Watch it roll by." },
       { sel: '[data-tour="win"]',           text: "Every entry opens with <b>Today's Biggest Win</b> — the headline of your day." },
+      { sel: '[data-tour="win"] button.mps-mic', text: "Hate typing? Tap the <b>mic</b> on any field and just talk. It fills the box for you and stops when you pause — every field has one." },
       { sel: '[data-tour="disc"]',          text: "End with your <b>Daily Discipline Score</b>. This one honest number is what powers your insights." },
       { txt: 'Insights',                    text: "Now the payoff. Tap <b>Insights</b> — where MPS connects the dots.", click: true },
       { sel: '[data-tour="perf"]',          text: "<b>Performance Insights</b> — MPS shows the exact behaviors behind your best days, and coaches you on what to repeat." }

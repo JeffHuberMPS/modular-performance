@@ -351,7 +351,7 @@
       // Weapon 5: Premium Light / Intense mode (remembered; Premium only — others always Intense)
       const [mode, setMode] = useState(() => { try { const m=localStorage.getItem('mps_jnls_journal_mode'); return (m==='light'||m==='intense')?m:'intense'; } catch(e){ return 'intense'; } });
       const setModePersist = (m) => { setMode(m); try { localStorage.setItem('mps_jnls_journal_mode', m); } catch(e){} };
-      const isLight = __PREMIUM && mode === 'light';   // Light shows only: Biggest Win, Emotion, Tomorrow's Top 3, Discipline
+      const isLight = __PREMIUM && mode === 'light' && !tdOverride;   // Light shows only Quick 4 (but the demo always shows the full journal)
       useEffect(() => { if (tdOverride) { setTd(tdOverride); return; } let on=true; loadTrackerData().then(d=>{ if(on) setTd(d); }).catch(()=>{}); return ()=>{on=false;}; }, [tdOverride]);
       const effTd = tdOverride || td;
       const A = effTd ? ciAggregate(effTd, [today]) : null;
@@ -980,6 +980,10 @@
       const wins = ['Closed the client deal','Hit a squat PR','Finished the course module','Trained before sunrise','Shipped the landing page','Called mom, long overdue','Meal prepped the week','Read 40 pages before work','Cold plunge + gym done','Inbox zero by 9am','Deep work, zero distractions','Ran 5 miles','Wrote 1,000 words','Rebuilt the budget','Helped a teammate win','Meditated 20 minutes','No phone until noon','Planned the whole month'];
       const emotions = ['Focused','Grateful','Driven','Calm','Tired','Proud','Locked in','Restless','Content','Energized'];
       const lessons = ['Sleep is the multiplier.','Mornings decide the day.','Say no more often.','Small reps compound.','Protect deep work.'];
+      const workouts = ['Push day: bench, dips, shoulders','Pull day: rows, chin-ups, curls','Leg day: squats, RDLs, calves','Easy 5-mile run','Full-body circuit + core','Conditioning: sprint intervals'];
+      const accs = [['Shipped the feature','Cleared the inbox','Prepped tomorrow'],['Closed two deals','Called a client back','Read 30 pages'],['Trained fasted','Cooked dinner in','Journaled early'],['Fixed the budget','Deep work, 3 hours','Walked after dinner']];
+      const antic = ['The morning training block','Deep work with no phone','Dinner with the family','An early, quiet start','Finishing the project'];
+      const gratsets = [['My health','My family','This system'],['A roof and food','Work I care about','A clear mind'],['My training','Time to build','People who push me']];
       const N = 18;
       for (let i=N-1; i>=0; i--) {
         const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
@@ -993,11 +997,13 @@
         disc = Math.min(10, disc);
         const stamp = new Date(d); stamp.setHours(hour, 12, 0, 0);
         entries[k] = { date:k, biggestWin:wins[idx%wins.length], emotion:emotions[idx%emotions.length],
-          gratitude:['My health','My family','This system'], accomplishment:['','',''],
-          affBecoming:'', affLearning:'', affIHave:'', anticipation:'',
-          biggestDistraction: q==='rough' ? 'Phone and social media' : '',
-          biggestLesson: (idx%3===0) ? lessons[idx%lessons.length] : '',
-          top3:['Train','Deep work block','Sleep by 10'], quoteVault:'',
+          workout: (q==='rough') ? '' : workouts[idx%workouts.length],
+          gratitude: gratsets[idx%gratsets.length], accomplishment: accs[idx%accs.length],
+          affBecoming:'Disciplined, calm, relentless', affLearning:'To say no without guilt', affIHave:'Everything I need to win today',
+          anticipation: antic[idx%antic.length],
+          biggestDistraction: q==='good' ? 'A few minutes of social scrolling' : 'Phone and social media',
+          biggestLesson: lessons[idx%lessons.length],
+          top3:['Train before work','Deep work block','Sleep by 10'], quoteVault:'Discipline equals freedom.',
           disciplineScore:disc, complete:true, completedAt:stamp.toISOString(), updatedAt:stamp.toISOString(), createdAt:stamp.toISOString(), __demo:true };
         sleep[k] = { wakeTime:wake, sleepTime:bed };
         const hobj = {}; for (let h=0; h<habDone; h++) hobj[allHab[h]] = true; habits[k] = hobj;
