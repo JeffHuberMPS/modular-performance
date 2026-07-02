@@ -48,7 +48,7 @@
       { sel: '#btn-clear-expenses',        text: "When you're done exploring, <b>Clear All Expenses</b> wipes the sample data so you can start with your own numbers. That's it — you're ready.", click: false }
     ],
     journal: [
-      { pan: true,                          text: "This is your <b>Journal</b> — your day auto-filled from your trackers up top. Watch it roll by." },
+      { sel: '[data-tour="dash"]',          text: "This is your day, <b>auto-filled from your trackers</b> — sleep, wake time, habits and spending. No typing." },
       { sel: '[data-tour="win"]',           text: "Every entry opens with <b>Today's Biggest Win</b> — the headline of your day." },
       { sel: '[data-tour="win"] button.mps-mic', text: "Hate typing? Tap the <b>mic</b> on any field and just talk. It fills the box for you and stops when you pause — every field has one." },
       { sel: '[data-tour="disc"]',          text: "End with your <b>Daily Discipline Score</b>. This one honest number is what powers your insights." },
