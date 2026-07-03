@@ -846,7 +846,7 @@ function HabitTracker() {
             // 1 white, 2 light coral, 3 bright red-orange, 4 strong red, 5 very deep red. (0 = empty gray.)
             const HEAT = ['#ffffff', '#ff9d80', '#ff4d2e', '#cc1000', '#8a0000'];
             const heatLevel = (r) => (r >= 0.8 ? 5 : r >= 0.6 ? 4 : r >= 0.4 ? 3 : r >= 0.2 ? 2 : 1);
-            const cellColor = (d) => { if (d > end) return 'transparent'; const c = getDayCompletionAll(fmtKey(d)); if (c <= 0) return '#161616'; const r = TOTAL_HABITS > 0 ? c / TOTAL_HABITS : 0; return HEAT[heatLevel(r) - 1]; };
+            const cellColor = (d) => { if (d > end) return 'transparent'; const c = getDayCompletionAll(fmtKey(d)); if (c <= 0) return '#333333'; /* empty-day gray: light enough to read the grid on the black card */ const r = TOTAL_HABITS > 0 ? c / TOTAL_HABITS : 0; return HEAT[heatLevel(r) - 1]; };
             const cardSty = { background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D };
             return (
               <>
