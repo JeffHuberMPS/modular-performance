@@ -854,12 +854,38 @@ function HabitTracker() {
                 <div style={cardSty}>
                   <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '12px' }}>LAST 12 MONTHS</div>
                   <div style={{ overflowX: 'auto', paddingBottom: '6px' }}>
-                    <div style={{ display: 'flex', gap: '3px' }}>
-                      {weeks.map((wk, wi) => (
-                        <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          {wk.map((d, di) => (<div key={di} title={fmtKey(d)} style={{ width: '11px', height: '11px', borderRadius: '2px', background: cellColor(d) }} />))}
-                        </div>
-                      ))}
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                      {(() => {
+                        // Split the year into 12 clearly-separated MONTH blocks (oldest -> newest),
+                        // each labeled and gapped so the 12 months are obvious. Days outside a block's
+                        // own month are transparent spacers so each block reads as just that month.
+                        const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        const anchor = new Date(end.getFullYear(), end.getMonth(), 1);
+                        const blocks = [];
+                        for (let m = 11; m >= 0; m--) {
+                          const first = new Date(anchor.getFullYear(), anchor.getMonth() - m, 1);
+                          const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+                          const gs = new Date(first); gs.setDate(first.getDate() - first.getDay());
+                          const cols = []; let c = new Date(gs);
+                          while (c <= last) { const col = []; for (let i = 0; i < 7; i++) { col.push(new Date(c)); c.setDate(c.getDate() + 1); } cols.push(col); }
+                          blocks.push({ label: MON[first.getMonth()], mon: first.getMonth(), yr: first.getFullYear(), cols });
+                        }
+                        return blocks.map((b, bi) => (
+                          <div key={bi} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px', height: '11px', lineHeight: '11px', textTransform: 'uppercase' }}>{b.label}</div>
+                            <div style={{ display: 'flex', gap: '3px' }}>
+                              {b.cols.map((col, ci) => (
+                                <div key={ci} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                  {col.map((d, di) => {
+                                    const inMo = d.getMonth() === b.mon && d.getFullYear() === b.yr;
+                                    return (<div key={di} title={inMo ? fmtKey(d) : ''} style={{ width: '11px', height: '11px', borderRadius: '2px', background: inMo ? cellColor(d) : 'transparent' }} />);
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '12px', fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>
