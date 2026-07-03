@@ -472,8 +472,13 @@
     (function(){ try { const p = new URLSearchParams(location.search); const b = p.get('beta'); if (b && b === BETA_CODE) { localStorage.setItem('mps_beta', BETA_CODE); const r = p.get('ref'); if (r) localStorage.setItem('mps_beta_ref', r); const f = p.get('from'); if (f) localStorage.setItem('mps_beta_from', f); } } catch(e){} })();
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
+    // GUEST / NO-SIGN-IN TESTING MODE — ?guest=1 auto-starts a throwaway session (no sign-in screen)
+    // and hands the visitor the full Premium app. URL-flag only (not persisted) + SESSION persistence,
+    // so it never clobbers or lingers in a real signed-in browser. Sandbox testing only.
+    const IS_GUEST = (()=>{ try { return new URLSearchParams(location.search).get('guest') === '1'; } catch(e){ return false; } })();
+
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '315';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '317';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1438,7 +1443,30 @@
 
     /* ── Auth ─────────────────────────────────────────────── */
     firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) { if (window._mpsResetting) return; location.replace('/auth.html'); return; }
+      if (!user) {
+        if (window._mpsResetting) return;
+        // GUEST: no sign-in screen — start a throwaway session automatically. Uses the default
+        // LOCAL persistence so the app iframes (same origin) share the session and render.
+        if (IS_GUEST) {
+          firebase.auth().signInWithEmailAndPassword('jeffreyhuber86+test1@gmail.com', 'test1234')
+            .catch(function () { try { showToast('Could not start the guest session — try again.'); } catch (e) {} });
+          return;   // onAuthStateChanged re-fires once the guest session is live
+        }
+        location.replace('/auth.html'); return;
+      }
+
+      // GUEST session → full Premium demo, every app unlocked. (No dev tools, no reset button.)
+      if (IS_GUEST) {
+        unlockedApps = APPS.map(a => a.id);
+        currentTier = 'all';
+        renderUser('Guest', '', '', TIER_LABEL.all);
+        applyTheme();
+        updateTierBadge();
+        refreshTabLocks();
+        previewTier('all', true);
+        if (activeId === 'home') loadDashboard();
+        return;
+      }
 
       // PREVIEW SANDBOX ONLY — fill ~3 weeks of sample data across the pillars so the app can be
       // demoed as a populated first-time-customer experience. HOST-GATED to *.vercel.app, so this
