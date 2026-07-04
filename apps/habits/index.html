@@ -344,6 +344,11 @@ function HabitTracker() {
   const monthRemaining = monthTotalPossible - monthTotalComplete;
   const monthPct = monthTotalPossible > 0 ? Math.round((monthTotalComplete/monthTotalPossible)*10000)/100 : 0;
 
+  // ═══ WEAPON 1: Hero Discipline Score ═══
+  // Today's completion as a single 0-100 score. Drives the Dashboard hero.
+  const todayDone = getDayCompletionAll(selKey);
+  const todayPct = TOTAL_HABITS > 0 ? Math.round((todayDone / TOTAL_HABITS) * 100) : 0;
+
   const blockStats = Object.keys(blocks).map(key => {
     const block = blocks[key];
     const totalPossible = daysInMonth * block.habits.length;
@@ -546,6 +551,15 @@ function HabitTracker() {
       {/* ═══ DASHBOARD ═══ */}
       {view === 'dashboard' && (
         <>
+          {/* ═══ WEAPON 1: Hero Discipline Score ═══ */}
+          <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '24px 18px', marginBottom: '16px', textAlign: 'center', boxShadow: CARD_SHADOW_3D, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+              <ScoreRing pct={todayPct} color={PRIMARY_LIGHT} track={BORDER} glow={PRIMARY_GLOW} size={64} />
+              <div style={{ fontSize: '48px', fontWeight: 900, color: PRIMARY_LIGHT, lineHeight: 1, textShadow: `0 0 22px ${PRIMARY_GLOW}` }}>{todayPct}%</div>
+            </div>
+            <div style={{ fontSize: '12px', color: TEXT, letterSpacing: '4px', fontWeight: 800, marginTop: '16px' }}>DISCIPLINE SCORE</div>
+          </div>
+
           <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D }}>
             <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '14px' }}>{isToday ? 'TODAY' : 'SELECTED'} · {formatDate(selectedDate)}</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px' }}>
@@ -946,6 +960,21 @@ function StatCard({ label, value, sub, accent, card, border, muted, shadow }) {
   );
 }
 
+// Wireframe discipline-score ring (replaces the ⭕ emoji). Fills clockwise to pct.
+function ScoreRing({ pct, color, track, glow, size = 60 }) {
+  const r = 24;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, pct || 0));
+  const off = c * (1 - clamped / 100);
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" style={{ flexShrink: 0, filter: `drop-shadow(0 0 6px ${glow || 'transparent'})` }} aria-hidden="true">
+      <circle cx="28" cy="28" r={r} fill="none" stroke={track} strokeWidth="4" />
+      <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={off} transform="rotate(-90 28 28)"
+        style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+    </svg>
+  );
+}
 // Clean monochrome block icons (replaces the childish emojis — CEO-grade, not a toy)
 function BlockIcon({ k, color, size = 15 }) {
   const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color || "currentColor", strokeWidth: 1.9, strokeLinecap: "round", strokeLinejoin: "round", style: { verticalAlign: '-2px', marginRight: '7px', flexShrink: 0 } };
