@@ -418,12 +418,26 @@ function HabitTracker() {
   // Converts the target % into an actionable per-block + whole-day habit count.
   const clampNum = (n, min, max) => Math.max(min, Math.min(max, n));
   const dailyTarget = (() => {
-    const dayTarget = clampNum(Math.floor((targetScore / 100) * TOTAL_HABITS), 0, TOTAL_HABITS);
-    const perBlock = Object.keys(blocks).reduce((acc, key) => {
-      const total = blocks[key].habits.length;
-      acc[key] = clampNum(Math.round((targetScore / 100) * total), 0, total);
-      return acc;
-    }, {});
+    const keys = Object.keys(blocks);
+    // Whole-day target first, then hand it out to the blocks so the block rows ALWAYS
+    // sum to exactly the DAY row (largest-remainder method). No more 5+5+5 != 14.
+    const dayTarget = clampNum(Math.round((targetScore / 100) * TOTAL_HABITS), 0, TOTAL_HABITS);
+    const rows = keys.map(k => {
+      const total = blocks[k].habits.length;
+      const exact = (targetScore / 100) * total;
+      const floor = clampNum(Math.floor(exact), 0, total);
+      return { k, total, floor, rem: exact - Math.floor(exact) };
+    });
+    let leftover = dayTarget - rows.reduce((s, r) => s + r.floor, 0);
+    const order = [...rows].sort((a, b) => b.rem - a.rem);
+    // Give the leftover habits to the blocks with the biggest fraction, respecting each block's cap.
+    for (let pass = 0; pass < 2 && leftover > 0; pass++) {
+      for (let i = 0; i < order.length && leftover > 0; i++) {
+        if (order[i].floor < order[i].total) { order[i].floor += 1; leftover--; }
+      }
+    }
+    const perBlock = {};
+    rows.forEach(r => { perBlock[r.k] = r.floor; });
     return { dayTarget, perBlock };
   })();
   const gapText = (current, target) => { const d = target - current; return d <= 0 ? '✓' : `+${d}`; };
