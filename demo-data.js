@@ -20,7 +20,7 @@ window.MPS_DEMO = (function () {
   'use strict';
 
   const MANIFEST_KEY = 'mps_demo_v2';   // storage footprint key for surgical clear()
-  const DEMO_VERSION = '338';           // bump whenever the sample data changes -> every browser auto-reseeds on next load (no manual flag juggling)
+  const DEMO_VERSION = '339';           // bump whenever the sample data changes -> every browser auto-reseeds on next load (no manual flag juggling)
   const DAYS = 21;                 // three weeks, ending today
   const SEED = 20260618;          // fixed → the demo is identical every load
   const SUBCOLLECTIONS = ['workout_history', 'sleep_logs', 'expense_logs', 'journal_entries'];
@@ -55,13 +55,12 @@ window.MPS_DEMO = (function () {
   const between = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));   // inclusive int
   const chance = (p) => rng() < p;
 
-  // Calendar dates, oldest → newest. End on THIS WEEK'S SATURDAY (not today) so the weekly
-  // daily charts are fully filled even when today is early in the week.
+  // Calendar dates, oldest → newest. END ON TODAY — never seed future days (a future day would
+  // inflate the month totals + projected score and desync the monthly rollups from the daily bars).
   function buildDates() {
     const out = [];
-    const sat = new Date(); sat.setHours(12, 0, 0, 0);
-    sat.setDate(sat.getDate() + (6 - sat.getDay()));   // getDay: 0=Sun..6=Sat → advance to Saturday
-    for (let i = DAYS - 1; i >= 0; i--) { const d = new Date(sat); d.setDate(sat.getDate() - i); out.push(ymd(d)); }
+    const end = new Date(); end.setHours(12, 0, 0, 0);
+    for (let i = DAYS - 1; i >= 0; i--) { const d = new Date(end); d.setDate(end.getDate() - i); out.push(ymd(d)); }
     return out;
   }
 
@@ -191,7 +190,7 @@ window.MPS_DEMO = (function () {
     const SPREAD = [ [5,1,3], [1,4,2], [2,5,4], [4,3,1], [3,2,5], [1,5,2], [5,4,3] ];   // [MRN,WRK,NGT] per day
     const nD = dates.length;
     SPREAD.forEach((pat, i) => {
-      const date = dates[nD - 8 + i];   // the 7 days the daily chart shows (today back 6)
+      const date = dates[nD - 7 + i];   // the 7 days the daily chart shows = today back 6 (dates now END on today)
       if (!date) return;
       const day = {};
       setBlock(day, MRN_IDS, pat[0]);

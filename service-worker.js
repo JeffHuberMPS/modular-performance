@@ -1,5 +1,5 @@
 // MPS Service Worker — offline support + update notification
-const CACHE_VERSION = 'mps-v338';
+const CACHE_VERSION = 'mps-v339';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const FONT_CACHE    = CACHE_VERSION + '-fonts';
 
@@ -17,7 +17,7 @@ const STATIC_ASSETS = [
   '/billing.js',
   '/shared/styles.css',
   '/shared/firebase.js',
-  '/demo-data.js?v=338',
+  '/demo-data.js?v=339',
   '/shared/auth-guard.js',
   '/shared/components.js',
   '/shared/install-prompt.js',
