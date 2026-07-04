@@ -226,6 +226,8 @@ function HabitTracker() {
   const [barDetail, setBarDetail] = useState(null);
   const [logTab, setLogTab] = useState('habits');
   const [insightView, setInsightView] = useState('monthly');
+  // ═══ WEAPON 10: Insights coaching cards — independent expand/collapse ═══
+  const [insightCardsOpen, setInsightCardsOpen] = useState({ strongest: true, attention: false, focus: false });
   const [habits, setHabits] = useState({});
   const habitsRef = useRef({});
   const [gymDone, setGymDone] = useState({});
@@ -497,6 +499,20 @@ function HabitTracker() {
     const pct = totalPossible > 0 ? Math.round((totalDone/totalPossible)*10000)/100 : 0;
     return { key, ...block, totalDone, totalPossible, pct };
   });
+
+  // ═══ WEAPON 10/11: Insights coaching helpers ═══
+  const getInsightMetrics = () => (insightView === 'weekly' ? weeklyHabitMetrics : habitMetrics) || [];
+  const toggleInsightCard = (key) => setInsightCardsOpen(prev => ({ ...prev, [key]: !prev[key] }));
+  // Highest-strength habit in each block (respects the weekly/monthly toggle).
+  const strongestByBlock = (() => {
+    const metrics = getInsightMetrics();
+    const out = {};
+    Object.keys(blocks).forEach(bk => {
+      const items = (blocks[bk].habits || []).map(h => ({ ...h, strength: (metrics.find(m => m.id === h.id)?.strength || 0) }));
+      out[bk] = items.slice().sort((a, b) => b.strength - a.strength)[0];
+    });
+    return out;
+  })();
 
   // ─── Theme ───
   const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
@@ -951,6 +967,61 @@ function HabitTracker() {
       {/* ═══ INSIGHTS ═══ */}
       {view === 'insights' && (
         <>
+          {/* ═══ WEAPON 10 (3-card shell) + WEAPON 11 (Strongest) ═══ */}
+          {!__CORE && (
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '3px', fontWeight: 800, marginBottom: '12px', textAlign: 'center' }}>COACHING</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'start' }}>
+
+                {/* CARD 1 — STRONGEST (Weapon 11) */}
+                <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '14px', boxShadow: CARD_SHADOW_3D, minWidth: 0 }}>
+                  <button onClick={() => toggleInsightCard('strongest')} style={{ width: '100%', background: 'transparent', border: 'none', color: PRIMARY_LIGHT, fontFamily: bodyFont, fontSize: '12px', letterSpacing: '1px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0zM6 8H3.6A1.6 1.6 0 0 0 6 10.6M18 8h2.4A1.6 1.6 0 0 1 18 10.6"/></svg>
+                    <span style={{ flex: 1, textAlign: 'left' }}>STRONGEST</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.strongest ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  {insightCardsOpen.strongest && (
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '6px' }}>
+                      {Object.keys(blocks).map(bk => {
+                        const h = strongestByBlock[bk];
+                        return (
+                          <div key={bk} style={{ display: 'grid', gridTemplateColumns: '42px 1fr auto', gap: '8px', alignItems: 'center', fontSize: '12px', padding: '7px 0' }}>
+                            <div style={{ color: MUTED, fontWeight: 900, letterSpacing: '1px' }}>{bk}</div>
+                            <div style={{ color: TEXT, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h?.label || '—'}</div>
+                            <div style={{ color: PRIMARY_LIGHT, fontWeight: 900 }}>{h?.strength ?? 0}%</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* CARD 2 — NEEDS ATTENTION (Weapon 12, wiring next) */}
+                <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '14px', boxShadow: CARD_SHADOW_3D, minWidth: 0 }}>
+                  <button onClick={() => toggleInsightCard('attention')} style={{ width: '100%', background: 'transparent', border: 'none', color: ACCENT, fontFamily: bodyFont, fontSize: '12px', letterSpacing: '1px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>
+                    <span style={{ flex: 1, textAlign: 'left' }}>NEEDS ATTENTION</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.attention ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  {insightCardsOpen.attention && (
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '10px', fontSize: '11px', color: MUTED, textAlign: 'center', lineHeight: 1.5 }}>Wiring in the next build.</div>
+                  )}
+                </div>
+
+                {/* CARD 3 — TODAY'S FOCUS (Weapon 13, wiring next) */}
+                <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '14px', boxShadow: CARD_SHADOW_3D, minWidth: 0 }}>
+                  <button onClick={() => toggleInsightCard('focus')} style={{ width: '100%', background: 'transparent', border: 'none', color: PRIMARY_LIGHT, fontFamily: bodyFont, fontSize: '12px', letterSpacing: '1px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6"/></svg>
+                    <span style={{ flex: 1, textAlign: 'left' }}>TODAY'S FOCUS</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.focus ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  {insightCardsOpen.focus && (
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '10px', fontSize: '11px', color: MUTED, textAlign: 'center', lineHeight: 1.5 }}>Wiring in the next build.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {__CORE ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', marginBottom: '14px', background: 'rgba(201,160,32,0.06)', border: `1px dashed ${BORDER}`, borderRadius: '12px' }}>
               <span style={{ fontSize: '18px' }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
