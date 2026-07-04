@@ -19,7 +19,7 @@
 window.MPS_DEMO = (function () {
   'use strict';
 
-  const MANIFEST_KEY = 'mps_demo_v1';
+  const MANIFEST_KEY = 'mps_demo_v2';   // bumped: forces a fresh reseed so the new full-scale habit spread (1/5 & 2/5 days) replaces the old all-high demo
   const DAYS = 21;                 // three weeks, ending today
   const SEED = 20260618;          // fixed → the demo is identical every load
   const SUBCOLLECTIONS = ['workout_history', 'sleep_logs', 'expense_logs', 'journal_entries'];
