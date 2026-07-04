@@ -191,6 +191,7 @@ function HabitTracker() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   // ═══ WEAPON 3: Goals panel (opened by the Projected Month line) ═══
   const [showGoalsPanel, setShowGoalsPanel] = useState(false);
+  const [showTargetSlider, setShowTargetSlider] = useState(false);
   const [targetScore, setTargetScore] = useState(() => {
     try { return parseInt(localStorage.getItem('habits_target_score') || '95', 10) || 95; }
     catch(e) { return 95; }
@@ -382,6 +383,13 @@ function HabitTracker() {
     return { dayTarget, perBlock };
   })();
   const gapText = (current, target) => { const d = target - current; return d <= 0 ? '✓' : `+${d}`; };
+
+  // ═══ WEAPON 5: Target Score slider (live, no save button) ═══
+  const saveTargetScore = (n) => {
+    const clean = clampNum(parseInt(n, 10) || 95, 50, 100);
+    setTargetScore(clean);
+    try { localStorage.setItem('habits_target_score', String(clean)); } catch(e) {}
+  };
 
   const blockStats = Object.keys(blocks).map(key => {
     const block = blocks[key];
@@ -621,9 +629,24 @@ function HabitTracker() {
             {showGoalsPanel && (
               <div style={{ marginTop: '14px', borderTop: `1px solid ${BORDER}`, paddingTop: '14px', textAlign: 'left' }}>
                 <div style={{ textAlign: 'center', color: MUTED, fontSize: '11px', letterSpacing: '3px', fontWeight: 800, marginBottom: '12px' }}>GOALS</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 2px', borderBottom: `1px solid ${BORDER}`, paddingBottom: '12px' }}>
-                  <div style={{ fontSize: '13px', color: TEXT, fontWeight: 700 }}>Target Score</div>
-                  <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 800 }}>{targetScore}%</div>
+                <div style={{ padding: '6px 2px 12px', borderBottom: `1px solid ${BORDER}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '13px', color: TEXT, fontWeight: 700 }}>Target Score</div>
+                    <button onClick={() => setShowTargetSlider(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0a0a0a', border: `1px solid ${BORDER}`, color: PRIMARY_LIGHT, borderRadius: '8px', padding: '6px 11px', fontFamily: bodyFont, fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}>
+                      {targetScore}%
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: showTargetSlider ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+                  </div>
+                  {showTargetSlider && (
+                    <div style={{ marginTop: '12px' }}>
+                      <input type="range" min="50" max="100" value={targetScore} onChange={(e) => saveTargetScore(e.target.value)} style={{ width: '100%', accentColor: PRIMARY_LIGHT, cursor: 'pointer' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: MUTED, marginTop: '4px', letterSpacing: '1px', fontWeight: 700 }}>
+                        <span>50%</span>
+                        <span style={{ color: PRIMARY_LIGHT, fontWeight: 800 }}>{targetScore}%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* CURRENT SCORE */}
