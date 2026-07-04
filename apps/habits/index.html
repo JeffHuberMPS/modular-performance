@@ -828,7 +828,7 @@ function HabitTracker() {
           </div>
 
           {[...Object.keys(blocks), 'DAY'].map(blockKey => (
-            <BarChart3D key={blockKey} blockKey={blockKey} block={blockKey === 'DAY' ? { icon: '📊', name: 'Total', habits: ALL_HABITS } : blocks[blockKey]} chartView={chartView} habits={habits} selectedDate={selectedDate} onBarTap={setBarDetail} theme={{ PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2 }} fmtKey={fmtKey} />
+            <BarChart3D key={blockKey} blockKey={blockKey} block={blockKey === 'DAY' ? { icon: '📊', name: 'Total', habits: ALL_HABITS } : blocks[blockKey]} chartView={chartView} habits={habits} selectedDate={selectedDate} onBarTap={setBarDetail} theme={{ PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2, gray: __GRAY }} fmtKey={fmtKey} />
           ))}
         </>
       )}
@@ -1126,7 +1126,8 @@ function HabitTracker() {
                           <span style={{ fontSize: '12px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{h.cnt} days</span>
                         </div>
                         <div style={{ height: '6px', background: '#0a0a0a', borderRadius: '3px', overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', background: `rgba(${PL_RGB},0.85)` }} />
+                          {/* ═══ WEAPON 9: consistency bar colored by performance (universal scale) ═══ */}
+                          <div style={{ width: `${pct}%`, height: '100%', ...mpsPerfStyle(pct, __GRAY), borderRadius: '3px' }} />
                         </div>
                       </div>
                     );
@@ -1206,7 +1207,7 @@ function HabitIcon({ id, color, size = 18 }) {
   }
 }
 function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap, theme, fmtKey }) {
-  const { PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2 } = theme;
+  const { PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2, gray } = theme;
 
   const habitCount = block.habits.length;
   const maxY = chartView === 'daily' ? habitCount : habitCount * 7;
@@ -1261,16 +1262,19 @@ function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap
             const pct = maxY > 0 ? (bar.value/maxY)*100 : 0;
             const bh = (pct/100)*chartHeight;
             const hasVal = bar.value > 0;
+            // ═══ WEAPON 7 (charts): each bar colored + glowing by its own completion ═══
+            const perf = mpsPerfConfig(maxY > 0 ? (bar.value/maxY)*5 : 0, gray);
+            const glow = perf.glow === 'none' ? 'none' : perf.glow;
             return (
               <div key={i} onClick={() => { if (onBarTap) onBarTap({ blockKey, isWeek: chartView === 'weekly', dateKey: chartView === 'daily' ? bar.dateKeys[0] : null, dayKeys: chartView === 'weekly' ? bar.dateKeys : null, label: bar.fullLabel, summary: `${bar.value}/${maxY}` }); }} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', cursor: 'pointer', position: 'relative' }}>
                 {hasVal ? (
                   <div style={{ position: 'relative', width: '100%', maxWidth: '36px', height: `${bh}px` }}>
-                    <div style={{ position: 'absolute', top: 0, left: '100%', width: `${DEPTH}px`, height: '100%', background: BAR_SIDE, transform: 'skewY(-45deg)', transformOrigin: 'left top' }} />
-                    <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', height: `${DEPTH}px`, background: BAR_TOP, transform: 'skewX(-45deg)', transformOrigin: 'bottom left' }} />
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: `linear-gradient(180deg,${PRIMARY_LIGHT} 0%,${PRIMARY} 65%,${BAR_FOOT} 100%)`, borderRadius: '2px 0 0 2px', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 0 10px ${PRIMARY_GLOW}` }} />
+                    <div style={{ position: 'absolute', top: 0, left: '100%', width: `${DEPTH}px`, height: '100%', background: `linear-gradient(0deg, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), ${perf.fill}`, transform: 'skewY(-45deg)', transformOrigin: 'left top' }} />
+                    <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', height: `${DEPTH}px`, background: `linear-gradient(0deg, rgba(255,255,255,0.42), rgba(255,255,255,0.42)), ${perf.fill}`, transform: 'skewX(-45deg)', transformOrigin: 'bottom left' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: `linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 30%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.42) 100%), ${perf.fill}`, borderRadius: '2px 0 0 2px', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), ${glow}` }} />
                   </div>
                 ) : (
-                  <div style={{ width: '100%', maxWidth: '36px', height: '3px', background: `linear-gradient(180deg,${PRIMARY} 0%,${BAR_FOOT2} 100%)`, borderRadius: '2px', opacity: 0.35 }} />
+                  <div style={{ width: '100%', maxWidth: '36px', height: '3px', background: mpsPerfConfig(0, gray).fill, borderRadius: '2px', opacity: 0.6 }} />
                 )}
               </div>
             );
