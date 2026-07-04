@@ -227,7 +227,7 @@ function HabitTracker() {
   const [logTab, setLogTab] = useState('habits');
   const [insightView, setInsightView] = useState('monthly');
   // ═══ WEAPON 10: Insights coaching cards — independent expand/collapse ═══
-  const [insightCardsOpen, setInsightCardsOpen] = useState({ strongest: true, attention: false, focus: false });
+  const [insightCardsOpen, setInsightCardsOpen] = useState({ strongest: true, attention: true, focus: true });
   const [habits, setHabits] = useState({});
   const habitsRef = useRef({});
   const [gymDone, setGymDone] = useState({});
@@ -512,6 +512,35 @@ function HabitTracker() {
       out[bk] = items.slice().sort((a, b) => b.strength - a.strength)[0];
     });
     return out;
+  })();
+  // ═══ WEAPON 12: weakest habit per block ═══
+  const weakestByBlock = (() => {
+    const metrics = getInsightMetrics();
+    const out = {};
+    Object.keys(blocks).forEach(bk => {
+      const items = (blocks[bk].habits || []).map(h => ({ ...h, strength: (metrics.find(m => m.id === h.id)?.strength || 0) }));
+      out[bk] = items.slice().sort((a, b) => a.strength - b.strength)[0];
+    });
+    return out;
+  })();
+  // ═══ WEAPON 13: today's focus — the 2 lowest-strength habits overall ═══
+  const todaysFocus = (() => {
+    const metrics = getInsightMetrics();
+    return ALL_HABITS
+      .map(h => ({ ...h, strength: (metrics.find(m => m.id === h.id)?.strength || 0) }))
+      .slice().sort((a, b) => a.strength - b.strength)
+      .slice(0, 2);
+  })();
+  // ═══ WEAPON 14: expected month if today's 2 focus habits get done ═══
+  const expectedMonthAfterFocus = (() => {
+    const nextToday = { ...(habits[selKey] || {}) };
+    todaysFocus.forEach(h => { nextToday[h.id] = true; });
+    const currentDoneToday = getDayCompletionAll(selKey);
+    const improvedDoneToday = ALL_HABITS.filter(h => nextToday[h.id]).length;
+    const delta = Math.max(0, improvedDoneToday - currentDoneToday);
+    const passed = Math.max(1, todayDayOfMonth);
+    const proj = (done) => monthTotalPossible > 0 ? Math.min(100, Math.round(((done / passed) * daysInMonth / monthTotalPossible) * 100)) : 0;
+    return { projectedCurrent: proj(monthTotalComplete), projectedImproved: proj(monthTotalComplete + delta) };
   })();
 
   // ─── Theme ───
@@ -1004,7 +1033,18 @@ function HabitTracker() {
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.attention ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
                   </button>
                   {insightCardsOpen.attention && (
-                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '10px', fontSize: '11px', color: MUTED, textAlign: 'center', lineHeight: 1.5 }}>Wiring in the next build.</div>
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '6px' }}>
+                      {Object.keys(blocks).map(bk => {
+                        const h = weakestByBlock[bk];
+                        return (
+                          <div key={bk} style={{ display: 'grid', gridTemplateColumns: '42px 1fr auto', gap: '8px', alignItems: 'center', fontSize: '12px', padding: '7px 0' }}>
+                            <div style={{ color: MUTED, fontWeight: 900, letterSpacing: '1px' }}>{bk}</div>
+                            <div style={{ color: TEXT, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h?.label || '—'}</div>
+                            <div style={{ color: ACCENT, fontWeight: 900 }}>{h?.strength ?? 0}%</div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
 
@@ -1016,7 +1056,26 @@ function HabitTracker() {
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.focus ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
                   </button>
                   {insightCardsOpen.focus && (
-                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '10px', fontSize: '11px', color: MUTED, textAlign: 'center', lineHeight: 1.5 }}>Wiring in the next build.</div>
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '6px' }}>
+                      {todaysFocus.map((h, idx) => (
+                        <div key={h.id} style={{ padding: '8px 0', borderBottom: idx === 0 ? `1px solid ${BORDER}` : 'none' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '12px' }}>
+                            <div style={{ color: TEXT, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{idx + 1}. {h.label}</div>
+                            <div style={{ color: ACCENT, fontWeight: 900 }}>{h.strength ?? 0}%</div>
+                          </div>
+                          <div style={{ color: '#4fc36b', fontSize: '11px', fontWeight: 800, marginTop: '4px' }}>Complete +1 today</div>
+                        </div>
+                      ))}
+                      {/* ═══ WEAPON 14: Expected Month forecast ═══ */}
+                      <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '2px', fontWeight: 800 }}>EXPECTED MONTH</div>
+                        <div style={{ fontSize: '15px', color: TEXT, fontWeight: 900, marginTop: '5px' }}>
+                          <span>{expectedMonthAfterFocus.projectedCurrent}%</span>
+                          <span style={{ color: PRIMARY_LIGHT, padding: '0 8px' }}>→</span>
+                          <span style={{ color: '#4fc36b' }}>{expectedMonthAfterFocus.projectedImproved}%</span>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
