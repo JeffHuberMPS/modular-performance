@@ -178,6 +178,25 @@ window.MPS_DEMO = (function () {
       }
       if (Object.keys(day).length) habits_v4[date] = day;
     });
+    // Deliberate spread across the last 7 visible days so the demo shows the FULL
+    // performance scale — low days included (1/5 = gray, 2/5 = pink), not just red.
+    // Pattern is [MRN, WRK, NGT] done-counts, oldest -> newest for days -6..-1. Today (last) stays strong.
+    const MRN_IDS = ['h_wake','h_gymtr','h_breath','h_read','h_cold'];
+    const WRK_IDS = ['h_mind','h_course','h_outr','h_chess','h_auto'];
+    const NGT_IDS = ['h_journ','h_pray','h_bible','h_guit','h_sleep'];
+    const setBlock = (day, ids, count) => { ids.forEach((id, i) => { if (i < count) day[id] = true; else delete day[id]; }); };
+    const SPREAD = [ [5,4,5], [2,1,2], [3,3,4], [1,2,1], [4,5,4], [5,5,4] ];   // days -6 .. -1
+    const nD = dates.length;
+    SPREAD.forEach((pat, i) => {
+      const date = dates[nD - 7 + i];
+      if (!date) return;
+      const day = {};
+      setBlock(day, MRN_IDS, pat[0]);
+      setBlock(day, WRK_IDS, pat[1]);
+      setBlock(day, NGT_IDS, pat[2]);
+      if (day['h_gymtr']) gym_v4[date] = true; else delete gym_v4[date];
+      habits_v4[date] = day;
+    });
     return { local: { habits_v4, gym_v4 }, docs: [] };   // habits dashboard reads localStorage only
   }
 
