@@ -172,6 +172,50 @@
 <script type="text/babel" id="habits-app">
 const { useState, useEffect, useRef } = React;
 
+// ═══ WEAPON 6: Universal Performance Scale engine ═══
+// One canonical 0-5 score -> color + glow, reused by every bar / heatmap / progress fill.
+// Rule: Height/Length = Progress, Color = Performance, Glow = Excellence.
+// Two palettes (red for the Premium colorful theme, gold/gray for the Core/Elite mono theme)
+// so the SAME score reads correctly in whichever theme is active. Never a second color system.
+const MPS_PERF_SCALE = {
+  red: {
+    5: { fill: '#b00000', glow: '0 0 22px rgba(255,30,30,0.65)' },
+    4: { fill: '#e02020', glow: '0 0 16px rgba(255,40,40,0.45)' },
+    3: { fill: '#ff4a4a', glow: '0 0 10px rgba(255,80,80,0.30)' },
+    2: { fill: '#ff8a8a', glow: '0 0 6px rgba(255,120,120,0.20)' },
+    1: { fill: '#8b8b8b', glow: 'none' },
+    0: { fill: '#333333', glow: 'none' },
+  },
+  gray: {
+    5: { fill: '#e6c15a', glow: '0 0 20px rgba(201,160,32,0.55)' },
+    4: { fill: '#C9A020', glow: '0 0 14px rgba(201,160,32,0.40)' },
+    3: { fill: '#a88a3c', glow: '0 0 9px rgba(201,160,32,0.25)' },
+    2: { fill: '#7f7658', glow: '0 0 5px rgba(201,160,32,0.15)' },
+    1: { fill: '#8b8b8b', glow: 'none' },
+    0: { fill: '#333333', glow: 'none' },
+  },
+};
+function mpsClampScore(score) {
+  const n = Number(score);
+  if (Number.isNaN(n)) return 0;
+  return Math.max(0, Math.min(5, Math.round(n)));
+}
+// Accepts a 0-5 score OR a 0-100 percent (auto-detected when > 5).
+function mpsPerfConfig(scoreOrPct, gray) {
+  let s = Number(scoreOrPct);
+  if (Number.isNaN(s)) s = 0;
+  if (s > 5) s = s / 20;                 // percent -> 0-5 score
+  const lvl = mpsClampScore(s);
+  return (gray ? MPS_PERF_SCALE.gray : MPS_PERF_SCALE.red)[lvl];
+}
+// Style for any solid fill (progress bars, heatmap cells, chart bars).
+function mpsPerfStyle(scoreOrPct, gray) {
+  const c = mpsPerfConfig(scoreOrPct, gray);
+  return { background: c.fill, boxShadow: c.glow };
+}
+// Height as a share of a chart cell (Height = Progress). 5/5 -> 100%.
+function mpsBarHeight(score) { return `${mpsClampScore(score) * 20}%`; }
+
 function HabitTracker() {
   const [view, setView] = useState('dashboard');
   const [activeBlock, setActiveBlock] = useState('MRN');
