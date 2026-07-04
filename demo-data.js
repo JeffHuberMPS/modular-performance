@@ -181,12 +181,13 @@ window.MPS_DEMO = (function () {
     // Deliberate spread across the last 7 visible days so the demo shows the FULL
     // performance scale — low days included (1/5 = gray, 2/5 = pink), not just red.
     // Pattern is [MRN, WRK, NGT] done-counts for the LAST 7 VISIBLE days, oldest -> newest.
-    // Day-star totals: 5,1,2,4,1,2,5  -> exactly TWO 1-star days + TWO 2-star days, the rest 3/4/5.
+    // Day-star totals stay 5,1,2,4,1,2,5 (two 1-star + two 2-star days), but each day's total is
+    // split UNEVENLY across MRN/WRK/NGT (some blocks 0, some 5) so it reads like a real, messy user.
     const MRN_IDS = ['h_wake','h_gymtr','h_breath','h_read','h_cold'];
     const WRK_IDS = ['h_mind','h_course','h_outr','h_chess','h_auto'];
     const NGT_IDS = ['h_journ','h_pray','h_bible','h_guit','h_sleep'];
     const setBlock = (day, ids, count) => { ids.forEach((id, i) => { if (i < count) day[id] = true; else delete day[id]; }); };
-    const SPREAD = [ [5,5,4], [1,1,1], [2,2,2], [4,4,4], [1,1,1], [2,3,2], [5,5,4] ];
+    const SPREAD = [ [5,4,5], [1,2,0], [3,1,2], [5,3,4], [0,1,2], [2,4,1], [4,5,5] ];   // [MRN,WRK,NGT]; day sums = 14,3,6,12,3,7,14
     const nD = dates.length;
     SPREAD.forEach((pat, i) => {
       const date = dates[nD - 8 + i];   // the 7 days the daily chart shows (today back 6)
