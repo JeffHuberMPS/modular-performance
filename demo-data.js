@@ -19,7 +19,8 @@
 window.MPS_DEMO = (function () {
   'use strict';
 
-  const MANIFEST_KEY = 'mps_demo_v2';   // bumped: forces a fresh reseed so the new full-scale habit spread (1/5 & 2/5 days) replaces the old all-high demo
+  const MANIFEST_KEY = 'mps_demo_v2';   // storage footprint key for surgical clear()
+  const DEMO_VERSION = '337';           // bump whenever the sample data changes -> every browser auto-reseeds on next load (no manual flag juggling)
   const DAYS = 21;                 // three weeks, ending today
   const SEED = 20260618;          // fixed → the demo is identical every load
   const SUBCOLLECTIONS = ['workout_history', 'sleep_logs', 'expense_logs', 'journal_entries'];
@@ -473,5 +474,5 @@ window.MPS_DEMO = (function () {
     return { wiped: true };
   }
 
-  return { load, clear, isLoaded, wipeTrackers };
+  return { load, clear, isLoaded, wipeTrackers, VERSION: DEMO_VERSION };
 })();
