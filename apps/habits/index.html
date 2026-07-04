@@ -812,8 +812,8 @@ function HabitTracker() {
                   </div>
                 </div>
                 <div style={{ height: '8px', background: '#0a0a0a', borderRadius: '4px', overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}>
-                  {/* ═══ WEAPON 7: bar colored + glowing by performance (universal scale) ═══ */}
-                  <div style={{ width: `${b.pct}%`, height: '100%', ...mpsPerfStyle(b.pct, __GRAY), borderRadius: '4px', transition: 'width 0.4s, background 0.3s' }} />
+                  {/* ═══ WEAPON 7: length = month progress, color = daily performance (avg per day) ═══ */}
+                  <div style={{ width: `${b.pct}%`, height: '100%', ...mpsPerfStyle((daysLogged > 0 && b.habits.length > 0) ? ((b.totalDone / daysLogged) / b.habits.length) * 100 : 0, __GRAY), borderRadius: '4px', transition: 'width 0.4s, background 0.3s' }} />
                 </div>
                 <div style={{ fontSize: '10px', color: MUTED, marginTop: '6px', letterSpacing: '1px' }}>{b.totalDone}/{b.totalPossible} · TARGET {b.target}</div>
               </div>
