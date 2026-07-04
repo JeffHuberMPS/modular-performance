@@ -369,6 +369,20 @@ function HabitTracker() {
     return monthTotalPossible > 0 ? Math.round((projectedDone / monthTotalPossible) * 100) : 0;
   })();
 
+  // ═══ WEAPON 4: Goals panel — Current vs Daily Target ═══
+  // Converts the target % into an actionable per-block + whole-day habit count.
+  const clampNum = (n, min, max) => Math.max(min, Math.min(max, n));
+  const dailyTarget = (() => {
+    const dayTarget = clampNum(Math.floor((targetScore / 100) * TOTAL_HABITS), 0, TOTAL_HABITS);
+    const perBlock = Object.keys(blocks).reduce((acc, key) => {
+      const total = blocks[key].habits.length;
+      acc[key] = clampNum(Math.round((targetScore / 100) * total), 0, total);
+      return acc;
+    }, {});
+    return { dayTarget, perBlock };
+  })();
+  const gapText = (current, target) => { const d = target - current; return d <= 0 ? '✓' : `+${d}`; };
+
   const blockStats = Object.keys(blocks).map(key => {
     const block = blocks[key];
     const totalPossible = daysInMonth * block.habits.length;
@@ -607,9 +621,58 @@ function HabitTracker() {
             {showGoalsPanel && (
               <div style={{ marginTop: '14px', borderTop: `1px solid ${BORDER}`, paddingTop: '14px', textAlign: 'left' }}>
                 <div style={{ textAlign: 'center', color: MUTED, fontSize: '11px', letterSpacing: '3px', fontWeight: 800, marginBottom: '12px' }}>GOALS</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 2px', borderBottom: `1px solid ${BORDER}`, paddingBottom: '12px' }}>
                   <div style={{ fontSize: '13px', color: TEXT, fontWeight: 700 }}>Target Score</div>
                   <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 800 }}>{targetScore}%</div>
+                </div>
+
+                {/* CURRENT SCORE */}
+                <div style={{ marginTop: '14px' }}>
+                  <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '2px', fontWeight: 800, marginBottom: '4px', textAlign: 'center' }}>CURRENT SCORE</div>
+                  {Object.keys(blocks).map(key => {
+                    const cur = getDayCompletion(selKey, key).done;
+                    const total = blocks[key].habits.length;
+                    return (
+                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '5px 2px', fontSize: '13px' }}>
+                        <div style={{ color: MUTED, fontWeight: 800, letterSpacing: '1px' }}>{key}</div>
+                        <div style={{ color: TEXT, fontWeight: 700 }}>{cur} / {total}</div>
+                        <div />
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '8px 2px 2px', fontSize: '13px', borderTop: `1px solid ${BORDER}`, marginTop: '4px' }}>
+                    <div style={{ color: PRIMARY_LIGHT, fontWeight: 800, letterSpacing: '1px' }}>DAY</div>
+                    <div style={{ color: TEXT, fontWeight: 800 }}>{todayDone} / {TOTAL_HABITS}</div>
+                    <div />
+                  </div>
+                </div>
+
+                {/* DAILY TARGET */}
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '2px', fontWeight: 800, marginBottom: '4px', textAlign: 'center' }}>DAILY TARGET ({targetScore}%)</div>
+                  {Object.keys(blocks).map(key => {
+                    const cur = getDayCompletion(selKey, key).done;
+                    const total = blocks[key].habits.length;
+                    const target = dailyTarget.perBlock[key];
+                    const g = gapText(cur, target);
+                    return (
+                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '5px 2px', fontSize: '13px' }}>
+                        <div style={{ color: MUTED, fontWeight: 800, letterSpacing: '1px' }}>{key}</div>
+                        <div style={{ color: TEXT, fontWeight: 700 }}>{target} / {total}</div>
+                        <div style={{ color: g === '✓' ? '#4fc36b' : PRIMARY_LIGHT, fontWeight: 900 }}>{g}</div>
+                      </div>
+                    );
+                  })}
+                  {(() => {
+                    const g = gapText(todayDone, dailyTarget.dayTarget);
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '8px 2px 2px', fontSize: '13px', borderTop: `1px solid ${BORDER}`, marginTop: '4px' }}>
+                        <div style={{ color: PRIMARY_LIGHT, fontWeight: 800, letterSpacing: '1px' }}>DAY</div>
+                        <div style={{ color: TEXT, fontWeight: 800 }}>{dailyTarget.dayTarget} / {TOTAL_HABITS}</div>
+                        <div style={{ color: g === '✓' ? '#4fc36b' : PRIMARY_LIGHT, fontWeight: 900 }}>{g}</div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}
