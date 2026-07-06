@@ -344,10 +344,12 @@
   <div class="view active" id="view-today">
     <div class="today-top" id="todayTop"></div>
     <div id="dailyTarget"></div>
+    <div id="todayAlerts"></div>
     <div class="breakdown" id="breakdown"></div>
     <div class="meals-wrap" id="mealsWrap"></div>
     <div id="todayWeight"></div>
     <div id="todaySupps"></div>
+    <div id="todayOverall"></div>
   </div>
 
   <!-- HISTORY -->
@@ -644,6 +646,8 @@ function renderToday(){
   renderTodayWeight();
   renderTodaySupps();
   renderDailyTarget();
+  renderAlerts();
+  renderOverall();
 }
 function mealMiniHTML(){
   var entries=S.log[curDate]||[];
@@ -1405,6 +1409,90 @@ function weightHistoryHTML(){
   return html;
 }
 function goalLabel(g){ return g==='lose'?'Lose weight':g==='gain'?'Build muscle / gain':'Maintain'; }
+
+/* ============================== WEAPON 6: PERFORMANCE ALERTS ============================== */
+/* Actionable, no spam: only fires once you've logged something today. Core P/C/V always; optional
+   metrics only if you track them; over-limits (sodium/sugar/calories) flag high. */
+function generateAlerts(date){
+  var out=[]; var entries=S.log[date]||[];
+  if(!entries.length) return out;                     // don't nag an untouched day
+  var tot=dayTotals(date), tracked=activeMetrics();
+  function has(k){ return tracked.some(function(m){return m.k===k;}); }
+  function pct(k){ return metricPct(date,k); }
+  if(has('protein') && pct('protein')<50) out.push({lvl:'warn', t:'Protein behind pace', b:'You\'re at '+Math.round(pct('protein'))+'% of your protein target.'});
+  if(has('veg') && (tot.veg||0)===0)        out.push({lvl:'warn', t:'No vegetables yet', b:'You haven\'t logged any vegetables today.'});
+  if(has('carbs') && pct('carbs')<35)       out.push({lvl:'', t:'Carbs behind pace', b:'Carbs are at '+Math.round(pct('carbs'))+'% of target.'});
+  if(has('water') && pct('water')<40)       out.push({lvl:'warn', t:'Hydration behind pace', b:'Water is at '+Math.round(pct('water'))+'% of your goal.'});
+  if(has('fruits') && (tot.fruit||0)===0)   out.push({lvl:'', t:'No fruit yet', b:'No fruit logged today.'});
+  if(has('calories') && pct('calories')>115) out.push({lvl:'bad', t:'Over on calories', b:'You\'re at '+Math.round(pct('calories'))+'% of your calorie target.'});
+  if(has('sodium') && pct('sodium')>100)    out.push({lvl:'bad', t:'Sodium is high', b:'Sodium is over your daily limit ('+Math.round(tot.sodium)+' mg).'});
+  if(has('sugar') && pct('sugar')>100)      out.push({lvl:'bad', t:'Sugar is high', b:'Sugar is over your daily limit ('+Math.round(tot.sugar)+' g).'});
+  return out;
+}
+function renderAlerts(){
+  var el=document.getElementById('todayAlerts'); if(!el) return;
+  var alerts=generateAlerts(curDate);
+  if(!alerts.length){ el.innerHTML=''; return; }      // no alerts = no card (never nag)
+  var html='<div class="section-title" style="margin-top:22px">Heads Up</div>';
+  alerts.forEach(function(a){
+    var col=a.lvl==='bad'?'#ff9d5c':(a.lvl==='warn'?'#ffc24d':'#8a93a0');
+    html+='<div style="background:linear-gradient(160deg,#15181c,#0c0e11);border:1px solid #1d2126;border-left:3px solid '+col+';border-radius:12px;padding:11px 15px;margin-bottom:8px">'
+      +'<div style="font-family:var(--disp);letter-spacing:.5px;font-size:14px;color:'+col+'">'+a.t+'</div>'
+      +'<div style="font-size:13px;color:#cdd4dc;margin-top:2px">'+a.b+'</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+/* ============================== WEAPON 7: RECOVERY / OVERALL PERFORMANCE SCORE ============================== */
+/* Combines the pillars into one score. Reads the SAME localStorage the hub reads (same origin) so the
+   numbers are real. Safe fallback: only Nutrition data -> show Nutrition + "connect other pillars". */
+function _sget(k){ try{ var v=localStorage.getItem(k); return v!=null?JSON.parse(v):null; }catch(e){ return null; } }
+function pillarScores(){
+  var out=[{ name:'Nutrition', pct:dailyScore(curDate), self:true }];
+  var uid=null; try{ if(window.firebase && firebase.auth && firebase.auth().currentUser) uid=firebase.auth().currentUser.uid; }catch(e){}
+  try{ var hlog=_sget('habits_v4');
+    if(hlog && Object.keys(hlog).length){
+      var blocks=_sget('blocks_v4'), total=0;
+      if(blocks){ ['MRN','WRK','NGT'].forEach(function(bk){ if(blocks[bk]&&blocks[bk].habits) total+=blocks[bk].habits.length; }); }
+      if(!total) total=15;
+      var done=Object.keys(hlog[curDate]||{}).filter(function(id){return hlog[curDate][id];}).length;
+      out.push({ name:'Habits', pct:Math.round(Math.min(100, done/total*100)) });
+    } }catch(e){}
+  try{ var wh=_sget('mps_v3_history');
+    if(Array.isArray(wh) && wh.length) out.push({ name:'Workout', pct: wh.some(function(d){return d&&d.date===curDate;})?100:0 });
+  }catch(e){}
+  try{ var hasSleep=false, sleptToday=false;
+    for(var k in localStorage){ if(k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest'){ hasSleep=true; var v=_sget(k); if(v && v.date===curDate) sleptToday=true; } }
+    if(hasSleep) out.push({ name:'Sleep', pct: sleptToday?100:0 });
+  }catch(e){}
+  try{ if(uid){ var jmap=_sget('mps_jnl_'+uid+'_journal_v1'); if(jmap && Object.keys(jmap).length) out.push({ name:'Journal', pct: jmap[curDate]?100:0 }); } }catch(e){}
+  return out;
+}
+function _scoreCol(p){ return p>=65?'var(--g)':p>=33?'#ffc24d':'#ffffff'; }
+function renderOverall(){
+  var el=document.getElementById('todayOverall'); if(!el) return;
+  var ps=pillarScores();
+  var others=ps.filter(function(p){return !p.self;});
+  var html='<div class="section-title" style="margin-top:22px">Overall Performance</div>';
+  if(!others.length){
+    var n=ps[0];
+    html+='<div class="set-card glass"><div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+      +'<span style="font-family:var(--disp);font-size:36px;font-weight:600;color:'+_scoreCol(n.pct)+'">'+n.pct+'%</span>'
+      +'<span style="font-size:13px;color:#cdd4dc">Nutrition: '+n.pct+'% · <span style="color:#8a93a0">connect your other pillars to unlock your full performance score.</span></span></div></div>';
+  } else {
+    var overall=Math.round(ps.reduce(function(a,p){return a+p.pct;},0)/ps.length);
+    html+='<div class="set-card glass">'
+      +'<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px">'
+        +'<span style="font-family:var(--disp);font-size:40px;font-weight:600;color:'+_scoreCol(overall)+'">'+overall+'%</span>'
+        +'<span style="font-size:12px;color:#8a93a0;text-transform:uppercase;letter-spacing:1px">Overall Score · today</span></div>';
+    ps.forEach(function(p){
+      html+='<div class="toggle-row" style="cursor:default"><div class="tl">'+p.name+'</div>'
+        +'<div style="font-family:var(--disp);letter-spacing:.5px;color:'+_scoreCol(p.pct)+'">'+p.pct+'%</div></div>';
+    });
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
 
 /* ============================== WEAPON 3: SUPPLEMENT TRACKER ============================== */
 /* Supplements tracked as named items grouped into STACKS (templates). Daily compliance = stacks
