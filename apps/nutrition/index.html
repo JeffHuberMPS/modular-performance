@@ -346,6 +346,7 @@
     <div class="breakdown" id="breakdown"></div>
     <div class="meals-wrap" id="mealsWrap"></div>
     <div id="todayWeight"></div>
+    <div id="todaySupps"></div>
   </div>
 
   <!-- HISTORY -->
@@ -472,6 +473,9 @@ let S = {
   customFoods:[],
   customRecipes:[],   // was customMeals (renamed V2)
   mealTemplates:[],   // W1: saved rigid meal presets
+  customSupplements:[],   // W3
+  supplementTemplates:[], // W3: stacks
+  supplementLog:{},       // W3: { 'YYYY-MM-DD': { stackId:true } }
   weightLog:[],
   reminders:{ enabled:false, freq:'daily' }
 };
@@ -484,6 +488,9 @@ function load(){ try{ var d=JSON.parse(localStorage.getItem('mps_nutrition')); i
   if(S.customMeals){ if(!S.customRecipes || !S.customRecipes.length) S.customRecipes=S.customMeals; delete S.customMeals; }
   if(!S.customRecipes) S.customRecipes=[];
   if(!S.mealTemplates) S.mealTemplates=[];
+  if(!S.customSupplements) S.customSupplements=[];
+  if(!S.supplementTemplates) S.supplementTemplates=[];
+  if(!S.supplementLog) S.supplementLog={};
 }
 function save(){ localStorage.setItem('mps_nutrition', JSON.stringify(S)); try{ if(window.nutritionScheduleBackup) window.nutritionScheduleBackup(); }catch(e){} }
 function allFoods(){ return FOODS.concat(S.customFoods); }
@@ -634,6 +641,7 @@ function renderToday(){
   renderBreakdownPanel();
   renderMeals();
   renderTodayWeight();
+  renderTodaySupps();
 }
 function mealMiniHTML(){
   var entries=S.log[curDate]||[];
@@ -713,7 +721,8 @@ const WICO = {
   plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   dup:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
-  trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'
+  trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+  pill:'<rect x="3" y="8.5" width="18" height="7" rx="3.5"/><line x1="12" y1="8.5" x2="12" y2="15.5"/>'
 };
 function wBig(ic){ return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'+ic+'</svg>'; }
 function wSm(ic){ return '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'+ic+'</svg>'; }
@@ -1393,6 +1402,112 @@ function weightHistoryHTML(){
   return html;
 }
 function goalLabel(g){ return g==='lose'?'Lose weight':g==='gain'?'Build muscle / gain':'Maintain'; }
+
+/* ============================== WEAPON 3: SUPPLEMENT TRACKER ============================== */
+/* Supplements tracked as named items grouped into STACKS (templates). Daily compliance = stacks
+   checked off today / total stacks. Card only appears once you have stacks/supps (no 0% shaming). */
+const SUPP_DB = [
+  {id:'s1',n:'Whey Protein'},{id:'s2',n:'Creatine'},{id:'s3',n:'Multivitamin'},{id:'s4',n:'Fish Oil (Omega-3)'},
+  {id:'s5',n:'Vitamin D3'},{id:'s6',n:'Magnesium'},{id:'s7',n:'Pre-Workout'},{id:'s8',n:'Greens Powder'},
+  {id:'s9',n:'Probiotic'},{id:'s10',n:'Zinc'},{id:'s11',n:'Ashwagandha'},{id:'s12',n:'Melatonin'},
+  {id:'s13',n:'Caffeine'},{id:'s14',n:'Electrolytes'},{id:'s15',n:'Collagen'},{id:'s16',n:'Vitamin C'}
+];
+function allSupps(){ return SUPP_DB.concat(S.customSupplements||[]); }
+function suppById(id){ return allSupps().find(function(x){return x.id===id;}); }
+
+function renderTodaySupps(){
+  var el=document.getElementById('todaySupps'); if(!el) return;
+  var stacks=S.supplementTemplates||[];
+  var hasAny = stacks.length || (S.customSupplements && S.customSupplements.length);
+  if(!hasAny){
+    el.innerHTML='<div class="section-title" style="margin-top:22px">Supplements</div>'
+      +'<div class="set-card glass" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+      +'<div class="desc" style="margin:0">Build a stack (like a Morning Stack) to track your supplements and daily compliance.</div>'
+      +'<button class="btn-primary" onclick="openSuppManager()">'+wSm(WICO.plus)+' Add Stack</button></div>';
+    return;
+  }
+  var done=S.supplementLog[curDate]||{};
+  var doneCount=stacks.filter(function(st){return done[st.id];}).length;
+  var pct = stacks.length? Math.round(doneCount/stacks.length*100):0;
+  var pcol = pct>=100?'var(--g)':pct>=50?'#ffc24d':'#ffffff';
+  var html='<div class="section-title" style="margin-top:22px">Supplements</div>';
+  if(stacks.length){
+    html+='<div class="set-card glass"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+      +'<div><div style="font-size:12px;color:#8a93a0;text-transform:uppercase;letter-spacing:1px">Today\'s Compliance</div>'
+      +'<div style="font-family:var(--disp);font-size:34px;color:'+pcol+'">'+doneCount+'/'+stacks.length+' · '+pct+'%</div></div>'
+      +'<button class="btn-ghost" onclick="openSuppManager()">Manage</button></div>'
+      +'<div style="margin-top:6px">';
+    stacks.forEach(function(st){
+      var on=!!done[st.id];
+      html+='<div class="toggle-row"><div class="tl">'+esc(st.name)+' <small>'+st.items.length+' item'+(st.items.length===1?'':'s')+'</small></div>'
+        +'<div class="sw'+(on?' on':'')+'" onclick="toggleStackDone(\''+st.id+'\')"></div></div>';
+    });
+    html+='</div></div>';
+  } else {
+    html+='<div class="set-card glass" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="desc" style="margin:0">You have custom supplements saved. Group them into a stack to track daily.</div><button class="btn-primary" onclick="openSuppManager()">'+wSm(WICO.plus)+' New Stack</button></div>';
+  }
+  el.innerHTML=html;
+}
+function toggleStackDone(id){
+  if(!S.supplementLog[curDate]) S.supplementLog[curDate]={};
+  S.supplementLog[curDate][id]=!S.supplementLog[curDate][id];
+  save(); renderTodaySupps();
+}
+function openSuppManager(){
+  var stacks=S.supplementTemplates||[];
+  var html='<div class="modal-head"><h2>Supplement Stacks</h2><span class="x" onclick="closeModal()">×</span></div>';
+  if(stacks.length){
+    html+='<div class="results">'+stacks.map(function(st){
+      var names=st.items.map(function(id){ var s=suppById(id); return s?esc(s.n):''; }).filter(Boolean).join(', ');
+      return '<div class="res-item"><span class="res-emoji" style="color:var(--g)">'+wBig(WICO.pill)+'</span>'
+        +'<div class="res-info"><div class="rn">'+esc(st.name)+'</div><div class="rm" style="text-transform:none;letter-spacing:0">'+names+'</div></div>'
+        +'<span class="res-fav" title="Delete" style="color:#ff6b6b" onclick="deleteStack(\''+st.id+'\')">'+wSm(WICO.trash)+'</span></div>';
+    }).join('')+'</div>';
+  } else { html+='<div class="res-empty">No stacks yet. Create one to start tracking.</div>'; }
+  html+='<div class="modal-actions"><button class="save" onclick="openNewStack()">'+wSm(WICO.plus)+' New Stack</button><button class="cancel" onclick="openAddSupp()">Add Supplement</button></div>';
+  document.getElementById('modal').innerHTML=html;
+  document.getElementById('overlay').classList.add('active');
+}
+var _newStackSel={};
+function openNewStack(){ _newStackSel={}; renderNewStack(''); }
+function renderNewStack(name){
+  var html='<div class="modal-head"><h2>New Stack</h2><span class="x" onclick="openSuppManager()">×</span></div>'
+    +'<label>Stack name</label><input id="stackName" value="'+esc(name||'')+'" placeholder="Morning Stack">'
+    +'<label>Include supplements</label><div class="results" style="max-height:280px">'
+    + allSupps().map(function(s){ var on=_newStackSel[s.id];
+        return '<div class="res-item" onclick="toggleStackSel(\''+s.id+'\')"><span class="res-emoji" style="color:'+(on?'var(--g)':'#3a424c')+'">'+wBig(WICO.pill)+'</span>'
+          +'<div class="res-info"><div class="rn">'+esc(s.n)+'</div></div>'
+          +'<span class="res-fav '+(on?'star-on':'star-off')+'" style="color:'+(on?'var(--g)':'#3a424c')+'">'+(on?'✓':'○')+'</span></div>';
+      }).join('')
+    +'</div>'
+    +'<div class="modal-actions"><button class="save" onclick="commitStack()">Save Stack</button><button class="cancel" onclick="openAddSupp()">+ Custom</button></div>';
+  document.getElementById('modal').innerHTML=html;
+}
+function toggleStackSel(id){ _newStackSel[id]=!_newStackSel[id]; var nm=(document.getElementById('stackName')||{}).value||''; renderNewStack(nm); }
+function commitStack(){
+  var name=(document.getElementById('stackName').value||'').trim(); if(!name){ toast('Name your stack'); return; }
+  var items=Object.keys(_newStackSel).filter(function(k){return _newStackSel[k];});
+  if(!items.length){ toast('Pick at least one supplement'); return; }
+  S.supplementTemplates.push({ id:'stk'+Date.now(), name:name, items:items });
+  save(); toast('Stack saved: '+name); if(curTab==='today') renderTodaySupps(); openSuppManager();
+}
+function openAddSupp(){
+  document.getElementById('modal').innerHTML='<div class="modal-head"><h2>Custom Supplement</h2><span class="x" onclick="openSuppManager()">×</span></div>'
+    +'<label>Supplement name</label><input id="suppName" placeholder="e.g. Beet Root">'
+    +'<div class="modal-actions"><button class="save" onclick="commitSupp()">Add</button><button class="cancel" onclick="openSuppManager()">Back</button></div>';
+}
+function commitSupp(){
+  var n=(document.getElementById('suppName').value||'').trim(); if(!n){ toast('Enter a name'); return; }
+  S.customSupplements=S.customSupplements||[];
+  S.customSupplements.push({ id:'cs'+Date.now(), n:n });
+  save(); toast(n+' added'); openNewStack();
+}
+function deleteStack(id){
+  if(!confirm('Delete this stack?')) return;
+  S.supplementTemplates=(S.supplementTemplates||[]).filter(function(x){return x.id!==id;});
+  Object.keys(S.supplementLog||{}).forEach(function(d){ if(S.supplementLog[d]) delete S.supplementLog[d][id]; });
+  save(); if(curTab==='today') renderTodaySupps(); openSuppManager();
+}
 
 /* ============================== SETTINGS ============================== */
 function renderSettings(){
