@@ -1,0 +1,1264 @@
+
+const { useState, useEffect, useRef } = React;
+
+// ═══ WEAPON 6: Universal Performance Scale engine ═══
+// One canonical 0-5 score -> color + glow, reused by every bar / heatmap / progress fill.
+// Rule: Height/Length = Progress, Color = Performance, Glow = Excellence.
+// Two palettes (red for the Premium colorful theme, gold/gray for the Core/Elite mono theme)
+// so the SAME score reads correctly in whichever theme is active. Never a second color system.
+const MPS_PERF_SCALE = {
+  red: {
+    5: { fill: '#b00000', glow: '0 0 22px rgba(255,30,30,0.65)' },
+    4: { fill: '#e02020', glow: '0 0 16px rgba(255,40,40,0.45)' },
+    3: { fill: '#ff4a4a', glow: '0 0 10px rgba(255,80,80,0.30)' },
+    2: { fill: '#ff8a8a', glow: '0 0 6px rgba(255,120,120,0.20)' },
+    1: { fill: '#8b8b8b', glow: 'none' },
+    0: { fill: '#333333', glow: 'none' },
+  },
+  gray: {
+    5: { fill: '#e6c15a', glow: '0 0 20px rgba(201,160,32,0.55)' },
+    4: { fill: '#C9A020', glow: '0 0 14px rgba(201,160,32,0.40)' },
+    3: { fill: '#a88a3c', glow: '0 0 9px rgba(201,160,32,0.25)' },
+    2: { fill: '#7f7658', glow: '0 0 5px rgba(201,160,32,0.15)' },
+    1: { fill: '#8b8b8b', glow: 'none' },
+    0: { fill: '#333333', glow: 'none' },
+  },
+};
+function mpsClampScore(score) {
+  const n = Number(score);
+  if (Number.isNaN(n)) return 0;
+  return Math.max(0, Math.min(5, Math.round(n)));
+}
+// Accepts a 0-5 score OR a 0-100 percent (auto-detected when > 5).
+function mpsPerfConfig(scoreOrPct, gray) {
+  let s = Number(scoreOrPct);
+  if (Number.isNaN(s)) s = 0;
+  if (s > 5) s = s / 20;                 // percent -> 0-5 score
+  const lvl = mpsClampScore(s);
+  return (gray ? MPS_PERF_SCALE.gray : MPS_PERF_SCALE.red)[lvl];
+}
+// Style for any solid fill (progress bars, heatmap cells, chart bars).
+function mpsPerfStyle(scoreOrPct, gray) {
+  const c = mpsPerfConfig(scoreOrPct, gray);
+  return { background: c.fill, boxShadow: c.glow };
+}
+// Height as a share of a chart cell (Height = Progress). 5/5 -> 100%.
+function mpsBarHeight(score) { return `${mpsClampScore(score) * 20}%`; }
+
+function HabitTracker() {
+  const [view, setView] = useState('dashboard');
+  const [activeBlock, setActiveBlock] = useState('MRN');
+  const [chartView, setChartView] = useState('daily');
+  const [editingHabit, setEditingHabit] = useState(null);
+  const [editingBlock, setEditingBlock] = useState(null);
+  const [saveFlash, setSaveFlash] = useState(false);
+  const [barDetail, setBarDetail] = useState(null);
+  const [logTab, setLogTab] = useState('habits');
+  const [insightView, setInsightView] = useState('monthly');
+  // ═══ WEAPON 10: Insights coaching cards — independent expand/collapse ═══
+  const [insightCardsOpen, setInsightCardsOpen] = useState({ strongest: true, attention: true, focus: true });
+  const [habits, setHabits] = useState({});
+  const habitsRef = useRef({});
+  const [gymDone, setGymDone] = useState({});
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCal, setShowCal] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  // ═══ WEAPON 3: Goals panel (opened by the Projected Month line) ═══
+  const [showGoalsPanel, setShowGoalsPanel] = useState(false);
+  const [showTargetSlider, setShowTargetSlider] = useState(false);
+  const [targetScore, setTargetScore] = useState(() => {
+    try { return parseInt(localStorage.getItem('habits_target_score') || '95', 10) || 95; }
+    catch(e) { return 95; }
+  });
+
+  const DEFAULT_BLOCKS = {
+    MRN: {
+      name: 'Morning', icon: '🌅', target: 63,
+      habits: [
+        { id: 'h_wake', label: 'Wake up — 4:00 AM', emoji: '🔥' },
+        { id: 'h_gymtr', label: 'Gym / training', emoji: '🏋️' },
+        { id: 'h_breath', label: 'Breathwork', emoji: '🌬️' },
+        { id: 'h_read', label: 'Reading', emoji: '📖' },
+        { id: 'h_cold', label: 'Cold shower', emoji: '❄️' },
+      ],
+    },
+    WRK: {
+      name: 'Work', icon: '💼', target: 63,
+      habits: [
+        { id: 'h_mind', label: 'Mind Inputs', emoji: '🧠' },
+        { id: 'h_course', label: 'Coursera (60 Min)', emoji: '🎓' },
+        { id: 'h_outr', label: 'MPS Outreach', emoji: '📡' },
+        { id: 'h_chess', label: 'Chess Games', emoji: '♟️' },
+        { id: 'h_auto', label: 'Automation', emoji: '⚙️' },
+      ],
+    },
+    NGT: {
+      name: 'Night', icon: '🌙', target: 54,
+      habits: [
+        { id: 'h_journ', label: 'Journaling', emoji: '✍️' },
+        { id: 'h_pray', label: 'Prayer + Meditation', emoji: '🙏' },
+        { id: 'h_bible', label: 'Bible (Reading)', emoji: '📖' },
+        { id: 'h_guit', label: 'Play Guitar', emoji: '🎸' },
+        { id: 'h_sleep', label: 'Sleep — 10:00 PM', emoji: '🛌' },
+      ],
+    },
+  };
+
+  const [blocksRaw, setBlocks] = useState(DEFAULT_BLOCKS);
+  // Core: show only the first 3 habits per block (the rest is an Elite upgrade). Core can't edit
+  // habits (the edit/insights view is locked), so capping the display data is safe — no data is lost.
+  const __isCore = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
+  const blocks = __isCore ? Object.fromEntries(Object.entries(blocksRaw).map(([k, b]) => [k, { ...b, habits: (b.habits || []).slice(0, 3) }])) : blocksRaw;
+  // Premium = full history; Core/Elite can only browse back ~60 days. __capMin = oldest selectable date.
+  const __PREMIUM = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+  const __capMin = (()=>{ const d = new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); return d; })();
+  const __monthFullyBeforeCap = (dt) => { const monthEnd = new Date(dt.getFullYear(), dt.getMonth()+1, 0, 23, 59, 59); return monthEnd < __capMin; };
+
+  useEffect(() => {
+    (async () => {
+      let habitsLoaded = false;
+      try {
+        const h = await window.storage.get('habits_v4').catch(() => null);
+        const g = await window.storage.get('gym_v4').catch(() => null);
+        const b = await window.storage.get('blocks_v4').catch(() => null);
+        if (h && h.value) {
+          const parsed = JSON.parse(h.value);
+          setHabits(parsed);
+          habitsRef.current = parsed;
+          habitsLoaded = true;
+        }
+        if (g && g.value) setGymDone(JSON.parse(g.value));
+        if (b && b.value) setBlocks(JSON.parse(b.value));
+      } catch (e) {}
+      if (!habitsLoaded) {
+        try {
+          const lh = localStorage.getItem('habits_v4');
+          if (lh) {
+            const parsed = JSON.parse(lh);
+            setHabits(parsed);
+            habitsRef.current = parsed;
+          }
+        } catch (e) {}
+      }
+      setLoaded(true);
+    })();
+  }, []);
+
+  const saveHabits = async (next) => {
+    setHabits(next);
+    habitsRef.current = next;
+    const s = JSON.stringify(next);
+    try { localStorage.setItem('habits_v4', s); } catch(e) {}
+    try { await window.storage.set('habits_v4', s); } catch(e) {}
+  };
+
+  const saveGym = async (next) => {
+    setGymDone(next);
+    try { await window.storage.set('gym_v4', JSON.stringify(next)); } catch(e) {}
+  };
+
+  const saveBlocks = async (next) => {
+    setBlocks(next);
+    try { await window.storage.set('blocks_v4', JSON.stringify(next)); } catch(e) {}
+  };
+
+  const fmtKey = (d) => {
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${d.getFullYear()}-${m}-${day}`;
+  };
+
+  const selKey = fmtKey(selectedDate);
+  const today = new Date();
+  const todayKey = fmtKey(today);
+  const isToday = selKey === todayKey;
+  const formatDate = (d) => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
+
+  const ALL_HABITS = Object.entries(blocks).flatMap(([key, b]) => b.habits.map(h => ({ ...h, block: key })));
+  const TOTAL_HABITS = ALL_HABITS.length;
+
+  const toggleHabitForDate = (dateKey, habitId) => {
+    if (!dateKey) return;
+    const next = { ...habits };
+    next[dateKey] = { ...(next[dateKey] || {}) };
+    if (next[dateKey][habitId]) { delete next[dateKey][habitId]; } else { next[dateKey][habitId] = true; }
+    if (Object.keys(next[dateKey]).length === 0) delete next[dateKey];
+    saveHabits(next);
+  };
+  const toggleHabit = (habitId) => toggleHabitForDate(selKey, habitId);
+
+  const toggleGym = () => { const next = { ...gymDone }; next[selKey] = !next[selKey]; if (!next[selKey]) delete next[selKey]; saveGym(next); };
+  // NOTE: block mutators always read from blocksRaw (the full, uncapped data), never the
+  // Core-capped `blocks` view. Mutating `blocks` and persisting it would wipe habits 4–5 in Core.
+  const renameBlock = (k, v) => { const n = { ...blocksRaw }; n[k] = { ...n[k], name: v }; saveBlocks(n); };
+  const updateBlockIcon = (k, v) => { const n = { ...blocksRaw }; n[k] = { ...n[k], icon: v }; saveBlocks(n); };
+  const updateBlockTarget = (k, v) => { const n = { ...blocksRaw }; n[k] = { ...n[k], target: parseInt(v) || 0 }; saveBlocks(n); };
+  const renameHabit = (bk, hid, v) => { const n = { ...blocksRaw }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, label: v } : h) }; saveBlocks(n); };
+  const updateHabitEmoji = (bk, hid, v) => { const n = { ...blocksRaw }; n[bk] = { ...n[bk], habits: n[bk].habits.map(h => h.id === hid ? { ...h, emoji: v } : h) }; saveBlocks(n); };
+  const addHabit = (bk) => { if ((blocksRaw[bk] && blocksRaw[bk].habits ? blocksRaw[bk].habits.length : 0) >= 5) return; const n = { ...blocksRaw }; const id = `h_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`; n[bk] = { ...n[bk], habits: [...n[bk].habits, { id, label: 'New habit', emoji: '✨' }] }; saveBlocks(n); };
+  const deleteHabit = (bk, hid) => { const n = { ...blocksRaw }; n[bk] = { ...n[bk], habits: n[bk].habits.filter(h => h.id !== hid) }; saveBlocks(n); };
+  const askConfirm = (message, onYes) => setConfirmDialog({ message, onYes });
+  const resetToDefault = () => askConfirm('Reset all habits and block names to defaults? Your check-in data stays.', () => saveBlocks(DEFAULT_BLOCKS));
+
+  const getDayCompletion = (dk, bk) => {
+    const dd = habits[dk] || {};
+    const bh = blocks[bk].habits;
+    return { done: bh.filter(h => dd[h.id]).length, total: bh.length };
+  };
+  const getDayCompletionAll = (dk) => { const dd = habits[dk] || {}; return ALL_HABITS.filter(h => dd[h.id]).length; };
+
+  const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth()+1, 0);
+  const daysInMonth = monthEnd.getDate();
+  const isCurMo = today.getMonth() === selectedDate.getMonth() && today.getFullYear() === selectedDate.getFullYear();
+  const todayDayOfMonth = isCurMo ? today.getDate() : daysInMonth;
+  const daysLeft = Math.max(0, daysInMonth - todayDayOfMonth);
+  const monthName = selectedDate.toLocaleString('en-US', { month: 'long' });
+  const year = selectedDate.getFullYear();
+
+  const monthDateKeys = [];
+  for (let i = 1; i <= daysInMonth; i++) monthDateKeys.push(fmtKey(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i)));
+  const passedDateKeys = monthDateKeys.slice(0, todayDayOfMonth);
+  const daysLogged = monthDateKeys.filter(k => getDayCompletionAll(k) > 0).length;
+  const monthTotalPossible = daysInMonth * TOTAL_HABITS;
+  const monthTotalComplete = monthDateKeys.reduce((s,k) => s + getDayCompletionAll(k), 0);
+  const monthRemaining = monthTotalPossible - monthTotalComplete;
+  const monthPct = monthTotalPossible > 0 ? Math.round((monthTotalComplete/monthTotalPossible)*10000)/100 : 0;
+
+  // ═══ WEAPON 1: Hero Discipline Score ═══
+  // Today's completion as a single 0-100 score. Drives the Dashboard hero.
+  const todayDone = getDayCompletionAll(selKey);
+  const todayPct = TOTAL_HABITS > 0 ? Math.round((todayDone / TOTAL_HABITS) * 100) : 0;
+
+  // ═══ WEAPON 2: vs Yesterday delta ═══
+  // Compares the selected day against the day before it (habit count).
+  const prevDayKey = (() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); return fmtKey(d); })();
+  const dayDelta = todayDone - getDayCompletionAll(prevDayKey);
+  const dayDeltaText = dayDelta === 0 ? 'Same as yesterday' : `${dayDelta > 0 ? '+' : ''}${dayDelta} vs yesterday`;
+
+  // ═══ WEAPON 3: Projected month ═══
+  // Pace so far this month, projected across the full month.
+  const projectedMonthPct = (() => {
+    const passed = Math.max(1, todayDayOfMonth);
+    const projectedDone = (monthTotalComplete / passed) * daysInMonth;
+    return monthTotalPossible > 0 ? Math.min(100, Math.round((projectedDone / monthTotalPossible) * 100)) : 0;
+  })();
+
+  // ═══ WEAPON 4: Goals panel — Current vs Daily Target ═══
+  // Converts the target % into an actionable per-block + whole-day habit count.
+  const clampNum = (n, min, max) => Math.max(min, Math.min(max, n));
+  const dailyTarget = (() => {
+    const keys = Object.keys(blocks);
+    // Whole-day target first, then hand it out to the blocks so the block rows ALWAYS
+    // sum to exactly the DAY row (largest-remainder method). No more 5+5+5 != 14.
+    const dayTarget = clampNum(Math.round((targetScore / 100) * TOTAL_HABITS), 0, TOTAL_HABITS);
+    const rows = keys.map(k => {
+      const total = blocks[k].habits.length;
+      const exact = (targetScore / 100) * total;
+      const floor = clampNum(Math.floor(exact), 0, total);
+      return { k, total, floor, rem: exact - Math.floor(exact) };
+    });
+    let leftover = dayTarget - rows.reduce((s, r) => s + r.floor, 0);
+    const order = [...rows].sort((a, b) => b.rem - a.rem);
+    // Give the leftover habits to the blocks with the biggest fraction, respecting each block's cap.
+    for (let pass = 0; pass < 2 && leftover > 0; pass++) {
+      for (let i = 0; i < order.length && leftover > 0; i++) {
+        if (order[i].floor < order[i].total) { order[i].floor += 1; leftover--; }
+      }
+    }
+    const perBlock = {};
+    rows.forEach(r => { perBlock[r.k] = r.floor; });
+    return { dayTarget, perBlock };
+  })();
+  const gapText = (current, target) => { const d = target - current; return d <= 0 ? '✓' : `+${d}`; };
+
+  // ═══ WEAPON 5: Target Score slider (live, no save button) ═══
+  const saveTargetScore = (n) => {
+    const clean = clampNum(parseInt(n, 10) || 95, 50, 100);
+    setTargetScore(clean);
+    try { localStorage.setItem('habits_target_score', String(clean)); } catch(e) {}
+  };
+
+  const blockStats = Object.keys(blocks).map(key => {
+    const block = blocks[key];
+    const totalPossible = daysInMonth * block.habits.length;
+    const totalDone = monthDateKeys.reduce((s,k) => s + getDayCompletion(k,key).done, 0);
+    const pct = totalPossible > 0 ? Math.round((totalDone/totalPossible)*10000)/100 : 0;
+    return { key, ...block, totalDone, totalPossible, pct };
+  });
+
+  const last7DateKeys = (() => {
+    const arr = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate()-i); arr.push(fmtKey(d));
+    }
+    return arr;
+  })();
+
+  const gymMonthDone = monthDateKeys.filter(k => gymDone[k]).length;
+  const gymPct = passedDateKeys.length > 0 ? Math.round((passedDateKeys.filter(k => gymDone[k]).length/passedDateKeys.length)*10000)/100 : 0;
+
+  const habitMetrics = ALL_HABITS.map(h => {
+    const completed = passedDateKeys.filter(k => habits[k]?.[h.id]).length;
+    const strength = passedDateKeys.length > 0 ? Math.round((completed/passedDateKeys.length)*10000)/100 : 0;
+    let streak = 0;
+    for (let i = passedDateKeys.length-1; i >= 0; i--) {
+      if (habits[passedDateKeys[i]]?.[h.id]) streak++; else break;
+    }
+    return { ...h, completed, strength, streak };
+  });
+
+  const weeklyHabitMetrics = ALL_HABITS.map(h => {
+    const completed = last7DateKeys.filter(k => habits[k]?.[h.id]).length;
+    const strength = last7DateKeys.length > 0 ? Math.round((completed/last7DateKeys.length)*10000)/100 : 0;
+    let streak = 0;
+    for (let i = last7DateKeys.length-1; i >= 0; i--) {
+      if (habits[last7DateKeys[i]]?.[h.id]) streak++; else break;
+    }
+    return { ...h, completed, strength, streak };
+  });
+
+  // Weekly (last-7-day) per-block stats — mirrors blockStats so the Insights weekly toggle
+  // can drive the block AVG the same way it drives the per-habit STRENGTH.
+  const weeklyBlockStats = Object.keys(blocks).map(key => {
+    const block = blocks[key];
+    const totalPossible = last7DateKeys.length * block.habits.length;
+    const totalDone = last7DateKeys.reduce((s,k) => s + getDayCompletion(k,key).done, 0);
+    const pct = totalPossible > 0 ? Math.round((totalDone/totalPossible)*10000)/100 : 0;
+    return { key, ...block, totalDone, totalPossible, pct };
+  });
+
+  // ═══ WEAPON 10/11: Insights coaching helpers ═══
+  const getInsightMetrics = () => (insightView === 'weekly' ? weeklyHabitMetrics : habitMetrics) || [];
+  const toggleInsightCard = (key) => setInsightCardsOpen(prev => ({ ...prev, [key]: !prev[key] }));
+  // Highest-strength habit in each block (respects the weekly/monthly toggle).
+  const strongestByBlock = (() => {
+    const metrics = getInsightMetrics();
+    const out = {};
+    Object.keys(blocks).forEach(bk => {
+      const items = (blocks[bk].habits || []).map(h => ({ ...h, strength: (metrics.find(m => m.id === h.id)?.strength || 0) }));
+      out[bk] = items.slice().sort((a, b) => b.strength - a.strength)[0];
+    });
+    return out;
+  })();
+  // ═══ WEAPON 12: weakest habit per block ═══
+  const weakestByBlock = (() => {
+    const metrics = getInsightMetrics();
+    const out = {};
+    Object.keys(blocks).forEach(bk => {
+      const items = (blocks[bk].habits || []).map(h => ({ ...h, strength: (metrics.find(m => m.id === h.id)?.strength || 0) }));
+      out[bk] = items.slice().sort((a, b) => a.strength - b.strength)[0];
+    });
+    return out;
+  })();
+  // ═══ WEAPON 13: today's focus — the 2 lowest-strength habits overall ═══
+  const todaysFocus = (() => {
+    const metrics = getInsightMetrics();
+    return ALL_HABITS
+      .map(h => ({ ...h, strength: (metrics.find(m => m.id === h.id)?.strength || 0) }))
+      .slice().sort((a, b) => a.strength - b.strength)
+      .slice(0, 2);
+  })();
+  // ═══ WEAPON 14: expected month if today's 2 focus habits get done ═══
+  const expectedMonthAfterFocus = (() => {
+    const nextToday = { ...(habits[selKey] || {}) };
+    todaysFocus.forEach(h => { nextToday[h.id] = true; });
+    const currentDoneToday = getDayCompletionAll(selKey);
+    const improvedDoneToday = ALL_HABITS.filter(h => nextToday[h.id]).length;
+    const delta = Math.max(0, improvedDoneToday - currentDoneToday);
+    const passed = Math.max(1, todayDayOfMonth);
+    const proj = (done) => monthTotalPossible > 0 ? Math.min(100, Math.round(((done / passed) * daysInMonth / monthTotalPossible) * 100)) : 0;
+    return { projectedCurrent: proj(monthTotalComplete), projectedImproved: proj(monthTotalComplete + delta) };
+  })();
+
+  // ─── Theme ───
+  const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+  const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
+  const PRIMARY = __GRAY ? '#f5f5f5' : '#8b0000';
+  const PRIMARY_LIGHT = __GRAY ? '#C9A020' : '#d62020';
+  const PL_RGB = __GRAY ? '201, 160, 32' : '214, 32, 32';   // theme color for icon chips (gold gray / red colorful)
+  const PRIMARY_GLOW = __GRAY ? 'rgba(201,160,32,0.22)' : 'rgba(150,150,150,0.5)';
+  const SEG = __GRAY ? '#2e2e2e' : PRIMARY;   // active toggle segment: dark grey in gray mode (not white)
+  const ACCENT = '#b8b8b8';
+  const BG = '#050505';
+  const CARD = '#121212';
+  const CARD_RAISED = '#181818';
+  const BORDER = '#1f1f1f';
+  const MUTED = __GRAY ? '#C9A020' : '#6b6b6b';
+  const TEXT = '#e8e8e8';
+  const CARD_SHADOW_3D = '0 4px 12px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.04)';
+  const CARD_SHADOW_3D_HOVER = '0 6px 18px rgba(150,150,150,0.25), 0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06)';
+  const bodyFont = "'Inter', system-ui, sans-serif";
+
+  // Header + chart-bar accents: red in colorful (Premium), gold/neutral in gray (Core/Elite).
+  const HDR_GLOW  = __GRAY ? 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(201,160,32,0.14) 0%, rgba(201,160,32,0.05) 45%, transparent 75%)' : 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(230,57,70,0.20) 0%, rgba(230,57,70,0.06) 45%, transparent 75%)';
+  const HDR_LOGO  = __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #ffb3ba 18%, #ff6b78 38%, #e63946 65%, #8a1825 95%, #4a0a13 100%)';
+  const HDR_LINK  = __GRAY ? '#C9A020' : '#8b0000';
+  const HDR_TITLE = __GRAY ? '#C9A020' : '#e63946';
+  const HDR_DIVID = __GRAY ? 'linear-gradient(90deg, transparent, rgba(201,160,32,0.55) 25%, rgba(192,192,192,0.7) 50%, rgba(201,160,32,0.55) 75%, transparent)' : 'linear-gradient(90deg, transparent, rgba(230,57,70,0.6) 25%, rgba(192,192,192,0.7) 50%, rgba(230,57,70,0.6) 75%, transparent)';
+  const BAR_SIDE  = __GRAY ? 'linear-gradient(180deg,#3a3a3a 0%,#1a1a1a 100%)' : 'linear-gradient(180deg,#6b1018 0%,#3a0610 100%)';
+  const BAR_TOP   = __GRAY ? 'linear-gradient(180deg,#e8e8e8 0%,#bdbdbd 100%)' : 'linear-gradient(180deg,#ff9aa3 0%,#ff7a87 100%)';
+  const BAR_FOOT  = __GRAY ? '#2a2a2a' : '#5a0e16';
+  const BAR_FOOT2 = __GRAY ? '#2a2a2a' : '#3a0610';
+
+  if (!loaded) {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, color: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: bodyFont }}>
+        <div style={{ letterSpacing: '4px', fontSize: '14px' }}>LOADING...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, fontFamily: bodyFont, padding: '16px 8px', paddingBottom: '80px' }}>
+      {confirmDialog && (
+        <div onClick={() => setConfirmDialog(null)} style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#141414', border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '22px', maxWidth: '340px', width: '100%', fontFamily: bodyFont, boxShadow: '0 18px 50px rgba(0,0,0,0.6)' }}>
+            <div style={{ fontSize: '14px', color: TEXT, lineHeight: 1.5, marginBottom: '18px' }}>{confirmDialog.message}</div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setConfirmDialog(null)} style={{ flex: 1, padding: '10px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: 'transparent', color: MUTED, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: bodyFont }}>Cancel</button>
+              <button onClick={() => { const fn = confirmDialog.onYes; setConfirmDialog(null); if (fn) fn(); }} style={{ flex: 1, padding: '10px', borderRadius: '9px', border: 'none', background: PRIMARY_LIGHT, color: '#0a0a0a', fontSize: '13px', fontWeight: 800, letterSpacing: '0.04em', cursor: 'pointer', fontFamily: bodyFont }}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* HERO */}
+      <div style={{
+        background: '#000000',
+        backgroundImage: HDR_GLOW,
+        border: '3px solid transparent',
+        borderRadius: '22px',
+        padding: '38px 20px 28px',
+        textAlign: 'center',
+        marginBottom: '28px',
+        position: 'relative',
+        overflow: 'hidden',
+        backgroundClip: 'padding-box',
+        boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(192,192,192,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+      }}>
+        <a href="/hub.html" onClick={(e)=>{e.preventDefault();mpsNavigate('/hub.html');}} style={{ position: 'absolute', top: '16px', left: '16px', color: HDR_LINK, fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textDecoration: 'none', textTransform: 'uppercase' }}>← Hub</a>
+        <div className="mps-logo-rsp" style={{
+          fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+          fontWeight: 900, fontStyle: 'italic',
+          letterSpacing: '4px', lineHeight: 1,
+          background: HDR_LOGO,
+          WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
+        }}>MPS</div>
+        <div style={{ width: '70%', height: '1px', background: HDR_DIVID, margin: '16px auto 14px' }} />
+        <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px' }}>MODULAR PERFORMANCE SYSTEMS</div>
+        <div style={{ fontSize: '20px', letterSpacing: '6px', color: HDR_TITLE, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px' }}>
+          <span>HABIT</span><span>TRACKER</span>
+        </div>
+      </div>
+
+      {/* Date header */}
+      {((view === 'insights' && !__CORE) || view === 'habits') && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 4px' }}>
+          <div>
+            <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px' }}>{monthName.toUpperCase()} {year}</div>
+            <div style={{ fontSize: '14px', color: TEXT, marginTop: '2px' }}>{isToday ? 'TODAY' : 'VIEWING'} · {formatDate(selectedDate)}</div>
+          </div>
+          {view === 'insights' ? (
+            <div style={{ display: 'flex', gap: '4px', padding: '3px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '8px', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
+              {['weekly','monthly'].map(v => (
+                <button key={v} onClick={() => setInsightView(v)} style={{ padding: '6px 10px', background: insightView === v ? SEG : 'transparent', color: insightView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '10px', letterSpacing: '1.5px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
+              ))}
+            </div>
+          ) : (
+            <button onClick={() => setShowCal(!showCal)} style={{ padding: '8px 14px', background: 'transparent', color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer' }}>PICK DATE</button>
+          )}
+        </div>
+      )}
+
+      {/* Calendar */}
+      {showCal && (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '14px', marginBottom: '20px', boxShadow: CARD_SHADOW_3D }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <button disabled={!__PREMIUM && __monthFullyBeforeCap(new Date(selectedDate.getFullYear(), selectedDate.getMonth()-1, 1))} onClick={() => { const d = new Date(selectedDate); d.setMonth(d.getMonth()-1); if (!__PREMIUM && __monthFullyBeforeCap(d)) return; setSelectedDate(d); }} style={{ background: 'transparent', color: (!__PREMIUM && __monthFullyBeforeCap(new Date(selectedDate.getFullYear(), selectedDate.getMonth()-1, 1))) ? 'rgba(150,150,150,0.3)' : PRIMARY_LIGHT, border: 'none', fontSize: '20px', cursor: (!__PREMIUM && __monthFullyBeforeCap(new Date(selectedDate.getFullYear(), selectedDate.getMonth()-1, 1))) ? 'not-allowed' : 'pointer' }}>‹</button>
+            <div style={{ color: PRIMARY_LIGHT, letterSpacing: '3px', fontSize: '13px', fontWeight: 600 }}>{monthName.toUpperCase()} {year}</div>
+            <button onClick={() => { const d = new Date(selectedDate); d.setMonth(d.getMonth()+1); setSelectedDate(d); }} style={{ background: 'transparent', color: PRIMARY_LIGHT, border: 'none', fontSize: '20px', cursor: 'pointer' }}>›</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px' }}>
+            {['S','M','T','W','T','F','S'].map((d,i) => <div key={i} style={{ textAlign: 'center', fontSize: '10px', color: MUTED, padding: '4px' }}>{d}</div>)}
+            {Array.from({ length: monthStart.getDay() }).map((_,i) => <div key={`e${i}`} />)}
+            {Array.from({ length: daysInMonth }).map((_,i) => {
+              const day = i+1;
+              const d = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
+              const k = fmtKey(d);
+              const isSel = k === selKey;
+              const isTd = k === todayKey;
+              const done = getDayCompletionAll(k);
+              const pct = TOTAL_HABITS > 0 ? done/TOTAL_HABITS : 0;
+              return (
+                <button key={day} onClick={() => { setSelectedDate(d); setShowCal(false); }} style={{ padding: '8px 0', textAlign: 'center', fontSize: '13px', background: isSel ? PRIMARY_LIGHT : isTd ? 'rgba(184,184,184,0.15)' : 'transparent', color: isSel ? '#0a0a0a' : TEXT, border: `1px solid ${isSel ? PRIMARY_LIGHT : pct > 0.66 ? PRIMARY : pct > 0.33 ? ACCENT : BORDER}`, borderRadius: '6px', cursor: 'pointer', fontFamily: bodyFont, fontWeight: isSel ? 700 : 400 }}>{day}</button>
+              );
+            })}
+          </div>
+          {!__PREMIUM && (
+            <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '10px', color: MUTED, letterSpacing: '0.5px', lineHeight: 1.5 }}>
+              History is limited to the last 60 days. <a href="/billing.html" target="_top" style={{ color: '#C9A020', fontWeight: 700, textDecoration: 'none' }}>Upgrade to Premium</a> for your full history.
+            </div>
+          )}
+          <button onClick={() => { setSelectedDate(new Date()); setShowCal(false); }} style={{ marginTop: '12px', width: '100%', padding: '10px', background: 'transparent', color: PRIMARY_LIGHT, border: `1px solid ${PRIMARY}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', cursor: 'pointer' }}>JUMP TO TODAY</button>
+        </div>
+      )}
+
+      {/* Persistent tab bar (matches the other trackers) */}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: view === 'log' ? '12px' : '20px' }}>
+        {[['dashboard','DASHBOARD'],['log','TRACK'],['insights','INSIGHTS'],['compound','COMPOUND']].map(([v,lbl]) => (
+          <button key={v} onClick={() => setView(v)} style={{
+            flex: 1, padding: '11px 4px', background: 'none', border: 'none',
+            borderBottom: view === v ? `2px solid ${PRIMARY_LIGHT}` : '2px solid transparent',
+            color: view === v ? PRIMARY_LIGHT : '#6b6b6b',
+            fontFamily: bodyFont, fontSize: '12px', letterSpacing: '0.08em', fontWeight: 600, cursor: 'pointer'
+          }}>{lbl}</button>
+        ))}
+      </div>
+      {view === 'log' && (
+        <div style={{ marginBottom: '12px' }}>
+          <button onClick={() => setShowCal(!showCal)} style={blockTabStyle(false, PRIMARY, BORDER, bodyFont, TEXT)}>PICK DATE</button>
+        </div>
+      )}
+
+      {/* ═══ DASHBOARD ═══ */}
+      {view === 'dashboard' && (
+        <>
+          {/* ═══ WEAPON 1: Hero Discipline Score ═══ */}
+          <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '24px 18px', marginBottom: '16px', textAlign: 'center', boxShadow: CARD_SHADOW_3D, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+              <ScoreRing pct={todayPct} color={PRIMARY_LIGHT} track={BORDER} glow={PRIMARY_GLOW} size={64} />
+              <div style={{ fontSize: '48px', fontWeight: 900, color: PRIMARY_LIGHT, lineHeight: 1, textShadow: `0 0 22px ${PRIMARY_GLOW}` }}>{todayPct}%</div>
+            </div>
+            <div style={{ fontSize: '12px', color: TEXT, letterSpacing: '4px', fontWeight: 800, marginTop: '16px' }}>DISCIPLINE SCORE</div>
+
+            {/* ═══ WEAPON 2: vs Yesterday ═══ */}
+            <div style={{ height: '1px', background: `linear-gradient(90deg, transparent, ${BORDER}, transparent)`, margin: '14px 0' }} />
+            {(() => {
+              const up = dayDelta > 0, flat = dayDelta === 0;
+              const dcolor = flat ? MUTED : up ? '#4fc36b' : ACCENT;
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontSize: '13px', color: dcolor, fontWeight: 800, letterSpacing: '0.4px' }}>
+                  {!flat && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: up ? 'none' : 'rotate(180deg)' }}>
+                      <path d="M12 19V5M6 11l6-6 6 6"/>
+                    </svg>
+                  )}
+                  {dayDeltaText}
+                </div>
+              );
+            })()}
+
+            {/* ═══ WEAPON 3: Projected Month toggle ═══ */}
+            <button onClick={() => setShowGoalsPanel(v => !v)} style={{ width: '100%', background: 'transparent', border: 'none', color: ACCENT, fontFamily: bodyFont, fontSize: '13px', fontWeight: 700, letterSpacing: '0.4px', cursor: 'pointer', padding: '10px 0 2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>Projected month: <span style={{ color: PRIMARY_LIGHT, fontWeight: 800 }}>{projectedMonthPct}%</span></span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: showGoalsPanel ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}>
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            {showGoalsPanel && (
+              <div style={{ marginTop: '14px', borderTop: `1px solid ${BORDER}`, paddingTop: '14px', textAlign: 'left' }}>
+                <div style={{ textAlign: 'center', color: MUTED, fontSize: '11px', letterSpacing: '3px', fontWeight: 800, marginBottom: '12px' }}>GOALS</div>
+                <div style={{ padding: '6px 2px 12px', borderBottom: `1px solid ${BORDER}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '13px', color: TEXT, fontWeight: 700 }}>Target Score</div>
+                    <button onClick={() => setShowTargetSlider(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0a0a0a', border: `1px solid ${BORDER}`, color: PRIMARY_LIGHT, borderRadius: '8px', padding: '6px 11px', fontFamily: bodyFont, fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}>
+                      {targetScore}%
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: showTargetSlider ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+                  </div>
+                  {showTargetSlider && (
+                    <div style={{ marginTop: '12px' }}>
+                      <input type="range" min="50" max="100" value={targetScore} onChange={(e) => saveTargetScore(e.target.value)} style={{ width: '100%', accentColor: PRIMARY_LIGHT, cursor: 'pointer' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: MUTED, marginTop: '4px', letterSpacing: '1px', fontWeight: 700 }}>
+                        <span>50%</span>
+                        <span style={{ color: PRIMARY_LIGHT, fontWeight: 800 }}>{targetScore}%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* CURRENT SCORE */}
+                <div style={{ marginTop: '14px' }}>
+                  <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '2px', fontWeight: 800, marginBottom: '4px', textAlign: 'center' }}>CURRENT SCORE</div>
+                  {Object.keys(blocks).map(key => {
+                    const cur = getDayCompletion(selKey, key).done;
+                    const total = blocks[key].habits.length;
+                    return (
+                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '5px 2px', fontSize: '13px' }}>
+                        <div style={{ color: MUTED, fontWeight: 800, letterSpacing: '1px' }}>{key}</div>
+                        <div style={{ color: TEXT, fontWeight: 700 }}>{cur} / {total}</div>
+                        <div />
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '8px 2px 2px', fontSize: '13px', borderTop: `1px solid ${BORDER}`, marginTop: '4px' }}>
+                    <div style={{ color: PRIMARY_LIGHT, fontWeight: 800, letterSpacing: '1px' }}>DAY</div>
+                    <div style={{ color: TEXT, fontWeight: 800 }}>{todayDone} / {TOTAL_HABITS}</div>
+                    <div />
+                  </div>
+                </div>
+
+                {/* DAILY TARGET */}
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '2px', fontWeight: 800, marginBottom: '4px', textAlign: 'center' }}>DAILY TARGET ({targetScore}%)</div>
+                  {Object.keys(blocks).map(key => {
+                    const cur = getDayCompletion(selKey, key).done;
+                    const total = blocks[key].habits.length;
+                    const target = dailyTarget.perBlock[key];
+                    const g = gapText(cur, target);
+                    return (
+                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '5px 2px', fontSize: '13px' }}>
+                        <div style={{ color: MUTED, fontWeight: 800, letterSpacing: '1px' }}>{key}</div>
+                        <div style={{ color: TEXT, fontWeight: 700 }}>{target} / {total}</div>
+                        <div style={{ color: g === '✓' ? '#ffffff' : '#4fc36b', fontWeight: 900 }}>{g}</div>
+                      </div>
+                    );
+                  })}
+                  {(() => {
+                    const g = gapText(todayDone, dailyTarget.dayTarget);
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: '58px 1fr auto', alignItems: 'center', gap: '8px', padding: '8px 2px 2px', fontSize: '13px', borderTop: `1px solid ${BORDER}`, marginTop: '4px' }}>
+                        <div style={{ color: PRIMARY_LIGHT, fontWeight: 800, letterSpacing: '1px' }}>DAY</div>
+                        <div style={{ color: TEXT, fontWeight: 800 }}>{dailyTarget.dayTarget} / {TOTAL_HABITS}</div>
+                        <div style={{ color: g === '✓' ? '#ffffff' : '#4fc36b', fontWeight: 900 }}>{g}</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D }}>
+            <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '14px' }}>{isToday ? 'TODAY' : 'SELECTED'} · {formatDate(selectedDate)}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px' }}>
+              {blockStats.map(b => {
+                const { done, total } = getDayCompletion(selKey, b.key);
+                const isComplete = done === total && total > 0;
+                return (
+                  <div key={b.key} style={{ textAlign: 'center', padding: '10px 4px', background: '#0a0a0a', borderRadius: '10px', border: `1px solid ${isComplete ? PRIMARY : BORDER}`, boxShadow: isComplete ? `0 0 12px ${PRIMARY_GLOW}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
+                    <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '1px' }}>{b.key}</div>
+                    <div style={{ fontSize: '18px', color: isComplete ? PRIMARY_LIGHT : TEXT, fontWeight: 700, marginTop: '4px' }}>{done}/{total}</div>
+                  </div>
+                );
+              })}
+              {(() => {
+                // Count only currently-defined habits — not stale keys left by deleted habits,
+                // which could otherwise push totalDone past TOTAL_HABITS and break isPerfect.
+                const totalDone = getDayCompletionAll(selKey);
+                const isPerfect = totalDone === TOTAL_HABITS;
+                return (
+                  <div style={{ textAlign: 'center', padding: '10px 4px', background: '#0a0a0a', borderRadius: '10px', border: `1px solid ${isPerfect ? PRIMARY : BORDER}`, boxShadow: isPerfect ? `0 0 12px ${PRIMARY_GLOW}, inset 0 1px 0 rgba(255,255,255,0.04)` : 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
+                    <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '1px', fontWeight: 700 }}>TOTAL</div>
+                    <div style={{ fontSize: '18px', fontWeight: 800, marginTop: '4px', color: isPerfect ? PRIMARY_LIGHT : totalDone > 0 ? TEXT : MUTED }}>{totalDone}/{TOTAL_HABITS}</div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <StatCard label="MONTH" value={`${monthPct}%`} sub={`${monthTotalComplete}/${monthTotalPossible}`} accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+            <StatCard label="REMAINING" value={monthRemaining} sub={`${daysLeft} days left`} accent={ACCENT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <StatCard label="AVERAGE" value={`${daysLogged > 0 ? Math.round(monthTotalComplete/daysLogged) : 0} / ${TOTAL_HABITS}`} sub="per day this month" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+            <StatCard label="DAYS LEFT" value={daysLeft} sub={`of ${daysInMonth}`} accent={ACCENT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+          </div>
+
+          {/* Block progress */}
+          <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D }}>
+            <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '14px' }}>BY BLOCK · {monthName.toUpperCase()}</div>
+            {blockStats.map(b => (
+              <div key={b.key} style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginBottom: '8px' }}>
+                  <span style={{ color: TEXT, letterSpacing: '1px', display: 'inline-flex', alignItems: 'center' }}><BlockIcon k={b.key} color={TEXT}/>{b.key}</span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ padding: '4px 10px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '6px', textAlign: 'center', minWidth: '60px' }}>
+                      <div style={{ fontSize: '8px', color: MUTED, letterSpacing: '1px', lineHeight: 1 }}>AVG</div>
+                      <div style={{ fontSize: '12px', color: PRIMARY_LIGHT, fontWeight: 700, lineHeight: 1.2 }}>{Math.round(daysLogged > 0 ? b.totalDone/daysLogged : 0)} / {b.habits.length}</div>
+                    </div>
+                    <span style={{ color: PRIMARY_LIGHT, fontWeight: 600, minWidth: '38px', textAlign: 'right' }}>{b.pct}%</span>
+                  </div>
+                </div>
+                <div style={{ height: '8px', background: '#0a0a0a', borderRadius: '4px', overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}>
+                  {/* ═══ WEAPON 7: length = month progress, color = daily performance (avg per day) ═══ */}
+                  <div style={{ width: `${b.pct}%`, height: '100%', ...mpsPerfStyle((daysLogged > 0 && b.habits.length > 0) ? ((b.totalDone / daysLogged) / b.habits.length) * 100 : 0, __GRAY), borderRadius: '4px', transition: 'width 0.4s, background 0.3s' }} />
+                </div>
+                <div style={{ fontSize: '10px', color: MUTED, marginTop: '6px', letterSpacing: '1px' }}>{b.totalDone}/{b.totalPossible} · TARGET {b.target}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart toggle */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '4px', boxShadow: CARD_SHADOW_3D }}>
+            {['daily','weekly'].map(v => (
+              <button key={v} onClick={() => setChartView(v)} style={{ flex: 1, padding: '10px', background: chartView === v ? SEG : 'transparent', color: chartView === v ? '#fff' : ACCENT, border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 700, cursor: 'pointer' }}>{v.toUpperCase()}</button>
+            ))}
+          </div>
+
+          {[...Object.keys(blocks), 'DAY'].map(blockKey => (
+            <BarChart3D key={blockKey} blockKey={blockKey} block={blockKey === 'DAY' ? { icon: '📊', name: 'Total', habits: ALL_HABITS } : blocks[blockKey]} chartView={chartView} habits={habits} selectedDate={selectedDate} onBarTap={setBarDetail} theme={{ PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2, gray: __GRAY }} fmtKey={fmtKey} />
+          ))}
+        </>
+      )}
+
+      {/* Bar detail modal */}
+      {barDetail && (
+        <div onClick={() => setBarDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD_RAISED, border: '2px solid rgba(192,192,192,0.4)', borderRadius: '16px', padding: '8px 12px 6px', maxWidth: '520px', width: '100%', boxShadow: `0 0 30px ${PRIMARY_GLOW}, 0 20px 60px rgba(0,0,0,0.9)`, margin: 'auto' }}>
+            {(() => {
+              const detailBlock = barDetail.blockKey === 'DAY' ? { icon: '📊', habits: ALL_HABITS } : blocks[barDetail.blockKey];
+              const editKey = barDetail.dateKey;  // single-day bars are tappable to check off; weekly bars stay read-only
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '13px', color: PRIMARY_LIGHT, letterSpacing: '2px', fontWeight: 700, display: 'flex', alignItems: 'center' }}><BlockIcon k={barDetail.blockKey} color={PRIMARY_LIGHT}/>{barDetail.blockKey}</div>
+                    <button onClick={() => setBarDetail(null)} style={{ background: 'transparent', color: MUTED, border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '2px' }}>{barDetail.label}</div>
+                  {editKey && <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '0.5px', marginBottom: '5px' }}>Tap a habit to check it off</div>}
+                  <div style={{ display: (detailBlock?.habits.length > 7) ? 'grid' : 'flex', flexDirection: 'column', gridTemplateColumns: (detailBlock?.habits.length > 7) ? '1fr 1fr' : null, gap: '3px' }}>
+                    {detailBlock?.habits.map(h => {
+                      const dayData = habits[barDetail.dateKey || barDetail.dayKeys?.[0]] || {};
+                      const isDone = !!dayData[h.id];
+                      return (
+                        <div key={h.id} onClick={editKey ? () => toggleHabitForDate(editKey, h.id) : undefined} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '7px', cursor: editKey ? 'pointer' : 'default' }}>
+                          <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: `rgba(${PL_RGB},0.16)`, border: `1px solid rgba(${PL_RGB},0.4)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><HabitIcon id={h.id} color={PRIMARY_LIGHT} size={13}/></div>
+                          <div style={{ flex: 1, fontSize: '13.5px', color: '#f5f5f5', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.label}</div>
+                          <div style={{ width: '21px', height: '21px', borderRadius: '6px', border: `2px solid ${isDone ? PRIMARY_LIGHT : BORDER}`, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: PRIMARY_LIGHT, fontWeight: 800, fontSize: '12px', flexShrink: 0 }}>{isDone ? '✓' : ''}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ LOG ═══ */}
+      {view === 'log' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
+            {['habits','history'].map(tab => (
+              <button key={tab} onClick={() => setLogTab(tab)} style={blockTabStyle(logTab === tab, PRIMARY, BORDER, bodyFont, TEXT)}>
+                {tab === 'habits' ? 'HABITS' : 'HISTORY'}
+              </button>
+            ))}
+          </div>
+
+          {logTab === 'habits' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '6px', marginBottom: '10px' }}>
+              {Object.keys(blocks).map(k => (
+                <button key={k} onClick={() => setActiveBlock(k)} style={blockTabStyle(activeBlock === k, PRIMARY, BORDER, bodyFont, TEXT)}><BlockIcon k={k}/>{k}</button>
+              ))}
+            </div>
+          )}
+
+          {logTab === 'history' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {monthDateKeys.filter(k => getDayCompletionAll(k) > 0).reverse().map(k => {
+                const d = new Date(k + 'T00:00:00');
+                const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+                const totalDone = getDayCompletionAll(k);
+                const isPerfect = totalDone === TOTAL_HABITS;
+                return (
+                  <div key={k} onClick={() => { setSelectedDate(d); setActiveBlock('MRN'); setLogTab('habits'); }} style={{ padding: '16px', background: CARD_RAISED, border: `2px solid ${isPerfect ? PRIMARY : 'rgba(192,192,192,0.25)'}`, borderRadius: '14px', boxShadow: CARD_SHADOW_3D, cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: TEXT, fontWeight: 700, letterSpacing: '1.5px' }}>{dayLabel}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: isPerfect ? PRIMARY_LIGHT : TEXT }}>{totalDone}<span style={{ color: MUTED, fontSize: '11px' }}>/{TOTAL_HABITS}</span></div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '6px' }}>
+                      {['MRN','WRK','NGT'].map(bk => {
+                        const { done, total } = getDayCompletion(k, bk);
+                        const bc = done === total && total > 0;
+                        return (
+                          <div key={bk} style={{ padding: '7px 4px', background: '#0a0a0a', border: `1px solid ${bc ? PRIMARY : BORDER}`, borderRadius: '8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BlockIcon k={bk}/></div>
+                            <div style={{ fontSize: '8px', color: MUTED, letterSpacing: '1px', marginTop: '2px' }}>{bk}</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '2px', color: bc ? PRIMARY_LIGHT : done > 0 ? TEXT : MUTED }}>{done}/{total}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {logTab === 'habits' && blocks[activeBlock] && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {blocks[activeBlock].habits.map(h => {
+                const checked = !!habits[selKey]?.[h.id];
+                return (
+                  <div key={h.id} onClick={() => toggleHabit(h.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 15px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '12px', cursor: 'pointer', boxShadow: CARD_SHADOW_3D, transition: 'all 0.15s ease' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: `rgba(${PL_RGB},0.15)`, border: `1px solid rgba(${PL_RGB},0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><HabitIcon id={h.id} color={PRIMARY_LIGHT} size={19}/></div>
+                    <div style={{ flex: 1, fontSize: '16px', color: '#f5f5f5', fontWeight: 600 }}>{h.label}</div>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '7px', border: `2px solid ${checked ? PRIMARY_LIGHT : BORDER}`, background: 'transparent', boxShadow: checked ? `0 0 8px ${PRIMARY_GLOW}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: PRIMARY_LIGHT, fontWeight: 800, fontSize: '16px', transition: 'all 0.15s ease' }}>{checked ? '✓' : ''}</div>
+                  </div>
+                );
+              })}
+              {__CORE && (
+                <div onClick={() => { try { window.top.location.href = '/billing.html'; } catch(e) {} }} style={{ padding: '13px', textAlign: 'center', background: 'rgba(201,160,32,0.06)', border: `1px dashed ${BORDER}`, borderRadius: '12px', cursor: 'pointer', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12.5px', color: '#C9A020', fontWeight: 700, letterSpacing: '0.4px' }}><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-0.15em' }}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Core tracks 3 habits per block — unlock all with Elite</div>
+                </div>
+              )}
+              <button onClick={async () => {
+                setSaveFlash(true);
+                try { await window.storage.set('habits_v4', JSON.stringify(habitsRef.current)); } catch(e) {}
+                setTimeout(() => setSaveFlash(false), 1400);
+              }} style={{ width: '100%', marginTop: '20px', padding: '16px', background: saveFlash ? `linear-gradient(135deg, ${PRIMARY_LIGHT} 0%, ${PRIMARY} 100%)` : 'transparent', color: saveFlash ? '#fff' : PRIMARY_LIGHT, border: `2px solid ${PRIMARY}`, borderRadius: '12px', fontFamily: bodyFont, fontSize: '13px', letterSpacing: '3px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                {saveFlash ? 'SAVED — LOCKED IN' : 'SAVE ENTRY'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ INSIGHTS ═══ */}
+      {view === 'insights' && (
+        <>
+          {/* ═══ WEAPON 10 (3-card shell) + WEAPON 11 (Strongest) ═══ */}
+          {!__CORE && (
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '3px', fontWeight: 800, marginBottom: '12px', textAlign: 'center' }}>COACHING</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'start' }}>
+
+                {/* CARD 1 — STRONGEST (Weapon 11) */}
+                <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '14px', boxShadow: CARD_SHADOW_3D, minWidth: 0 }}>
+                  <button onClick={() => toggleInsightCard('strongest')} style={{ width: '100%', background: 'transparent', border: 'none', color: PRIMARY_LIGHT, fontFamily: bodyFont, fontSize: '12px', letterSpacing: '1px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0zM6 8H3.6A1.6 1.6 0 0 0 6 10.6M18 8h2.4A1.6 1.6 0 0 1 18 10.6"/></svg>
+                    <span style={{ flex: 1, textAlign: 'left' }}>STRONGEST</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.strongest ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  {insightCardsOpen.strongest && (
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '6px' }}>
+                      {Object.keys(blocks).map(bk => {
+                        const h = strongestByBlock[bk];
+                        return (
+                          <div key={bk} style={{ display: 'grid', gridTemplateColumns: '42px 1fr auto', gap: '8px', alignItems: 'center', fontSize: '12px', padding: '7px 0' }}>
+                            <div style={{ color: MUTED, fontWeight: 900, letterSpacing: '1px' }}>{bk}</div>
+                            <div style={{ color: TEXT, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h?.label || '—'}</div>
+                            <div style={{ color: PRIMARY_LIGHT, fontWeight: 900 }}>{h?.strength ?? 0}%</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* CARD 2 — NEEDS ATTENTION (Weapon 12, wiring next) */}
+                <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '14px', boxShadow: CARD_SHADOW_3D, minWidth: 0 }}>
+                  <button onClick={() => toggleInsightCard('attention')} style={{ width: '100%', background: 'transparent', border: 'none', color: ACCENT, fontFamily: bodyFont, fontSize: '12px', letterSpacing: '1px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>
+                    <span style={{ flex: 1, textAlign: 'left' }}>NEEDS ATTENTION</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.attention ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  {insightCardsOpen.attention && (
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '6px' }}>
+                      {Object.keys(blocks).map(bk => {
+                        const h = weakestByBlock[bk];
+                        return (
+                          <div key={bk} style={{ display: 'grid', gridTemplateColumns: '42px 1fr auto', gap: '8px', alignItems: 'center', fontSize: '12px', padding: '7px 0' }}>
+                            <div style={{ color: MUTED, fontWeight: 900, letterSpacing: '1px' }}>{bk}</div>
+                            <div style={{ color: TEXT, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h?.label || '—'}</div>
+                            <div style={{ color: ACCENT, fontWeight: 900 }}>{h?.strength ?? 0}%</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* CARD 3 — TODAY'S FOCUS (Weapon 13, wiring next) */}
+                <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '14px', boxShadow: CARD_SHADOW_3D, minWidth: 0 }}>
+                  <button onClick={() => toggleInsightCard('focus')} style={{ width: '100%', background: 'transparent', border: 'none', color: PRIMARY_LIGHT, fontFamily: bodyFont, fontSize: '12px', letterSpacing: '1px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6"/></svg>
+                    <span style={{ flex: 1, textAlign: 'left' }}>TODAY'S FOCUS</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: insightCardsOpen.focus ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  {insightCardsOpen.focus && (
+                    <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '6px' }}>
+                      {todaysFocus.map((h, idx) => (
+                        <div key={h.id} style={{ padding: '8px 0', borderBottom: idx === 0 ? `1px solid ${BORDER}` : 'none' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '12px' }}>
+                            <div style={{ color: TEXT, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{idx + 1}. {h.label}</div>
+                            <div style={{ color: ACCENT, fontWeight: 900 }}>{h.strength ?? 0}%</div>
+                          </div>
+                          <div style={{ color: '#4fc36b', fontSize: '11px', fontWeight: 800, marginTop: '4px' }}>Complete +1 today</div>
+                        </div>
+                      ))}
+                      {/* ═══ WEAPON 14: Expected Month forecast ═══ */}
+                      <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: MUTED, letterSpacing: '2px', fontWeight: 800 }}>EXPECTED MONTH</div>
+                        <div style={{ fontSize: '15px', color: TEXT, fontWeight: 900, marginTop: '5px' }}>
+                          <span>{expectedMonthAfterFocus.projectedCurrent}%</span>
+                          <span style={{ color: PRIMARY_LIGHT, padding: '0 8px' }}>→</span>
+                          <span style={{ color: '#4fc36b' }}>{expectedMonthAfterFocus.projectedImproved}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {__CORE ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', marginBottom: '14px', background: 'rgba(201,160,32,0.06)', border: `1px dashed ${BORDER}`, borderRadius: '12px' }}>
+              <span style={{ fontSize: '18px' }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <div style={{ flex: 1, fontSize: '12px', color: MUTED, lineHeight: 1.5 }}>Edit your habits freely. <b style={{ color: '#C9A020' }}>Strength % & streak metrics unlock with Elite.</b></div>
+              <a href="/billing.html" target="_top" style={{ fontSize: '11px', fontWeight: 800, color: '#0a0a0a', background: '#C9A020', padding: '7px 12px', borderRadius: '8px', textDecoration: 'none', whiteSpace: 'nowrap' }}>UPGRADE</a>
+            </div>
+          ) : (
+            <div style={{ fontSize: '11px', color: ACCENT, letterSpacing: '2px', marginBottom: '14px' }}>STRENGTH · STREAKS · EDIT</div>
+          )}
+          {Object.entries(blocks).map(([blockKey, block]) => {
+            const isEditingThisBlock = editingBlock === blockKey;
+            return (
+              <div key={blockKey} style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', marginBottom: '10px', background: CARD_RAISED, borderRadius: '10px', border: `1px solid ${BORDER}`, boxShadow: CARD_SHADOW_3D }}>
+                  {isEditingThisBlock ? (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flex: 1 }}>
+                      <input type="text" value={block.icon} onChange={e => updateBlockIcon(blockKey, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '40px', 'center', '16px')} />
+                      <input type="text" value={block.name} onChange={e => renameBlock(blockKey, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '1', 'left', '14px')} autoFocus />
+                      <input type="number" value={block.target} onChange={e => updateBlockTarget(blockKey, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '54px', 'center', '12px')} />
+                      <button onClick={() => setEditingBlock(null)} style={{ padding: '6px 10px', background: PRIMARY, color: __GRAY ? '#0a0a0a' : '#fff', border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', cursor: 'pointer', fontWeight: 700 }}>✓</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: '13px', letterSpacing: '2px', color: PRIMARY_LIGHT, fontWeight: 700, display: 'flex', alignItems: 'center' }}><BlockIcon k={blockKey} color={PRIMARY_LIGHT}/>{blockKey}</div>
+                      <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>AVG</div>
+                          <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{__CORE ? <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-0.15em' }}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> : ((insightView === 'weekly' ? weeklyBlockStats : blockStats).find(b => b.key === blockKey)?.pct || 0) + '%'}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>TARGET</div>
+                          <div style={{ fontSize: '14px', color: ACCENT, fontWeight: 700 }}>{block.target}</div>
+                        </div>
+                        <button onClick={() => setEditingBlock(blockKey)} style={{ padding: '4px 6px', background: 'transparent', color: MUTED, border: 'none', cursor: 'pointer', fontSize: '13px' }}><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {block.habits.map(h => {
+                    const m = (insightView === 'weekly' ? weeklyHabitMetrics : habitMetrics).find(x => x.id === h.id);
+                    const isEditingThis = editingHabit === h.id;
+                    return (
+                      <div key={h.id} style={{ padding: '12px 14px', background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '10px', boxShadow: CARD_SHADOW_3D }}>
+                        {isEditingThis ? (
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input type="text" value={h.emoji} onChange={e => updateHabitEmoji(blockKey, h.id, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '46px', 'center', '18px')} />
+                            <input type="text" value={h.label} onChange={e => renameHabit(blockKey, h.id, e.target.value)} style={inputStyle(BORDER, TEXT, bodyFont, '1', 'left', '14px')} autoFocus />
+                            <button onClick={() => setEditingHabit(null)} style={{ padding: '8px 10px', background: PRIMARY, color: __GRAY ? '#0a0a0a' : '#fff', border: 'none', borderRadius: '6px', fontFamily: bodyFont, fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}>✓</button>
+                            <button onClick={() => askConfirm(`Delete "${h.label}"?`, () => { deleteHabit(blockKey, h.id); setEditingHabit(null); })} style={{ padding: '8px 10px', background: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: '6px', fontFamily: bodyFont, fontSize: '11px', cursor: 'pointer' }}><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ fontSize: '14px', color: TEXT, fontWeight: 500 }}>{h.label}</div>
+                            <div style={{ textAlign: 'right', minWidth: '54px' }}>
+                              <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>STRENGTH</div>
+                              <div style={{ fontSize: '15px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{__CORE ? <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-0.15em' }}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> : (m?.strength || 0) + '%'}</div>
+                            </div>
+                            <div style={{ textAlign: 'right', minWidth: '40px' }}>
+                              <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>STREAK</div>
+                              <div style={{ fontSize: '15px', color: ACCENT, fontWeight: 700 }}>{__CORE ? <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-0.15em' }}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> : (m?.streak || 0)}</div>
+                            </div>
+                            <button onClick={() => setEditingHabit(h.id)} style={{ padding: '4px 6px', background: 'transparent', color: MUTED, border: 'none', cursor: 'pointer', fontSize: '13px' }}><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {__CORE ? (
+                    <div onClick={() => { try { window.top.location.href = '/billing.html'; } catch(e) {} }} style={{ padding: '10px', textAlign: 'center', background: 'rgba(201,160,32,0.05)', color: '#C9A020', border: `1px dashed ${BORDER}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '1px', fontWeight: 700, cursor: 'pointer' }}><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-0.15em' }}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Core holds 3 habits — unlock 5 with Elite</div>
+                  ) : ((blocks[blockKey] && blocks[blockKey].habits.length >= 5) ? (
+                    <div style={{ padding: '10px', textAlign: 'center', color: '#8a8a8a', border: `1px dashed ${BORDER}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '1px', fontWeight: 600 }}>Max 5 habits per block</div>
+                  ) : (
+                    <button onClick={() => addHabit(blockKey)} style={{ padding: '10px', background: 'transparent', color: PRIMARY_LIGHT, border: `1px dashed ${PRIMARY}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', fontWeight: 600, cursor: 'pointer' }}>+ ADD HABIT TO {blockKey}</button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          <button onClick={resetToDefault} style={{ width: '100%', padding: '14px', marginTop: '8px', background: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: '8px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '2px', cursor: 'pointer' }}>RESET TO DEFAULTS</button>
+        </>
+      )}
+
+      {/* ═══ COMPOUND (Premium) ═══ */}
+      {view === 'compound' && (
+        <div>
+          {!__PREMIUM ? (
+            <div style={{ textAlign: 'center', padding: '48px 22px' }}>
+              <div style={{ marginBottom: '12px', color: PRIMARY_LIGHT }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#f5f5f5', letterSpacing: '1px', marginBottom: '8px' }}>COMPOUND IS A PREMIUM FEATURE</div>
+              <div style={{ fontSize: '13px', color: '#9a9a9a', lineHeight: 1.6, maxWidth: '300px', margin: '0 auto 20px' }}>Your full-year habit heatmap, streaks, and per-habit consistency — see it all compound over time.</div>
+              <a href="/billing.html" target="_top" style={{ display: 'inline-block', padding: '12px 26px', background: '#C9A020', color: '#0a0a0a', fontWeight: 800, fontSize: '13px', letterSpacing: '1px', borderRadius: '10px', textDecoration: 'none' }}>↑ Unlock with Premium</a>
+            </div>
+          ) : (() => {
+            const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const start = new Date(end); start.setDate(start.getDate() - 363); start.setDate(start.getDate() - start.getDay());
+            const weeks = []; let cur = new Date(start);
+            while (cur <= end) { const wk = []; for (let i = 0; i < 7; i++) { wk.push(new Date(cur)); cur.setDate(cur.getDate() + 1); } weeks.push(wk); }
+            const activeOn = (d) => getDayCompletionAll(fmtKey(d)) > 0;
+            let curStreak = 0; const ds = new Date(end); if (!activeOn(ds)) ds.setDate(ds.getDate() - 1);
+            while (activeOn(ds)) { curStreak++; ds.setDate(ds.getDate() - 1); }
+            let longest = 0, run = 0, activeDays = 0; const it = new Date(start);
+            while (it <= end) { if (activeOn(it)) { run++; if (run > longest) longest = run; activeDays++; } else run = 0; it.setDate(it.getDate() + 1); }
+            const habitCounts = ALL_HABITS.map(h => { let cnt = 0; const p = new Date(start); while (p <= end) { const dd = habits[fmtKey(p)]; if (dd && dd[h.id]) cnt++; p.setDate(p.getDate() + 1); } return { ...h, cnt }; }).sort((a, b) => b.cnt - a.cnt);
+            const maxCnt = Math.max(1, ...habitCounts.map(h => h.cnt));
+            // ═══ WEAPON 8: heatmap on the Universal Performance Scale (gray -> red) ═══
+            // Empty day = level 0 (dark gray). Active days map completion ratio to levels 1-5.
+            // Cells use fill only (no glow) so the dense grid stays clean.
+            const heatLevel = (r) => (r >= 0.8 ? 5 : r >= 0.6 ? 4 : r >= 0.4 ? 3 : r >= 0.2 ? 2 : 1);
+            const cellColor = (d) => { if (d > end) return 'transparent'; const c = getDayCompletionAll(fmtKey(d)); if (c <= 0) return mpsPerfConfig(0, __GRAY).fill; const r = TOTAL_HABITS > 0 ? c / TOTAL_HABITS : 0; return mpsPerfConfig(heatLevel(r), __GRAY).fill; };
+            const cardSty = { background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '18px', marginBottom: '16px', boxShadow: CARD_SHADOW_3D };
+            return (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <StatCard label="STREAK" value={curStreak} sub="days in a row" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+                  <StatCard label="LONGEST" value={longest} sub="best run" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+                  <StatCard label="ACTIVE DAYS" value={activeDays} sub="last 12 months" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
+                </div>
+                <div style={cardSty}>
+                  <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '12px' }}>LAST 12 MONTHS</div>
+                  <div style={{ overflowX: 'auto', paddingBottom: '6px' }}>
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                      {(() => {
+                        // Split the year into 12 clearly-separated MONTH blocks (oldest -> newest),
+                        // each labeled and gapped so the 12 months are obvious. Days outside a block's
+                        // own month are transparent spacers so each block reads as just that month.
+                        const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        const anchor = new Date(end.getFullYear(), end.getMonth(), 1);
+                        const blocks = [];
+                        for (let m = 11; m >= 0; m--) {
+                          const first = new Date(anchor.getFullYear(), anchor.getMonth() - m, 1);
+                          const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+                          const gs = new Date(first); gs.setDate(first.getDate() - first.getDay());
+                          const cols = []; let c = new Date(gs);
+                          while (c <= last) { const col = []; for (let i = 0; i < 7; i++) { col.push(new Date(c)); c.setDate(c.getDate() + 1); } cols.push(col); }
+                          blocks.push({ label: MON[first.getMonth()], mon: first.getMonth(), yr: first.getFullYear(), cols });
+                        }
+                        return blocks.map((b, bi) => (
+                          <div key={bi} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1px', height: '11px', lineHeight: '11px', textTransform: 'uppercase' }}>{b.label}</div>
+                            <div style={{ display: 'flex', gap: '3px' }}>
+                              {b.cols.map((col, ci) => (
+                                <div key={ci} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                  {col.map((d, di) => {
+                                    const inMo = d.getMonth() === b.mon && d.getFullYear() === b.yr;
+                                    return (<div key={di} title={inMo ? fmtKey(d) : ''} style={{ width: '11px', height: '11px', borderRadius: '2px', background: inMo ? cellColor(d) : 'transparent' }} />);
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '12px', fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>
+                    <span>LESS</span>
+                    {[1,2,3,4,5].map(lvl => (<div key={lvl} style={{ width: '11px', height: '11px', borderRadius: '2px', background: mpsPerfConfig(lvl, __GRAY).fill }} />))}
+                    <span>MORE</span>
+                  </div>
+                </div>
+                <div style={cardSty}>
+                  <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '14px' }}>HABIT CONSISTENCY · 12 MO</div>
+                  {habitCounts.map(h => {
+                    const pct = Math.round(h.cnt / maxCnt * 100);
+                    return (
+                      <div key={h.id} style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: TEXT }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '6px', background: `rgba(${PL_RGB},0.15)`, border: `1px solid rgba(${PL_RGB},0.35)`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><HabitIcon id={h.id} color={PRIMARY_LIGHT} size={13} /></span>
+                            {h.label}
+                          </span>
+                          <span style={{ fontSize: '12px', color: PRIMARY_LIGHT, fontWeight: 700 }}>{h.cnt} days</span>
+                        </div>
+                        <div style={{ height: '6px', background: '#0a0a0a', borderRadius: '3px', overflow: 'hidden' }}>
+                          {/* ═══ WEAPON 9: consistency bar colored by performance (universal scale) ═══ */}
+                          <div style={{ width: `${pct}%`, height: '100%', ...mpsPerfStyle(pct, __GRAY), borderRadius: '3px' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Style helpers ───
+function blockTabStyle(active, primary, border, font, text) {
+  return { padding: '6px 4px', background: active ? primary : 'transparent', color: active ? '#fff' : text, border: `1px solid ${active ? primary : border}`, borderRadius: '8px', fontFamily: font, fontSize: '11px', letterSpacing: '2px', fontWeight: 700, cursor: 'pointer' };
+}
+function inputStyle(border, text, font, width, align, size) {
+  return { flex: width === '1' ? 1 : undefined, width: width === '1' ? undefined : width, padding: '10px 12px', background: '#0a0a0a', color: text, border: `1px solid ${border}`, borderRadius: '8px', fontFamily: font, fontSize: size, textAlign: align, outline: 'none' };
+}
+
+function StatCard({ label, value, sub, accent, card, border, muted, shadow }) {
+  return (
+    <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '18px', position: 'relative', overflow: 'hidden', boxShadow: shadow }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: accent, opacity: 0.8 }} />
+      <div style={{ fontSize: '10px', color: muted, letterSpacing: '2px', marginBottom: '8px' }}>{label}</div>
+      <div style={{ fontSize: '30px', color: accent, fontWeight: 700, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: '11px', color: muted, marginTop: '6px', letterSpacing: '1px' }}>{sub}</div>
+    </div>
+  );
+}
+
+// Wireframe discipline-score ring (replaces the ⭕ emoji). Fills clockwise to pct.
+function ScoreRing({ pct, color, track, glow, size = 60 }) {
+  const r = 24;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, pct || 0));
+  const off = c * (1 - clamped / 100);
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" style={{ flexShrink: 0, filter: `drop-shadow(0 0 6px ${glow || 'transparent'})` }} aria-hidden="true">
+      <circle cx="28" cy="28" r={r} fill="none" stroke={track} strokeWidth="4" />
+      <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={off} transform="rotate(-90 28 28)"
+        style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+    </svg>
+  );
+}
+// Clean monochrome block icons (replaces the childish emojis — CEO-grade, not a toy)
+function BlockIcon({ k, color, size = 15 }) {
+  const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color || "currentColor", strokeWidth: 1.9, strokeLinecap: "round", strokeLinejoin: "round", style: { verticalAlign: '-2px', marginRight: '7px', flexShrink: 0 } };
+  if (k === 'MRN') return <svg {...p}><path d="M3 22h18M5.5 18h13M12 2v3M4.5 10.5 6 12M19.5 10.5 18 12"/><path d="M8 18a4 4 0 0 1 8 0"/></svg>;
+  if (k === 'WRK') return <svg {...p}><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+  if (k === 'NGT') return <svg {...p}><path d="M20 14.5A8 8 0 1 1 9.5 4a6 6 0 0 0 10.5 10.5z"/></svg>;
+  return <svg {...p}><path d="M4 20V11M9.3 20V5M14.6 20v-7M20 20V8"/></svg>;
+}
+// Wireframe line icons for each habit — professional, monochrome, recognizable (not childish emojis)
+function HabitIcon({ id, color, size = 18 }) {
+  const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color || "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round", style: { flexShrink: 0 } };
+  switch (id) {
+    case 'h_wake':   return <svg {...p}><circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M5 3 2.5 5.5M22 6l-2.5-2.5"/></svg>;
+    case 'h_gymtr':  return <svg {...p}><path d="M6.5 7v10M3.5 9.5v5M17.5 7v10M20.5 9.5v5M6.5 12h11"/></svg>;
+    case 'h_breath': return <svg {...p}><path d="M3 8h10a2 2 0 1 0-2-2M3 12h14a2 2 0 1 1-2 2M3 16h8a2 2 0 1 1-2 2"/></svg>;
+    case 'h_read':   return <svg {...p}><path d="M2 5h6a3 3 0 0 1 3 3v11a2.5 2.5 0 0 0-2.5-2H2zM22 5h-6a3 3 0 0 0-3 3v11a2.5 2.5 0 0 1 2.5-2H22z"/></svg>;
+    case 'h_cold':   return <svg {...p}><path d="M12 2v20M4 7l16 10M20 7 4 17"/><path d="m9 3 3 1.5 3-1.5M9 21l3-1.5 3 1.5"/></svg>;
+    case 'h_mind':   return <svg {...p}><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.5.4.6.9.6 1.2v.5h6v-.5c0-.3.1-.8.6-1.2A6 6 0 0 0 12 3z"/></svg>;
+    case 'h_course': return <svg {...p}><path d="M21 9 12 5 3 9l9 4 9-4zM7 11v4c0 1.3 10 1.3 10 0v-4"/></svg>;
+    case 'h_outr':   return <svg {...p}><circle cx="12" cy="12" r="1.5"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19 5a10 10 0 0 1 0 14M5 5a10 10 0 0 0 0 14"/></svg>;
+    case 'h_chess':  return <svg {...p}><path d="M8 21h8M10 21c0-2.5 1.2-3.5 1.5-6M14 21c0-2.5-1.2-3.5-1.5-6"/><circle cx="12" cy="6" r="2.5"/><path d="M9.5 11h5"/></svg>;
+    case 'h_auto':   return <svg {...p}><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M5.6 5.6 7 7M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>;
+    case 'h_journ':  return <svg {...p}><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>;
+    case 'h_pray':   return <svg {...p}><path d="M12 20s-6.5-4-6.5-9A3.5 3.5 0 0 1 12 8a3.5 3.5 0 0 1 6.5 3c0 5-6.5 9-6.5 9z"/></svg>;
+    case 'h_bible':  return <svg {...p}><path d="M5 4a1 1 0 0 1 1-1h11v17H6a1 1 0 0 0-1 1zM11 6v4M9 8h4"/></svg>;
+    case 'h_guit':   return <svg {...p}><circle cx="7" cy="18" r="2.5"/><circle cx="16" cy="16" r="2.5"/><path d="M9.5 18V6l9-2v10"/></svg>;
+    case 'h_sleep':  return <svg {...p}><path d="M20 14.5A8 8 0 1 1 9.5 4a6 6 0 0 0 10.5 10.5z"/></svg>;
+    default:         return <svg {...p}><circle cx="12" cy="12" r="8"/></svg>;
+  }
+}
+function BarChart3D({ blockKey, block, chartView, habits, selectedDate, onBarTap, theme, fmtKey }) {
+  const { PRIMARY, PRIMARY_LIGHT, PRIMARY_GLOW, ACCENT, CARD_RAISED, BORDER, MUTED, TEXT, BG, CARD_SHADOW_3D, bodyFont, BAR_SIDE, BAR_TOP, BAR_FOOT, BAR_FOOT2, gray } = theme;
+
+  const habitCount = block.habits.length;
+  const maxY = chartView === 'daily' ? habitCount : habitCount * 7;
+  const bars = [];
+
+  if (chartView === 'daily') {
+    const endDate = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(endDate); d.setDate(endDate.getDate()-i);
+      const key = fmtKey(d);
+      const dayData = habits[key] || {};
+      const done = block.habits.filter(h => dayData[h.id]).length;
+      bars.push({ label: `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`, value: done, dateKeys: [key], fullLabel: d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) });
+    }
+  } else {
+    const yr = selectedDate.getFullYear(), mo = selectedDate.getMonth();
+    const dim = new Date(yr, mo+1, 0).getDate();
+    const weekCount = Math.ceil(dim/7);
+    for (let w = 0; w < weekCount; w++) {
+      const start = w*7+1, end = Math.min(start+6, dim);
+      let total = 0; const wks = [];
+      for (let day = start; day <= end; day++) {
+        const d = new Date(yr, mo, day); const k = fmtKey(d);
+        const dayData = habits[k] || {};
+        total += block.habits.filter(h => dayData[h.id]).length;
+        wks.push(k);
+      }
+      bars.push({ label: `W${w+1}`, value: total, dateKeys: wks, fullLabel: `Week ${w+1} · ${selectedDate.toLocaleString('en-US', { month: 'long' })} ${start}–${end}` });
+    }
+  }
+
+  const chartHeight = blockKey === 'DAY' ? 176 : 140;
+  const DEPTH = 6;
+
+  return (
+    <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '16px 14px 14px', marginBottom: '14px', boxShadow: CARD_SHADOW_3D, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <div style={{ fontSize: '14px', color: TEXT, fontWeight: 700, letterSpacing: '1px', display: 'flex', alignItems: 'center' }}><BlockIcon k={blockKey} color={TEXT}/>{blockKey}</div>
+        <div style={{ padding: '6px 12px', background: '#0a0a0a', border: `1px solid ${BORDER}`, borderRadius: '8px', textAlign: 'center', minWidth: '72px' }}>
+          <div style={{ fontSize: '9px', color: MUTED, letterSpacing: '1.5px' }}>AVERAGE</div>
+          <div style={{ fontSize: '14px', color: PRIMARY_LIGHT, fontWeight: 700, lineHeight: 1.1 }}>
+            {(() => { const s = bars.reduce((x,b) => x+b.value, 0); const avg = bars.length > 0 ? s/bars.length : 0; return `${Math.round(avg)} / ${maxY}`; })()}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', paddingLeft: '24px', marginBottom: '6px' }}>
+        {bars.map((bar, i) => <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '12px', color: PRIMARY_LIGHT, fontWeight: 700, letterSpacing: '0.5px' }}>{bar.value}/{maxY}</div>)}
+      </div>
+      <div style={{ display: 'flex', height: `${chartHeight+30}px`, paddingLeft: '24px', position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '6px', height: `${chartHeight}px`, borderBottom: `1px solid ${BORDER}`, position: 'relative' }}>
+          {bars.map((bar, i) => {
+            const pct = maxY > 0 ? (bar.value/maxY)*100 : 0;
+            const bh = (pct/100)*chartHeight;
+            const hasVal = bar.value > 0;
+            // ═══ WEAPON 7 (charts): each bar colored + glowing by its own completion ═══
+            const perf = mpsPerfConfig(maxY > 0 ? (bar.value/maxY)*5 : 0, gray);
+            const glow = perf.glow === 'none' ? 'none' : perf.glow;
+            const isMax = bar.value === maxY && maxY > 0;   // perfect bar -> white "hat" cap on top
+            return (
+              <div key={i} onClick={() => { if (onBarTap) onBarTap({ blockKey, isWeek: chartView === 'weekly', dateKey: chartView === 'daily' ? bar.dateKeys[0] : null, dayKeys: chartView === 'weekly' ? bar.dateKeys : null, label: bar.fullLabel, summary: `${bar.value}/${maxY}` }); }} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', cursor: 'pointer', position: 'relative' }}>
+                {hasVal ? (
+                  <div style={{ position: 'relative', width: '100%', maxWidth: '36px', height: `${bh}px` }}>
+                    <div style={{ position: 'absolute', top: 0, left: '100%', width: `${DEPTH}px`, height: '100%', background: `linear-gradient(0deg, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), ${perf.fill}`, transform: 'skewY(-45deg)', transformOrigin: 'left top' }} />
+                    <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', height: `${DEPTH}px`, background: isMax ? '#ffffff' : `linear-gradient(0deg, rgba(255,255,255,0.42), rgba(255,255,255,0.42)), ${perf.fill}`, transform: 'skewX(-45deg)', transformOrigin: 'bottom left' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: `linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 30%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.42) 100%), ${perf.fill}`, borderRadius: '2px 0 0 2px', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), ${glow}` }} />
+                    {isMax && <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: '#ffffff', borderRadius: '2px 0 0 0', boxShadow: '0 0 6px rgba(255,255,255,0.75)', zIndex: 2 }} />}
+                  </div>
+                ) : (
+                  <div style={{ width: '100%', maxWidth: '36px', height: '3px', background: mpsPerfConfig(0, gray).fill, borderRadius: '2px', opacity: 0.6 }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', paddingLeft: '24px', marginTop: '8px' }}>
+        {bars.map((bar, i) => <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '9px', color: MUTED, letterSpacing: '1px' }}>{bar.label}</div>)}
+      </div>
+    </div>
+  );
+}
+
+// Mount
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+
+// Wait for window.storage to be set before mounting
+function tryMount() {
+  if (window.storage) {
+    root.render(<HabitTracker />);
+  } else {
+    setTimeout(tryMount, 100);
+  }
+}
+tryMount();
