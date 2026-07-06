@@ -1317,6 +1317,7 @@ function renderInsights(){
   if(!tierOK('elite')){ v.innerHTML=lockedPanel('elite','Insights','Weekly performance callouts after your first week of data. PREMIUM adds smarter coaching and food-swap suggestions.'); return; }
   var data=lastNDays(7).filter(d=>d.has);
   var html = data.length ? weeklyTrendHTML() : '';
+  html += perfInsightsHTML();   // W5: rules-based Daily / Weekly / Monthly insights
   if(data.length<3){
     html+='<div class="locked-panel glass"><div class="lk">'+wBig('<line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/>')+'</div><h3>More insights coming</h3><p>Per-metric weekly insights unlock once you have about a week of data. You\'ve logged '+data.length+' day'+(data.length===1?'':'s')+' so far — keep going.</p></div>';
     v.innerHTML=html; return;
@@ -1553,6 +1554,80 @@ function renderDailyTarget(){
       +'<div style="font-family:var(--disp);letter-spacing:.5px;font-size:15px;color:#fff">'+esc(need)+'</div></div>';
   }
   el.innerHTML=html;
+}
+
+/* ============================== WEAPON 5: PERFORMANCE INSIGHTS (rules-based, no paid AI) ============================== */
+let insightRange='week';
+function setInsightRange(r){ insightRange=r; renderInsights(); }
+function _iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _avg(a){ return a.length? a.reduce(function(x,y){return x+y;},0)/a.length : 0; }
+function lastNDaysRange(offset, n){
+  var arr=[]; var base=new Date(curDate+'T00:00:00');
+  for(var i=offset+n-1;i>=offset;i--){ var d=new Date(base); d.setDate(d.getDate()-i);
+    var iso=_iso(d); var has=(S.log[iso]||[]).length>0; arr.push({date:iso, has:has, score:has?dailyScore(iso):0}); }
+  return arr;
+}
+function bestWeekday(n){
+  var sums={},cnts={}; lastNDaysRange(0,n).forEach(function(d){ if(!d.has)return; var wd=new Date(d.date+'T00:00:00').getDay(); sums[wd]=(sums[wd]||0)+d.score; cnts[wd]=(cnts[wd]||0)+1; });
+  var best=null; Object.keys(cnts).forEach(function(wd){ var a=sums[wd]/cnts[wd]; if(!best||a>best.pct){ best={wd:+wd, pct:Math.round(a)}; } });
+  if(!best) return null; best.name=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][best.wd]; return best;
+}
+function mostMissedMeal(n){
+  if(!S.meals.length) return null; var miss={}, days=0;
+  lastNDaysRange(0,n).forEach(function(d){ var e=S.log[d.date]||[]; if(!e.length) return; days++; S.meals.forEach(function(m){ if(!e.some(function(x){return x.meal===m;})) miss[m]=(miss[m]||0)+1; }); });
+  if(!days) return null; var worst=null; S.meals.forEach(function(m){ var c=miss[m]||0; if(!worst||c>worst.count){ worst={meal:m,count:c}; } });
+  if(!worst||worst.count===0) return null; worst.rate=Math.round((1-worst.count/days)*100); return worst;
+}
+function weekendVsWeekday(n){
+  var we=[],wk=[]; lastNDaysRange(0,n).forEach(function(d){ if(!d.has)return; var g=new Date(d.date+'T00:00:00').getDay(); if(g===0||g===6) we.push(d.score); else wk.push(d.score); });
+  if(!we.length||!wk.length) return null; var w=Math.round(_avg(we)), k=Math.round(_avg(wk)); return {weekend:w, weekday:k, dip:w<k-5};
+}
+function generateDailyInsights(date){
+  var out=[]; var ms=activeMetrics(); var tot=dayTotals(date); var ov=dailyScore(date);
+  if(!(S.log[date]||[]).length){ out.push({cls:'', t:'Today', b:'Nothing logged yet today. Log a meal to see where you stand.'}); return out; }
+  if(ov>=90) out.push({cls:'good', t:'On track', b:'You\'re at '+ov+'% today — dialed in.'});
+  ms.forEach(function(m){
+    if(m.k==='sodium'||m.k==='sugar') return;
+    var pct=Math.round(metricPct(date,m.k)); var rem=Math.round((S.targets[m.k]||0)-(tot[m.k]||0));
+    if(pct<60 && rem>0){
+      var unit=(m.k==='veg')?rem+' veg servings':(m.k==='fruits')?rem+' fruit servings':(m.k==='calories')?rem+' cal':(m.k==='water')?rem+' ml':rem+'g';
+      out.push({cls:'warn', t:m.label+' behind pace', b:'Only '+pct+'% of your '+m.label.toLowerCase()+' target so far — about '+unit+' to go.'});
+    }
+  });
+  if(ov<90 && out.length<=1) out.push({cls:'', t:'Almost there', b:'You\'re at '+ov+'% — finish your meals and macros to close at 100%.'});
+  return out;
+}
+function generateWeeklyInsights(){
+  var out=[]; var thisW=lastNDaysRange(0,7).filter(function(d){return d.has;}), lastW=lastNDaysRange(7,7).filter(function(d){return d.has;});
+  if(thisW.length<2){ out.push({cls:'',t:'Building your week',b:'Log a few more days this week to unlock weekly patterns.'}); return out; }
+  var tAvg=_avg(thisW.map(function(d){return d.score;})), lAvg=lastW.length?_avg(lastW.map(function(d){return d.score;})):null;
+  if(lAvg!=null){ var d=Math.round(tAvg-lAvg); out.push({cls:d>=0?'good':'warn', t:'Weekly score', b:'Your nutrition score is '+(d>=0?'up':'down')+' '+Math.abs(d)+' pts vs last week ('+Math.round(tAvg)+'% vs '+Math.round(lAvg)+'%).'}); }
+  else out.push({cls:'', t:'Weekly score', b:'Averaging '+Math.round(tAvg)+'% this week across '+thisW.length+' logged days.'});
+  var tP=_avg(thisW.map(function(d){return Math.min(100,metricPct(d.date,'protein'));})), lP=lastW.length?_avg(lastW.map(function(d){return Math.min(100,metricPct(d.date,'protein'));})):null;
+  if(lP!=null){ var dp=Math.round(tP-lP); if(Math.abs(dp)>=5) out.push({cls:dp>=0?'good':'warn', t:'Protein', b:'Protein adherence '+(dp>=0?'up':'down')+' '+Math.abs(dp)+'% vs last week.'}); }
+  var best=bestWeekday(14); if(best) out.push({cls:'', t:'Your strongest day', b:best.name+' is your best day on average ('+best.pct+'%).'});
+  var miss=mostMissedMeal(14); if(miss && miss.count>0) out.push({cls:'warn', t:'Most-missed meal', b:miss.meal+' is the meal you skip most — logged only '+miss.rate+'% of days.'});
+  var wd=weekendVsWeekday(14); if(wd) out.push({cls:wd.dip?'warn':'', t:'Weekends', b: wd.dip? 'Your score dips on weekends ('+wd.weekend+'% vs '+wd.weekday+'% on weekdays).' : 'You hold steady on weekends ('+wd.weekend+'% vs '+wd.weekday+'%).'});
+  return out;
+}
+function generateMonthlyInsights(){
+  var out=[]; var thisM=lastNDaysRange(0,30).filter(function(d){return d.has;}), lastM=lastNDaysRange(30,30).filter(function(d){return d.has;});
+  if(thisM.length<5){ out.push({cls:'',t:'Building your month',b:'Log more days to unlock monthly trends (about a week of data).'}); return out; }
+  var tAvg=_avg(thisM.map(function(d){return d.score;})), lAvg=lastM.length?_avg(lastM.map(function(d){return d.score;})):null;
+  if(lAvg!=null){ var d=Math.round(tAvg-lAvg); out.push({cls:d>=0?'good':'warn', t:'Consistency', b:'Averaging '+Math.round(tAvg)+'% this month — '+(d>=0?'up':'down')+' '+Math.abs(d)+' pts vs the previous 30 days.'}); }
+  else out.push({cls:'', t:'This month', b:'Averaging '+Math.round(tAvg)+'% across '+thisM.length+' logged days.'});
+  var tHit=Math.round(thisM.filter(function(d){return metricPct(d.date,'protein')>=90;}).length/thisM.length*100);
+  out.push({cls:tHit>=70?'good':'', t:'Protein adherence', b:'You hit your protein target on '+tHit+'% of logged days this month.'});
+  out.push({cls:'', t:'Days logged', b:thisM.length+' of the last 30 days logged.'});
+  return out;
+}
+function perfInsightsHTML(){
+  var tabs=[['day','Today'],['week','This Week'],['month','This Month']];
+  var html='<div class="section-title">Insights</div>';
+  html+='<div class="range-tabs">'+tabs.map(function(t){ return '<span class="range-tab'+(insightRange===t[0]?' active':'')+'" onclick="setInsightRange(\''+t[0]+'\')">'+t[1]+'</span>'; }).join('')+'</div>';
+  var list = insightRange==='day'?generateDailyInsights(curDate): insightRange==='month'?generateMonthlyInsights(): generateWeeklyInsights();
+  html += list.map(function(o){ return '<div class="insight-card '+(o.cls||'')+' glass"><div class="ic-t">'+o.t+'</div><div class="ic-b">'+o.b+'</div></div>'; }).join('');
+  return html;
 }
 
 /* ============================== SETTINGS ============================== */
