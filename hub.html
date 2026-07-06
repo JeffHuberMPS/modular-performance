@@ -467,7 +467,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '325';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '326';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1351,11 +1351,15 @@
         if (!user || (user.email || '').toLowerCase() !== 'jeffreyhuber86@gmail.com') return;
         var ref = firebase.firestore().collection('users').doc(user.uid);
         var snap = await ref.get();
-        if (snap.exists && snap.data() && snap.data().demo_purged_v2) return;   // already cleaned
+        if (snap.exists && snap.data() && snap.data().demo_purged_v3) return;   // already cleaned (v3 re-arm)
+        // Stop the first-open app tutorials from ever re-seeding demo data onto his real account.
+        ['workout','habits','sleep','expenses','journal','nutrition'].forEach(function (id) {
+          try { localStorage.setItem('mps_tut_' + id, '1'); localStorage.setItem('mps_tour_' + id, '1'); } catch (e) {}
+        });
         if (window.MPS_DEMO && MPS_DEMO.wipeTrackers) { await MPS_DEMO.wipeTrackers(); }
-        await ref.set({ demo_purged_v2: true }, { merge: true });
-        try { showToast('Cleared demo data — refreshing…'); } catch (e) {}
-        setTimeout(function () { location.reload(); }, 800);
+        await ref.set({ demo_purged_v3: true }, { merge: true });
+        try { showToast('Reset to your real data — refreshing…'); } catch (e) {}
+        setTimeout(function () { location.reload(); }, 900);
       } catch (e) { console.warn('[MPS] demo purge skipped:', e && e.message); }
     }
 
