@@ -959,7 +959,7 @@ function renderSettings(){
   html+='</div>';
 
   html+='<div class="set-card glass"><h3>Barcode Scanning '+(!tierOK('premium')?'<span class="lock-tag">PREMIUM</span>':'')+'</h3><div class="desc">Scan packaged foods (Walmart / Target / High V databases).</div>';
-  if(tierOK('premium')){ html+='<button class="btn-primary" onclick="simBarcode()">📷 Simulate Scan</button>'; }
+  if(tierOK('premium')){ html+='<button class="btn-primary" onclick="simBarcode()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:7px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Scan</button>'; }
   else { html+='<div class="desc">Upgrade to PREMIUM for barcode scanning.</div>'; }
   html+='</div>';
 
@@ -993,10 +993,19 @@ function resetTargets(){ S.customTargets=false; delete S.targets._custom; comput
 // innerHTML, which collapses the page height and snaps scroll to 0. Capture the scroll position and
 // put it back so you can flip toggles one after another without the screen leaping up each time.
 function rerenderSettingsKeepScroll(){
+  // Capture from whichever element is actually scrolling (document, html, or body — differs between
+  // standalone and inside the hub iframe).
   var se = document.scrollingElement || document.documentElement;
-  var y = se ? se.scrollTop : 0;
+  var y = (se && se.scrollTop) || window.pageYOffset || (document.body && document.body.scrollTop) || 0;
   renderSettings();
-  if(se) se.scrollTop = y;
+  var restore = function(){
+    if(se) se.scrollTop = y;
+    if(document.body) document.body.scrollTop = y;   // fallback if body is the scroller
+    try{ window.scrollTo(0, y); }catch(e){}
+  };
+  restore();                        // sync
+  requestAnimationFrame(restore);   // again after layout settles, defeating the reflow clamp that
+                                    // otherwise snaps scroll to the top when the view is rebuilt
 }
 function toggleMetric(k){ S.tracked[k]=!S.tracked[k]; computeTargets(); save(); rerenderSettingsKeepScroll(); }
 function toggleMeal(meal){
