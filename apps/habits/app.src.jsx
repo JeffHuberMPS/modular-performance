@@ -508,7 +508,7 @@ function HabitTracker() {
       {/* Persistent tab bar (matches the other trackers) */}
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: view === 'log' ? '12px' : '20px' }}>
         {[['dashboard','DASHBOARD'],['log','TRACK'],['insights','INSIGHTS'],['compound','COMPOUND']].map(([v,lbl]) => (
-          <button key={v} onClick={() => setView(v)} style={{
+          <button key={v} data-tour={'tab-' + v} onClick={() => setView(v)} style={{
             flex: 1, padding: '11px 4px', background: 'none', border: 'none',
             borderBottom: view === v ? `2px solid ${PRIMARY_LIGHT}` : '2px solid transparent',
             color: view === v ? PRIMARY_LIGHT : '#6b6b6b',
@@ -525,8 +525,15 @@ function HabitTracker() {
       {/* ═══ DASHBOARD ═══ */}
       {view === 'dashboard' && (
         <>
+          {/* Watch Demo — guided walkthrough of the redesign (shared/tour.js) */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+            <button onClick={() => { try { window.startMpsTour && window.startMpsTour(); } catch(e){} }} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: `1px solid ${BORDER}`, color: ACCENT, borderRadius: '20px', padding: '7px 16px', fontFamily: bodyFont, fontSize: '11px', letterSpacing: '1.5px', fontWeight: 700, cursor: 'pointer' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              WATCH DEMO
+            </button>
+          </div>
           {/* ═══ WEAPON 1: Hero Discipline Score ═══ */}
-          <div style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '24px 18px', marginBottom: '16px', textAlign: 'center', boxShadow: CARD_SHADOW_3D, overflow: 'hidden' }}>
+          <div data-tour="score" style={{ background: CARD_RAISED, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '24px 18px', marginBottom: '16px', textAlign: 'center', boxShadow: CARD_SHADOW_3D, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
               <ScoreRing pct={todayPct} color={PRIMARY_LIGHT} track={BORDER} glow={PRIMARY_GLOW} size={64} />
               <div style={{ fontSize: '48px', fontWeight: 900, color: PRIMARY_LIGHT, lineHeight: 1, textShadow: `0 0 22px ${PRIMARY_GLOW}` }}>{todayPct}%</div>
@@ -551,7 +558,7 @@ function HabitTracker() {
             })()}
 
             {/* ═══ WEAPON 3: Projected Month toggle ═══ */}
-            <button onClick={() => setShowGoalsPanel(v => !v)} style={{ width: '100%', background: 'transparent', border: 'none', color: ACCENT, fontFamily: bodyFont, fontSize: '13px', fontWeight: 700, letterSpacing: '0.4px', cursor: 'pointer', padding: '10px 0 2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <button data-tour="projected" onClick={() => setShowGoalsPanel(v => !v)} style={{ width: '100%', background: 'transparent', border: 'none', color: ACCENT, fontFamily: bodyFont, fontSize: '13px', fontWeight: 700, letterSpacing: '0.4px', cursor: 'pointer', padding: '10px 0 2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <span>Projected month: <span style={{ color: PRIMARY_LIGHT, fontWeight: 800 }}>{projectedMonthPct}%</span></span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: showGoalsPanel ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}>
                 <path d="M6 9l6 6 6-6"/>
@@ -827,7 +834,7 @@ function HabitTracker() {
         <>
           {/* ═══ WEAPON 10 (3-card shell) + WEAPON 11 (Strongest) ═══ */}
           {!__CORE && (
-            <div style={{ marginBottom: '20px' }}>
+            <div data-tour="coaching" style={{ marginBottom: '20px' }}>
               <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '3px', fontWeight: 800, marginBottom: '12px', textAlign: 'center' }}>COACHING</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'start' }}>
 
@@ -1028,7 +1035,7 @@ function HabitTracker() {
                   <StatCard label="LONGEST" value={longest} sub="best run" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
                   <StatCard label="ACTIVE DAYS" value={activeDays} sub="last 12 months" accent={PRIMARY_LIGHT} card={CARD_RAISED} border={BORDER} muted={MUTED} shadow={CARD_SHADOW_3D} />
                 </div>
-                <div style={cardSty}>
+                <div data-tour="heatmap" style={cardSty}>
                   <div style={{ fontSize: '11px', color: MUTED, letterSpacing: '2px', marginBottom: '12px' }}>LAST 12 MONTHS</div>
                   <div style={{ overflowX: 'auto', paddingBottom: '6px' }}>
                     <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>

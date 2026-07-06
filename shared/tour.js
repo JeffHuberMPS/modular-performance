@@ -26,11 +26,15 @@
       { sel: '#end-workout',               text: "When you're done, <b>End Workout &amp; Save</b> logs the whole session. That's it — you're set.", click: false }
     ],
     habits: [
-      { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — every habit's streak and strength. Watch it roll by.", click: true },
-      { pan: true,                          text: "Your discipline at a glance: streaks, momentum, how each habit is trending." },
-      { sel: 'button:has(path[d="M12 20h9"])', text: "These are <b>starter</b> habits — tap the <b>pencil</b> on any one to rename it, change its icon, or delete it. Make them your own.", click: false },
-      { txt: 'Track', sel: '.log-tab',     text: "Now tap <b>Track</b> — your daily check-in.", click: true },
-      { center: true,                       text: "Tap each habit to check it off, then hit <b>Save Entry</b> to lock the day in. That's the whole thing.", click: false }
+      { sel: '[data-tour="score"]',        text: "Your <b>Discipline Score</b> — today's habits in one number. It climbs as you check off your day." },
+      { sel: '[data-tour="projected"]',    text: "Tap <b>Projected Month</b> to open your <b>Goals</b> — set a target and see exactly what to hit today.", click: true },
+      { pan: true,                          text: "Every bar is colored by how you did: <b>deep red</b> for a strong day, a <b>white cap</b> when you max it out, <b>gray</b> when you slip. Watch it roll by." },
+      { sel: '[data-tour="tab-log"]',      text: "Now the daily part — tap <b>Track</b>, your 30-second check-in.", click: true },
+      { center: true,                       text: "Check off each habit, then <b>Complete Check-In</b> to lock the day in. That's the whole daily job." },
+      { sel: '[data-tour="tab-insights"]', text: "Tap <b>Insights</b> — MPS coaches you.", click: true },
+      { sel: '[data-tour="coaching"]',     text: "Your <b>Strongest</b> habit, what <b>Needs Attention</b>, and <b>Today's Focus</b> — the two habits to win today." },
+      { sel: '[data-tour="tab-compound"]', text: "Last, tap <b>Compound</b>.", click: true },
+      { sel: '[data-tour="heatmap"]',      text: "A full year of your habits in one heatmap — this is discipline <b>compounding</b>. That's the whole app." }
     ],
     sleep: [
       { txt: 'Dashboard',                   text: "First, your <b>Dashboard</b> — recovery score, sleep and trends. Watch it roll by.", click: true },

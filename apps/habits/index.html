@@ -1227,6 +1227,7 @@ function HabitTracker() {
     }
   }, [['dashboard', 'DASHBOARD'], ['log', 'TRACK'], ['insights', 'INSIGHTS'], ['compound', 'COMPOUND']].map(([v, lbl]) => /*#__PURE__*/React.createElement("button", {
     key: v,
+    "data-tour": 'tab-' + v,
     onClick: () => setView(v),
     style: {
       flex: 1,
@@ -1249,6 +1250,42 @@ function HabitTracker() {
     onClick: () => setShowCal(!showCal),
     style: blockTabStyle(false, PRIMARY, BORDER, bodyFont, TEXT)
   }, "PICK DATE")), view === 'dashboard' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      try {
+        window.startMpsTour && window.startMpsTour();
+      } catch (e) {}
+    },
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '7px',
+      background: 'transparent',
+      border: `1px solid ${BORDER}`,
+      color: ACCENT,
+      borderRadius: '20px',
+      padding: '7px 16px',
+      fontFamily: bodyFont,
+      fontSize: '11px',
+      letterSpacing: '1.5px',
+      fontWeight: 700,
+      cursor: 'pointer'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "11",
+    height: "11",
+    viewBox: "0 0 24 24",
+    fill: "currentColor",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("polygon", {
+    points: "6 4 20 12 6 20 6 4"
+  })), "WATCH DEMO")), /*#__PURE__*/React.createElement("div", {
+    "data-tour": "score",
     style: {
       background: CARD_RAISED,
       border: `1px solid ${BORDER}`,
@@ -1326,6 +1363,7 @@ function HabitTracker() {
       d: "M12 19V5M6 11l6-6 6 6"
     })), dayDeltaText);
   })(), /*#__PURE__*/React.createElement("button", {
+    "data-tour": "projected",
     onClick: () => setShowGoalsPanel(v => !v),
     style: {
       width: '100%',
@@ -2276,6 +2314,7 @@ function HabitTracker() {
       transition: 'all 0.2s ease'
     }
   }, saveFlash ? 'SAVED — LOCKED IN' : 'SAVE ENTRY'))), view === 'insights' && /*#__PURE__*/React.createElement(React.Fragment, null, !__CORE && /*#__PURE__*/React.createElement("div", {
+    "data-tour": "coaching",
     style: {
       marginBottom: '20px'
     }
@@ -3275,6 +3314,7 @@ function HabitTracker() {
       muted: MUTED,
       shadow: CARD_SHADOW_3D
     })), /*#__PURE__*/React.createElement("div", {
+      "data-tour": "heatmap",
       style: cardSty
     }, /*#__PURE__*/React.createElement("div", {
       style: {
