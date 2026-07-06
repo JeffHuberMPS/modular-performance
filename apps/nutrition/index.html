@@ -990,13 +990,22 @@ function saveTargets(){
   save(); renderSettings();
 }
 function resetTargets(){ S.customTargets=false; delete S.targets._custom; computeTargets(); save(); renderSettings(); toast('Reset to auto-calculated'); }
-function toggleMetric(k){ S.tracked[k]=!S.tracked[k]; computeTargets(); save(); renderSettings(); }
+// Re-render Settings WITHOUT jumping to the top. renderSettings() rebuilds the whole view via
+// innerHTML, which collapses the page height and snaps scroll to 0. Capture the scroll position and
+// put it back so you can flip toggles one after another without the screen leaping up each time.
+function rerenderSettingsKeepScroll(){
+  var se = document.scrollingElement || document.documentElement;
+  var y = se ? se.scrollTop : 0;
+  renderSettings();
+  if(se) se.scrollTop = y;
+}
+function toggleMetric(k){ S.tracked[k]=!S.tracked[k]; computeTargets(); save(); rerenderSettingsKeepScroll(); }
 function toggleMeal(meal){
   if(S.meals.includes(meal)) S.meals=S.meals.filter(x=>x!==meal);
   else { S.meals.push(meal); S.meals.sort((a,b)=>MEAL_TYPES.indexOf(a)-MEAL_TYPES.indexOf(b)); }
-  save(); renderSettings();
+  save(); rerenderSettingsKeepScroll();
 }
-function toggleReminders(){ S.reminders.enabled=!S.reminders.enabled; save(); renderSettings(); }
+function toggleReminders(){ S.reminders.enabled=!S.reminders.enabled; save(); rerenderSettingsKeepScroll(); }
 function setRemFreq(v){ S.reminders.freq=v; save(); }
 
 function openCustomFood(){
