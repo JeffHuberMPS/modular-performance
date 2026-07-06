@@ -345,6 +345,7 @@
     <div class="today-top" id="todayTop"></div>
     <div class="breakdown" id="breakdown"></div>
     <div class="meals-wrap" id="mealsWrap"></div>
+    <div id="todayWeight"></div>
   </div>
 
   <!-- HISTORY -->
@@ -353,8 +354,8 @@
   <!-- INSIGHTS -->
   <div class="view" id="view-insights"></div>
 
-  <!-- WEIGHT -->
-  <div class="view" id="view-weight"></div>
+  <!-- LIBRARY -->
+  <div class="view" id="view-library"></div>
 
   <!-- SETTINGS -->
   <div class="view" id="view-settings"></div>
@@ -469,14 +470,21 @@ let S = {
   favorites:[],
   recent:[],
   customFoods:[],
-  customMeals:[],
+  customRecipes:[],   // was customMeals (renamed V2)
+  mealTemplates:[],   // W1: saved rigid meal presets
   weightLog:[],
   reminders:{ enabled:false, freq:'daily' }
 };
 let curDate = todayISO();
 
 function todayISO(){ var t=new Date(); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
-function load(){ try{ var d=JSON.parse(localStorage.getItem('mps_nutrition')); if(d) S=Object.assign(S,d); }catch(e){} }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function load(){ try{ var d=JSON.parse(localStorage.getItem('mps_nutrition')); if(d) S=Object.assign(S,d); }catch(e){}
+  // V2 migration: customMeals -> customRecipes (zero data loss)
+  if(S.customMeals){ if(!S.customRecipes || !S.customRecipes.length) S.customRecipes=S.customMeals; delete S.customMeals; }
+  if(!S.customRecipes) S.customRecipes=[];
+  if(!S.mealTemplates) S.mealTemplates=[];
+}
 function save(){ localStorage.setItem('mps_nutrition', JSON.stringify(S)); try{ if(window.nutritionScheduleBackup) window.nutritionScheduleBackup(); }catch(e){} }
 function allFoods(){ return FOODS.concat(S.customFoods); }
 function foodById(id){ return allFoods().find(f=>f.id===id); }
@@ -549,7 +557,7 @@ const TABS = [
   {id:'today', label:'Today', icon: wfIcon('<line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/>')},
   {id:'history', label:'History', icon: wfIcon('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'), tier:'elite'},
   {id:'insights', label:'Insights', icon: wfIcon('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.5.4.9 1 1 1.6h5c.1-.6.5-1.2 1-1.6A6 6 0 0 0 12 3z"/>'), tier:'elite'},
-  {id:'weight', label:'Weight', icon: wfIcon('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 8.5a3 3 0 0 1 6 0"/><line x1="12" y1="8.5" x2="13" y2="11"/>'), tier:'elite'},
+  {id:'library', label:'Library', icon: wfIcon('<path d="M6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5v-13A2.5 2.5 0 0 1 6.5 3z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/>')},
   {id:'settings', label:'Settings', icon: wfIcon('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>')},
 ];
 let curTab='today';
@@ -571,7 +579,7 @@ function go(id){
   if(id==='today') renderToday();
   if(id==='history') renderHistory();
   if(id==='insights') renderInsights();
-  if(id==='weight') renderWeight();
+  if(id==='library') renderLibrary();
   if(id==='settings') renderSettings();
 }
 
@@ -625,6 +633,7 @@ function renderToday(){
 
   renderBreakdownPanel();
   renderMeals();
+  renderTodayWeight();
 }
 function mealMiniHTML(){
   var entries=S.log[curDate]||[];
@@ -671,7 +680,7 @@ function renderMeals(){
     var sumTxt='P '+Math.round(sums.p)+'g · C '+Math.round(sums.c)+'g · '+Math.round(sums.cal)+' cal';
     html+='<div class="meal-block glass"><div class="meal-head"><div><h3>'+MEAL_EMOJI[meal]+' '+meal+'</h3>'
       +(items.length?'<div class="meal-sum">'+sumTxt+'</div>':'')+'</div>'
-      +'<button class="add" onclick="openSearch(\''+meal+'\')">+ Add Food</button></div>';
+      +'<button class="add" onclick="openAddFood(\''+meal+'\')">+ Add Food</button></div>';
     if(items.length){
       items.forEach(it=>{
         html+='<div class="food-line"><span class="food-emoji">'+catIcon(foodCat(it.name))+'</span>'
@@ -691,6 +700,129 @@ function delEntry(eid){
   if(!confirm('Remove this food from your log?')) return;
   S.log[curDate]=(S.log[curDate]||[]).filter(e=>e.id!==eid);
   save(); renderToday();
+}
+
+/* ============================== WEAPON 1: ADD FOOD MENU ============================== */
+/* wireframe icon paths (no emojis — house style) */
+const WICO = {
+  search:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/>',
+  barcode:'<line x1="4" y1="6" x2="4" y2="18"/><line x1="7.5" y1="6" x2="7.5" y2="18"/><line x1="11" y1="6" x2="11" y2="18"/><line x1="14" y1="6" x2="14" y2="18"/><line x1="17" y1="6" x2="17" y2="18"/><line x1="20" y1="6" x2="20" y2="18"/>',
+  camera:'<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7H7l1.5-2h7L17 7h2.5A1.5 1.5 0 0 1 21 8.5V18a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/><circle cx="12" cy="13" r="3.5"/>',
+  clip:'<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 9h6M9 13h6M9 17h4"/>',
+  save:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  dup:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'
+};
+function wBig(ic){ return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'+ic+'</svg>'; }
+function wSm(ic){ return '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'+ic+'</svg>'; }
+
+function openAddFood(meal){
+  searchMeal=meal;
+  var tCount=S.mealTemplates.length;
+  function opt(ico,title,sub,onclick,dashed){
+    return '<div class="res-item" style="padding:14px 12px;border:1px '+(dashed?'dashed #3a4a35':'solid #262b31')+';margin-bottom:8px" onclick="'+onclick+'">'
+      +'<span class="res-emoji" style="color:var(--g)">'+wBig(ico)+'</span>'
+      +'<div class="res-info"><div class="rn">'+title+'</div><div class="rm" style="text-transform:none;letter-spacing:0">'+sub+'</div></div>'
+      +'<span style="color:#5f6a76;font-size:20px">›</span></div>';
+  }
+  document.getElementById('modal').innerHTML=
+    '<div class="modal-head"><h2>Add to '+meal+'</h2><span class="x" onclick="closeModal()">×</span></div>'
+    +opt(WICO.search,'Search Foods','Database, favorites, recent, custom','openSearch(\''+meal+'\')')
+    +opt(WICO.barcode,'Scan Barcode','Packaged foods · camera or manual','openBarcode(\''+meal+'\')')
+    +opt(WICO.camera,'Meal Recognition','Snap a plate, confirm & log','openRecognition(\''+meal+'\')')
+    +opt(WICO.clip,'Meal Templates','One-tap log a saved meal'+(tCount?' ('+tCount+')':''),'openTemplates(\''+meal+'\')');
+  document.getElementById('overlay').classList.add('active');
+}
+function afSoon(name){ toast(name+' is the next bolt-on within Weapon 1 — coming soon'); }
+
+/* ============================== WEAPON 1D: MEAL TEMPLATES ============================== */
+function templateMacros(t){ var o={protein:0,carbs:0,calories:0}; t.items.forEach(it=>{ o.protein+=it.m.protein||0; o.carbs+=it.m.carbs||0; o.calories+=it.m.calories||0; }); return o; }
+
+function openTemplates(meal){
+  searchMeal=meal;
+  var todays=(S.log[curDate]||[]).filter(e=>e.meal===meal);
+  var html='<div class="modal-head"><h2>Meal Templates</h2><span class="x" onclick="closeModal()">×</span></div>';
+  if(todays.length){
+    html+='<div class="res-item" style="border:1px dashed #3a4a35;margin-bottom:12px" onclick="saveMealAsTemplate(\''+meal+'\')">'
+      +'<span class="res-emoji" style="color:var(--g)">'+wBig(WICO.save)+'</span><div class="res-info"><div class="rn">Save current '+meal+' as a template</div>'
+      +'<div class="rm" style="text-transform:none;letter-spacing:0">'+todays.length+' item'+(todays.length>1?'s':'')+' logged now</div></div></div>';
+  } else {
+    html+='<div class="desc" style="margin-bottom:12px">Tip: log some foods to '+meal+', then come back to save them as a one-tap template.</div>';
+  }
+  if(!S.mealTemplates.length){
+    html+='<div class="res-empty">No templates yet.</div>';
+  } else {
+    html+='<div class="results">'+S.mealTemplates.map(t=>{
+      var mac=templateMacros(t);
+      return '<div class="res-item">'
+        +'<span class="res-emoji" style="cursor:pointer;color:var(--g)" onclick="logTemplate(\''+t.id+'\',\''+meal+'\')">'+wBig(WICO.clip)+'</span>'
+        +'<div class="res-info" style="cursor:pointer" onclick="logTemplate(\''+t.id+'\',\''+meal+'\')"><div class="rn">'+esc(t.name)+'</div>'
+        +'<div class="rm" style="text-transform:none;letter-spacing:0">'+t.items.length+' items · P'+Math.round(mac.protein)+' C'+Math.round(mac.carbs)+' · '+Math.round(mac.calories)+'cal</div></div>'
+        +'<span class="res-fav" title="Log to '+meal+'" style="color:var(--g)" onclick="logTemplate(\''+t.id+'\',\''+meal+'\')">'+wSm(WICO.plus)+'</span>'
+        +'<span class="res-fav" title="Duplicate" onclick="duplicateTemplate(\''+t.id+'\')">'+wSm(WICO.dup)+'</span>'
+        +'<span class="res-fav" title="Rename" onclick="renameTemplate(\''+t.id+'\')">'+wSm(WICO.edit)+'</span>'
+        +'<span class="res-fav" title="Delete" style="color:#ff6b6b" onclick="deleteTemplate(\''+t.id+'\')">'+wSm(WICO.trash)+'</span>'
+        +'</div>';
+    }).join('')+'</div>';
+  }
+  document.getElementById('modal').innerHTML=html;
+  document.getElementById('overlay').classList.add('active');
+}
+function saveMealAsTemplate(meal){
+  var todays=(S.log[curDate]||[]).filter(e=>e.meal===meal);
+  if(!todays.length){ toast('Nothing logged to '+meal+' yet'); return; }
+  document.getElementById('modal').innerHTML=
+    '<div class="modal-head"><h2>Save Template</h2><span class="x" onclick="closeModal()">×</span></div>'
+    +'<div class="desc">Saving '+todays.length+' item'+(todays.length>1?'s':'')+' from '+meal+' exactly as logged.</div>'
+    +'<label>Template name</label><input id="tplName" value="'+esc(meal)+'">'
+    +'<div class="modal-actions"><button class="save" onclick="commitTemplate(\''+meal+'\')">Save Template</button><button class="cancel" onclick="openTemplates(\''+meal+'\')">Back</button></div>';
+}
+function commitTemplate(meal){
+  var name=(document.getElementById('tplName').value||'').trim(); if(!name){ toast('Enter a name'); return; }
+  var todays=(S.log[curDate]||[]).filter(e=>e.meal===meal);
+  S.mealTemplates.push({ id:'t'+Date.now(), name:name, items: todays.map(e=>({foodId:e.foodId, name:e.name, emoji:e.emoji, qty:e.qty, m:Object.assign({},e.m)})), createdAt:curDate });
+  save(); toast('Template saved: '+name); openTemplates(meal);
+}
+function logTemplate(id, meal){
+  var t=S.mealTemplates.find(x=>x.id===id); if(!t) return;
+  if(!S.log[curDate]) S.log[curDate]=[];
+  t.items.forEach(it=>{
+    S.log[curDate].push({ id:'e'+Date.now()+Math.floor(Math.random()*10000), meal:meal, foodId:it.foodId, name:it.name, emoji:it.emoji, qty:it.qty, m:Object.assign({},it.m) });
+    if(it.foodId) S.recent=[it.foodId].concat(S.recent.filter(x=>x!==it.foodId)).slice(0,20);
+  });
+  save(); closeModal(); renderToday(); toast(t.name+' logged to '+meal);
+}
+function duplicateTemplate(id){
+  var t=S.mealTemplates.find(x=>x.id===id); if(!t) return;
+  S.mealTemplates.push({ id:'t'+Date.now(), name:t.name+' (copy)', createdAt:curDate, items:t.items.map(i=>Object.assign({},i,{m:Object.assign({},i.m)})) });
+  save(); toast('Duplicated'); openTemplates(searchMeal);
+}
+function renameTemplate(id){
+  var t=S.mealTemplates.find(x=>x.id===id); if(!t) return;
+  document.getElementById('modal').innerHTML=
+    '<div class="modal-head"><h2>Rename Template</h2><span class="x" onclick="closeModal()">×</span></div>'
+    +'<label>Template name</label><input id="tplRename" value="'+esc(t.name)+'">'
+    +'<div class="modal-actions"><button class="save" onclick="commitRename(\''+id+'\')">Save</button><button class="cancel" onclick="openTemplates(searchMeal)">Back</button></div>';
+}
+function commitRename(id){
+  var t=S.mealTemplates.find(x=>x.id===id); if(!t) return;
+  var n=(document.getElementById('tplRename').value||'').trim(); if(!n){ toast('Enter a name'); return; }
+  t.name=n; save(); openTemplates(searchMeal);
+}
+function deleteTemplate(id){
+  if(!confirm('Delete this template?')) return;
+  S.mealTemplates=S.mealTemplates.filter(x=>x.id!==id);
+  save(); openTemplates(searchMeal);
+}
+
+/* ============================== LIBRARY (Piece 2 builds the 4-section grid) ============================== */
+function renderLibrary(){
+  var v=document.getElementById('view-library');
+  v.innerHTML='<div class="section-title">Library</div>'
+    +'<div class="locked-panel glass"><div class="lk">'+wBig(WICO.clip)+'</div><h3>Library</h3>'
+    +'<p>Your saved foods, meals, recipes, favorites, and supplements will live here — organized in one place. Coming in the next build step.</p></div>';
 }
 
 /* ============================== SEARCH / LOG MODAL ============================== */
@@ -778,8 +910,292 @@ function logFood(foodId){
   save(); closeModal(); renderToday();
   toast(f.n+' added to '+searchMeal);
 }
-function closeModal(){ document.getElementById('overlay').classList.remove('active'); }
+function closeModal(){ stopCam(); document.getElementById('overlay').classList.remove('active'); }
 document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') closeModal(); });
+
+/* ============================== WEAPON 1B: BARCODE SCANNER ============================== */
+/* Camera via the browser's native BarcodeDetector; lookup via Open Food Facts (free, no key). */
+var _cam={stream:null, timer:null};
+function stopCam(){ try{ if(_cam.timer){ clearInterval(_cam.timer); _cam.timer=null; } if(_cam.stream){ _cam.stream.getTracks().forEach(t=>t.stop()); _cam.stream=null; } }catch(e){} }
+
+function openBarcode(meal){
+  searchMeal=meal;
+  var supported=('BarcodeDetector' in window);
+  var html='<div class="modal-head"><h2>Scan Barcode</h2><span class="x" onclick="closeModal()">×</span></div>';
+  html+='<div id="bcCam" style="'+(supported?'':'display:none')+'">'
+    +'<div style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:8px">'
+    +'<video id="bcVideo" playsinline muted style="width:100%;height:100%;object-fit:cover"></video>'
+    +'<div style="position:absolute;left:10%;right:10%;top:44%;height:14%;border:2px solid var(--g);border-radius:8px"></div>'
+    +'</div><div id="bcStatus" class="desc" style="text-align:center">Point your camera at a barcode…</div></div>';
+  if(!supported){ html+='<div class="desc">Live scanning isn\'t available here. Type the barcode number below, or enter macros manually.</div>'; }
+  html+='<label>Barcode number</label><div style="display:flex;gap:8px"><input id="bcManual" type="tel" inputmode="numeric" placeholder="e.g. 0123456789012" style="flex:1">'
+    +'<button class="btn-primary" onclick="lookupBarcode(document.getElementById(\'bcManual\').value,\''+meal+'\')">Look up</button></div>';
+  html+='<div class="modal-actions"><button class="cancel" onclick="manualMacro(\''+meal+'\')">Enter macros manually</button>'
+    +'<button class="cancel" onclick="openAddFood(\''+meal+'\')">Back</button></div>';
+  document.getElementById('modal').innerHTML=html;
+  document.getElementById('overlay').classList.add('active');
+  if(supported) startBarcodeCam(meal);
+}
+function startBarcodeCam(meal){
+  var det; try{ det=new window.BarcodeDetector(); }catch(e){ bcCamFail(); return; }
+  var v=document.getElementById('bcVideo'); if(!v) return;
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(stream){
+    _cam.stream=stream; v.srcObject=stream; v.play();
+    _cam.timer=setInterval(function(){
+      det.detect(v).then(function(codes){
+        if(codes && codes.length){ var code=codes[0].rawValue; stopCam();
+          var s=document.getElementById('bcStatus'); if(s) s.textContent='Found '+code+' — looking up…';
+          lookupBarcode(code, meal);
+        }
+      }).catch(function(){});
+    }, 450);
+  }).catch(function(){ bcCamFail(); });
+}
+function bcCamFail(){ var s=document.getElementById('bcStatus'); if(s) s.textContent='Camera unavailable — type the barcode number below.'; var c=document.getElementById('bcCam'); if(c) c.style.display='none'; }
+
+function offNum(nu,key){ var v=nu[key]; return (typeof v==='number' && !isNaN(v))?v:0; }
+function guessCatFromOFF(p){ var t=((p.categories_tags||[]).join(' ')+' '+(p.categories||'')).toLowerCase();
+  if(/vegetable/.test(t)) return 'veg'; if(/fruit/.test(t)) return 'fruit';
+  if(/meat|fish|seafood|egg|poultry|yogurt|dairy|protein/.test(t)) return 'protein';
+  if(/bread|pasta|rice|cereal|grain|potato|noodle/.test(t)) return 'carbs'; return 'snack'; }
+
+function lookupBarcode(code, meal){
+  code=(code||'').trim(); if(!code){ toast('Enter a barcode number'); return; }
+  stopCam();
+  document.getElementById('modal').innerHTML='<div class="modal-head"><h2>Looking up…</h2><span class="x" onclick="closeModal()">×</span></div><div class="desc">Barcode '+esc(code)+' — checking Open Food Facts…</div>';
+  document.getElementById('overlay').classList.add('active');
+  fetch('https://world.openfoodfacts.org/api/v0/product/'+encodeURIComponent(code)+'.json')
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if(j && j.status===1 && j.product){ barcodeProduct(j.product, code, meal); } else { barcodeNotFound(code, meal, false); } })
+    .catch(function(){ barcodeNotFound(code, meal, true); });
+}
+function barcodeProduct(p, code, meal){
+  var nu=p.nutriments||{};
+  var perServing = (nu['energy-kcal_serving']!==undefined || nu['proteins_serving']!==undefined) && !!p.serving_size;
+  var suf = perServing ? '_serving' : '_100g';
+  var label = perServing ? (p.serving_size||'1 serving') : '100 g';
+  var m={ p:offNum(nu,'proteins'+suf), c:offNum(nu,'carbohydrates'+suf), f:offNum(nu,'fat'+suf),
+    cal:offNum(nu,'energy-kcal'+suf), veg:0, fruit:0, water:0,
+    sod:Math.round(offNum(nu,'sodium'+suf)*1000), sug:offNum(nu,'sugars'+suf) };
+  var name=(p.product_name||'Scanned product').trim(); if(p.brands) name+=' ('+String(p.brands).split(',')[0].trim()+')';
+  var id='off'+code;
+  if(!S.customFoods.find(function(x){return x.id===id;})) S.customFoods.push({ id:id, n:name, e:'', cat:guessCatFromOFF(p), serv:label, m:m });
+  save(); searchMeal=meal; openServing(id);
+}
+function barcodeNotFound(code, meal, err){
+  document.getElementById('modal').innerHTML=
+    '<div class="modal-head"><h2>'+(err?'Connection issue':'Not found')+'</h2><span class="x" onclick="closeModal()">×</span></div>'
+    +'<div class="desc">'+(err?'Couldn\'t reach the food database. Check your connection, or enter the details manually.':'No match for barcode '+esc(code)+'. You can enter the details manually.')+'</div>'
+    +'<div class="modal-actions"><button class="save" onclick="manualMacro(\''+meal+'\')">Enter manually</button><button class="cancel" onclick="openBarcode(\''+meal+'\')">Try again</button></div>';
+}
+function manualMacro(meal){
+  searchMeal=meal;
+  document.getElementById('modal').innerHTML=
+    '<div class="modal-head"><h2>Manual Entry</h2><span class="x" onclick="closeModal()">×</span></div>'
+    +'<label>Food name</label><input id="mm_n" placeholder="Protein bar">'
+    +'<label>Serving label</label><input id="mm_s" placeholder="1 bar">'
+    +'<div class="serv-row"><div><label>Protein g</label><input type="number" id="mm_p" value="0"></div><div><label>Carbs g</label><input type="number" id="mm_c" value="0"></div><div><label>Fat g</label><input type="number" id="mm_f" value="0"></div></div>'
+    +'<div class="serv-row"><div><label>Calories</label><input type="number" id="mm_cal" value="0"></div><div><label>Sugar g</label><input type="number" id="mm_sug" value="0"></div><div><label>Sodium mg</label><input type="number" id="mm_sod" value="0"></div></div>'
+    +'<div class="modal-actions"><button class="save" onclick="commitManual(\''+meal+'\')">Add to '+meal+'</button><button class="cancel" onclick="openBarcode(\''+meal+'\')">Back</button></div>';
+}
+function commitManual(meal){
+  var g=function(id){ return parseFloat(document.getElementById(id).value)||0; };
+  var n=(document.getElementById('mm_n').value||'').trim(); if(!n){ toast('Enter a name'); return; }
+  var id='man'+Date.now();
+  S.customFoods.push({ id:id, n:n, e:'', cat:'snack', serv:(document.getElementById('mm_s').value||'1 serving'),
+    m:{p:g('mm_p'),c:g('mm_c'),f:g('mm_f'),cal:g('mm_cal'),veg:0,fruit:0,water:0,sod:g('mm_sod'),sug:g('mm_sug')} });
+  save(); searchMeal=meal; openServing(id);
+}
+
+/* ============================== WEAPON 1C: MEAL RECOGNITION ============================== */
+/* Snap/upload a plate → best-effort auto-detect (common foods) → you confirm & adjust → log.
+   Auto-detect is a progressive enhancement (lazy MediaPipe); the confirm/adjust builder always works. */
+var _recoItems=[];
+function foodCatById(id){ var f=foodById(id); return f?f.cat:'snack'; }
+function openRecognition(meal, keep){
+  searchMeal=meal;
+  if(!keep) _recoItems=[];
+  var html='<div class="modal-head"><h2>Meal Recognition</h2><span class="x" onclick="closeModal()">×</span></div>'
+    +'<div class="desc">Snap or upload a photo of your plate. We suggest what\'s on it — you confirm and adjust before logging. Best-effort on common foods; you\'re always in control.</div>'
+    +'<div id="recoImgWrap"></div>'
+    +'<div style="display:flex;gap:8px;margin:10px 0">'
+      +'<button class="btn-ghost" style="flex:1" onclick="document.getElementById(\'recoFile\').click()">Take / upload photo</button>'
+      +'<button class="btn-ghost" style="flex:1" onclick="recoAddPicker(\''+meal+'\')">+ Add food</button>'
+    +'</div>'
+    +'<input type="file" id="recoFile" accept="image/*" capture="environment" style="display:none" onchange="recoPicked(this,\''+meal+'\')">'
+    +'<div id="recoStatus" class="desc" style="text-align:center;display:none"></div>'
+    +'<div id="recoList" style="margin-top:6px"></div>'
+    +'<div class="modal-actions"><button class="save" onclick="recoConfirm(\''+meal+'\')">Log 0 items</button>'
+    +'<button class="cancel" onclick="openAddFood(\''+meal+'\')">Back</button></div>';
+  document.getElementById('modal').innerHTML=html;
+  document.getElementById('overlay').classList.add('active');
+  // re-show a previously chosen photo if still around
+  if(_recoImgURL){ var w=document.getElementById('recoImgWrap'); if(w) w.innerHTML='<img src="'+_recoImgURL+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px">'; }
+  renderRecoList(meal);
+}
+var _recoImgURL=null;
+function renderRecoList(meal){
+  var el=document.getElementById('recoList'); if(!el) return;
+  if(!_recoItems.length){
+    el.innerHTML='<div class="res-empty" style="padding:14px">No items yet. Take a photo to auto-suggest, or use “+ Add food”.</div>';
+  } else {
+    el.innerHTML=_recoItems.map(function(it,i){
+      return '<div class="food-line"><span class="food-emoji">'+catIcon(foodCatById(it.foodId))+'</span>'
+      +'<div class="food-info"><div class="fn">'+esc(it.name)+'</div><div class="fm">P'+Math.round(it.m.protein)+' C'+Math.round(it.m.carbs)+' · '+Math.round(it.m.calories)+'cal</div></div>'
+      +'<span class="res-fav" title="Less" onclick="recoQty('+i+',-0.5)">'+wSm('<line x1="5" y1="12" x2="19" y2="12"/>')+'</span>'
+      +'<span style="min-width:38px;text-align:center;font-family:var(--disp)">'+it.qty+'×</span>'
+      +'<span class="res-fav" title="More" style="color:var(--g)" onclick="recoQty('+i+',0.5)">'+wSm(WICO.plus)+'</span>'
+      +'<span class="food-del" onclick="recoRemove('+i+')">×</span></div>';
+    }).join('');
+  }
+  var btn=document.querySelector('#modal .save'); if(btn) btn.textContent='Log '+_recoItems.length+' item'+(_recoItems.length===1?'':'s');
+}
+function recoQty(i,delta){ var it=_recoItems[i]; if(!it) return; it.qty=Math.max(0.5, +(it.qty+delta).toFixed(2)); var f=foodById(it.foodId); if(f) it.m=scaledMacros(f,it.qty); renderRecoList(searchMeal); }
+function recoRemove(i){ _recoItems.splice(i,1); renderRecoList(searchMeal); }
+function recoPushFood(foodId, qty){ var f=foodById(foodId); if(!f) return; qty=qty||1; _recoItems.push({foodId:f.id, name:f.n, emoji:f.e||'', qty:qty, m:scaledMacros(f,qty)}); }
+function recoAddPicker(meal){
+  searchMeal=meal;
+  document.getElementById('modal').innerHTML='<div class="modal-head"><h2>Add to plate</h2><span class="x" onclick="openRecognition(\''+meal+'\',true)">×</span></div>'
+    +'<input class="search-in" id="recoSearch" placeholder="Search foods…" oninput="renderRecoPicker(this.value)">'
+    +'<div class="results" id="recoPickResults"></div>'
+    +'<div class="modal-actions"><button class="cancel" onclick="openRecognition(\''+meal+'\',true)">Back to plate</button></div>';
+  renderRecoPicker('');
+  setTimeout(function(){ var s=document.getElementById('recoSearch'); if(s) s.focus(); },50);
+}
+function renderRecoPicker(q){
+  q=(q||'').toLowerCase().trim();
+  var list=allFoods().filter(function(f){ return !q || f.n.toLowerCase().includes(q); }).slice(0,30);
+  var el=document.getElementById('recoPickResults'); if(!el) return;
+  el.innerHTML=list.length? list.map(function(f){ return '<div class="res-item" onclick="recoPickAdd(\''+f.id+'\')"><span class="res-emoji">'+catIcon(f.cat)+'</span><div class="res-info"><div class="rn">'+f.n+'</div><div class="rm">'+f.serv+'</div></div></div>'; }).join('') : '<div class="res-empty">No foods found.</div>';
+}
+function recoPickAdd(foodId){ recoPushFood(foodId,1); openRecognition(searchMeal, true); }
+function recoConfirm(meal){
+  if(!_recoItems.length){ toast('Add at least one item first'); return; }
+  if(!S.log[curDate]) S.log[curDate]=[];
+  _recoItems.forEach(function(it){
+    S.log[curDate].push({ id:'e'+Date.now()+Math.floor(Math.random()*10000), meal:meal, foodId:it.foodId, name:it.name, emoji:it.emoji, qty:it.qty, m:Object.assign({},it.m) });
+    if(it.foodId) S.recent=[it.foodId].concat(S.recent.filter(function(x){return x!==it.foodId;})).slice(0,20);
+  });
+  var n=_recoItems.length; _recoItems=[]; _recoImgURL=null;
+  save(); closeModal(); renderToday(); toast('Logged '+n+' item'+(n===1?'':'s')+' to '+meal);
+}
+function recoPicked(input, meal){
+  var file=input.files && input.files[0]; if(!file) return;
+  try{ if(_recoImgURL) URL.revokeObjectURL(_recoImgURL); }catch(e){}
+  _recoImgURL=URL.createObjectURL(file);
+  var w=document.getElementById('recoImgWrap'); if(w) w.innerHTML='<img id="recoImg" src="'+_recoImgURL+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px">';
+  var s=document.getElementById('recoStatus'); if(s){ s.style.display='block'; s.textContent='Scanning the photo…'; }
+  recoDetect(meal);
+}
+/* Food label → nutrition. Keyword substring match (handles ImageNet's "Granny Smith", "pizza, pizza pie", etc.).
+   Order matters: longer/compound keywords first so e.g. pineapple≠apple, cheeseburger≠burger, acorn squash≠corn. */
+const RECO_MATCH = [
+  // fruits
+  {kw:['pineapple','ananas'], f:{n:'Pineapple', cat:'fruit', serv:'1 cup', m:{c:22,cal:82,fruit:1,sug:16,p:1}}},
+  {kw:['strawberr'], f:{n:'Strawberries', cat:'fruit', serv:'1 cup', m:{c:12,cal:49,fruit:1,sug:7,p:1}}},
+  {kw:['blueberr'], f:{n:'Blueberries', cat:'fruit', serv:'1 cup', m:{c:21,cal:84,fruit:1,sug:15,p:1}}},
+  {kw:['watermelon'], f:{n:'Watermelon', cat:'fruit', serv:'1 cup', m:{c:11,cal:46,fruit:1,sug:9,p:1}}},
+  {kw:['pomegranate'], f:{n:'Pomegranate', cat:'fruit', serv:'1/2 cup', m:{c:16,cal:72,fruit:1,sug:12,p:1}}},
+  {kw:['banana'], f:{n:'Banana', cat:'fruit', serv:'1 medium', m:{c:27,cal:105,fruit:1,sug:14,p:1}}},
+  {kw:['granny smith','apple'], f:{n:'Apple', cat:'fruit', serv:'1 medium', m:{c:25,cal:95,fruit:1,sug:19}}},
+  {kw:['orange','mandarin','clementine'], f:{n:'Orange', cat:'fruit', serv:'1 medium', m:{c:15,cal:62,fruit:1,sug:12,p:1}}},
+  {kw:['lemon','lime'], f:{n:'Lemon', cat:'fruit', serv:'1', m:{c:5,cal:17,fruit:1,sug:1}}},
+  {kw:['grape'], f:{n:'Grapes', cat:'fruit', serv:'1 cup', m:{c:27,cal:104,fruit:1,sug:23,p:1}}},
+  {kw:['peach','nectarine'], f:{n:'Peach', cat:'fruit', serv:'1', m:{c:15,cal:59,fruit:1,sug:13,p:1}}},
+  {kw:['pear'], f:{n:'Pear', cat:'fruit', serv:'1', m:{c:27,cal:101,fruit:1,sug:17,p:1}}},
+  {kw:['mango'], f:{n:'Mango', cat:'fruit', serv:'1 cup', m:{c:25,cal:99,fruit:1,sug:23,p:1}}},
+  {kw:['fig'], f:{n:'Figs', cat:'fruit', serv:'2', m:{c:19,cal:74,fruit:1,sug:16,p:1}}},
+  // vegetables
+  {kw:['broccoli'], f:{n:'Broccoli', cat:'veg', serv:'1 cup', m:{p:4,c:11,cal:55,veg:1}}},
+  {kw:['cauliflower'], f:{n:'Cauliflower', cat:'veg', serv:'1 cup', m:{p:2,c:5,cal:27,veg:1}}},
+  {kw:['cucumber','cuke'], f:{n:'Cucumber', cat:'veg', serv:'1 cup', m:{c:4,cal:16,veg:1,p:1}}},
+  {kw:['bell pepper','pepper'], f:{n:'Bell Pepper', cat:'veg', serv:'1', m:{c:6,cal:25,veg:1,sug:4,p:1}}},
+  {kw:['mushroom'], f:{n:'Mushrooms', cat:'veg', serv:'1 cup', m:{p:3,c:2,cal:15,veg:1}}},
+  {kw:['asparagus'], f:{n:'Asparagus', cat:'veg', serv:'1 cup', m:{p:3,c:5,cal:27,veg:1}}},
+  {kw:['zucchini','courgette'], f:{n:'Zucchini', cat:'veg', serv:'1 cup', m:{c:4,cal:20,veg:1,p:1}}},
+  {kw:['squash'], f:{n:'Squash', cat:'veg', serv:'1 cup', m:{c:15,cal:63,veg:1,p:1}}},
+  {kw:['artichoke'], f:{n:'Artichoke', cat:'veg', serv:'1', m:{p:4,c:13,cal:60,veg:1}}},
+  {kw:['cabbage','cardoon'], f:{n:'Cabbage', cat:'veg', serv:'1 cup', m:{c:5,cal:22,veg:1,p:1}}},
+  {kw:['spinach','lettuce','salad','greens'], f:{n:'Salad Greens', cat:'veg', serv:'2 cups', m:{c:4,cal:20,veg:1,p:1}}},
+  {kw:['carrot'], f:{n:'Carrots', cat:'veg', serv:'1 cup', m:{c:12,cal:52,veg:1,sug:6,p:1}}},
+  {kw:['tomato'], f:{n:'Tomato', cat:'veg', serv:'1', m:{c:5,cal:22,veg:1,sug:3,p:1}}},
+  {kw:['corn','maize'], f:{n:'Corn', cat:'veg', serv:'1 ear', m:{p:3,c:19,cal:88,veg:1,sug:6}}},
+  {kw:['mashed potato'], f:{n:'Mashed Potato', cat:'carbs', serv:'1 cup', m:{p:4,c:37,f:7,cal:214,sod:400,sug:2}}},
+  // dishes / carbs
+  {kw:['cheeseburger'], f:{n:'Cheeseburger', cat:'protein', serv:'1', m:{p:25,c:33,f:26,cal:500,sod:1000}}},
+  {kw:['hamburger','burger'], f:{n:'Hamburger', cat:'protein', serv:'1', m:{p:20,c:30,f:17,cal:354,sod:500}}},
+  {kw:['hot dog','hotdog','frankfurter'], f:{n:'Hot Dog', cat:'protein', serv:'1', m:{p:10,c:22,f:15,cal:270,sod:620}}},
+  {kw:['pizza'], f:{n:'Pizza (1 slice)', cat:'carbs', serv:'1 slice', m:{p:12,c:36,f:10,cal:285,sod:640,sug:4}}},
+  {kw:['burrito'], f:{n:'Burrito', cat:'carbs', serv:'1', m:{p:20,c:55,f:18,cal:445,sod:900}}},
+  {kw:['taco'], f:{n:'Taco', cat:'carbs', serv:'1', m:{p:9,c:15,f:8,cal:170,sod:330}}},
+  {kw:['sandwich','sub '], f:{n:'Sandwich', cat:'carbs', serv:'1', m:{p:18,c:34,f:12,cal:330,sod:700}}},
+  {kw:['bagel','beigel'], f:{n:'Bagel', cat:'carbs', serv:'1', m:{p:10,c:48,f:2,cal:245,sod:430,sug:6}}},
+  {kw:['pretzel'], f:{n:'Pretzel', cat:'snack', serv:'1', m:{p:5,c:38,f:2,cal:180,sod:800}}},
+  {kw:['french loaf','baguette','bread','toast'], f:{n:'Bread', cat:'carbs', serv:'2 slices', m:{p:8,c:24,f:2,cal:140,sod:240,sug:4}}},
+  {kw:['carbonara','spaghetti','pasta','noodle','lasagna'], f:{n:'Pasta', cat:'carbs', serv:'1 cup', m:{p:8,c:43,f:6,cal:250,sod:300,sug:2}}},
+  {kw:['fried rice','rice','risotto'], f:{n:'Rice', cat:'carbs', serv:'1 cup', m:{p:4,c:45,cal:205}}},
+  {kw:['sushi'], f:{n:'Sushi', cat:'carbs', serv:'6 pcs', m:{p:9,c:30,f:4,cal:200,sod:500}}},
+  {kw:['french fries','fries','chips'], f:{n:'French Fries', cat:'carbs', serv:'1 medium', m:{p:4,c:48,f:17,cal:365,sod:250}}},
+  {kw:['pot pie','potpie'], f:{n:'Pot Pie', cat:'carbs', serv:'1', m:{p:15,c:40,f:30,cal:480,sod:800}}},
+  // protein / other
+  {kw:['meat loaf','meatloaf','steak','roast beef'], f:{n:'Beef', cat:'protein', serv:'4 oz', m:{p:24,c:2,f:16,cal:250,sod:400}}},
+  {kw:['rotisserie','chicken','drumstick','poultry'], f:{n:'Chicken', cat:'protein', serv:'4 oz', m:{p:35,c:0,f:4,cal:185,sod:75}}},
+  {kw:['salmon','fish','tuna','shrimp','seafood'], f:{n:'Fish', cat:'protein', serv:'4 oz', m:{p:25,c:0,f:11,cal:210,sod:60}}},
+  {kw:['egg'], f:{n:'Eggs', cat:'protein', serv:'2', m:{p:12,c:1,f:10,cal:140,sod:140,sug:1}}},
+  {kw:['guacamole','avocado'], f:{n:'Guacamole', cat:'snack', serv:'1/2 cup', m:{p:2,c:9,f:11,cal:150,sod:300}}},
+  {kw:['consomme','soup','hot pot','hotpot','chowder'], f:{n:'Soup', cat:'veg', serv:'1 cup', m:{p:6,c:9,f:3,cal:90,sod:700}}},
+  // treats
+  {kw:['ice cream','icecream','ice lolly'], f:{n:'Ice Cream', cat:'snack', serv:'1/2 cup', m:{p:2,c:16,f:7,cal:137,sug:14}}},
+  {kw:['donut','doughnut'], f:{n:'Donut', cat:'snack', serv:'1', m:{p:3,c:22,f:11,cal:190,sug:10}}},
+  {kw:['cake','trifle','cupcake'], f:{n:'Cake (1 slice)', cat:'snack', serv:'1 slice', m:{p:3,c:35,f:14,cal:260,sug:25}}},
+  {kw:['cookie'], f:{n:'Cookie', cat:'snack', serv:'1', m:{p:1,c:10,f:4,cal:78,sug:6}}},
+  {kw:['chocolate'], f:{n:'Chocolate', cat:'snack', serv:'1 oz', m:{p:2,c:13,f:9,cal:155,sug:14}}},
+  {kw:['croissant','pastry','dough','pie'], f:{n:'Pastry', cat:'snack', serv:'1', m:{p:5,c:26,f:12,cal:230,sug:6}}}
+];
+function recoSlug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function recoResolveLabel(label){
+  label=String(label||'').toLowerCase();
+  for(var i=0;i<RECO_MATCH.length;i++){ for(var j=0;j<RECO_MATCH[i].kw.length;j++){ if(label.indexOf(RECO_MATCH[i].kw[j])>=0) return RECO_MATCH[i].f; } }
+  return null;
+}
+function recoAddByLabel(label){
+  var f=recoResolveLabel(label); if(!f) return false;
+  var id='reco_'+recoSlug(f.n);
+  if(!S.customFoods.find(function(x){return x.id===id;})){
+    var m=Object.assign({p:0,c:0,f:0,cal:0,veg:0,fruit:0,water:0,sod:0,sug:0}, f.m);
+    S.customFoods.push({ id:id, n:f.n, e:'', cat:f.cat, serv:f.serv, m:m });
+  }
+  if(!_recoItems.some(function(it){return it.foodId===id;})) recoPushFood(id,1);
+  return true;
+}
+
+/* Best-effort on-device detection. Uses BOTH an object detector (multi-item plates) and an image
+   classifier (~1000 ImageNet classes → far more foods), mapped through RECO_MATCH. Any failure => manual builder. */
+function recoDetect(meal){
+  var img=document.getElementById('recoImg');
+  var before=_recoItems.length;
+  var done=function(){ var added=_recoItems.length-before; var s=document.getElementById('recoStatus'); if(s){ s.textContent = added>0 ? ('Suggested '+added+' item'+(added===1?'':'s')+' — check and adjust below.') : 'Couldn\'t auto-detect this photo. Add the foods you see with “+ Add food”.'; } renderRecoList(meal); };
+  if(!img){ done(); return; }
+  (async function(){
+    try{
+      var vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+      var files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+      if(!img.complete){ await new Promise(function(res){ img.onload=res; }); }
+      // 1) object detection — good for multiple items on one plate (COCO food classes)
+      try{
+        var detector=await vision.ObjectDetector.createFromOptions(files,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite' }, scoreThreshold:0.35, maxResults:12, runningMode:'IMAGE' });
+        (detector.detect(img).detections||[]).forEach(function(d){ recoAddByLabel(d.categories && d.categories[0] && d.categories[0].categoryName); });
+      }catch(e){}
+      // 2) image classification — much broader vocabulary (ImageNet has hundreds of foods)
+      try{
+        var clf=await vision.ImageClassifier.createFromOptions(files,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/image_classifier/efficientnet_lite0/float32/1/efficientnet_lite0.tflite' }, maxResults:5, scoreThreshold:0.12, runningMode:'IMAGE' });
+        var cr=clf.classify(img); var cats=(cr.classifications && cr.classifications[0] && cr.classifications[0].categories)||[];
+        cats.forEach(function(c){ recoAddByLabel(c.categoryName); });
+      }catch(e){}
+    }catch(e){}
+    done();
+  })();
+}
 
 /* ============================== HISTORY ============================== */
 let histRange='week';
@@ -816,6 +1232,7 @@ function renderHistory(){
       +'<span class="hist-pct" style="color:'+(d.has?colorForText(d.score):'#5f6a76')+'">'+(d.has?d.score+'%':'—')+'</span></div>';
   });
   html+='</div>';
+  html+=weightHistoryHTML();
   v.innerHTML=html;
 }
 function setRange(r){ histRange=r; renderHistory(); }
@@ -831,16 +1248,69 @@ function lastNDays(n){
 }
 function fmtShort(iso){ var p=iso.split('-'); var d=new Date(p[0],p[1]-1,p[2]); return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+(+p[1])+'/'+(+p[2]); }
 
+/* ============================== WEAPON 2: WEEKLY NUTRITION TRENDS ============================== */
+let chartMode='bar';
+function setChartMode(m){ chartMode=m; renderInsights(); }
+function fmtDow(iso){ var p=iso.split('-'); var d=new Date(p[0],p[1]-1,p[2]); return ['S','M','T','W','T','F','S'][d.getDay()]; }
+function weeklyChartSVG(data, mode){
+  var W=320,H=140, padL=8,padR=8,padT=10,padB=22;
+  var n=data.length, iw=W-padL-padR, ih=H-padT-padB;
+  var x=function(i){ return padL + iw*(i/(n-1)); };
+  var xb=function(i){ return padL + iw*(i/n) + (iw/n)/2; };
+  var y=function(v){ return padT + ih*(1 - Math.max(0,Math.min(100,v))/100); };
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="margin-top:12px">';
+  [0,50,100].forEach(function(g){ var yy=y(g).toFixed(1); svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#1d2126" stroke-width="1"/>'; });
+  if(mode==='bar'){
+    var bw=(iw/n)*0.6;
+    data.forEach(function(d,i){ var v=d.has?d.score:0; var cx=xb(i); var yy=y(v); var col=d.has?colorFor(d.score):'#262b31';
+      svg+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+yy.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,(padT+ih-yy)).toFixed(1)+'" rx="3" fill="'+col+'"/>'; });
+    data.forEach(function(d,i){ svg+='<text x="'+xb(i).toFixed(1)+'" y="'+(H-6)+'" fill="#5f6a76" font-size="9" text-anchor="middle">'+fmtDow(d.date)+'</text>'; });
+  } else {
+    var pts=data.map(function(d,i){ return x(i).toFixed(1)+','+y(d.has?d.score:0).toFixed(1); }).join(' ');
+    svg+='<polyline points="'+pts+'" style="fill:none;stroke:var(--g);stroke-width:2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    data.forEach(function(d,i){ svg+='<circle cx="'+x(i).toFixed(1)+'" cy="'+y(d.has?d.score:0).toFixed(1)+'" r="3.6" fill="'+(d.has?colorFor(d.score):'#262b31')+'" stroke="#0b0c0e" stroke-width="1.5"/>'; });
+    data.forEach(function(d,i){ svg+='<text x="'+x(i).toFixed(1)+'" y="'+(H-6)+'" fill="#5f6a76" font-size="9" text-anchor="middle">'+fmtDow(d.date)+'</text>'; });
+  }
+  return svg+'</svg>';
+}
+function weeklyTrendHTML(){
+  var data=lastNDays(7);
+  var scored=data.filter(function(d){return d.has;});
+  var wk= scored.length? Math.round(scored.reduce(function(a,d){return a+d.score;},0)/scored.length):0;
+  var best=null,worst=null;
+  scored.forEach(function(d){ if(!best||d.score>best.score)best=d; if(!worst||d.score<worst.score)worst=d; });
+  var missed=0; data.forEach(function(d){ var e=S.log[d.date]||[]; S.meals.forEach(function(m){ if(!e.some(function(x){return x.meal===m;})) missed++; }); });
+  var wkCol = wk>=65?'var(--g)':wk>=33?'#ffc24d':'#ffffff';
+  var html='<div class="section-title">Weekly Trends</div>';
+  html+='<div class="chart-card glass">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">'
+    +'<div><div style="font-size:12px;color:#8a93a0;text-transform:uppercase;letter-spacing:1px">Weekly Nutrition Score</div>'
+    +'<div style="font-family:var(--disp);font-size:44px;font-weight:600;color:'+wkCol+'">'+wk+'%</div>'
+    +'<div style="font-size:12px;color:#8a93a0">'+scored.length+' logged day'+(scored.length===1?'':'s')+' · last 7</div></div>'
+    +'<div style="display:flex;gap:6px"><span class="range-tab'+(chartMode==='bar'?' active':'')+'" onclick="setChartMode(\'bar\')">Bar</span>'
+    +'<span class="range-tab'+(chartMode==='line'?' active':'')+'" onclick="setChartMode(\'line\')">Line</span></div></div>'
+    + weeklyChartSVG(data, chartMode)
+    +'</div>';
+  function mini(lbl,val,col,sub){ return '<div class="set-card glass" style="margin:0;text-align:center;padding:14px 10px"><div style="font-size:10px;color:#8a93a0;text-transform:uppercase;letter-spacing:1px">'+lbl+'</div><div style="font-family:var(--disp);font-size:22px;color:'+col+';margin-top:2px">'+val+'</div><div style="font-size:11px;color:#8a93a0;margin-top:2px">'+sub+'</div></div>'; }
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+    + mini('Best Day', best?best.score+'%':'—', 'var(--g)', best?fmtShort(best.date):'no data')
+    + mini('Worst Day', worst?worst.score+'%':'—', '#ffc24d', worst?fmtShort(worst.date):'no data')
+    + mini('Missed Meals', missed, '#ffffff', 'last 7 days')
+    +'</div>';
+  return html;
+}
+
 /* ============================== INSIGHTS ============================== */
 function renderInsights(){
   var v=document.getElementById('view-insights');
   if(!tierOK('elite')){ v.innerHTML=lockedPanel('elite','Insights','Weekly performance callouts after your first week of data. PREMIUM adds smarter coaching and food-swap suggestions.'); return; }
   var data=lastNDays(7).filter(d=>d.has);
+  var html = data.length ? weeklyTrendHTML() : '';
   if(data.length<3){
-    v.innerHTML='<div class="locked-panel glass"><div class="lk">📊</div><h3>Keep logging</h3><p>Insights unlock once you have about a week of data. You\'ve logged '+data.length+' day'+(data.length===1?'':'s')+' so far — keep going.</p></div>';
-    return;
+    html+='<div class="locked-panel glass"><div class="lk">'+wBig('<line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/>')+'</div><h3>More insights coming</h3><p>Per-metric weekly insights unlock once you have about a week of data. You\'ve logged '+data.length+' day'+(data.length===1?'':'s')+' so far — keep going.</p></div>';
+    v.innerHTML=html; return;
   }
-  var html='<div class="section-title">This Week</div>';
+  html+='<div class="section-title">This Week</div>';
   var ms=activeMetrics();
   ms.forEach(m=>{
     var vals=data.map(d=>Math.min(100,metricPct(d.date,m.k)));
@@ -873,46 +1343,54 @@ function renderInsights(){
   v.innerHTML=html;
 }
 
-/* ============================== WEIGHT ============================== */
-function renderWeight(){
-  var v=document.getElementById('view-weight');
-  if(!tierOK('elite')){ v.innerHTML=lockedPanel('elite','Weight Tracking','Log your weight, watch the trend, and (on Premium) get projections toward your goal.'); return; }
+/* ============================== WEIGHT (V2: logging on Today, history in History tab) ============================== */
+function renderTodayWeight(){
+  var el=document.getElementById('todayWeight');
+  if(!el) return;
+  if(!tierOK('elite')){ el.innerHTML=''; return; }
   var log=S.weightLog.slice().sort((a,b)=>a.date<b.date?1:-1);
-  var html='';
-  if(log.length){
-    var latest=log[0], prev=log[1];
-    var trend = prev? (latest.weight-prev.weight):0;
-    html+='<div class="set-card glass"><div class="weight-now"><b>'+latest.weight+'</b><span>lbs</span></div>';
-    if(prev){ html+='<div class="wtrend '+(trend>0?'wup':'wdown')+'">'+(trend>0?'▲ +':'▼ ')+trend.toFixed(1)+' lb since last entry ('+fmtShort(prev.date)+')</div>'; }
-    html+='<div style="font-size:12px;color:#8a93a0">Goal: '+goalLabel(S.profile.goal)+'</div></div>';
-    if(tierOK('premium') && log.length>=2){
-      var oldest=log[log.length-1];
-      var dDays=(new Date(latest.date)-new Date(oldest.date))/86400000;
-      if(dDays>0){
-        var rate=(latest.weight-oldest.weight)/dDays;
-        var proj=(latest.weight+rate*90).toFixed(1);
-        html+='<div class="insight-card glass"><div class="ic-t">90-Day Projection (Premium)</div><div class="ic-b">At your current pace ('+(rate>=0?'+':'')+(rate*7).toFixed(2)+' lb/week) you\'ll be about <b>'+proj+' lbs</b> in 3 months.</div></div>';
-      }
-    }
-  } else {
-    html+='<div class="set-card glass"><div class="desc">No weight logged yet. Add your first entry below.</div></div>';
-  }
-  html+='<div class="set-card glass"><h3>Log Weight</h3><div class="field-row" style="margin-top:10px"><div><label>Weight (lbs)</label><input type="number" id="wIn" placeholder="'+(S.profile.weight||180)+'"></div>'
-    +'<div style="display:flex;align-items:flex-end"><button class="btn-primary" style="width:100%" onclick="logWeight()">Save Entry</button></div></div></div>';
-  if(log.length){
-    html+='<div class="chart-card glass"><div class="section-title">History</div>';
-    log.slice(0,15).forEach(w=>{ html+='<div class="hist-day"><span class="hd">'+fmtShort(w.date)+'</span><div style="flex:1"></div><span class="hist-pct" style="width:70px;color:#fff">'+w.weight+' lb</span></div>'; });
-    html+='</div>';
-  }
-  v.innerHTML=html;
+  var latest=log[0], prev=log[1];
+  var trendHtml='';
+  if(latest && prev){ var tr=latest.weight-prev.weight; trendHtml='<span class="wtrend '+(tr>0?'wup':'wdown')+'" style="margin-left:10px">'+(tr>0?'▲ +':'▼ ')+tr.toFixed(1)+' lb</span>'; }
+  var cur=(S.weightLog.find(w=>w.date===curDate)||{}).weight;
+  el.innerHTML='<div class="section-title" style="margin-top:22px">Weight</div>'
+    +'<div class="set-card glass"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;justify-content:space-between">'
+    +'<div class="weight-now" style="margin:0"><b>'+(latest?latest.weight:'--')+'</b><span>lbs</span>'+trendHtml+'</div>'
+    +'<div style="display:flex;gap:8px;align-items:flex-end">'
+    +'<div><label style="margin:0 0 5px">Log for this day</label><input type="number" id="wInToday" placeholder="'+(cur||S.profile.weight||180)+'" style="width:120px"></div>'
+    +'<button class="btn-primary" onclick="logWeightToday()">Save</button></div>'
+    +'</div><div style="font-size:11px;color:#5f6a76;margin-top:8px">Full weight history is in the History tab.</div></div>';
 }
-function logWeight(){
-  var val=parseFloat(document.getElementById('wIn').value);
+function logWeightToday(){
+  var val=parseFloat(document.getElementById('wInToday').value);
   if(!val||val<=0){ toast('Enter a valid weight'); return; }
   S.weightLog=S.weightLog.filter(w=>w.date!==curDate);
   S.weightLog.push({date:curDate, weight:val});
   S.profile.weight=val; computeTargets();
-  save(); renderWeight(); toast('Weight logged: '+val+' lb');
+  save(); renderTodayWeight(); toast('Weight logged: '+val+' lb');
+}
+function weightHistoryHTML(){
+  var log=S.weightLog.slice().sort((a,b)=>a.date<b.date?1:-1);
+  var html='<div class="section-title" style="margin-top:22px">Weight</div>';
+  if(!log.length){ return html+'<div class="set-card glass"><div class="desc">No weight logged yet. Add an entry from the Today tab.</div></div>'; }
+  var latest=log[0], prev=log[1];
+  var trend = prev? (latest.weight-prev.weight):0;
+  html+='<div class="set-card glass"><div class="weight-now"><b>'+latest.weight+'</b><span>lbs</span></div>';
+  if(prev){ html+='<div class="wtrend '+(trend>0?'wup':'wdown')+'">'+(trend>0?'▲ +':'▼ ')+trend.toFixed(1)+' lb since last entry ('+fmtShort(prev.date)+')</div>'; }
+  html+='<div style="font-size:12px;color:#8a93a0">Goal: '+goalLabel(S.profile.goal)+'</div></div>';
+  if(tierOK('premium') && log.length>=2){
+    var oldest=log[log.length-1];
+    var dDays=(new Date(latest.date)-new Date(oldest.date))/86400000;
+    if(dDays>0){
+      var rate=(latest.weight-oldest.weight)/dDays;
+      var proj=(latest.weight+rate*90).toFixed(1);
+      html+='<div class="insight-card glass"><div class="ic-t">90-Day Projection (Premium)</div><div class="ic-b">At your current pace ('+(rate>=0?'+':'')+(rate*7).toFixed(2)+' lb/week) you\'ll be about <b>'+proj+' lbs</b> in 3 months.</div></div>';
+    }
+  }
+  html+='<div class="chart-card glass"><div class="section-title">Log</div>';
+  log.slice(0,15).forEach(w=>{ html+='<div class="hist-day"><span class="hd">'+fmtShort(w.date)+'</span><div style="flex:1"></div><span class="hist-pct" style="width:70px;color:#fff">'+w.weight+' lb</span></div>'; });
+  html+='</div>';
+  return html;
 }
 function goalLabel(g){ return g==='lose'?'Lose weight':g==='gain'?'Build muscle / gain':'Maintain'; }
 
@@ -1002,19 +1480,21 @@ function saveTargets(){
 function resetTargets(){ S.customTargets=false; delete S.targets._custom; computeTargets(); save(); renderSettings(); toast('Reset to auto-calculated'); }
 // Re-render Settings WITHOUT jumping to the top. renderSettings() rebuilds the whole view via
 // innerHTML, which collapses the page height and snaps scroll to 0. Capture the scroll position and
-// put it back (sync + after layout) so you can flip toggles one after another without the screen
-// leaping up each time.
+// put it back so you can flip toggles one after another without the screen leaping up each time.
 function rerenderSettingsKeepScroll(){
+  // Capture from whichever element is actually scrolling (document, html, or body — differs between
+  // standalone and inside the hub iframe).
   var se = document.scrollingElement || document.documentElement;
   var y = (se && se.scrollTop) || window.pageYOffset || (document.body && document.body.scrollTop) || 0;
   renderSettings();
   var restore = function(){
     if(se) se.scrollTop = y;
-    if(document.body) document.body.scrollTop = y;
+    if(document.body) document.body.scrollTop = y;   // fallback if body is the scroller
     try{ window.scrollTo(0, y); }catch(e){}
   };
-  restore();
-  requestAnimationFrame(restore);
+  restore();                        // sync
+  requestAnimationFrame(restore);   // again after layout settles, defeating the reflow clamp that
+                                    // otherwise snaps scroll to the top when the view is rebuilt
 }
 // Flip the switch IN PLACE — no view rebuild — so the page never moves while you run down the list.
 // (The Macro Targets list refreshes next time Settings is opened.)

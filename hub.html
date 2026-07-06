@@ -478,7 +478,7 @@
     const IS_GUEST = (()=>{ try { return new URLSearchParams(location.search).get('guest') === '1'; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '354';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '355';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -634,7 +634,8 @@
       frame.setAttribute('title', app.label);
       // Allow the in-iframe apps to use the microphone (Journal's Smart Voice Entry uses the
       // Web Speech API; without this the mic is blocked inside the sandboxed app frame).
-      frame.setAttribute('allow', 'microphone');
+      // Journal Smart Voice needs mic; Nutrition V2 barcode scanner + meal-photo recognition need camera.
+      frame.setAttribute('allow', app.id === 'nutrition' ? 'camera; microphone' : 'microphone');
       // EAGER load: frames are now created only when you open the app, so load immediately.
       // (loading="lazy" could decide this absolutely-positioned overlay was "offscreen" and
       // never load it — that was the infinite spinner / "never loads" bug.)
