@@ -171,6 +171,16 @@
 
   /* settings */
   .set-card { border-radius:16px; padding:20px; margin-bottom:16px; }
+  /* Library: 4-container grid */
+  .lib-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .lib-card { padding:20px 16px; cursor:pointer; transition:border-color .15s, transform .1s; }
+  .lib-card:hover { border-color:var(--g); }
+  .lib-card:active { transform:scale(.985); }
+  .lib-ico { color:var(--g); margin-bottom:10px; }
+  .lib-t { font-family:var(--disp); font-weight:600; letter-spacing:1px; font-size:15px; text-transform:uppercase; color:#e6ebf0; }
+  .lib-c { font-size:26px; font-weight:700; margin-top:6px; color:#fff; font-variant-numeric:tabular-nums; line-height:1; }
+  .lib-s { font-size:12px; color:#8a93a0; margin-top:3px; }
+  @media (max-width:520px){ .lib-grid{ gap:9px; } .lib-card{ padding:16px 12px; } .lib-c{ font-size:23px; } }
   .set-card h3 { font-family:var(--disp); font-weight:600; letter-spacing:1px; font-size:16px; margin-bottom:4px; text-transform:uppercase; }
   .set-card .desc { font-size:12px; color:#8a93a0; margin-bottom:14px; line-height:1.5; }
   .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid #1f242a; gap:10px; }
@@ -835,10 +845,30 @@ function deleteTemplate(id){
 /* ============================== LIBRARY (Piece 2 builds the 4-section grid) ============================== */
 function renderLibrary(){
   var v=document.getElementById('view-library');
+  var defMeal=(S.meals&&S.meals[0])||'Breakfast';
+  var nFoods=(function(){ try{ return allFoods().length; }catch(e){ return (S.customFoods||[]).length; } })();
+  var nRecipes=(S.mealTemplates||[]).length;
+  var nFav=(S.favorites||[]).length;
+  var nSupp=((S.customSupplements||[]).length)+((S.supplementTemplates||[]).length);
+  var forkKnife='<path d="M6 3v6a2 2 0 0 0 4 0V3"/><path d="M8 9v12"/><path d="M16 3c-1.4 0-2.4 2-2.4 5s1 4 2.4 4v9"/>';
+  var star='<path d="M12 2.6l2.9 6 6.5.6-4.9 4.3 1.5 6.4L12 16.9l-6 3.6 1.5-6.4L2.6 9.2l6.5-.6z"/>';
+  function card(icoPath,title,unit,count,onclick){
+    return '<div class="lib-card glass" onclick="'+onclick+'">'
+      +'<div class="lib-ico">'+wBig(icoPath)+'</div>'
+      +'<div class="lib-t">'+title+'</div>'
+      +'<div class="lib-c">'+count+'</div>'
+      +'<div class="lib-s">'+(count===1?unit:unit+'s')+'</div></div>';
+  }
   v.innerHTML='<div class="section-title">Library</div>'
-    +'<div class="locked-panel glass"><div class="lk">'+wBig(WICO.clip)+'</div><h3>Library</h3>'
-    +'<p>Your saved foods, meals, recipes, favorites, and supplements will live here — organized in one place. Coming in the next build step.</p></div>';
+    +'<div class="lib-grid">'
+    +card(forkKnife,'Foods','food', nFoods, "openSearch('"+defMeal+"')")
+    +card(WICO.clip,'Recipes &amp; Meals','recipe', nRecipes, "openTemplates('"+defMeal+"')")
+    +card(star,'Favorites','favorite', nFav, "openLibFav('"+defMeal+"')")
+    +card(WICO.pill,'Supplements','item', nSupp, "openSuppManager()")
+    +'</div>'
+    +'<div class="desc" style="text-align:center;margin-top:14px;color:#6b7480;font-size:12px">Tap a section to browse, add, or manage.</div>';
 }
+function openLibFav(meal){ openSearch(meal); try{ setCat('fav'); }catch(e){} }
 
 /* ============================== SEARCH / LOG MODAL ============================== */
 let searchMeal=null, searchCat='all', searchQuery='';
