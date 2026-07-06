@@ -74,6 +74,9 @@ body {
   min-height: 100vh;
   padding: 16px;
   padding-top: 56px;
+  /* Mobile: clear the home indicator / bottom browser chrome so the last card on every
+     tab (Dashboard, Log, Budget, Rules, Insights, Settings) is never cut off. */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   -webkit-font-smoothing: antialiased;
 }
 
