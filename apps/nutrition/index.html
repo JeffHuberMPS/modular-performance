@@ -909,13 +909,8 @@ function goalLabel(g){ return g==='lose'?'Lose weight':g==='gain'?'Build muscle 
 function renderSettings(){
   var v=document.getElementById('view-settings');
   var html='';
-  html+='<div class="set-card glass"><h3>Plan / Tier</h3><div class="desc">Switch tiers to preview what each unlocks. (In the live app this is set by the customer\'s subscription.)</div>'
-    +'<div class="tier-row">'
-    +tierOpt('free','FREE','P/C/V tracking')
-    +tierOpt('elite','ELITE','$49/mo · +4 metrics, analytics')
-    +tierOpt('premium','PREMIUM','$99/mo · +insights, projections')
-    +'</div></div>';
-
+  // Plan / Tier switcher removed: the subscription tier is system-wide (set by the customer's plan),
+  // not a per-app toggle. Premium means the whole app — all pillars — is Premium.
   html+='<div class="set-card glass"><h3>Profile & Goal</h3><div class="desc">Used to auto-calculate your macro targets.</div>'
     +'<div class="field-row"><div><label>Body weight (lbs)</label><input type="number" id="setWeight" value="'+(S.profile.weight||180)+'"></div>'
     +'<div><label>Goal</label><select id="setGoal"><option value="lose"'+(S.profile.goal==='lose'?' selected':'')+'>Lose weight</option><option value="maintain"'+(S.profile.goal==='maintain'?' selected':'')+'>Maintain</option><option value="gain"'+(S.profile.goal==='gain'?' selected':'')+'>Build muscle / gain</option></select></div></div>'
