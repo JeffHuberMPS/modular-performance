@@ -930,7 +930,7 @@ function renderSettings(){
     var locked = !m.core && !tierOK(m.tier);
     var tag = m.core? '' : ' <span class="lock-tag'+(m.tier==='elite'?' elite':'')+'">'+m.tier.toUpperCase()+'</span>';
     html+='<div class="toggle-row"><div class="tl">'+m.label+tag+(m.core?' <small>core — always tracked</small>':'')+'</div>'
-      +'<div class="sw'+(on?' on':'')+(m.core||locked?' locked':'')+'" onclick="'+(m.core||locked?'':'toggleMetric(\''+m.k+'\')')+'"></div></div>';
+      +'<div class="sw'+(on?' on':'')+(m.core||locked?' locked':'')+'" data-mk="'+m.k+'" onclick="'+(m.core||locked?'':'toggleMetric(\''+m.k+'\')')+'"></div></div>';
   });
   html+='</div>';
 
@@ -938,7 +938,7 @@ function renderSettings(){
   MEAL_TYPES.forEach(meal=>{
     var on=S.meals.includes(meal);
     html+='<div class="toggle-row"><div class="tl">'+MEAL_EMOJI[meal]+' '+meal+'</div>'
-      +'<div class="sw'+(on?' on':'')+'" onclick="toggleMeal(\''+meal+'\')"></div></div>';
+      +'<div class="sw'+(on?' on':'')+'" data-meal="'+meal+'" onclick="toggleMeal(\''+meal+'\')"></div></div>';
   });
   html+='</div>';
 
@@ -1007,11 +1007,19 @@ function rerenderSettingsKeepScroll(){
   requestAnimationFrame(restore);   // again after layout settles, defeating the reflow clamp that
                                     // otherwise snaps scroll to the top when the view is rebuilt
 }
-function toggleMetric(k){ S.tracked[k]=!S.tracked[k]; computeTargets(); save(); rerenderSettingsKeepScroll(); }
+// Flip the switch IN PLACE — no view rebuild — so the page never moves while you run down the list.
+// (The Macro Targets list refreshes next time Settings is opened.)
+function toggleMetric(k){
+  S.tracked[k]=!S.tracked[k]; computeTargets(); save();
+  var sw=document.querySelector('#view-settings .sw[data-mk="'+k+'"]');
+  if(sw) sw.classList.toggle('on', !!S.tracked[k]); else rerenderSettingsKeepScroll();
+}
 function toggleMeal(meal){
   if(S.meals.includes(meal)) S.meals=S.meals.filter(x=>x!==meal);
   else { S.meals.push(meal); S.meals.sort((a,b)=>MEAL_TYPES.indexOf(a)-MEAL_TYPES.indexOf(b)); }
-  save(); rerenderSettingsKeepScroll();
+  save();
+  var sw=document.querySelector('#view-settings .sw[data-meal="'+meal+'"]');
+  if(sw) sw.classList.toggle('on', S.meals.includes(meal)); else rerenderSettingsKeepScroll();
 }
 function toggleReminders(){ S.reminders.enabled=!S.reminders.enabled; save(); rerenderSettingsKeepScroll(); }
 function setRemFreq(v){ S.reminders.freq=v; save(); }
