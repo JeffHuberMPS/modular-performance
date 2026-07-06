@@ -1602,7 +1602,7 @@ function renderNewStack(name){
     +'<label>Stack name</label><input id="stackName" value="'+esc(name||'')+'" placeholder="Morning Stack">'
     +'<label>Include supplements</label><div class="results" style="max-height:280px">'
     + allSupps().map(function(s){ var on=_newStackSel[s.id];
-        return '<div class="res-item" onclick="toggleStackSel(\''+s.id+'\')"><span class="res-emoji" style="color:'+(on?'var(--g)':'#3a424c')+'">'+wBig(WICO.pill)+'</span>'
+        return '<div class="res-item" data-sid="'+s.id+'" onclick="toggleStackSel(\''+s.id+'\')"><span class="res-emoji" style="color:'+(on?'var(--g)':'#3a424c')+'">'+wBig(WICO.pill)+'</span>'
           +'<div class="res-info"><div class="rn">'+esc(s.n)+'</div></div>'
           +'<span class="res-fav '+(on?'star-on':'star-off')+'" style="color:'+(on?'var(--g)':'#3a424c')+'">'+(on?'✓':'○')+'</span></div>';
       }).join('')
@@ -1610,7 +1610,15 @@ function renderNewStack(name){
     +'<div class="modal-actions"><button class="save" onclick="commitStack()">Save Stack</button><button class="cancel" onclick="openAddSupp()">+ Custom</button></div>';
   document.getElementById('modal').innerHTML=html;
 }
-function toggleStackSel(id){ _newStackSel[id]=!_newStackSel[id]; var nm=(document.getElementById('stackName')||{}).value||''; renderNewStack(nm); }
+function toggleStackSel(id){
+  _newStackSel[id]=!_newStackSel[id]; var on=_newStackSel[id];
+  // Update the clicked row IN PLACE — no modal rebuild — so the supplement list never jumps to the top.
+  var row=document.querySelector('#modal .res-item[data-sid="'+id+'"]');
+  if(row){
+    var em=row.querySelector('.res-emoji'); if(em) em.style.color=on?'var(--g)':'#3a424c';
+    var ck=row.querySelector('.res-fav'); if(ck){ ck.className='res-fav '+(on?'star-on':'star-off'); ck.style.color=on?'var(--g)':'#3a424c'; ck.textContent=on?'✓':'○'; }
+  } else { var nm=(document.getElementById('stackName')||{}).value||''; renderNewStack(nm); }
+}
 function commitStack(){
   var name=(document.getElementById('stackName').value||'').trim(); if(!name){ toast('Name your stack'); return; }
   var items=Object.keys(_newStackSel).filter(function(k){return _newStackSel[k];});
