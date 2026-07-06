@@ -963,8 +963,12 @@ function renderSettings(){
   else { html+='<div class="desc">Upgrade to PREMIUM for barcode scanning.</div>'; }
   html+='</div>';
 
-  html+='<div class="set-card glass"><h3>Data</h3><div class="desc">Everything saves to this browser automatically (no account needed).</div>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-ghost" onclick="seedDemo()">Load Demo Week</button><button class="btn-ghost" onclick="resetAll()" style="color:#ffffff;border-color:#5a3a3a">Reset All Data</button></div></div>';
+  // DATA tools (Load Demo Week / Reset All Data) are a SANDBOX-only convenience — never on the live
+  // beta. Host-gated to the *.vercel.app preview.
+  if (/vercel\.app$/i.test(location.hostname)) {
+    html+='<div class="set-card glass"><h3>Data</h3><div class="desc">Everything saves to this browser automatically (no account needed).</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-ghost" onclick="seedDemo()">Load Demo Week</button><button class="btn-ghost" onclick="resetAll()" style="color:#ffffff;border-color:#5a3a3a">Reset All Data</button></div></div>';
+  }
 
   v.innerHTML=html;
 }
