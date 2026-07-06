@@ -499,7 +499,12 @@ function save(){ localStorage.setItem('mps_nutrition', JSON.stringify(S)); try{ 
 function allFoods(){ return FOODS.concat(S.customFoods); }
 function foodById(id){ return allFoods().find(f=>f.id===id); }
 /* When embedded in the hub, follow the hub's tier (Core/Elite/Premium); standalone uses the Settings switcher. */
-function curTier(){ try{ if(window.parent && window.parent!==window){ var b=window.parent.document.body; if(b.classList.contains('tier-core')) return 'free'; if(b.classList.contains('tier-premium')) return 'premium'; return 'elite'; } }catch(e){} return S.tier; }
+function curTier(){ if(window.__mpsNutriDemo) return 'premium';   /* demo walkthrough shows every feature */
+  try{ if(window.parent && window.parent!==window){ var b=window.parent.document.body; if(b.classList.contains('tier-core')) return 'free'; if(b.classList.contains('tier-premium')) return 'premium'; return 'elite'; } }catch(e){} return S.tier; }
+/* Demo hooks used by shared/tour.js `run:` steps — put the app in a known state for each stage. */
+window.demoNutritionStart = function(){ window.__mpsNutriDemo=true; try{ go('today'); }catch(e){} try{ var s=document.scrollingElement||document.documentElement; if(s)s.scrollTop=0; }catch(e){} };
+window.demoNutritionInsights = function(){ try{ go('insights'); }catch(e){} };
+window.demoNutritionHistory = function(){ try{ go('history'); }catch(e){} };
 function tierOK(req){ return TIER_RANK[curTier()] >= TIER_RANK[req]; }
 try{ window.addEventListener('message', function(e){ if(e&&e.data&&e.data.type==='mps-tier'){ try{ buildTabs(); renderTierBadge(); go(curTab); }catch(err){} } }); }catch(e){}
 
@@ -577,6 +582,7 @@ function buildTabs(){
     var locked = t.tier && !tierOK(t.tier);
     var d=document.createElement('div');
     d.className='tab'+(t.id===curTab?' active':'');
+    d.setAttribute('data-tab', t.id);   // stable hook for the guided demo/tour
     d.innerHTML=t.icon+' '+t.label+(locked?' <span class="lock">'+wfIcon('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')+'</span>':'');
     d.onclick=()=>go(t.id);
     el.appendChild(d);

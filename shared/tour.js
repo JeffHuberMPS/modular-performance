@@ -56,10 +56,18 @@
       { sel: '[data-tour="perf"]',               text: "<b>Performance Insights</b>: MPS shows the behaviors behind your best days, and coaches you on what to repeat." }
     ],
     nutrition: [
-      { sel: '.meal-head .add',             text: "Tap <b>+ Add Food</b> to log what you ate — search the built-in food list.", click: true },
-      { sel: '.donut-wrap',                 text: "This ring is your <b>daily score</b> — protein, carbs, calories &amp; water. Tap it for the full breakdown.", click: true },
-      { sel: '#datePick',                   text: "Use the <b>date picker</b> to log or review any day.", click: false },
-      { center: true,                       text: "That's it — hit your numbers each day and the score takes care of itself.", click: false }
+      { run: 'demoNutritionStart', pan: true, text: "This is your <b>Today</b> screen — your whole day at a glance. Watch it roll by: your score, what's left to hit, your meals, supplements, and overall performance." },
+      { run: 'demoNutritionStart', sel: '.donut-wrap', text: "This ring is your <b>Daily Score</b> — how close you are to hitting every target. Tap it any time for the full breakdown.", click: false },
+      { sel: '#dailyTarget .set-card',      text: "<b>Daily Target</b> tells you exactly what you still need — “42g protein, 2 veg servings” — and updates the second you log.", click: false },
+      { sel: '.meal-head .add',             text: "Tap <b>+ Add Food</b> to log a meal <b>4 ways</b>: search, scan a barcode, snap a photo of your plate, or one-tap a saved meal.", click: false },
+      { sel: '#todayAlerts',                text: "<b>Heads Up</b> flags anything off-track today — low protein, no veggies, high sodium — so you can fix it before the day's done.", click: false },
+      { sel: '#todaySupps .set-card',       text: "Track your <b>supplement stacks</b> and check them off — your daily compliance is scored just like your food.", click: false },
+      { sel: '#todayOverall .set-card',     text: "Your <b>Overall Performance Score</b> blends nutrition with your other MPS pillars — one number for the whole day.", click: false },
+      { sel: '.tab[data-tab="insights"]',   text: "Now tap <b>Insights</b> to see your trends and patterns.", click: true },
+      { run: 'demoNutritionInsights', pan: true, text: "<b>Weekly Trends</b>: your score, best &amp; worst days, a 7-day chart, plus plain-English insights like “protein up 12% vs last week.” Watch it roll by." },
+      { sel: '.tab[data-tab="history"]',    text: "Tap <b>History</b> for the long view.", click: true },
+      { run: 'demoNutritionHistory', pan: true, text: "Every day scored, plus weekly / monthly / yearly averages — and your full weight history." },
+      { center: true,                       text: "That's the whole app. Log your meals, hit your numbers, and the score takes care of itself. Tap <b>Done</b> to start with a clean slate." }
     ]
   };
 

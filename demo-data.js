@@ -20,6 +20,7 @@ window.MPS_DEMO = (function () {
   'use strict';
 
   const MANIFEST_KEY = 'mps_demo_v1';
+  const NUTR_BACKUP_KEY = 'mps_demo_nutrition_prev';   // nutrition is one blob → back up the real one, restore on clear
   const DAYS = 21;                 // three weeks, ending today
   const SEED = 20260618;          // fixed → the demo is identical every load
   const SUBCOLLECTIONS = ['workout_history', 'sleep_logs', 'expense_logs', 'journal_entries'];
@@ -292,6 +293,62 @@ window.MPS_DEMO = (function () {
     await ref.set({ data, ts: Date.now(), v: 1 }, { merge: false });
   }
 
+  // ── NUTRITION (single 'mps_nutrition' blob) ──────────────────────────────
+  //  Builds a full, realistic sample day-book so the Today screen, Insights and
+  //  History all look lived-in. Today is left PARTIAL on purpose so the alerts
+  //  and Daily Target have something to say.
+  function genNutrition(dates) {
+    const todayKey = ymd(new Date());
+    const NF = {
+      chicken:{id:'f1', n:'Grilled Chicken Breast', m:{protein:35,carbs:0,veg:0,calories:185,fats:4,water:0,fruits:0,sodium:75,sugar:0}},
+      salmon: {id:'f2', n:'Salmon Fillet',          m:{protein:25,carbs:0,veg:0,calories:230,fats:13,water:0,fruits:0,sodium:60,sugar:0}},
+      eggs:   {id:'f4', n:'Whole Eggs',             m:{protein:12,carbs:1,veg:0,calories:140,fats:10,water:0,fruits:0,sodium:140,sugar:1}},
+      yogurt: {id:'f5', n:'Greek Yogurt, Plain',    m:{protein:23,carbs:9,veg:0,calories:130,fats:0,water:0,fruits:0,sodium:85,sugar:9}},
+      shake:  {id:'f6', n:'Whey Protein Shake',     m:{protein:25,carbs:3,veg:0,calories:120,fats:1,water:0,fruits:0,sodium:60,sugar:2}},
+      rice:   {id:'f9', n:'Brown Rice, Cooked',     m:{protein:5,carbs:45,veg:0,calories:215,fats:2,water:0,fruits:0,sodium:10,sugar:0}},
+      oats:   {id:'f11',n:'Oatmeal, Dry',           m:{protein:5,carbs:27,veg:0,calories:150,fats:3,water:0,fruits:0,sodium:0,sugar:1}},
+      broc:   {id:'f16',n:'Broccoli, Steamed',      m:{protein:4,carbs:11,veg:1,calories:55,fats:0,water:0,fruits:0,sodium:60,sugar:2}},
+      salad:  {id:'f18',n:'Mixed Salad Greens',     m:{protein:1,carbs:4,veg:1,calories:20,fats:0,water:0,fruits:0,sodium:30,sugar:2}},
+      banana: {id:'f23',n:'Banana',                 m:{protein:1,carbs:27,veg:0,calories:105,fats:0,water:0,fruits:1,sodium:1,sugar:14}}
+    };
+    const scale = (m,q) => { const o={}; Object.keys(m).forEach(k => o[k] = +(m[k]*q).toFixed(2)); return o; };
+    let seq = 0;
+    const en = (meal,key,q) => { const f=NF[key]; return { id:'demo_n_'+(seq++), meal, foodId:f.id, name:f.n, emoji:'', qty:q, m:scale(f.m,q) }; };
+    const log = {};
+    dates.filter(d => d <= todayKey).forEach(function(d){
+      if (d === todayKey) {
+        log[d] = [ en('Breakfast','eggs',2), en('Breakfast','oats',1), en('Breakfast','banana',1) ];   // partial → alerts + target have work to do
+      } else {
+        log[d] = [
+          en('Breakfast','eggs',2), en('Breakfast','oats',1), en('Breakfast','banana',1),
+          en('Lunch','chicken',1.5), en('Lunch','rice',1), en('Lunch','salad',1),
+          en('Dinner','salmon',1), en('Dinner','broc',2), en('Dinner','rice',1)
+        ];
+      }
+    });
+    const weightLog = [];
+    for (let i=18;i>=0;i-=3){ weightLog.push({ date: ymd(dateNDaysAgo(i)), weight: +(184 - ((18-i)/3)*0.4).toFixed(1) }); }
+    const supLog = {}; supLog[todayKey] = { demo_stk1:true };   // 1 of 2 stacks done → 50% compliance today
+    return {
+      tier:'premium', onboarded:true,
+      profile:{ weight: weightLog[weightLog.length-1].weight, goal:'maintain', activity:'moderate' },
+      customTargets:false,
+      targets:{ protein:182, carbs:237, veg:5, calories:2639, fats:73, water:2500, fruits:2, sodium:2300, sugar:40 },
+      tracked:{ protein:true, carbs:true, veg:true, calories:true, water:true },
+      meals:['Breakfast','Lunch','Dinner'],
+      log, favorites:[], recent:[], customFoods:[], customRecipes:[],
+      mealTemplates:[ { id:'demo_tpl1', name:'Go-To Breakfast', createdAt:todayKey, items:[
+        { foodId:'f4',  name:'Whole Eggs',  emoji:'', qty:2, m:scale(NF.eggs.m,2) },
+        { foodId:'f11', name:'Oatmeal, Dry', emoji:'', qty:1, m:scale(NF.oats.m,1) },
+        { foodId:'f23', name:'Banana',       emoji:'', qty:1, m:scale(NF.banana.m,1) } ] } ],
+      customSupplements:[],
+      supplementTemplates:[ { id:'demo_stk1', name:'Morning Stack', items:['s3','s5','s4','s8'] }, { id:'demo_stk2', name:'Sleep Stack', items:['s6','s12'] } ],
+      supplementLog: supLog,
+      weightLog,
+      reminders:{ enabled:false, freq:'daily' }
+    };
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   //  LOAD
   // ═══════════════════════════════════════════════════════════════════════
@@ -325,6 +382,11 @@ window.MPS_DEMO = (function () {
     lsSet('mps_expense:entries', JSON.stringify(expExisting.concat(e.local['mps_expense:entries'])));
 
     lsSet(journalKey, JSON.stringify(Object.assign(jget(journalKey, {}), j.map)));
+
+    // nutrition — single blob: back up the real one (once), then write the demo book. Local-only
+    // (no Firestore) so a demo can never pollute the real cloud copy; restored verbatim on clear().
+    if (lsGet(NUTR_BACKUP_KEY) == null) { const prev = lsGet('mps_nutrition'); lsSet(NUTR_BACKUP_KEY, prev == null ? '__none__' : prev); }
+    lsSet('mps_nutrition', JSON.stringify(genNutrition(dates)));
 
     // 2) Firestore subcollections (Home dashboard) — batched
     const u = uid();
@@ -407,6 +469,10 @@ window.MPS_DEMO = (function () {
       // 3) re-sync backup docs from the now-cleaned localStorage (or delete if empty)
       for (const docName of Object.keys(BACKUP_DOCS)) { try { await syncBackupDoc(docName); } catch(err){} }
     }
+
+    // nutrition — restore the real blob we backed up (or remove the demo blob if there was none)
+    const nb = lsGet(NUTR_BACKUP_KEY);
+    if (nb != null) { if (nb === '__none__') lsDel('mps_nutrition'); else lsSet('mps_nutrition', nb); lsDel(NUTR_BACKUP_KEY); }
 
     lsDel(MANIFEST_KEY);
     return { cleared: true, days: (m.dates || []).length };
