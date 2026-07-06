@@ -25,6 +25,8 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:var(--body); background:var(--bg); color:#fff; min-height:100vh; padding:22px;
     background-image:radial-gradient(880px 480px at 12% -14%, rgba(45,212,191,0.07), transparent 60%), radial-gradient(760px 460px at 100% -8%, rgba(120,140,170,0.04), transparent 60%); }
+  /* Smooth momentum scrolling + keep the scroll from chaining into the shell. */
+  html, body { -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
   .accent { color:var(--g); }
 
   /* Modular Performance card look */
@@ -33,6 +35,15 @@
     border:1px solid var(--line);
     box-shadow:0 18px 40px rgba(0,0,0,0.55), 0 8px 34px -16px var(--gglow), inset 0 1px 0 rgba(255,255,255,0.05); }
   .glass::before { content:''; position:absolute; top:13px; bottom:13px; left:0; width:3px; border-radius:0 3px 3px 0; background:var(--g); box-shadow:0 0 16px var(--gglow); }
+
+  /* Phones: lighten the per-tile paint so fast scrolling stays buttery. Big blurred shadows + card
+     glows are expensive to re-rasterize as each row scrolls into view (the choppiness). Keep the
+     look — just cheaper — and remove the accent-bar halo that repaints on every card. */
+  @media (max-width:640px){
+    .glass { box-shadow:0 6px 16px rgba(0,0,0,0.5); }
+    .glass::before { box-shadow:none; }
+    .tab.active { box-shadow:none; }
+  }
 
   /* header */
   .header { display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; margin-bottom:20px; }
