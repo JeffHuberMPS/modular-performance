@@ -108,7 +108,7 @@
     .shell-loader.hidden { display: none; }
 
     /* Home dashboard */
-    .home-view { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; display: none; padding: 0; background: radial-gradient(130% 70% at 50% -5%, #14120b 0%, #0a0a0a 55%, #060606 100%); scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scroll-snap-type: y proximity; }
+    .home-view { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; display: none; padding: 0; background: radial-gradient(130% 70% at 50% -5%, #14120b 0%, #0a0a0a 55%, #060606 100%); scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scroll-snap-type: y mandatory; }
     .home-view.active { display: block; }
     /* Two screens (calm hero, then the systems). GENTLE proximity snap only — never traps the scroll
        (no scroll-snap-stop), so you can scroll freely up/down without it catching or freezing. */
@@ -467,7 +467,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '327';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '328';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
