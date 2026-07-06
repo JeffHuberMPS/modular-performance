@@ -959,7 +959,7 @@ function renderSettings(){
   html+='</div>';
 
   html+='<div class="set-card glass"><h3>Barcode Scanning '+(!tierOK('premium')?'<span class="lock-tag">PREMIUM</span>':'')+'</h3><div class="desc">Scan packaged foods (Walmart / Target / High V databases).</div>';
-  if(tierOK('premium')){ html+='<button class="btn-primary" onclick="simBarcode()">📷 Simulate Scan</button>'; }
+  if(tierOK('premium')){ html+='<button class="btn-primary" onclick="simBarcode()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:7px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Scan</button>'; }
   else { html+='<div class="desc">Upgrade to PREMIUM for barcode scanning.</div>'; }
   html+='</div>';
 
@@ -989,13 +989,29 @@ function saveTargets(){
   save(); renderSettings();
 }
 function resetTargets(){ S.customTargets=false; delete S.targets._custom; computeTargets(); save(); renderSettings(); toast('Reset to auto-calculated'); }
-function toggleMetric(k){ S.tracked[k]=!S.tracked[k]; computeTargets(); save(); renderSettings(); }
+// Re-render Settings WITHOUT jumping to the top. renderSettings() rebuilds the whole view via
+// innerHTML, which collapses the page height and snaps scroll to 0. Capture the scroll position and
+// put it back (sync + after layout) so you can flip toggles one after another without the screen
+// leaping up each time.
+function rerenderSettingsKeepScroll(){
+  var se = document.scrollingElement || document.documentElement;
+  var y = (se && se.scrollTop) || window.pageYOffset || (document.body && document.body.scrollTop) || 0;
+  renderSettings();
+  var restore = function(){
+    if(se) se.scrollTop = y;
+    if(document.body) document.body.scrollTop = y;
+    try{ window.scrollTo(0, y); }catch(e){}
+  };
+  restore();
+  requestAnimationFrame(restore);
+}
+function toggleMetric(k){ S.tracked[k]=!S.tracked[k]; computeTargets(); save(); rerenderSettingsKeepScroll(); }
 function toggleMeal(meal){
   if(S.meals.includes(meal)) S.meals=S.meals.filter(x=>x!==meal);
   else { S.meals.push(meal); S.meals.sort((a,b)=>MEAL_TYPES.indexOf(a)-MEAL_TYPES.indexOf(b)); }
-  save(); renderSettings();
+  save(); rerenderSettingsKeepScroll();
 }
-function toggleReminders(){ S.reminders.enabled=!S.reminders.enabled; save(); renderSettings(); }
+function toggleReminders(){ S.reminders.enabled=!S.reminders.enabled; save(); rerenderSettingsKeepScroll(); }
 function setRemFreq(v){ S.reminders.freq=v; save(); }
 
 function openCustomFood(){
