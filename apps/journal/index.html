@@ -348,30 +348,52 @@
       const [recKey, setRecKey] = useState(null);   // which field id is currently recording
       const [recErr, setRecErr] = useState('');      // small error popup text
       const recRef = useRef(null);                    // active SpeechRecognition
-      const silRef = useRef(null);                    // 4s silence timer
+      const silRef = useRef(null);                    // silence timer
+      const warmRef = useRef(false);                  // mic device primed once
       useEffect(() => () => { try { if (recRef.current) { recRef.current.onend = null; recRef.current.abort(); } } catch(e){} if (silRef.current) clearTimeout(silRef.current); }, []);
       useEffect(() => { if (!recErr) return; const t = setTimeout(() => setRecErr(''), 3600); return () => clearTimeout(t); }, [recErr]);
 
       const stopVoice = () => { try { if (recRef.current) recRef.current.stop(); } catch(e){} };
-      const startVoice = (fieldId, getBase, setText) => {
-        if (!SpeechRec) { setRecErr('Voice typing is not supported in this browser. Try Chrome.'); return; }
+
+      // Prime the mic once with getUserMedia. Forces the permission prompt up front and wakes the
+      // input device — without this Chrome's speech engine often ends the FIRST attempt instantly
+      // with no result (the "mic does nothing" symptom).
+      const warmMic = async () => {
+        if (warmRef.current) return true;
+        if (!(typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { warmRef.current = true; return true; }
+        try { const s = await navigator.mediaDevices.getUserMedia({ audio:true }); s.getTracks().forEach(t=>t.stop()); warmRef.current = true; return true; }
+        catch(e){ const n = e && e.name;
+          if (n==='NotAllowedError' || n==='SecurityError') setRecErr('Microphone is blocked. Click the lock icon left of the address bar, allow the mic, then try again.');
+          else if (n==='NotFoundError' || n==='OverconstrainedError') setRecErr('No microphone found on this device.');
+          else setRecErr('Could not open the microphone. Check your mic, then try again.');
+          return false; }
+      };
+
+      const startVoice = async (fieldId, getBase, setText, attempt) => {
+        attempt = attempt || 0;
+        if (!SpeechRec) { setRecErr('Voice typing needs Chrome (desktop or Android).'); return; }
         // Tapping any mic instantly stops the current recording and starts the new one.
         try { if (recRef.current) { recRef.current.onend = null; recRef.current.abort(); } } catch(e){}
         if (silRef.current) clearTimeout(silRef.current);
+        if (!(await warmMic())) return;
         let recog;
         try { recog = new SpeechRec(); } catch(e){ setRecErr('Could not start voice. Try again.'); return; }
         recog.continuous = true; recog.interimResults = true; recog.lang = 'en-US';
         const base = (getBase() || '');   // existing text is preserved; dictation appends to it
         let finalText = '';
-        const armSilence = () => { if (silRef.current) clearTimeout(silRef.current); silRef.current = setTimeout(() => { try { recog.stop(); } catch(e){} }, 4000); };
+        let audioOn = false;       // did the device actually start capturing?
+        let userStopped = false;   // did the user tap to stop, or hit the silence timeout?
+        const armSilence = () => { if (silRef.current) clearTimeout(silRef.current); silRef.current = setTimeout(() => { userStopped = true; try { recog.stop(); } catch(e){} }, 6000); };
         const compose = (interim) => {
           const dictated = (finalText + interim).replace(/\s+/g,' ').trim();
           if (!dictated) return base;
           if (!base) return dictated.charAt(0).toUpperCase() + dictated.slice(1);
           return base + (/\s$/.test(base) ? '' : ' ') + dictated;
         };
-        recog.onstart  = () => { armSilence(); };
+        recog.onstart      = () => { armSilence(); };
+        recog.onaudiostart = () => { audioOn = true; };
         recog.onresult = (e) => {
+          audioOn = true;
           let interim = '';
           for (let i = e.resultIndex; i < e.results.length; i++) {
             const tr = e.results[i][0].transcript;
@@ -382,15 +404,22 @@
         };
         recog.onerror  = (e) => {
           const err = e && e.error;
-          if (err === 'not-allowed' || err === 'service-not-allowed') setRecErr('Microphone is blocked. Allow mic access in your browser, then try again.');
+          if (err === 'not-allowed' || err === 'service-not-allowed') setRecErr('Microphone is blocked. Click the lock icon left of the address bar, allow the mic, then try again.');
           else if (err === 'audio-capture') setRecErr('No microphone found.');
           else if (err === 'network') setRecErr('Voice needs a connection. Check your internet.');
           // 'no-speech' and 'aborted' are silent (typed text is never erased)
         };
-        recog.onend    = () => { if (recRef.current === recog) { recRef.current = null; setRecKey(null); if (silRef.current) clearTimeout(silRef.current); } };
+        recog.onend    = () => {
+          if (recRef.current !== recog) return;
+          recRef.current = null; setRecKey(null); if (silRef.current) clearTimeout(silRef.current);
+          // Chrome sometimes no-ops the first attempt (ends instantly, no audio). Retry once silently.
+          if (!audioOn && !userStopped && attempt < 1) { setTimeout(() => startVoice(fieldId, getBase, setText, attempt + 1), 250); return; }
+          // If it still never captured audio, say so instead of failing silently.
+          if (!audioOn && !userStopped) setRecErr('Did not catch any audio. Check your mic is on and set as the default input, then tap and speak.');
+        };
         recRef.current = recog;
         setRecKey(fieldId);
-        try { recog.start(); } catch(e){}
+        try { recog.start(); } catch(e){ setRecErr('Could not start voice. Try again.'); }
       };
       const toggleVoice = (fieldId, getBase, setText) => { if (recKey === fieldId) stopVoice(); else startVoice(fieldId, getBase, setText); };
       const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.biggestDistraction||draft.biggestWin||draft.biggestLesson||draft.quoteVault||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x)||draft.top3.some(x=>x);
