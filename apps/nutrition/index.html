@@ -343,6 +343,7 @@
   <!-- TODAY -->
   <div class="view active" id="view-today">
     <div class="today-top" id="todayTop"></div>
+    <div id="dailyTarget"></div>
     <div class="breakdown" id="breakdown"></div>
     <div class="meals-wrap" id="mealsWrap"></div>
     <div id="todayWeight"></div>
@@ -642,6 +643,7 @@ function renderToday(){
   renderMeals();
   renderTodayWeight();
   renderTodaySupps();
+  renderDailyTarget();
 }
 function mealMiniHTML(){
   var entries=S.log[curDate]||[];
@@ -1507,6 +1509,50 @@ function deleteStack(id){
   S.supplementTemplates=(S.supplementTemplates||[]).filter(function(x){return x.id!==id;});
   Object.keys(S.supplementLog||{}).forEach(function(d){ if(S.supplementLog[d]) delete S.supplementLog[d][id]; });
   save(); if(curTab==='today') renderTodaySupps(); openSuppManager();
+}
+
+/* ============================== WEAPON 4: DAILY TARGET ============================== */
+/* Always-on Today card: "You're at X% — to hit 100% you still need ...". Live-updates on every log.
+   Only lists reach-up metrics (skips sodium/sugar, which are limits not goals). */
+function renderDailyTarget(){
+  var el=document.getElementById('dailyTarget'); if(!el) return;
+  var ms=activeMetrics();
+  var overall=dailyScore(curDate);
+  var tot=dayTotals(curDate);
+  var needs=[];
+  ms.forEach(function(m){
+    if(m.k==='sodium'||m.k==='sugar') return;           // limits, not targets to reach
+    var rem=(S.targets[m.k]||0)-(tot[m.k]||0);
+    if(rem>0.5){
+      var r=Math.round(rem), phrase;
+      if(m.k==='veg') phrase=r+' veg serving'+(r===1?'':'s');
+      else if(m.k==='fruits') phrase=r+' fruit serving'+(r===1?'':'s');
+      else if(m.k==='calories') phrase=r+' cal';
+      else if(m.k==='water') phrase=r+' ml water';
+      else phrase=r+'g '+m.label.toLowerCase();          // protein / carbs / fats
+      needs.push(phrase);
+    }
+  });
+  var entries=S.log[curDate]||[];
+  var mealsLeft=S.meals.filter(function(mm){ return !entries.some(function(e){return e.meal===mm;}); });
+  var ocol = overall>=100?'var(--g)': overall>=65?'var(--g)': overall>=33?'#ffc24d':'#ffffff';
+  var html='<div class="section-title" style="margin-top:22px">Daily Target</div>';
+  if(overall>=100 && !needs.length && !mealsLeft.length){
+    html+='<div class="set-card glass" style="display:flex;align-items:center;gap:14px">'
+      +'<span style="font-family:var(--disp);font-size:34px;font-weight:600;color:var(--g)">100%</span>'
+      +'<span style="font-size:14px;color:#cdd4dc">Crushed it — every target hit today.</span></div>';
+  } else {
+    var bits=[];
+    if(needs.length) bits.push(needs.join('  ·  '));
+    if(mealsLeft.length) bits.push('log '+mealsLeft.length+' more meal'+(mealsLeft.length===1?'':'s'));
+    var need = bits.length ? bits.join('  ·  ') : 'targets met — finish logging your meals';
+    html+='<div class="set-card glass">'
+      +'<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px">'
+        +'<span style="font-family:var(--disp);font-size:34px;font-weight:600;color:'+ocol+'">'+overall+'%</span>'
+        +'<span style="font-size:13px;color:#cdd4dc">You\'re at <b>'+overall+'%</b> today. To hit 100%, you still need:</span></div>'
+      +'<div style="font-family:var(--disp);letter-spacing:.5px;font-size:15px;color:#fff">'+esc(need)+'</div></div>';
+  }
+  el.innerHTML=html;
 }
 
 /* ============================== SETTINGS ============================== */
