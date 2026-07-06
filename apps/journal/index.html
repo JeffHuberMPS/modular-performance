@@ -265,9 +265,12 @@
         <line x1="8" y1="21" x2="16" y2="21" />
       </svg>
     );
-    // Live "listening" indicator. gAnalyser holds the active session's audio analyser (one mic at a
-    // time); MicWave reads it every frame and draws sound bars that react to your real voice level.
-    const gAnalyser = { current: null };
+    // Live "listening" indicator. gVoice.energy is pushed to 1 whenever speech-to-text hears words,
+    // then decays each frame — so the bars jump while you speak and settle when you pause, WITHOUT
+    // opening a second microphone stream (a second stream starves speech-to-text of the mic on phones,
+    // which is why it animated but never typed). The bars also keep a gentle baseline motion so you
+    // can always tell the mic is on.
+    const gVoice = { energy: 0 };
     const MicWave = ({ size=18 }) => {
       const ref = useRef(null);
       useEffect(() => {
@@ -275,22 +278,16 @@
         const ctx = c.getContext('2d');
         const W = c.width, H = c.height, NB = 4, gap = 2;
         const bw = (W - gap*(NB-1)) / NB;
-        let data = null, raf = 0;
+        let raf = 0;
         const draw = () => {
           raf = requestAnimationFrame(draw);
-          const an = gAnalyser.current;
-          let level = 0;
-          if (an) {
-            if (!data || data.length !== an.frequencyBinCount) data = new Uint8Array(an.frequencyBinCount);
-            an.getByteFrequencyData(data);
-            let s = 0; for (let i=0;i<data.length;i++) s += data[i];
-            level = s / data.length / 255;
-          }
+          gVoice.energy *= 0.9;                                   // decay toward baseline
+          const e = gVoice.energy;
           ctx.clearRect(0,0,W,H);
           ctx.fillStyle = '#0e0c0a';
           for (let i=0;i<NB;i++) {
             const wobble = 0.4 + 0.6*Math.abs(Math.sin(Date.now()/140 + i*1.25));
-            const amp = Math.min(1, Math.max(0.16, level*3.4) * wobble);
+            const amp = Math.min(1, (0.28 + 0.9*e) * wobble);     // baseline motion + speech boost
             const bh = Math.max(2, amp*H);
             ctx.fillRect(i*(bw+gap), (H-bh)/2, bw, bh);
           }
@@ -383,117 +380,75 @@
       const [recKey, setRecKey] = useState(null);   // which field id is listening now (drives the highlight)
       const [recErr, setRecErr] = useState('');      // small error popup text
       const recRef    = useRef(null);   // active SpeechRecognition (restarted under the hood while listening)
-      const streamRef = useRef(null);   // live mic MediaStream — keeps the button lit + feeds the sound bars
-      const actxRef   = useRef(null);   // AudioContext for the analyser
-      const rafRef    = useRef(0);      // silence-watch animation frame
+      const silRef    = useRef(null);   // silence auto-off timer
       const listenRef = useRef(false);  // is a listening session active
 
-      // Tear down the whole listening session (mic, speech, analyser, timers) and drop the highlight.
+      // Tear down the listening session and drop the highlight.
       const endSession = () => {
         listenRef.current = false;
-        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
+        if (silRef.current) { clearTimeout(silRef.current); silRef.current = null; }
         try { if (recRef.current) { recRef.current.onend = null; recRef.current.onerror = null; recRef.current.abort(); } } catch(e){}
         recRef.current = null;
-        try { if (streamRef.current) streamRef.current.getTracks().forEach(t=>t.stop()); } catch(e){}
-        streamRef.current = null;
-        try { if (actxRef.current) actxRef.current.close(); } catch(e){}
-        actxRef.current = null;
-        gAnalyser.current = null;
+        gVoice.energy = 0;
         setRecKey(null);
       };
       useEffect(() => () => { endSession(); }, []);
       useEffect(() => { if (!recErr) return; const t = setTimeout(() => setRecErr(''), 3600); return () => clearTimeout(t); }, [recErr]);
 
-      const startVoice = async (fieldId, getBase, setText) => {
+      // Speech-to-text OWNS the microphone (no getUserMedia running alongside it — a second mic
+      // consumer starves recognition of the mic on phones, so it animated but never typed). The bars
+      // are driven by recognition activity (gVoice.energy) instead of a raw audio stream.
+      const startVoice = (fieldId, getBase, setText) => {
         if (!SpeechRec) { setRecErr('Voice typing needs Chrome (desktop or Android).'); return; }
-        endSession();   // stop any mic already running
-        // 1) Open a real mic stream. This is the reliable part: it keeps the button lit and drives the
-        //    live sound bars, even if Chrome's speech-to-text is being finicky.
-        let stream;
-        try { stream = await navigator.mediaDevices.getUserMedia({ audio:true }); }
-        catch(e){ const n = e && e.name;
-          if (n==='NotAllowedError' || n==='SecurityError') setRecErr('Microphone is blocked. Click the lock icon left of the address bar, allow the mic, then try again.');
-          else if (n==='NotFoundError' || n==='OverconstrainedError') setRecErr('No microphone found on this device.');
-          else setRecErr('Could not open the microphone. Check your mic, then try again.');
-          return; }
-        streamRef.current = stream;
+        endSession();   // stop any session already running
         listenRef.current = true;
         setRecKey(fieldId);            // highlight ON now — stays lit until endSession()
 
-        // 2) Analyser: real-time level for the sound bars + silence auto-off.
-        let analyser = null;
-        try {
-          const AC = window.AudioContext || window.webkitAudioContext;
-          const actx = new AC(); actxRef.current = actx;
-          try { actx.resume(); } catch(e){}
-          analyser = actx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.6;
-          actx.createMediaStreamSource(stream).connect(analyser);
-          gAnalyser.current = analyser;   // MicWave reads this to draw the bars
-        } catch(e){ /* bars/silence-detect are optional; keep going */ }
-
-        // 3) Auto-off: when you stop talking for ~4s, shut the mic off by itself. If we DID hear real
-        //    audio but speech-to-text never returned a word, say so — that pins the fault on Chrome's
-        //    voice engine (not the mic), instead of failing silently.
-        let sawAudio = false, sawResult = false;
-        if (analyser) {
-          const SILENCE_MS = 4000, VOICE_LEVEL = 0.045;
-          const data = new Uint8Array(analyser.frequencyBinCount);
-          let lastVoice = Date.now();
-          const watch = () => {
-            if (!listenRef.current) return;
-            analyser.getByteFrequencyData(data);
-            let s = 0; for (let i=0;i<data.length;i++) s += data[i];
-            if (s/data.length/255 > VOICE_LEVEL) { lastVoice = Date.now(); sawAudio = true; }
-            if (Date.now() - lastVoice > SILENCE_MS) {
-              if (sawAudio && !sawResult) setRecErr('Your mic works — I can see the sound — but Chrome did not turn it into words. Reload the page and try once more.');
-              endSession(); return;
-            }
-            rafRef.current = requestAnimationFrame(watch);
-          };
-          rafRef.current = requestAnimationFrame(watch);
-        } else {
-          setTimeout(() => { if (listenRef.current) endSession(); }, 20000);   // no analyser: hard cap
-        }
-
-        // 4) Speech-to-text. Runs alongside the stream; if Chrome ends it early while we're still
-        //    listening, quietly restart it so dictation keeps flowing and the button stays lit.
         const base = (getBase() || '');   // existing text preserved; dictation appends
         let finalText = '';
-        let restarts = 0;
         const compose = (interim) => {
           const dictated = (finalText + interim).replace(/\s+/g,' ').trim();
           if (!dictated) return base;
           if (!base) return dictated.charAt(0).toUpperCase() + dictated.slice(1);
           return base + (/\s$/.test(base) ? '' : ' ') + dictated;
         };
+        // Auto-off after ~7s with no new speech. Reset whenever words come in. Armed at session start
+        // so a mic that never engages can't leave the button stuck on.
+        const armSilence = () => { if (silRef.current) clearTimeout(silRef.current); silRef.current = setTimeout(() => endSession(), 7000); };
+
         const startSR = () => {
           let recog;
-          try { recog = new SpeechRec(); } catch(e){ return; }
+          try { recog = new SpeechRec(); } catch(e){ setRecErr('Could not start voice. Try again.'); endSession(); return; }
           recog.continuous = true; recog.interimResults = true; recog.lang = 'en-US';
+          recog.onstart  = () => { armSilence(); };
           recog.onresult = (e) => {
-            restarts = 0;   // producing text means it's healthy — allow unlimited restarts
-            sawResult = true;
+            gVoice.energy = 1;   // make the bars jump when it actually hears you
             let interim = '';
             for (let i = e.resultIndex; i < e.results.length; i++) {
               const tr = e.results[i][0].transcript;
               if (e.results[i].isFinal) finalText += tr + ' '; else interim += tr;
             }
             setText(compose(interim));
+            armSilence();
           };
           recog.onerror = (e) => {
             const err = e && e.error;
-            if (err === 'not-allowed' || err === 'service-not-allowed') { setRecErr('Microphone is blocked. Allow mic access in your browser, then try again.'); endSession(); }
+            if (err === 'not-allowed' || err === 'service-not-allowed') { setRecErr('Microphone is blocked. Allow mic access, then tap the mic again.'); endSession(); }
+            else if (err === 'audio-capture') { setRecErr('No microphone found.'); endSession(); }
             else if (err === 'network') setRecErr('Voice needs a connection. Check your internet.');
             // 'no-speech' / 'aborted' ignored — onend decides whether to restart
           };
           recog.onend = () => {
             if (recRef.current !== recog) return;
             recRef.current = null;
-            if (listenRef.current && restarts < 60) { restarts++; setTimeout(() => { if (listenRef.current) startSR(); }, 150); }
+            // Continuous mode ends itself on pauses; while the user is still listening, restart so
+            // dictation keeps flowing. The silence timer is what actually ends the session.
+            if (listenRef.current) setTimeout(() => { if (listenRef.current) startSR(); }, 120);
           };
           recRef.current = recog;
-          try { recog.start(); } catch(e){}
+          try { recog.start(); } catch(e){ /* start can throw if called too fast; onend restart covers it */ }
         };
+        armSilence();
         startSR();
       };
       const toggleVoice = (fieldId, getBase, setText) => { if (recKey === fieldId) endSession(); else startVoice(fieldId, getBase, setText); };
@@ -628,6 +583,7 @@
           <div style={{ display:'flex', alignItems:'flex-start', gap:9, margin:'0 2px 22px', padding:'10px 13px', background:'rgba(201,160,32,0.05)', border:`1px solid ${BRG}`, borderRadius:9 }}>
             <span style={{ color:GOLD, fontSize:18, lineHeight:1, fontFamily:'Georgia, serif', marginTop:-2 }}>&ldquo;</span>
             <span style={{ color:'#cdb56a', fontSize:12.5, fontStyle:'italic', lineHeight:1.5, fontFamily:"'Playfair Display', Georgia, serif" }}>{quoteOfDay()}</span>
+            <span style={{ color:GOLD, fontSize:18, lineHeight:1, fontFamily:'Georgia, serif', alignSelf:'flex-end', marginBottom:-2 }}>&rdquo;</span>
           </div>
 
           {/* Auto-pulled day stats */}

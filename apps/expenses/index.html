@@ -218,17 +218,22 @@ body {
   background: rgba(255,255,255,0.025);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 12px;
-  padding: 16px 12px;
+  padding: 16px 10px;
   text-align: center;
+  min-width: 0;            /* let the grid cell shrink so the value can't push past the card */
 }
 .stat-value {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 26px;
+  /* Scale to fit narrow phones (e.g. $2,652.00) but cap at 26px on wider screens. */
+  font-size: clamp(15px, 5.4vw, 26px);
   font-weight: 600;
   line-height: 1;
   margin-bottom: 6px;
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .stat-value.mint { color: var(--mps-mint); }
 .stat-value.white { color: var(--mps-text); }
