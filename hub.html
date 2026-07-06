@@ -467,7 +467,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '326';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '327';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -704,10 +704,20 @@
     function prewarmFrames() {
       // Safety re-renders so Home catches up to cloud data on a fresh device (storage event also handles this).
       [3000, 7000, 13000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
-      // NOTE: tracker frames are NO LONGER pre-loaded in the background. Booting the heavy apps while
-      // you sit on Home blocked the main thread — that's what froze the scroll and made taps need 4-5
-      // tries. Each tracker now loads the instant you open it (with the stage loader), so Home stays
-      // perfectly smooth and every tap responds immediately. (Once opened, a frame stays warm.)
+      // The heavy Babel apps are NOT pre-loaded (booting them on Home blocked the main thread and froze
+      // scrolling). BUT Habits is now PRE-COMPILED (no Babel = light), so we DO quietly pre-warm just that
+      // one in the background — it fully boots behind the scenes, ON IDLE (never mid-scroll), so the first
+      // tap on Habits is instant with ZERO lag while Home stays perfectly smooth. Once warm it stays warm.
+      var warmHabits = function () {
+        try {
+          var a = APPS.find(function (x) { return x.id === 'habits'; });
+          if (a && !isSoon('habits') && unlockedApps.indexOf('habits') >= 0 && !document.getElementById('frame-habits')) {
+            ensureFrame(a);   // creates + loads the frame hidden; selectTab later just reveals it (warm = instant)
+          }
+        } catch (e) {}
+      };
+      if (window.requestIdleCallback) { requestIdleCallback(function () { setTimeout(warmHabits, 150); }, { timeout: 4000 }); }
+      else { setTimeout(warmHabits, 2500); }
     }
 
     function maybeCleanupFrames() { /* no-op: frames stay warm on every device for instant switching */ }
