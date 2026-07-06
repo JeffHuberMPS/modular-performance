@@ -431,7 +431,10 @@
           gAnalyser.current = analyser;   // MicWave reads this to draw the bars
         } catch(e){ /* bars/silence-detect are optional; keep going */ }
 
-        // 3) Auto-off: when you stop talking for ~4s, shut the mic off by itself.
+        // 3) Auto-off: when you stop talking for ~4s, shut the mic off by itself. If we DID hear real
+        //    audio but speech-to-text never returned a word, say so — that pins the fault on Chrome's
+        //    voice engine (not the mic), instead of failing silently.
+        let sawAudio = false, sawResult = false;
         if (analyser) {
           const SILENCE_MS = 4000, VOICE_LEVEL = 0.045;
           const data = new Uint8Array(analyser.frequencyBinCount);
@@ -440,8 +443,11 @@
             if (!listenRef.current) return;
             analyser.getByteFrequencyData(data);
             let s = 0; for (let i=0;i<data.length;i++) s += data[i];
-            if (s/data.length/255 > VOICE_LEVEL) lastVoice = Date.now();
-            if (Date.now() - lastVoice > SILENCE_MS) { endSession(); return; }
+            if (s/data.length/255 > VOICE_LEVEL) { lastVoice = Date.now(); sawAudio = true; }
+            if (Date.now() - lastVoice > SILENCE_MS) {
+              if (sawAudio && !sawResult) setRecErr('Your mic works — I can see the sound — but Chrome did not turn it into words. Reload the page and try once more.');
+              endSession(); return;
+            }
             rafRef.current = requestAnimationFrame(watch);
           };
           rafRef.current = requestAnimationFrame(watch);
@@ -466,6 +472,7 @@
           recog.continuous = true; recog.interimResults = true; recog.lang = 'en-US';
           recog.onresult = (e) => {
             restarts = 0;   // producing text means it's healthy — allow unlimited restarts
+            sawResult = true;
             let interim = '';
             for (let i = e.resultIndex; i < e.results.length; i++) {
               const tr = e.results[i][0].transcript;
