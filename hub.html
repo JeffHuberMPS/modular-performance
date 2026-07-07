@@ -483,7 +483,7 @@
     const IS_GUEST = (()=>{ try { return new URLSearchParams(location.search).get('guest') === '1'; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '365';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '366';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1007,9 +1007,22 @@
       } catch(e){ setCardMetrics('habits', []); }
 
       try {
-        const logs = Object.keys(localStorage)
+        const _localLogs = Object.keys(localStorage)
           .filter(k => k.indexOf('rr_sleep:') === 0 && k !== 'rr_sleep:wearable_interest')
-          .map(k => sget(k)).filter(Boolean)
+          .map(k => sget(k)).filter(Boolean);
+        /* Also read the cloud backup (source of truth) so Home reflects Recovery entries logged on ANY
+           device — even before this device's Recovery frame has restored them to localStorage. Merge by
+           date; local wins on a same-date conflict. */
+        let _cloudLogs = [];
+        try {
+          const _sdoc = await firebase.firestore().doc('users/'+uid+'/settings/sleep_backup').get();
+          const _sd = (_sdoc.exists && _sdoc.data()) ? (_sdoc.data().data || {}) : {};
+          _cloudLogs = Object.keys(_sd).filter(k => k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest')
+            .map(k => { try { return JSON.parse(_sd[k]); } catch(e){ return null; } }).filter(Boolean);
+        } catch(e) {}
+        const _byDate = {};
+        _cloudLogs.concat(_localLogs).forEach(l => { if (l && l.date) _byDate[l.date] = l; });
+        const logs = Object.values(_byDate)
           .sort((a,b) => (b.date||'').localeCompare(a.date||''))
           .slice(0,30);
         sig.sleep = logs.some(l => l.date === todayKey);
