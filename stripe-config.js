@@ -45,7 +45,7 @@ window.STRIPE_CONFIG = (function() {
     elite: {
       name:          'MPS Elite',
       tagline:       'Everything unlimited — full history, stats & insights.',
-      monthly_price: 5.99,
+      monthly_price: 9.99,
       onetime_price: 49,
       monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_monthly  : PRICE_IDS.live.elite_monthly,
       onetime_id:    IS_TEST_MODE ? PRICE_IDS.test.elite_onetime  : PRICE_IDS.live.elite_onetime
@@ -53,7 +53,7 @@ window.STRIPE_CONFIG = (function() {
     premium: {
       name:          'MPS Premium',
       tagline:       'Elite, plus the colorful theme, priority insights & every future release.',
-      monthly_price: 14.99,
+      monthly_price: 19.99,
       onetime_price: 99,
       monthly_id:    IS_TEST_MODE ? PRICE_IDS.test.premium_monthly : PRICE_IDS.live.premium_monthly,
       onetime_id:    IS_TEST_MODE ? PRICE_IDS.test.premium_onetime : PRICE_IDS.live.premium_onetime
