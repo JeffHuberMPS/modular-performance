@@ -1229,7 +1229,7 @@ async function safeGet(key) {
 }
 async function safeSet(key, val) {
   if (useLocalStorage) {
-    try { localStorage.setItem(key, val); } catch (e) { console.error('localStorage save fail', e); try { toast('Save failed — storage full.'); } catch (e2) {} }
+    try { localStorage.setItem(key, val); } catch (e) { console.error('localStorage cache full', e); }   // local cache only — cloud backup below persists from memory, so never alarm the user
     try { scheduleCloudBackup(); } catch (e) {}
     return;
   }
@@ -1238,7 +1238,7 @@ async function safeSet(key, val) {
   } catch (e) {
     // window.storage failed, switch to localStorage and retry
     useLocalStorage = true;
-    try { localStorage.setItem(key, val); } catch (e2) { console.error('localStorage save fail', e2); try { toast('Save failed — storage full.'); } catch (e3) {} }
+    try { localStorage.setItem(key, val); } catch (e2) { console.error('localStorage cache full', e2); }   // cloud backup below still persists from memory
   }
   try { scheduleCloudBackup(); } catch (e) {}
 }
@@ -1273,21 +1273,40 @@ function _collectLocal() {
   try { if (typeof K_CONDITIONING !== 'undefined' && typeof conditioningLogs !== 'undefined') data[K_CONDITIONING] = JSON.stringify(conditioningLogs); } catch (e) {}
   return data;
 }
+// A snapshot is "logically empty" when it carries no real workout data (no history,
+// no logged days, no PRs, no conditioning). We never back one up over the cloud, and we
+// never let one wipe local. If a value fails to parse, treat it as NON-empty (never skip).
+function _wkEmpty(data) {
+  if (!data) return true;
+  try { const h = data[K_HISTORY] ? JSON.parse(data[K_HISTORY]) : []; if (h && h.length) return false; } catch (e) { return false; }
+  try { const st = data[K_STATE] ? JSON.parse(data[K_STATE]) : {}; if (st && st.days && Object.keys(st.days).length) return false; } catch (e) { return false; }
+  try { const p = data[K_PRS] ? JSON.parse(data[K_PRS]) : {}; if (p && Object.keys(p).length) return false; } catch (e) { return false; }
+  try { if (typeof K_CONDITIONING !== 'undefined' && data[K_CONDITIONING]) { const c = JSON.parse(data[K_CONDITIONING]); if (c && ((c.length) || (typeof c === 'object' && Object.keys(c).length))) return false; } } catch (e) { return false; }
+  return true;
+}
 let _cloudTimer = null, _cloudBusy = false;
 function scheduleCloudBackup() {
   if (_cloudTimer) clearTimeout(_cloudTimer);
-  _cloudTimer = setTimeout(cloudBackupNow, 1800);   // debounce so rapid saves = one write
+  _cloudTimer = setTimeout(cloudBackupNow, 700);   // debounce so rapid saves = one write
 }
+// Flush any pending backup the instant the app is hidden/closed — mobile kills timers on
+// background, which was dropping just-logged sets before the debounce fired.
+function _cloudFlush() { if (_cloudTimer) { clearTimeout(_cloudTimer); _cloudTimer = null; } cloudBackupNow(); }
+try { document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') _cloudFlush(); }); window.addEventListener('pagehide', _cloudFlush); } catch (e) {}
 async function cloudBackupNow() {
   const doc = _cloudDoc();
   if (!doc || _cloudBusy) return false;
+  const _data = _collectLocal();
+  // NEVER back up a logically-empty snapshot — an early/partial-load write would stomp real
+  // cloud data (and wipe every device via the live sync). A device with nothing just skips.
+  if (_wkEmpty(_data)) return false;
   _cloudBusy = true;
   try {
     // The whole payload must live in the PARENT realm or Firestore rejects it as a
     // "custom Object". Rebuild it via the parent's JSON.parse so set() accepts it.
     const PJSON = (window.parent && window.parent.JSON) ? window.parent.JSON : JSON;
     const _ts = Date.now();
-    const payload = PJSON.parse(JSON.stringify({ data: _collectLocal(), ts: _ts, v: 1 }));
+    const payload = PJSON.parse(JSON.stringify({ data: _data, ts: _ts, v: 1 }));
     await doc.set(payload);
     try { localStorage.setItem('workout_synced_ts', String(_ts)); } catch (e) {}
     try { localStorage.setItem(K_LAST_BACKUP, new Date().toISOString()); } catch (e) {}
@@ -1309,6 +1328,13 @@ function watchCloudLive() {
       let localTs = 0; try { localTs = parseInt(localStorage.getItem('workout_synced_ts') || '0', 10) || 0; } catch (e) {}
       if (cloudTs <= localTs) return;             // our own write or older → ignore (never overwrite)
       let mine = {}; try { mine = _collectLocal(); } catch (e) {}
+      // SAFETY: a logically-empty (or corrupt) cloud is never a real user action. If we still hold
+      // real data, keep it and re-upload to heal the cloud — never let an empty cloud wipe us.
+      if (_wkEmpty(d) && !_wkEmpty(mine)) {
+        try { localStorage.setItem('workout_synced_ts', String(cloudTs)); } catch (e) {}
+        try { scheduleCloudBackup(); } catch (e) {}
+        return;
+      }
       let changed = false;
       for (const k in mine) { if (!(k in d)) changed = true; }      // a deletion (whole key gone)?
       for (const k in d) { if (d[k] !== mine[k]) changed = true; }  // an add/edit?
