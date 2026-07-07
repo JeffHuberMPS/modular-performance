@@ -1,0 +1,1386 @@
+
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    // ── THEME ─────────────────────────────────────────────────────
+    const __GRAY = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-mono')); } catch(e){ return false; } })();
+    const __CORE = (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-core')); } catch(e){ return false; } })();
+    // Premium = full history. Elite sees only the last 60 days of entries (Core has Journal locked entirely).
+    // SANDBOX: opened directly (not inside the hub) = preview as Premium so every Premium feature is testable on the link.
+    const __STANDALONE = (()=>{ try { return window.parent === window; } catch(e){ return true; } })();
+    const __PREMIUM = __STANDALONE || (()=>{ try { return !!(window.parent && window.parent !== window && window.parent.document.body.classList.contains('tier-premium')); } catch(e){ return false; } })();
+    const HISTORY_CAP_CUTOFF = (()=>{ const d=new Date(); d.setDate(d.getDate()-60); d.setHours(0,0,0,0); const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
+    /* Journal accent: TAN (this app is the tan one; the blue app is separate). Bright so it pops on the dark UI. */
+    const NAVY   = __GRAY ? '#f5f5f5' : '#c8a35d';
+    const NAVYL  = __GRAY ? '#C9A020' : '#e6c98c';
+    const GOLD   = '#C9A020';
+    const CREAM  = '#f5f5f5';
+    const BG     = '#080808';
+    const C1     = '#0e0c0a';
+    const C2     = '#141210';
+    const BR     = __GRAY ? 'rgba(255,255,255,0.08)' : 'rgba(150,150,150,0.14)';
+    const BRG    = 'rgba(201,160,32,0.18)';
+    const BRB    = __GRAY ? 'rgba(201,160,32,0.32)' : 'rgba(150,150,150,0.30)';
+
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    const todayStr = () => ciFmt(new Date());
+    const monthKey = d => d.slice(0, 7);
+    const monthLbl = k => { const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; };
+
+    // ── STORAGE ───────────────────────────────────────────────────
+    const KEY = 'journal_v1';
+    const load = () => window.storage.get(KEY).then(d => (d && typeof d === 'object' && !Array.isArray(d)) ? d : {});
+    const save = data => window.storage.set(KEY, data);
+
+    // ── SHARED ────────────────────────────────────────────────────
+    const Label = ({ children, style }) => (
+      <div style={{ display:'inline-block', color:NAVYL, fontSize:14, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:800, marginBottom:10, padding:'5px 12px', border:`2px solid ${NAVYL}`, borderRadius:7, background:'rgba(150,150,150,0.04)', ...style }}>
+        {children}
+      </div>
+    );
+
+    const Card = ({ children, style }) => (
+      <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, ...style }}>
+        {children}
+      </div>
+    );
+
+    // ── WEAPON 1 SHARED ───────────────────────────────────────────
+    // Wireframe trophy (no emoji, per MPS icon standard)
+    const TrophyIcon = ({ size=15, color=GOLD }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+        <path d="M6 9a6 6 0 0 0 12 0V3H6z" />
+        <path d="M6 4H3v2a3 3 0 0 0 3 3" />
+        <path d="M18 4h3v2a3 3 0 0 1-3 3" />
+        <line x1="12" y1="15" x2="12" y2="19" />
+        <path d="M8.5 22h7" /><path d="M9.5 19h5" />
+      </svg>
+    );
+    // Ribbon outline shape with 45° notebook-style notched ends
+    const RIBBON = 'polygon(0 0, 100% 0, calc(100% - 16px) 50%, 100% 100%, 0 100%, 16px 50%)';
+    // One short quote per day (MPS tone, no em dashes)
+    const DAILY_QUOTES = [
+      "Discipline is choosing what you want most over what you want now.",
+      "You do not rise to your goals. You fall to your systems.",
+      "Win the morning, win the day.",
+      "Small habits, repeated, become who you are.",
+      "The work you avoid is usually the work that matters.",
+      "Motivation gets you started. Discipline keeps you going.",
+      "Show up before you feel like it.",
+      "Your future is built by what you do today.",
+      "Hard now, easy later. Easy now, hard later.",
+      "Do the boring reps. That is where the growth hides.",
+      "Comfort is the enemy of progress.",
+      "Be the person your goals require.",
+      "Consistency beats intensity.",
+      "What gets measured gets improved.",
+      "Protect your mornings and your focus follows.",
+      "Excellence is a habit, not an event.",
+      "You can rest when the work is done.",
+      "Become 1 percent better than yesterday.",
+      "The standard you walk past is the standard you accept.",
+      "Earn your evening.",
+    ];
+    const dayOfYear = (d) => { const s=new Date(d.getFullYear(),0,0); return Math.floor((d-s)/86400000); };
+    const quoteOfDay = () => DAILY_QUOTES[dayOfYear(new Date()) % DAILY_QUOTES.length];
+
+    // ── WEAPON 2: SMART VOICE ENTRY ───────────────────────────────
+    const SpeechRec = (typeof window !== 'undefined') && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    const MicIcon = ({ size=15 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="2" width="6" height="11" rx="3" />
+        <path d="M5 10a7 7 0 0 0 14 0" />
+        <line x1="12" y1="17" x2="12" y2="21" />
+        <line x1="8" y1="21" x2="16" y2="21" />
+      </svg>
+    );
+    // Live "listening" indicator. gVoice.energy is pushed to 1 whenever speech-to-text hears words,
+    // then decays each frame — so the bars jump while you speak and settle when you pause, WITHOUT
+    // opening a second microphone stream (a second stream starves speech-to-text of the mic on phones,
+    // which is why it animated but never typed). The bars also keep a gentle baseline motion so you
+    // can always tell the mic is on.
+    const gVoice = { energy: 0 };
+    const MicWave = ({ size=18 }) => {
+      const ref = useRef(null);
+      useEffect(() => {
+        const c = ref.current; if (!c) return;
+        const ctx = c.getContext('2d');
+        const W = c.width, H = c.height, NB = 4, gap = 2;
+        const bw = (W - gap*(NB-1)) / NB;
+        let raf = 0;
+        const draw = () => {
+          raf = requestAnimationFrame(draw);
+          gVoice.energy *= 0.9;                                   // decay toward baseline
+          const e = gVoice.energy;
+          ctx.clearRect(0,0,W,H);
+          ctx.fillStyle = '#0e0c0a';
+          for (let i=0;i<NB;i++) {
+            const wobble = 0.4 + 0.6*Math.abs(Math.sin(Date.now()/140 + i*1.25));
+            const amp = Math.min(1, (0.28 + 0.9*e) * wobble);     // baseline motion + speech boost
+            const bh = Math.max(2, amp*H);
+            ctx.fillRect(i*(bw+gap), (H-bh)/2, bw, bh);
+          }
+        };
+        draw();
+        return () => cancelAnimationFrame(raf);
+      }, []);
+      return <canvas ref={ref} width={size} height={size} style={{ display:'block' }} />;
+    };
+    // Mic pinned to the right edge of a field: plain icon when idle, gold + animated bars while listening.
+    const MicButton = ({ active, onClick, multi }) => (
+      <button type="button" onMouseDown={(e)=>e.preventDefault()} onClick={onClick}
+        className={active ? 'mps-mic mps-mic-on' : 'mps-mic'}
+        title={active ? 'Listening… tap to stop' : 'Tap to talk'}
+        style={{ position:'absolute', left:7, top: multi ? 8 : '50%', transform: multi ? 'none' : 'translateY(-50%)', zIndex:2 }}>
+        {active ? <MicWave /> : <MicIcon />}
+      </button>
+    );
+
+    // ── NAV ────────────────────────────────────────────────────────
+    function Nav() {
+      return (
+        <nav style={{
+          display:'flex', alignItems:'center', padding:'13px 18px',
+          borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.95)',
+          position:'sticky', top:0, zIndex:100, backdropFilter:'blur(14px)'
+        }}>
+          <a href="/hub.html" style={{ color:NAVY, fontSize:10, fontWeight:700, letterSpacing:'0.12em', textDecoration:'none', textTransform:'uppercase' }}>← Hub</a>
+          <span style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:17, color:NAVYL, letterSpacing:'0.1em', flex:1, textAlign:'center' }}>
+            MPS JOURNAL
+          </span>
+          <span style={{ width:48 }} />
+        </nav>
+      );
+    }
+
+    function Tabs({ tab, setTab }) {
+      return (
+        <div style={{ display:'flex', borderBottom:`1px solid ${BR}`, background:'rgba(8,8,8,0.9)', position:'sticky', top:0, zIndex:90 }}>
+          {['WRITE','HISTORY','INSIGHTS','CHECK-IN'].map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex:1, padding:'11px 4px', background:'none', border:'none',
+              borderBottom: tab===t ? `2px solid ${NAVY}` : '2px solid transparent',
+              color: tab===t ? NAVYL : '#374151',
+              fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:12, letterSpacing:'0.08em', cursor:'pointer'
+            }}>{t}</button>
+          ))}
+        </div>
+      );
+    }
+
+    // ── WRITE VIEW ─────────────────────────────────────────────────
+    function WriteView({ entries, onSave, tdOverride }) {
+      const today = todayStr();
+      const existing = entries[today] || {};
+      const arr3 = (v) => Array.isArray(v) ? [v[0]||'', v[1]||'', v[2]||''] : ['','',''];
+      const [draft, setDraft] = useState(() => ({
+        workout: existing.workout || '',
+        gratitude: arr3(existing.gratitude),
+        accomplishment: arr3(existing.accomplishment),
+        affBecoming: existing.affBecoming || '',
+        affLearning: existing.affLearning || '',
+        affIHave: existing.affIHave || '',
+        anticipation: existing.anticipation || '',
+        emotion: existing.emotion || '',
+        // Weapon 1: Biggest Distraction replaces Wasted Time (old wastedTime maps in)
+        biggestDistraction: existing.biggestDistraction || existing.wastedTime || '',
+        // Weapon 1: new sections
+        biggestWin: existing.biggestWin || '',
+        biggestLesson: existing.biggestLesson || '',
+        top3: arr3(existing.top3),
+        quoteVault: existing.quoteVault || '',
+        disciplineScore: (typeof existing.disciplineScore === 'number') ? existing.disciplineScore : 5,
+      }));
+      const [saving, setSaving] = useState(false);
+      const [saved, setSaved] = useState(false);
+      const [td, setTd] = useState(null);
+      // Weapon 5: Premium Light / Intense mode (remembered; Premium only — others always Intense)
+      const [mode, setMode] = useState(() => { try { const m=localStorage.getItem('mps_jnl_journal_mode'); return (m==='light'||m==='intense')?m:'intense'; } catch(e){ return 'intense'; } });
+      const setModePersist = (m) => { setMode(m); try { localStorage.setItem('mps_jnl_journal_mode', m); } catch(e){} };
+      const isLight = __PREMIUM && mode === 'light' && !tdOverride;   // Light shows only Quick 4 (but the demo always shows the full journal)
+      useEffect(() => { if (tdOverride) { setTd(tdOverride); return; } let on=true; loadTrackerData().then(d=>{ if(on) setTd(d); }).catch(()=>{}); return ()=>{on=false;}; }, [tdOverride]);
+      const effTd = tdOverride || td;
+      const A = effTd ? ciAggregate(effTd, [today]) : null;
+
+      const upd = (k, v) => setDraft(p => ({ ...p, [k]: v }));
+      const updArr = (k, i, v) => setDraft(p => { const a = Array.isArray(p[k]) ? p[k].slice() : ['','','']; a[i]=v; return { ...p, [k]: a }; });
+
+      // ── Weapon 2: Smart Voice Entry ──
+      const [recKey, setRecKey] = useState(null);   // which field id is listening now (drives the highlight)
+      const [recErr, setRecErr] = useState('');      // small error popup text
+      const recRef    = useRef(null);   // active SpeechRecognition (restarted under the hood while listening)
+      const silRef    = useRef(null);   // silence auto-off timer
+      const listenRef = useRef(false);  // is a listening session active
+
+      // Tear down the listening session and drop the highlight.
+      const endSession = () => {
+        listenRef.current = false;
+        if (silRef.current) { clearTimeout(silRef.current); silRef.current = null; }
+        try { if (recRef.current) { recRef.current.onend = null; recRef.current.onerror = null; recRef.current.abort(); } } catch(e){}
+        recRef.current = null;
+        gVoice.energy = 0;
+        setRecKey(null);
+      };
+      useEffect(() => () => { endSession(); }, []);
+      useEffect(() => { if (!recErr) return; const t = setTimeout(() => setRecErr(''), 3600); return () => clearTimeout(t); }, [recErr]);
+
+      // Speech-to-text OWNS the microphone (no getUserMedia running alongside it — a second mic
+      // consumer starves recognition of the mic on phones, so it animated but never typed). The bars
+      // are driven by recognition activity (gVoice.energy) instead of a raw audio stream.
+      const startVoice = (fieldId, getBase, setText) => {
+        if (!SpeechRec) { setRecErr('Voice typing needs Chrome (desktop or Android).'); return; }
+        endSession();   // stop any session already running
+        listenRef.current = true;
+        setRecKey(fieldId);            // highlight ON now — stays lit until endSession()
+
+        const base = (getBase() || '');   // existing text preserved; dictation appends
+        let finalText = '';
+        const compose = (interim) => {
+          const dictated = (finalText + interim).replace(/\s+/g,' ').trim();
+          if (!dictated) return base;
+          if (!base) return dictated.charAt(0).toUpperCase() + dictated.slice(1);
+          return base + (/\s$/.test(base) ? '' : ' ') + dictated;
+        };
+        // Auto-off after ~7s with no new speech. Reset whenever words come in. Armed at session start
+        // so a mic that never engages can't leave the button stuck on.
+        const armSilence = () => { if (silRef.current) clearTimeout(silRef.current); silRef.current = setTimeout(() => endSession(), 7000); };
+
+        const startSR = () => {
+          let recog;
+          try { recog = new SpeechRec(); } catch(e){ setRecErr('Could not start voice. Try again.'); endSession(); return; }
+          recog.continuous = true; recog.interimResults = true; recog.lang = 'en-US';
+          recog.onstart  = () => { armSilence(); };
+          recog.onresult = (e) => {
+            gVoice.energy = 1;   // make the bars jump when it actually hears you
+            let interim = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              const tr = e.results[i][0].transcript;
+              if (e.results[i].isFinal) finalText += tr + ' '; else interim += tr;
+            }
+            setText(compose(interim));
+            armSilence();
+          };
+          recog.onerror = (e) => {
+            const err = e && e.error;
+            if (err === 'not-allowed' || err === 'service-not-allowed') { setRecErr('Microphone is blocked. Allow mic access, then tap the mic again.'); endSession(); }
+            else if (err === 'audio-capture') { setRecErr('No microphone found.'); endSession(); }
+            else if (err === 'network') setRecErr('Voice needs a connection. Check your internet.');
+            // 'no-speech' / 'aborted' ignored — onend decides whether to restart
+          };
+          recog.onend = () => {
+            if (recRef.current !== recog) return;
+            recRef.current = null;
+            // Continuous mode ends itself on pauses; while the user is still listening, restart so
+            // dictation keeps flowing. The silence timer is what actually ends the session.
+            if (listenRef.current) setTimeout(() => { if (listenRef.current) startSR(); }, 120);
+          };
+          recRef.current = recog;
+          try { recog.start(); } catch(e){ /* start can throw if called too fast; onend restart covers it */ }
+        };
+        armSilence();
+        startSR();
+      };
+      const toggleVoice = (fieldId, getBase, setText) => { if (recKey === fieldId) endSession(); else startVoice(fieldId, getBase, setText); };
+      const hasContent = draft.workout||draft.affBecoming||draft.affLearning||draft.affIHave||draft.anticipation||draft.emotion||draft.biggestDistraction||draft.biggestWin||draft.biggestLesson||draft.quoteVault||draft.gratitude.some(x=>x)||draft.accomplishment.some(x=>x)||draft.top3.some(x=>x);
+
+      // ── Weapon 3: build today's entry object (auto-save + Save Journal share this) ──
+      const buildUpdated = (extra) => ({ ...entries, [today]: { ...existing, date:today, ...draft, ...(extra||{}), updatedAt:new Date().toISOString(), createdAt: existing.createdAt || new Date().toISOString() } });
+
+      // ── Weapon 3: silent auto-save (background; no "Saving…" — only warns on failure) ──
+      const [autoErr, setAutoErr]         = useState('');
+      const [completeMsg, setCompleteMsg] = useState('');
+      const autoTimer  = useRef(null);
+      const skipFirst  = useRef(true);
+      useEffect(() => {
+        if (skipFirst.current) { skipFirst.current = false; return; }
+        if (!hasContent) return;
+        if (autoTimer.current) clearTimeout(autoTimer.current);
+        autoTimer.current = setTimeout(() => {
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) { setAutoErr('Offline. Changes will sync when connected.'); return; }
+          try {
+            Promise.resolve(onSave(buildUpdated()))
+              .then(() => { if (typeof navigator==='undefined' || navigator.onLine !== false) setAutoErr(''); })
+              .catch(() => setAutoErr('Unable to save. Retrying…'));
+          } catch(e) { setAutoErr('Unable to save. Retrying…'); }
+        }, 1200);
+        return () => { if (autoTimer.current) clearTimeout(autoTimer.current); };
+      }, [draft]);
+      useEffect(() => {
+        const goOn  = () => { setAutoErr(''); if (hasContent) { try { onSave(buildUpdated()); } catch(e){} } };
+        const goOff = () => setAutoErr('Offline. Changes will sync when connected.');
+        window.addEventListener('online', goOn); window.addEventListener('offline', goOff);
+        return () => { window.removeEventListener('online', goOn); window.removeEventListener('offline', goOff); };
+      });
+
+      // ── Weapon 3: SAVE JOURNAL (completion ritual) ──
+      const handleSave = async () => {
+        if (!hasContent) return;
+        setSaving(true);
+        const now = new Date();
+        try { await onSave(buildUpdated({ complete:true, completedAt: now.toISOString() })); setAutoErr(''); } catch(e){}
+        setSaving(false); setSaved(true); setTimeout(()=>setSaved(false), 2600);
+        const hh = now.getHours(), mm = String(now.getMinutes()).padStart(2,'0');
+        const ampm = hh >= 12 ? 'PM' : 'AM', h12 = ((hh + 11) % 12) + 1;
+        setCompleteMsg(`${h12}:${mm} ${ampm}`);
+        setTimeout(() => setCompleteMsg(''), 2600);
+      };
+
+      const dt = new Date();
+      const dayName = DAYS[dt.getDay()], moName = MONTHS[dt.getMonth()], yr = dt.getFullYear(), dayNum = dt.getDate();
+      const inp = { width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(230,201,140,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const ta = { ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
+      const stat = (label, v) => (<div style={{ flex:1, textAlign:'center', minWidth:0 }}><div style={{ fontSize:17, fontWeight:800, color:'#fff', whiteSpace:'nowrap' }}>{v}</div><div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div></div>);
+      const field = (label, key, multi) => (
+        <div style={{ marginBottom:38 }} key={key}>
+          <Label>{label}</Label>
+          <div style={{ position:'relative' }}>
+            {multi
+              ? <textarea value={draft[key]||''} onChange={e=>upd(key,e.target.value)} rows={2} style={{ ...ta, paddingLeft:44 }} />
+              : <input value={draft[key]||''} onChange={e=>upd(key,e.target.value)} style={{ ...inp, paddingLeft:44 }} />}
+            <MicButton multi={multi} active={recKey===key} onClick={()=>toggleVoice(key, ()=>draft[key]||'', t=>upd(key,t))} />
+          </div>
+        </div>
+      );
+      const numRow = (key, i) => (
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={key+i}>
+          <span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span>
+          <div style={{ position:'relative', flex:1 }}>
+            <input value={(draft[key]||[])[i]||''} onChange={e=>updArr(key,i,e.target.value)} style={{ ...inp, width:'100%', paddingLeft:44 }} />
+            <MicButton active={recKey===key+i} onClick={()=>toggleVoice(key+i, ()=>(draft[key]||[])[i]||'', t=>updArr(key,i,t))} />
+          </div>
+        </div>
+      );
+
+      return (
+        <div style={{ padding:'18px 20px' }}>
+          {/* Weapon 3: silent auto-save warning (only on failure/offline) */}
+          {autoErr && (
+            <div style={{ position:'fixed', left:'50%', bottom:24, transform:'translateX(-50%)', zIndex:10001,
+              maxWidth:'88%', background:'#1a1207', border:'1px solid rgba(230,201,140,0.55)', color:'#e8ddc8',
+              padding:'10px 15px', borderRadius:10, fontSize:12.5, lineHeight:1.4, textAlign:'center',
+              boxShadow:'0 6px 24px rgba(0,0,0,.6)' }}>
+              {autoErr}
+            </div>
+          )}
+
+          {/* Weapon 3: SAVE JOURNAL completion popup (fades ~2.6s) */}
+          {completeMsg && (
+            <div style={{ position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', zIndex:10002, pointerEvents:'none' }}>
+              <div style={{ background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', borderRadius:16, padding:'26px 38px', textAlign:'center', boxShadow:'0 14px 44px rgba(0,0,0,.7)', animation:'mpsToastIn .25s ease' }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:7, color:NAVYL, fontSize:13, fontWeight:700, letterSpacing:'0.06em', marginBottom:12 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Saved {completeMsg}
+                </div>
+                <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:24, fontWeight:800, color:'#f3e8cf', letterSpacing:'0.02em', marginBottom:6 }}>Journal Complete</div>
+                <div style={{ fontSize:13, color:'#8a8172' }}>See you tomorrow.</div>
+              </div>
+            </div>
+          )}
+
+          {/* Weapon 2: voice error popup */}
+          {recErr && (
+            <div style={{ position:'fixed', left:'50%', bottom:24, transform:'translateX(-50%)', zIndex:10001,
+              maxWidth:'88%', background:'#1a1207', border:'1px solid rgba(201,160,32,0.6)', color:'#f1e7c8',
+              padding:'11px 16px', borderRadius:10, fontSize:12.5, lineHeight:1.4, textAlign:'center',
+              boxShadow:'0 6px 24px rgba(0,0,0,.6)', animation:'mpsToastIn .2s ease' }}>
+              {recErr}
+            </div>
+          )}
+
+          {/* Date header */}
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:32, fontWeight:800, color:'#fff', lineHeight:1.05 }}>{dayName.toUpperCase()}</div>
+            <div style={{ color:'#6b7280', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:600, marginTop:3 }}>{moName} {dayNum}, {yr}</div>
+          </div>
+
+          {/* Weapon 5: Premium Light / Intense toggle */}
+          {__PREMIUM && (
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
+              <div style={{ display:'inline-flex', background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:3, gap:3 }}>
+                {[['light','Light'],['intense','Intense']].map(([m,label]) => (
+                  <button key={m} onClick={()=>setModePersist(m)} style={{
+                    padding:'6px 18px', borderRadius:8, border:'none', cursor:'pointer',
+                    fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:11, fontWeight:800, letterSpacing:'0.1em', textTransform:'uppercase',
+                    background: mode===m ? NAVYL : 'transparent', color: mode===m ? '#1a1206' : '#8a8f98', transition:'all .15s'
+                  }}>{label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Weapon 1: Daily quote */}
+          <div style={{ display:'flex', alignItems:'flex-start', gap:9, margin:'0 2px 22px', padding:'10px 13px', background:'rgba(201,160,32,0.05)', border:`1px solid ${BRG}`, borderRadius:9 }}>
+            <span style={{ color:GOLD, fontSize:18, lineHeight:1, fontFamily:'Georgia, serif', marginTop:-2 }}>&ldquo;</span>
+            <span style={{ color:'#cdb56a', fontSize:12.5, fontStyle:'italic', lineHeight:1.5, fontFamily:"'Playfair Display', Georgia, serif" }}>{quoteOfDay()}<span style={{ color:GOLD, fontSize:18, fontStyle:'normal', fontFamily:'Georgia, serif', verticalAlign:'-3px', marginLeft:3 }}>&rdquo;</span></span>
+          </div>
+
+          {/* Auto-pulled day stats */}
+          <div data-tour="dash" style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 14px', marginBottom:34 }}>
+            <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>
+            <div style={{ display:'flex', gap:6, marginBottom:10 }}>
+              {stat('MRN', A?A.mrn+'/5':'—')}{stat('WRK', A?A.wrk+'/5':'—')}{stat('NGT', A?A.ngt+'/5':'—')}{stat('DAY', A?A.dayTotal+'/15':'—')}
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              {stat('Wake', A?A.avgWake:'—')}{stat('Sleep', A?A.avgSleep:'—')}{stat('Spent', A?ciMoney(A.spending):'—')}
+            </div>
+          </div>
+
+          {/* Weapon 1: Today's Biggest Win — prominent tan banner, deep 45° slanted ends */}
+          <div data-tour="win" style={{ position:'relative', marginBottom:42, filter:'drop-shadow(0 5px 14px rgba(230,201,140,0.16))' }}>
+            <div style={{ position:'absolute', inset:0, background:'rgba(230,201,140,0.85)', clipPath:'polygon(0 0, 100% 0, calc(100% - 36px) 100%, 36px 100%)' }} />
+            {/* inner dark layer extends past the TOP (top:-1) so no tan top edge shows — only the 45° sides + bottom outline remain */}
+            <div style={{ position:'absolute', top:-1, left:2.5, right:2.5, bottom:2.5, background:'linear-gradient(135deg,#1a160d,#0e0c0a)', clipPath:'polygon(0 0, 100% 0, calc(100% - 36px) 100%, 36px 100%)' }} />
+            <div style={{ position:'relative', padding:'7px 52px 14px' }}>
+              <div style={{ textAlign:'center' }}>
+                <Label style={{ display:'inline-flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <TrophyIcon size={15} color={NAVYL} />Today's Biggest Win
+                </Label>
+              </div>
+              <div style={{ position:'relative' }}>
+                <input value={draft.biggestWin} onChange={e=>upd('biggestWin',e.target.value)}
+                  placeholder="The headline of your day"
+                  style={{ width:'100%', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(230,201,140,0.45)', borderRadius:8, padding:'12px 44px', color:'#f3e8cf', fontSize:15, fontWeight:500, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:'#e6c98c', textAlign:'center' }} />
+                <MicButton active={recKey==='biggestWin'} onClick={()=>toggleVoice('biggestWin', ()=>draft.biggestWin||'', t=>upd('biggestWin',t))} />
+              </div>
+            </div>
+          </div>
+
+          {/* Weapon 1: body indented to start at the bottom point of the Win banner's left 45° slant */}
+          <div style={{ paddingLeft:36 }}>
+          {!isLight && <div data-tour="mic">{field('Workout', 'workout')}</div>}
+
+          {!isLight && (
+          <div style={{ marginBottom:38 }}>
+            <Label>Gratitude</Label>
+            {numRow('gratitude',0)}{numRow('gratitude',1)}{numRow('gratitude',2)}
+          </div>
+          )}
+
+          {!isLight && (
+          <div style={{ marginBottom:38 }}>
+            <Label>Accomplishments</Label>
+            {numRow('accomplishment',0)}{numRow('accomplishment',1)}{numRow('accomplishment',2)}
+          </div>
+          )}
+
+          {!isLight && (
+          <div style={{ marginBottom:38 }}>
+            <Label>Affirmation</Label>
+            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affBecoming} onChange={e=>upd('affBecoming',e.target.value)} placeholder="Becoming…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affBecoming'} onClick={()=>toggleVoice('affBecoming', ()=>draft.affBecoming||'', t=>upd('affBecoming',t))} /></div>
+            <div style={{ position:'relative', marginBottom:7 }}><input value={draft.affLearning} onChange={e=>upd('affLearning',e.target.value)} placeholder="Learning…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affLearning'} onClick={()=>toggleVoice('affLearning', ()=>draft.affLearning||'', t=>upd('affLearning',t))} /></div>
+            <div style={{ position:'relative' }}><input value={draft.affIHave} onChange={e=>upd('affIHave',e.target.value)} placeholder="I Have…" style={{ ...inp, paddingLeft:44 }} /><MicButton active={recKey==='affIHave'} onClick={()=>toggleVoice('affIHave', ()=>draft.affIHave||'', t=>upd('affIHave',t))} /></div>
+          </div>
+          )}
+
+          {!isLight && field('Anticipation', 'anticipation', true)}
+          {field('Emotion', 'emotion')}
+          {!isLight && field('Biggest Distraction', 'biggestDistraction', true)}
+
+          {/* Weapon 1: Reflection section */}
+          {!isLight && (
+          <div style={{ display:'flex', alignItems:'center', gap:12, margin:'6px 0 26px' }}>
+            <div style={{ flex:1, height:1, background:BR }} />
+            <span style={{ color:'#6b7280', fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase', fontWeight:700 }}>Reflection</span>
+            <div style={{ flex:1, height:1, background:BR }} />
+          </div>
+          )}
+
+          {!isLight && field('Biggest Lesson', 'biggestLesson', true)}
+
+          <div style={{ marginBottom:38 }}>
+            <Label>Tomorrow's Top 3</Label>
+            {numRow('top3',0)}{numRow('top3',1)}{numRow('top3',2)}
+            <div style={{ color:'#6b7280', fontSize:11.5, marginTop:8, fontStyle:'italic' }}>Choose only your three highest-impact priorities.</div>
+          </div>
+
+          {!isLight && field('Quote / Idea Vault', 'quoteVault', true)}
+
+          {/* Weapon 1: Daily Discipline Score slider */}
+          <div data-tour="disc" style={{ marginBottom:38 }}>
+            <Label>Daily Discipline Score</Label>
+            <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'18px 16px 16px' }}>
+              <div style={{ color:'#d1d5db', fontSize:13.5, fontWeight:600, textAlign:'center', marginBottom:14 }}>How disciplined was I today?</div>
+              <div style={{ textAlign:'center', marginBottom:14 }}>
+                <span style={{ color:GOLD, fontSize:34, fontWeight:800, lineHeight:1 }}>{draft.disciplineScore}</span>
+                <span style={{ color:'#6b7280', fontSize:16, fontWeight:600 }}> / 10</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <span style={{ color:'#6b7280', fontSize:12, fontWeight:700, width:12, textAlign:'center' }}>0</span>
+                <input className="mps-disc" type="range" min={0} max={10} step={1}
+                  value={draft.disciplineScore}
+                  onChange={e=>upd('disciplineScore', parseInt(e.target.value,10))} style={{ flex:1 }} />
+                <span style={{ color:'#6b7280', fontSize:12, fontWeight:700, width:14, textAlign:'center' }}>10</span>
+              </div>
+              <div style={{ color:'#6b7280', fontSize:11.5, marginTop:13, textAlign:'center' }}>Did I keep the promises I made to myself today?</div>
+            </div>
+          </div>
+          </div>{/* end indented body */}
+
+          <button onClick={handleSave} disabled={!hasContent||saving} style={{
+            width:'100%', padding:'14px', marginTop:8,
+            background: saved ? 'rgba(150,150,150,0.12)' : (hasContent&&!saving) ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#7a5d22'},${NAVY})` : C1,
+            border: saved ? `1px solid ${NAVY}` : 'none', borderRadius:10, color: saved ? NAVYL : '#fff',
+            fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em',
+            cursor: hasContent&&!saving ? 'pointer' : 'default', transition:'all 0.3s'
+          }}>
+            {saved ? (<span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>SAVED</span>) : saving ? 'SAVING…' : 'SAVE JOURNAL'}
+          </button>
+        </div>
+      );
+    }
+
+    // ── HISTORY VIEW ───────────────────────────────────────────────
+    function HistoryView({ entries }) {
+      const now = new Date();
+      const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const [selMonth, setSelMonth] = useState(curM);
+      const [expanded, setExpanded] = useState(null);
+
+      const __allDatesRaw = Object.keys(entries).sort((a,b) => b.localeCompare(a));
+      // 60-day history cap for Elite (Premium sees all; Core has Journal locked entirely).
+      const allDates   = __PREMIUM ? __allDatesRaw : __allDatesRaw.filter(d => d >= HISTORY_CAP_CUTOFF);
+      const capHidden  = __allDatesRaw.length - allDates.length;
+      const allMonths  = [...new Set(allDates.map(d => monthKey(d)))].sort((a,b) => b.localeCompare(a));
+      const monthDates = allDates.filter(d => monthKey(d) === selMonth);
+
+      return (
+        <div style={{ padding:'18px 20px' }}>
+          {/* Month pills */}
+          <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:4, marginBottom:16 }}>
+            {allMonths.length === 0 && <div style={{ color:'#374151', fontSize:12 }}>No entries yet</div>}
+            {allMonths.map(m => (
+              <button key={m} onClick={() => setSelMonth(m)} style={{
+                flexShrink:0, padding:'5px 11px',
+                background: selMonth===m ? 'rgba(150,150,150,0.14)' : C1,
+                border:`1px solid ${selMonth===m ? NAVY : BR}`,
+                borderRadius:6, color: selMonth===m ? NAVYL : '#374151',
+                fontSize:10, fontWeight:700, letterSpacing:'0.06em', cursor:'pointer'
+              }}>{monthLbl(m)}</button>
+            ))}
+          </div>
+
+          {capHidden > 0 && (
+            <div style={{ textAlign:'center', padding:'14px 18px', marginBottom:16, background:'rgba(201,160,32,0.08)', border:'1px solid rgba(201,160,32,0.35)', borderRadius:12 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'#C9A020', letterSpacing:'0.04em' }}>Showing your last 60 days</div>
+              <div style={{ fontSize:11, color:'#9a9a9a', marginTop:4, lineHeight:1.5 }}>Upgrade to <b style={{ color:'#C9A020' }}>Premium</b> to revisit your full journal.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', marginTop:8, padding:'7px 18px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:11, letterSpacing:'0.04em', borderRadius:8, textDecoration:'none' }}>↑ Unlock full history</a>
+            </div>
+          )}
+
+          {monthDates.length === 0
+            ? <div style={{ textAlign:'center', padding:'34px 18px' }}><div style={{ fontSize:30, marginBottom:8 }}>📓</div><div style={{ fontSize:15, fontWeight:700, color:'#e8e4df', marginBottom:4 }}>No entries this month</div><div style={{ fontSize:13, color:'#8a8276', marginBottom:16 }}>A few honest lines is all it takes.</div><button onClick={() => { const b=[...document.querySelectorAll('button')].find(x=>/^write$/i.test((x.textContent||'').trim())); if(b)b.click(); }} style={{ padding:'11px 20px', borderRadius:10, border:'1px solid #C9A020', background:'rgba(201,160,32,0.14)', color:'#C9A020', fontWeight:700, fontSize:13, cursor:'pointer' }}>Write your first entry →</button></div>
+            : monthDates.map(dateStr => {
+                const e = entries[dateStr] || {};
+                const [yr,mo,dd] = dateStr.split('-');
+                const dt = new Date(+yr,+mo-1,+dd);
+                const lbl = DAYS[dt.getDay()]+', '+MONTHS[dt.getMonth()]+' '+dd;
+                const isOpen = expanded === dateStr;
+
+                return (
+                  <div key={dateStr} style={{ marginBottom:10 }}>
+                    <button onClick={() => setExpanded(isOpen ? null : dateStr)} style={{
+                      width:'100%', background: isOpen ? 'rgba(150,150,150,0.08)' : C1,
+                      border:`1px solid ${isOpen ? BRB : BR}`, borderRadius: isOpen ? '12px 12px 0 0' : 12,
+                      padding:'13px 15px', cursor:'pointer', textAlign:'left',
+                      display:'flex', alignItems:'center', gap:12, transition:'all 0.2s'
+                    }}>
+                      <div style={{
+                        width:38, height:38, borderRadius:8, background:'rgba(150,150,150,0.07)',
+                        border:`1px solid ${BR}`, display:'flex', flexDirection:'column',
+                        alignItems:'center', justifyContent:'center', flexShrink:0
+                      }}>
+                        <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:18, color:NAVYL, lineHeight:1 }}>{dd}</div>
+                        <div style={{ fontSize:8, color:'#374151', fontWeight:600, letterSpacing:'0.06em' }}>{MONTHS[+mo-1].toUpperCase()}</div>
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ color:'#d1d5db', fontSize:13, fontWeight:500 }}>{lbl}</div>
+                        <div style={{ color:'#4b5563', fontSize:11, marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          {(() => { const g=Array.isArray(e.gratitude)?e.gratitude.filter(Boolean)[0]:(typeof e.gratitude==='string'?e.gratitude:''); const p=e.biggestWin||e.workout||g||e.emotion||e.entry||''; return p ? (p.slice(0,60)+(p.length>60?'…':'')) : 'Tap to view'; })()}
+                        </div>
+                      </div>
+                      <span style={{ color:'#374151', fontSize:12 }}>{isOpen?'▲':'▼'}</span>
+                    </button>
+
+                    {isOpen && (
+                      <div style={{ background:'rgba(8,8,8,0.8)', border:`1px solid ${BRB}`, borderTop:'none', borderRadius:'0 0 12px 12px', padding:'16px 15px' }}>
+                        {(() => {
+                          const g = Array.isArray(e.gratitude) ? e.gratitude.filter(Boolean) : (typeof e.gratitude==='string' && e.gratitude ? [e.gratitude] : []);
+                          const acc = Array.isArray(e.accomplishment) ? e.accomplishment.filter(Boolean) : [];
+                          const aff = [e.affBecoming, e.affLearning, e.affIHave].some(Boolean);
+                          const text = (label, val) => val ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label><div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{val}</div></div>) : null;
+                          const list = (label, items) => items.length ? (<div style={{ marginBottom:14 }} key={label}><Label>{label}</Label>{items.map((x,i)=>(<div key={i} style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{i+1}</span>{x}</div>))}</div>) : null;
+                          const affLine = (k,v) => v ? (<div style={{ color:'#d1d5db', fontSize:13, lineHeight:1.6, marginBottom:4 }} key={k}><span style={{ color:NAVYL, fontWeight:700, marginRight:8 }}>{k}</span>{v}</div>) : null;
+                          const top3 = Array.isArray(e.top3) ? e.top3.filter(Boolean) : [];
+                          const distraction = e.biggestDistraction || e.wastedTime;
+                          const anyNew = e.biggestWin||e.workout||g.length||acc.length||aff||e.anticipation||e.emotion||distraction||e.biggestLesson||top3.length||e.quoteVault||(typeof e.disciplineScore==='number');
+                          const anyOld = e.entry||e.wins||e.scripture;
+                          return (<>
+                            {text("Today's Biggest Win", e.biggestWin)}
+                            {text('Workout', e.workout)}
+                            {list('Gratitude', g)}
+                            {list('Accomplishments', acc)}
+                            {aff && (<div style={{ marginBottom:14 }}><Label>Affirmation</Label>{affLine('Becoming', e.affBecoming)}{affLine('Learning', e.affLearning)}{affLine('I Have', e.affIHave)}</div>)}
+                            {text('Anticipation', e.anticipation)}
+                            {text('Emotion', e.emotion)}
+                            {text('Biggest Distraction', distraction)}
+                            {text('Biggest Lesson', e.biggestLesson)}
+                            {list("Tomorrow's Top 3", top3)}
+                            {text('Quote / Idea Vault', e.quoteVault)}
+                            {(typeof e.disciplineScore==='number') && text('Daily Discipline Score', e.disciplineScore + ' / 10')}
+                            {text('Entry', e.entry)}
+                            {text('Win', e.wins)}
+                            {text('Scripture', e.scripture)}
+                            {!anyNew && !anyOld && (<div style={{ color:'#6b7280', fontSize:12 }}>No details saved for this day.</div>)}
+                          </>);
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+          }
+        </div>
+      );
+    }
+
+    // ── INSIGHTS VIEW ──────────────────────────────────────────────
+    function InsightsView({ entries, tdOverride }) {
+      const allDates = Object.keys(entries).sort((a,b) => a.localeCompare(b));
+      const total    = allDates.length;   // Total Journal Entries — only grows
+
+      // ── Weapon 4: load tracker data + run the Performance Insights engine ──
+      const [ptd, setPtd] = useState(tdOverride || null);
+      const [ptdLoading, setPtdLoading] = useState(!tdOverride);
+      useEffect(() => { if (tdOverride) { setPtd(tdOverride); setPtdLoading(false); return; } let on=true; loadTrackerData().then(d=>{ if(on){ setPtd(d); setPtdLoading(false); } }).catch(()=>{ if(on) setPtdLoading(false); }); return ()=>{on=false;}; }, [tdOverride]);
+      const perf = ptdLoading ? null : computePerf(entries, ptd);
+
+      // ── Weapon 3: Journal Consistency % (days journaled ÷ days available; no streaks, no reset) ──
+      let consistency = 0;
+      if (total) {
+        const [fy,fm,fd] = allDates[0].split('-').map(Number);
+        const first  = new Date(fy, fm-1, fd);
+        const today0 = new Date(); today0.setHours(0,0,0,0);
+        const span   = Math.max(1, Math.round((today0 - first)/86400000) + 1);
+        consistency  = Math.min(100, Math.round(total / span * 100));
+      }
+
+      // Streak calc
+      let streak     = 0;
+      let d          = new Date();
+      while (true) {
+        const key = ciFmt(d);
+        if (entries[key]) { streak++; d.setDate(d.getDate()-1); }
+        else break;
+      }
+
+      // Longest streak
+      let longest = 0, cur = 0;
+      allDates.forEach((dt, i) => {
+        if (i === 0) { cur = 1; return; }
+        const [py,pm,pd] = allDates[i-1].split('-');
+        const [cy,cm,cd] = dt.split('-');
+        const prev = new Date(+py,+pm-1,+pd);
+        const curr = new Date(+cy,+cm-1,+cd);
+        const diff = (curr - prev) / 86400000;
+        if (diff === 1) { cur++; longest = Math.max(longest, cur); }
+        else { cur = 1; }
+      });
+      longest = Math.max(longest, cur, streak);
+
+      // Top feeling (from the emotion field on entries)
+      const emoCount = {};
+      allDates.forEach(d => { const ee=entries[d]||{}; const em=(ee.emotion||'').trim(); if(em) emoCount[em.toLowerCase()]=(emoCount[em.toLowerCase()]||0)+1; });
+      const topEmo = Object.entries(emoCount).sort((a,b)=>b[1]-a[1])[0];
+      const topFeeling = topEmo ? (topEmo[0].charAt(0).toUpperCase()+topEmo[0].slice(1)) : '—';
+
+      // This month
+      const now  = new Date();
+      const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const thisMonthCount = allDates.filter(d=>d.startsWith(curM)).length;
+      const daysInMonth    = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+      const daysSoFar      = now.getDate();
+
+      // Last 30 days heatmap
+      const last30 = Array.from({length:30},(_,i)=>{
+        const dt = new Date(); dt.setDate(dt.getDate()-29+i);
+        const key = ciFmt(dt);
+        return { key, has: !!entries[key], day: dt.getDate() };
+      });
+
+      return (
+        <div style={{ padding:'18px 20px' }}>
+
+          {/* Weapon 4: Performance Insights engine */}
+          <div data-tour="perf" style={{ textAlign:'center', marginBottom:16 }}>
+            <div style={{ fontSize:20, fontWeight:800, color:NAVYL, letterSpacing:'0.08em' }}>PERFORMANCE INSIGHTS</div>
+            <div style={{ fontSize:11.5, color:'#6b7280', marginTop:4 }}>What behaviors produce your best days</div>
+          </div>
+
+          {ptdLoading ? (
+            <div style={{ textAlign:'center', padding:'24px 0', color:NAVYL, fontSize:13 }}>Analyzing your data…</div>
+          ) : !perf.ready ? (
+            <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:14, padding:'22px 18px', textAlign:'center', marginBottom:18 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'#e8e4df', marginBottom:6 }}>Building your Performance Insights</div>
+              <div style={{ fontSize:12.5, color:'#8a8276', lineHeight:1.6, maxWidth:330, margin:'0 auto 14px' }}>Journal and score a few more days. MPS will connect your sleep, wake time, workouts, habits and spending to your Daily Discipline Score.</div>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10 }}>
+                <div style={{ flex:'0 0 160px', height:6, background:'#26221a', borderRadius:6, overflow:'hidden' }}>
+                  <div style={{ width:`${Math.min(100, Math.round(perf.days/perf.need*100))}%`, height:'100%', background:NAVYL }} />
+                </div>
+                <div style={{ fontSize:12, color:NAVYL, fontWeight:700 }}>{perf.days}/{perf.need} days</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginBottom:18 }}>
+              {/* Growth Score */}
+              <div style={{ background:`linear-gradient(135deg,${C1},#0d0c10)`, border:`1px solid ${BRB}`, borderRadius:14, padding:'16px 14px', textAlign:'center', marginBottom:14 }}>
+                <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:38, color:NAVYL, lineHeight:1 }}>{perf.growthScore}</div>
+                <div style={{ color:'#6b7280', fontSize:9.5, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, marginTop:7 }}>Growth Score</div>
+                {perf.trend!=null && <div style={{ fontSize:10.5, marginTop:4, color: perf.trend>=0?'#8fbf8f':'#c98a8a' }}>{perf.trend>=0?'▲':'▼'} {Math.abs(perf.trend)} vs last week</div>}
+              </div>
+
+              {/* Correlation insights */}
+              {perf.insights.length>0 && (
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ color:NAVYL, fontSize:11, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:8 }}>What drives your days</div>
+                  {perf.insights.map(i=>(
+                    <div key={i.key} style={{ display:'flex', gap:11, background:C1, border:`1px solid ${BR}`, borderRadius:11, padding:'12px 13px', marginBottom:8 }}>
+                      <div style={{ width:3, borderRadius:3, background: i.good?NAVYL:'#a86b6b', flexShrink:0 }} />
+                      <div style={{ color:'#d1d5db', fontSize:12.5, lineHeight:1.55 }}>{i.text}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* AI Recommendation */}
+              {perf.best.length>0 && (
+                <div style={{ background:'linear-gradient(135deg, rgba(230,201,140,0.10), rgba(230,201,140,0.02))', border:`1px solid ${BRB}`, borderRadius:14, padding:'16px 15px', marginBottom:10 }}>
+                  <div style={{ color:NAVYL, fontSize:11, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:800, marginBottom:8 }}>AI Recommendation</div>
+                  <div style={{ color:'#e8ddc8', fontSize:13, lineHeight:1.6 }}>Your highest-performing days share {perf.best.length>1?'these behaviors':'this behavior'}:</div>
+                  <div style={{ marginTop:8 }}>
+                    {perf.best.map((b,idx)=>(<div key={idx} style={{ display:'flex', gap:8, alignItems:'center', color:'#f3e8cf', fontSize:12.5, marginBottom:4 }}><span style={{ color:NAVYL, fontWeight:800 }}>{idx+1}</span>{b}</div>))}
+                  </div>
+                </div>
+              )}
+
+              {/* Blind Spot */}
+              {perf.blindspot && (
+                <div style={{ background:C1, border:'1px solid rgba(168,107,107,0.35)', borderRadius:14, padding:'14px 15px', marginBottom:10 }}>
+                  <div style={{ color:'#c98a8a', fontSize:11, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:800, marginBottom:6 }}>Blind Spot</div>
+                  <div style={{ color:'#d1d5db', fontSize:12.5, lineHeight:1.55 }}>{perf.blindspot.text}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ height:1, background:BR, margin:'4px 0 18px' }} />
+
+          {/* Weapon 3: Consistency % + Total Entries */}
+          <div style={{ display:'flex', gap:12, marginBottom:14 }}>
+            <div style={{ flex:1, background:C1, border:`1px solid ${BR}`, borderRadius:14, padding:'16px 14px', textAlign:'center' }}>
+              <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:34, color:NAVYL, lineHeight:1 }}>{consistency}%</div>
+              <div style={{ color:'#6b7280', fontSize:9.5, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, marginTop:7 }}>Journal Consistency</div>
+              <div style={{ color:'#4b5563', fontSize:10, marginTop:2 }}>reward returning, not perfection</div>
+            </div>
+            <div style={{ flex:1, background:C1, border:`1px solid ${BR}`, borderRadius:14, padding:'16px 14px', textAlign:'center' }}>
+              <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:34, color:'#fff', lineHeight:1 }}>{total}</div>
+              <div style={{ color:'#6b7280', fontSize:9.5, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, marginTop:7 }}>Total Journal Entries</div>
+              <div style={{ color:'#4b5563', fontSize:10, marginTop:2 }}>every entry counts, forever</div>
+            </div>
+          </div>
+
+          {/* Streak hero */}
+          <div style={{
+            background:`linear-gradient(135deg,${C1},#0d0c10)`,
+            border:`1px solid ${BRB}`, borderRadius:14, padding:'22px 20px',
+            marginBottom:14, textAlign:'center', position:'relative', overflow:'hidden'
+          }}>
+            <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'rgba(150,150,150,0.05)' }} />
+            <div style={{ color:'#374151', fontSize:9, letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:700, marginBottom:8 }}>Current Streak</div>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:72, color:'#fff', lineHeight:1 }}>{streak}</div>
+            <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, color:NAVYL, letterSpacing:'0.1em', marginTop:2 }}>
+              {streak === 1 ? 'DAY' : 'DAYS'}
+            </div>
+            {streak > 0 && (
+              <div style={{ marginTop:10, color:GOLD, fontSize:11, fontStyle:'italic', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
+                {streak >= 30 ? '"Consistency is the currency of mastery."' : streak >= 7 ? '"One week in. Keep going."' : '"Every day counts."'}
+              </div>
+            )}
+          </div>
+
+          {/* Stat grid */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:14 }}>
+            {[
+              { lbl:'Total Entries',    val:total },
+              { lbl:'Longest Streak',   val:longest + (longest===1?' Day':' Days') },
+              { lbl:'This Month',       val:`${thisMonthCount} / ${daysSoFar}` },
+              { lbl:'Top Feeling',      val:topFeeling },
+            ].map(s => (
+              <div key={s.lbl} style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:'12px 13px' }}>
+                <Label style={{ marginBottom:4 }}>{s.lbl}</Label>
+                <div style={{ fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:22, color:NAVYL }}>{s.val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 30-day heatmap */}
+          <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'15px', marginBottom:14 }}>
+            <Label>Last 30 Days</Label>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:10 }}>
+              {last30.map(({ key, has, day }) => (
+                <div key={key} title={key} style={{
+                  width:28, height:28, borderRadius:5,
+                  background: has ? `linear-gradient(135deg,${__GRAY?'#6b5618':'#7a5d22'},${NAVY})` : '#0e0e0e',
+                  border:`1px solid ${has ? NAVY : '#1a1a1a'}`,
+                  display:'flex', alignItems:'center', justifyContent:'center'
+                }}>
+                  <span style={{ fontSize:9, color: has ? '#fff' : '#2a2a2a', fontWeight:600 }}>{day}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // ── WEAPON 6: DEMO MODE ──────────────────────────────────────
+    // Builds ~18 days of realistic sample data IN MEMORY (entries + matching tracker
+    // data engineered so Performance Insights lights up). Never touches storage, so real
+    // data is safe; exiting the demo discards everything instantly.
+    function makeDemoData() {
+      const entries = {}, sleep = {}, habits = {}, workout = [], expenses = [];
+      const allHab = [...CI_BLOCKS.MRN, ...CI_BLOCKS.WRK, ...CI_BLOCKS.NGT];
+      const wins = ['Closed the client deal','Hit a squat PR','Finished the course module','Trained before sunrise','Shipped the landing page','Called mom, long overdue','Meal prepped the week','Read 40 pages before work','Cold plunge + gym done','Inbox zero by 9am','Deep work, zero distractions','Ran 5 miles','Wrote 1,000 words','Rebuilt the budget','Helped a teammate win','Meditated 20 minutes','No phone until noon','Planned the whole month'];
+      const emotions = ['Focused','Grateful','Driven','Calm','Tired','Proud','Locked in','Restless','Content','Energized'];
+      const lessons = ['Sleep is the multiplier.','Mornings decide the day.','Say no more often.','Small reps compound.','Protect deep work.'];
+      const workouts = ['Push day: bench, dips, shoulders','Pull day: rows, chin-ups, curls','Leg day: squats, RDLs, calves','Easy 5-mile run','Full-body circuit + core','Conditioning: sprint intervals'];
+      const accs = [['Shipped the feature','Cleared the inbox','Prepped tomorrow'],['Closed two deals','Called a client back','Read 30 pages'],['Trained fasted','Cooked dinner in','Journaled early'],['Fixed the budget','Deep work, 3 hours','Walked after dinner']];
+      const antic = ['The morning training block','Deep work with no phone','Dinner with the family','An early, quiet start','Finishing the project'];
+      const gratsets = [['My health','My family','This system'],['A roof and food','Work I care about','A clear mind'],['My training','Time to build','People who push me']];
+      const N = 18;
+      for (let i=N-1; i>=0; i--) {
+        const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+        const k = ciFmt(d);
+        const idx = N-1-i;                       // 0 (oldest) .. N-1 (today)
+        const q = (i>12) ? 'rough' : (i>6) ? 'med' : 'good';   // improves over time
+        let disc, wake, bed, workoutDone, habDone, spend, hour;
+        if (q==='good')      { disc=8+(idx%2); wake='05:15'; bed='21:15'; workoutDone=true;          habDone=allHab.length;                 spend=12+(idx%3)*6;  hour=6; }
+        else if (q==='med')  { disc=6+(idx%2); wake='06:45'; bed='23:00'; workoutDone=(idx%2===0);   habDone=Math.round(allHab.length*0.7); spend=35+(idx%3)*10; hour=9; }
+        else                 { disc=3+(idx%3); wake='08:30'; bed='02:30'; workoutDone=false;         habDone=Math.round(allHab.length*0.35);spend=90+(idx%3)*25; hour=21; }
+        disc = Math.min(10, disc);
+        const stamp = new Date(d); stamp.setHours(hour, 12, 0, 0);
+        entries[k] = { date:k, biggestWin:wins[idx%wins.length], emotion:emotions[idx%emotions.length],
+          workout: (q==='rough') ? '' : workouts[idx%workouts.length],
+          gratitude: gratsets[idx%gratsets.length], accomplishment: accs[idx%accs.length],
+          affBecoming:'Disciplined, calm, relentless', affLearning:'To say no without guilt', affIHave:'Everything I need to win today',
+          anticipation: antic[idx%antic.length],
+          biggestDistraction: q==='good' ? 'A few minutes of social scrolling' : 'Phone and social media',
+          biggestLesson: lessons[idx%lessons.length],
+          top3:['Train before work','Deep work block','Sleep by 10'], quoteVault:'Discipline equals freedom.',
+          disciplineScore:disc, complete:true, completedAt:stamp.toISOString(), updatedAt:stamp.toISOString(), createdAt:stamp.toISOString(), __demo:true };
+        sleep[k] = { wakeTime:wake, sleepTime:bed };
+        const hobj = {}; for (let h=0; h<habDone; h++) hobj[allHab[h]] = true; habits[k] = hobj;
+        if (workoutDone) workout.push({ date:k });
+        expenses.push({ date:k, item:'Purchase', amount:spend });
+      }
+      return { entries, td:{ habits, blocks:null, expenses, workout, sleep } };
+    }
+
+    // Guided spotlight walkthrough: auto-scrolls to each element, white outline highlight, auto-advances.
+    function DemoTour({ steps, setTab, onExit }) {
+      const [i, setI]       = useState(0);
+      const [shown, setShown] = useState(false);
+      const ringRef = useRef(null);
+      const noteRef = useRef(null);
+      const rafRef  = useRef(0);
+      const lastRect = useRef(null);   // last painted target rect (viewport coords, unpadded)
+      const step = steps[i];
+      const P = 8;
+
+      // Paint the spotlight + note to a rect IMPERATIVELY (via refs, not React state) so we can
+      // update every animation frame with zero re-renders → buttery.
+      const paint = (r) => {
+        lastRect.current = r;
+        const ring = ringRef.current;
+        if (ring) {
+          ring.style.top    = (r.top - P) + 'px';
+          ring.style.left   = (r.left - P) + 'px';
+          ring.style.width  = (r.width + 2*P) + 'px';
+          ring.style.height = (r.height + 2*P) + 'px';
+        }
+        const note = noteRef.current;
+        if (note) {
+          const below = (r.top + r.height + 170 < window.innerHeight);
+          note.style.top = (below ? Math.min(window.innerHeight - 170, r.top + r.height + P + 14)
+                                  : Math.max(14, r.top - P - 150)) + 'px';
+        }
+      };
+
+      useEffect(() => {
+        if (!step) return;
+        setTab(step.tab);
+        let cancelled = false, tries = 0;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = (t) => (t < 0.5) ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;   // easeInOutQuad
+        const run = (el) => {
+          const from = lastRect.current || el.getBoundingClientRect();   // glide FROM the previous highlight
+          const start = performance.now(), DUR = 667, TAIL = 322;   // 15% slower glide (Jeff's call)
+          setShown(true);
+          el.scrollIntoView({ block:'center', behavior:'smooth' });
+          const tick = () => {
+            if (cancelled) return;
+            const elapsed = performance.now() - start;
+            const to = el.getBoundingClientRect();      // element's LIVE position (it moves as we scroll)
+            if (elapsed < DUR) {
+              const e = ease(elapsed / DUR);
+              paint({ top:lerp(from.top,to.top,e), left:lerp(from.left,to.left,e),
+                      width:lerp(from.width,to.width,e), height:lerp(from.height,to.height,e) });
+            } else {
+              paint(to);                                // glue 1:1 to catch the tail of the smooth scroll
+            }
+            if (elapsed < DUR + TAIL) rafRef.current = requestAnimationFrame(tick);
+            else paint(el.getBoundingClientRect());     // final settle
+          };
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        const place = () => {
+          if (cancelled) return;
+          const el = document.querySelector(step.sel);
+          if (!el) { if (tries++ < 25) setTimeout(place, 80); return; }
+          run(el);
+        };
+        const t = setTimeout(place, step.tab ? 240 : 40);   // let a tab switch paint first
+        return () => { cancelled = true; clearTimeout(t); cancelAnimationFrame(rafRef.current); };
+      }, [i]);
+
+      // Gentle auto-advance once the highlight has landed.
+      useEffect(() => {
+        if (!step || !shown) return;
+        const t = setTimeout(() => { if (i < steps.length-1) setI(i+1); }, 5200);
+        return () => clearTimeout(t);
+      }, [i, shown]);
+
+      if (!step) return null;
+      const ghost = { background:'transparent', border:`1px solid ${BR}`, color:'#9aa0a8', borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:700, cursor:'pointer' };
+      const gold  = { background:'#e6c98c', border:'none', color:'#1a1206', borderRadius:8, padding:'7px 16px', fontSize:12, fontWeight:800, cursor:'pointer' };
+      // NOTE: top/left/width/height are set imperatively in paint() and intentionally OMITTED from
+      // these style props, so a React re-render (step change) never resets the animated position.
+      return (
+        <div style={{ position:'fixed', inset:0, zIndex:11000, pointerEvents:'none' }}>
+          <div ref={ringRef} style={{ position:'fixed', borderRadius:12, boxShadow:'0 0 0 9999px rgba(0,0,0,0.74)', border:'2px solid #fff', pointerEvents:'none', opacity: shown?1:0, transition:'opacity .28s ease', willChange:'top,left,width,height' }} />
+          <div ref={noteRef} style={{ position:'fixed', left:'50%', transform:'translateX(-50%)', width:'86%', maxWidth:360, pointerEvents:'auto',
+            background:'linear-gradient(135deg,#1a160d,#0e0c0a)', border:'1px solid rgba(230,201,140,0.5)', borderRadius:14, padding:'16px 18px', boxShadow:'0 12px 40px rgba(0,0,0,.7)', opacity: shown?1:0, transition:'opacity .28s ease' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
+              <div style={{ color:'#C9A020', fontFamily:"'Bebas Neue', sans-serif", fontSize:14, letterSpacing:'0.12em' }}>STEP {i+1} OF {steps.length}</div>
+              <button onClick={onExit} style={{ background:'none', border:'none', color:'#8a8f98', fontSize:12.5, cursor:'pointer' }}>Skip tour</button>
+            </div>
+            <div style={{ color:'#f3e8cf', fontSize:15, fontWeight:800, marginBottom:5 }}>{step.title}</div>
+            <div style={{ color:'#cbb48a', fontSize:12.5, lineHeight:1.55, marginBottom:12 }}>{step.body}</div>
+            <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+              {i>0 && <button onClick={()=>setI(i-1)} style={ghost}>Back</button>}
+              {i < steps.length-1 ? <button onClick={()=>setI(i+1)} style={gold}>Next</button> : <button onClick={onExit} style={gold}>Finish</button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── ROOT ───────────────────────────────────────────────────────
+    function JournalApp() {
+      const [tab,     setTab]     = useState('WRITE');
+      const [entries, setEntries] = useState({});
+      const [ready,   setReady]   = useState(false);
+
+      useEffect(() => { load().then(d => { setEntries(d); setReady(true); }).catch(() => setReady(true)); }, []);
+
+      const saveEntries = useCallback(async (updated) => {
+        setEntries(updated);
+        await save(updated);
+      }, []);
+
+      // ── Weapon 6: Demo Mode (in-memory only; never persisted) ──
+      const [demo, setDemo] = useState(null);   // null = off; else { entries, td }
+      const [tourOn, setTourOn] = useState(false);   // guided walkthrough (demo can outlive the tour)
+      const startDemo = () => { setDemo(makeDemoData()); setTourOn(true); setTab('WRITE'); };
+      const exitDemo  = () => { setDemo(null); setTourOn(false); setTab('WRITE'); };
+      // Expose the demo trigger so the HUB can launch it from its title-bar button (same-origin
+      // iframe, same pattern the hub uses for tours). The floating in-app button is removed.
+      useEffect(() => {
+        window.startJournalDemo = function () { setDemo(makeDemoData()); setTourOn(true); setTab('WRITE'); };
+        return function () { window.startJournalDemo = undefined; };
+      }, []);
+      const viewEntries = demo ? demo.entries : entries;
+      const viewSave    = demo ? ((updated)=>setDemo(d=>({ ...d, entries:updated }))) : saveEntries;
+      const viewTd      = demo ? demo.td : null;
+      const DEMO_STEPS  = [
+        { tab:'WRITE',    sel:'[data-tour="dash"]',                title:'Auto-filled from your trackers', body:'Sleep, wake time, habits and spending flow in from your other MPS trackers. No typing.' },
+        { tab:'WRITE',    sel:'[data-tour="win"]',                 title:"Today's Biggest Win",            body:'Every entry opens with the headline of your day.' },
+        { tab:'WRITE',    sel:'[data-tour="mic"]',                 title:'Voice entry',                    body:'See the mic on the left of every field? Tap it and just talk. It fills the box for you and stops when you pause.' },
+        { tab:'WRITE',    sel:'[data-tour="disc"]',                title:'Daily Discipline Score',         body:'End with one honest score. This single number powers your Performance Insights.' },
+        { tab:'INSIGHTS', sel:'[data-tour="perf"]',                title:'Performance Insights',           body:'MPS connects your behaviors to your best days, and coaches you on what to repeat.' },
+      ];
+
+      if (!ready) return (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'80vh' }}>
+          <div style={{ color:NAVY, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:16, letterSpacing:'0.1em' }}>LOADING...</div>
+        </div>
+      );
+
+      if (__CORE) return (
+        <div style={{ background:BG, minHeight:'100vh' }}>
+          <Nav />
+          <div style={{ textAlign:'center', padding:'80px 24px', maxWidth:'420px', margin:'0 auto' }}>
+            <div style={{ fontSize:'46px', marginBottom:'14px' }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div style={{ fontSize:'20px', fontWeight:800, color:'#f5f5f5', letterSpacing:'1px', marginBottom:'12px' }}>JOURNAL IS AN ELITE FEATURE</div>
+            <div style={{ fontSize:'14px', color:'#9a9a9a', lineHeight:1.6, marginBottom:'26px' }}>Private daily journaling, guided prompts, and mood tracking. Upgrade to Elite to unlock the journal — Premium unlocks the upgraded version.</div>
+            <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'14px 30px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:'14px', letterSpacing:'1px', borderRadius:'12px', textDecoration:'none' }}>↑ UPGRADE TO UNLOCK</a>
+          </div>
+        </div>
+      );
+
+      return (
+        <div style={{ background:BG, minHeight:'100vh' }}>
+          <Nav />
+
+          {/* ── Big Hero Card — matches Habits style, navy/gold theme ── */}
+          <div style={{ padding:'16px 20px 0' }}>
+            <div style={{
+              background: '#000000',
+              backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(150,150,150,0.20) 0%, rgba(150,150,150,0.06) 45%, transparent 75%)',
+              border: '3px solid transparent',
+              borderRadius: '22px',
+              padding: '38px 20px 28px',
+              textAlign: 'center',
+              marginBottom: '16px',
+              position: 'relative',
+              overflow: 'hidden',
+              backgroundClip: 'padding-box',
+              boxShadow: '0 0 0 1px rgba(0,0,0,1), 0 0 0 2px rgba(220,220,220,0.85), 0 0 0 3px rgba(120,120,120,0.6), 0 0 0 4px rgba(0,0,0,0.9), 0 0 28px rgba(150,150,150,0.22), 0 18px 42px rgba(0,0,0,0.95), inset 0 3px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.95)',
+            }}>
+              <div className="mps-logo-rsp" style={{
+                fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                fontWeight: 900, fontStyle: 'italic',
+                letterSpacing: '4px', lineHeight: 1,
+                background: __GRAY ? 'linear-gradient(180deg, #ffffff 0%, #f0f0f0 18%, #d4d4d4 40%, #C9A020 78%, #7a6212 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f3e6c6 18%, #e6c98c 38%, #b8923f 65%, #7a5d22 95%, #3a2c10 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.7))',
+              }}>MPS</div>
+              <div style={{ width: '70%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(150,150,150,0.6) 25%, rgba(201,160,32,0.8) 50%, rgba(150,150,150,0.6) 75%, transparent)', margin: '16px auto 14px' }} />
+              <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#c0c0c0', fontWeight: 400, marginBottom: '14px', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>MODULAR PERFORMANCE SYSTEMS</div>
+              <div style={{ fontSize: '20px', letterSpacing: '6px', color: GOLD, fontWeight: 700, display: 'flex', justifyContent: 'center', gap: '20px', fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
+                <span>MPS</span><span>JOURNAL</span>
+              </div>
+            </div>
+          </div>
+
+          <Tabs tab={tab} setTab={setTab} />
+          {tab==='WRITE'    && <WriteView    key={demo?'demo':'real'} entries={viewEntries} onSave={viewSave} tdOverride={viewTd} />}
+          {tab==='HISTORY'  && <HistoryView  key={demo?'demo':'real'} entries={viewEntries} />}
+          {tab==='INSIGHTS' && (__CORE && !demo ? (
+            <div style={{ textAlign:'center', padding:'48px 22px', background:C1, border:`1px solid ${BR}`, borderRadius:14, marginTop:8 }}>
+              <div style={{ fontSize:34, marginBottom:10 }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#f5f5f5', letterSpacing:1, marginBottom:8 }}>INSIGHTS ARE AN ELITE FEATURE</div>
+              <div style={{ fontSize:13, color:'#9a9a9a', lineHeight:1.6, marginBottom:20, maxWidth:300, marginLeft:'auto', marginRight:'auto' }}>Unlock mood trends, streaks, and writing patterns. Journaling stays free — upgrade to see the insights.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ UNLOCK WITH ELITE</a>
+            </div>
+          ) : <InsightsView key={demo?'demo':'real'} entries={viewEntries} tdOverride={viewTd} />)}
+          {tab==='CHECK-IN' && (__PREMIUM ? <CheckInView /> : (
+            <div style={{ textAlign:'center', padding:'48px 22px', background:C1, border:`1px solid ${BR}`, borderRadius:14, margin:'16px 20px' }}>
+              <div style={{ fontSize:34, marginBottom:10, color:NAVYL }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#f5f5f5', letterSpacing:1, marginBottom:8 }}>CHECK-IN IS A PREMIUM FEATURE</div>
+              <div style={{ fontSize:13, color:'#9a9a9a', lineHeight:1.6, marginBottom:20, maxWidth:300, marginLeft:'auto', marginRight:'auto' }}>Weekly &amp; monthly check-ins that auto-pull your habits, workouts, spending and sleep.</div>
+              <a href="/billing.html" target="_top" style={{ display:'inline-block', padding:'12px 26px', background:'#C9A020', color:'#0a0a0a', fontWeight:800, fontSize:13, letterSpacing:1, borderRadius:10, textDecoration:'none' }}>↑ Unlock with Premium</a>
+            </div>
+          ))}
+
+          {/* Weapon 6: Demo launcher lives in the HUB title bar now (see startJournalDemo) — no floating button. */}
+
+          {/* Weapon 6: Demo banner + guided tour */}
+          {demo && (
+            <div style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:10500, background:'linear-gradient(135deg,#1a160d,#0e0c0a)', borderTop:'1px solid rgba(230,201,140,0.5)', padding:'11px 16px calc(11px + env(safe-area-inset-bottom))', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+              <div style={{ color:'#cbb48a', fontSize:12, lineHeight:1.4 }}><b style={{ color:'#e6c98c', letterSpacing:'0.08em' }}>DEMO MODE</b> · sample data. Nothing here is saved.</div>
+              <button onClick={exitDemo} style={{ flexShrink:0, background:'#e6c98c', border:'none', color:'#1a1206', borderRadius:999, padding:'8px 16px', fontSize:12, fontWeight:800, letterSpacing:'0.06em', cursor:'pointer' }}>EXIT DEMO</button>
+            </div>
+          )}
+          {demo && tourOn && <DemoTour steps={DEMO_STEPS} setTab={setTab} onExit={()=>setTourOn(false)} />}
+        </div>
+      );
+    }
+
+    // ═══ CHECK-IN: auto-pull from the other 4 trackers (Premium) ═══
+    const CI_BLOCKS = {
+      MRN: ['h_wake','h_gymtr','h_breath','h_read','h_cold'],
+      WRK: ['h_mind','h_course','h_outr','h_chess','h_auto'],
+      NGT: ['h_journ','h_pray','h_bible','h_guit','h_sleep'],
+    };
+    const ciP = (v) => { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch(e){ return null; } };
+    const ciLS = (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } };
+    // Reads the cloud backups (users/{uid}/settings/<app>_backup) the trackers write, with
+    // localStorage as the fresher fallback. Returns raw data; aggregation happens per period.
+    async function loadTrackerData(){
+      const out = { habits:{}, blocks:null, expenses:[], workout:[], sleep:{} };
+      let H={}, E={}, W={}, S={};
+      try {
+        const db = firebase.firestore();
+        const uid = (window.currentUser && window.currentUser.uid) || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+        if (uid){
+          const base = db.collection('users').doc(uid).collection('settings');
+          const snaps = await Promise.all([
+            base.doc('habits_backup').get().catch(()=>null),
+            base.doc('expenses_backup').get().catch(()=>null),
+            base.doc('workout_backup').get().catch(()=>null),
+            base.doc('sleep_backup').get().catch(()=>null),
+          ]);
+          const dataOf = (s) => (s && s.exists && s.data() && s.data().data) ? s.data().data : {};
+          H=dataOf(snaps[0]); E=dataOf(snaps[1]); W=dataOf(snaps[2]); S=dataOf(snaps[3]);
+        }
+      } catch(e){}
+      out.habits   = ciLS('habits_v4')            || ciP(H['habits_v4'])            || {};
+      out.blocks   = ciLS('blocks_v4')            || ciP(H['blocks_v4'])            || null;
+      out.expenses = ciLS('mps_expense:entries')  || ciP(E['mps_expense:entries'])  || [];
+      out.workout  = ciLS('mps_v3_history')       || ciP(W['mps_v3_history'])       || [];
+      const sleep = {};
+      Object.keys(S).forEach(k => { if (k.indexOf('rr_sleep:')===0){ const v=ciP(S[k]); if(v) sleep[k.slice(9)]=v; } });
+      try { for (let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if (k && k.indexOf('rr_sleep:')===0){ const v=ciLS(k); if(v) sleep[k.slice(9)]=v; } } } catch(e){}
+      out.sleep = sleep;
+      return out;
+    }
+    function ciFmt(d){ const m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
+    function ciWeekKeys(offset){ const now=new Date(); now.setHours(0,0,0,0); const dow=(now.getDay()+6)%7; const mon=new Date(now); mon.setDate(now.getDate()-dow+offset*7); const keys=[]; for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); keys.push(ciFmt(d)); } return keys; }
+    function ciMonthKeys(offset){ const now=new Date(); now.setHours(0,0,0,0); const base=new Date(now.getFullYear(), now.getMonth()+offset, 1); const dim=new Date(base.getFullYear(), base.getMonth()+1, 0).getDate(); const keys=[]; for(let i=1;i<=dim;i++) keys.push(ciFmt(new Date(base.getFullYear(), base.getMonth(), i))); return keys; }
+    function ciMonthLabel(offset){ const now=new Date(); const base=new Date(now.getFullYear(), now.getMonth()+offset, 1); return MONTHS[base.getMonth()]+' '+base.getFullYear(); }
+    function ciHmToMin(t){ if(!t || String(t).indexOf(':')<0) return null; const p=String(t).split(':'); const h=+p[0], m=+p[1]; if(isNaN(h)) return null; return h*60+(m||0); }
+    function ciAvgTime(arr){ if(!arr.length) return '—'; const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); const h=Math.floor(avg/60), m=avg%60; const ap=h>=12?'PM':'AM'; const h12=((h+11)%12)+1; return h12+':'+String(m).padStart(2,'0')+' '+ap; }
+    function ciMoney(n){ const v=Math.round(Number(n)||0); return '$'+v.toLocaleString(); }
+    function ciRange(a,b){ const A=a.split('-'), B=b.split('-'); return MONTHS[+A[1]-1]+' '+(+A[2])+' – '+MONTHS[+B[1]-1]+' '+(+B[2]); }
+    function ciAggregate(data, dateKeys){
+      const bl = (data.blocks && data.blocks.MRN && data.blocks.MRN.habits) ? {
+        MRN:(data.blocks.MRN.habits||[]).map(h=>h.id), WRK:(data.blocks.WRK.habits||[]).map(h=>h.id), NGT:(data.blocks.NGT.habits||[]).map(h=>h.id)
+      } : CI_BLOCKS;
+      let mrn=0,wrk=0,ngt=0;
+      dateKeys.forEach(dk=>{ const dd=data.habits[dk]||{}; mrn+=bl.MRN.filter(id=>dd[id]).length; wrk+=bl.WRK.filter(id=>dd[id]).length; ngt+=bl.NGT.filter(id=>dd[id]).length; });
+      const dayTotal=mrn+wrk+ngt;
+      const inR=(d)=> d && dateKeys.indexOf(String(d).slice(0,10))>=0;
+      const purch=(data.expenses||[]).filter(e=>e && e.item==='Purchase' && inR(e.date));
+      const spending=purch.reduce((s,e)=>s+Math.abs(Number(e.amount)||0),0);
+      const income=(data.expenses||[]).filter(e=>e && (e.item==='Income'||e.item==='Paycheck') && inR(e.date)).reduce((s,e)=>s+Math.abs(Number(e.amount)||0),0);
+      const workouts=(data.workout||[]).filter(w=>w && inR(w.date)).length;
+      const wake=[],slp=[];
+      dateKeys.forEach(dk=>{ const s=data.sleep[dk]; if(s){ const wm=ciHmToMin(s.wakeTime); const sm=ciHmToMin(s.sleepTime); if(wm!=null) wake.push(wm); if(sm!=null) slp.push(sm); } });
+      const today=todayStr();
+      const elapsed=Math.max(1, dateKeys.filter(dk=>dk<=today).length || dateKeys.length);
+      return { mrn,wrk,ngt,dayTotal, mrnAvg:Math.round(mrn/elapsed), wrkAvg:Math.round(wrk/elapsed), ngtAvg:Math.round(ngt/elapsed), dayAvg:Math.round(dayTotal/elapsed), spending, income, net:income-spending, workouts, avgWake:ciAvgTime(wake), avgSleep:ciAvgTime(slp) };
+    }
+
+    // ── WEAPON 4: PERFORMANCE INSIGHTS ENGINE ────────────────────
+    // Correlates each day's Daily Discipline Score with that day's sleep, wake time,
+    // workout, habits, and spending, then turns the strongest links into plain-language
+    // insights + coaching. Returns {ready:false} until there's enough data to be honest.
+    function computePerf(entries, td) {
+      const MIN_DAYS = 5, MIN_GROUP = 2;
+      const blocks = (td && td.blocks && td.blocks.MRN && td.blocks.MRN.habits) ? {
+        MRN:(td.blocks.MRN.habits||[]).map(h=>h.id), WRK:(td.blocks.WRK.habits||[]).map(h=>h.id), NGT:(td.blocks.NGT.habits||[]).map(h=>h.id)
+      } : CI_BLOCKS;
+      const allHabitIds = [...blocks.MRN, ...blocks.WRK, ...blocks.NGT];
+
+      const recs = [];
+      Object.keys(entries).forEach(dk => {
+        const e = entries[dk] || {};
+        if (typeof e.disciplineScore !== 'number') return;
+        const s = (td && td.sleep && td.sleep[dk]) || null;
+        const wakeMin = s ? ciHmToMin(s.wakeTime) : null;
+        let sleepHrs = null;
+        if (s) { const wm=ciHmToMin(s.wakeTime), bm=ciHmToMin(s.sleepTime); if (wm!=null && bm!=null) sleepHrs = ((wm-bm+1440)%1440)/60; }
+        const workout = !!(td && (td.workout||[]).some(w => w && String(w.date).slice(0,10)===dk));
+        let habitPct = null;
+        if (td && td.habits && td.habits[dk]) { const dd=td.habits[dk]; const done=allHabitIds.filter(id=>dd[id]).length; habitPct = allHabitIds.length ? done/allHabitIds.length : null; }
+        const spend = (td ? (td.expenses||[]) : []).filter(x=>x && x.item==='Purchase' && String(x.date).slice(0,10)===dk).reduce((a,x)=>a+Math.abs(Number(x.amount)||0),0);
+        const stamp = e.completedAt || e.updatedAt; let hour=null; if (stamp){ const t=new Date(stamp); if(!isNaN(t)) hour=t.getHours(); }
+        recs.push({ dk, discipline:e.disciplineScore, wakeMin, sleepHrs, workout, habitPct, spend, hour });
+      });
+
+      const days = recs.length;
+      if (days < MIN_DAYS) return { ready:false, days, need:MIN_DAYS };
+
+      const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+      const cmp = (hiF, loF) => {
+        const hi = recs.filter(hiF).map(r=>r.discipline), lo = recs.filter(loF).map(r=>r.discipline);
+        if (hi.length < MIN_GROUP || lo.length < MIN_GROUP) return null;
+        const ah=avg(hi), al=avg(lo);
+        return { ah, al, delta:ah-al, pct: al>0 ? Math.round((ah-al)/al*100) : 0, hiN:hi.length, loN:lo.length };
+      };
+
+      const insights = [];
+      const cSleep = cmp(r=>r.sleepHrs!=null && r.sleepHrs>=8, r=>r.sleepHrs!=null && r.sleepHrs<7);
+      if (cSleep) insights.push({ key:'sleep', good:cSleep.delta>=0, strength:Math.abs(cSleep.delta), behavior:'Sleep 8+ hours', text:`When you sleep 8+ hours, your Daily Discipline Score averages ${cSleep.ah.toFixed(1)}/10, versus ${cSleep.al.toFixed(1)} on under 7.` });
+      const cWake = cmp(r=>r.wakeMin!=null && r.wakeMin<=330, r=>r.wakeMin!=null && r.wakeMin>=480);
+      if (cWake) insights.push({ key:'wake', good:cWake.delta>=0, strength:Math.abs(cWake.delta), behavior:'Wake before 5:30 AM', text:`Days you wake before 5:30 AM average ${Math.abs(cWake.pct)}% ${cWake.delta>=0?'higher':'lower'} discipline than days you wake after 8:00 AM.` });
+      const cWork = cmp(r=>r.workout===true, r=>r.workout===false);
+      if (cWork) insights.push({ key:'workout', good:cWork.delta>=0, strength:Math.abs(cWork.delta), behavior:'Finish a workout', text:`On workout days, your Daily Discipline Score is ${Math.abs(cWork.pct)}% ${cWork.delta>=0?'higher':'lower'} on average.` });
+      const cHab = cmp(r=>r.habitPct!=null && r.habitPct>=0.999, r=>r.habitPct!=null && r.habitPct<0.6);
+      if (cHab) insights.push({ key:'habits', good:cHab.delta>=0, strength:Math.abs(cHab.delta), behavior:'Complete every habit', text:`Completing every habit raises your average Daily Discipline Score from ${cHab.al.toFixed(1)} to ${cHab.ah.toFixed(1)}.` });
+      const spends = recs.map(r=>r.spend).filter(x=>x>0).sort((a,b)=>a-b);
+      if (spends.length >= 4) {
+        const med = spends[Math.floor(spends.length/2)];
+        const cSpend = cmp(r=>r.spend>0 && r.spend<=med, r=>r.spend>med);
+        if (cSpend) insights.push({ key:'spend', good:cSpend.delta>=0, strength:Math.abs(cSpend.delta), behavior:'Keep spending in check', text:`Higher-spending days are associated with ${cSpend.delta>=0?'higher':'lower'} Daily Discipline Scores.` });
+      }
+      const cNoon = cmp(r=>r.hour!=null && r.hour<12, r=>r.hour!=null && r.hour>=18);
+      if (cNoon) insights.push({ key:'noon', good:cNoon.delta>=0, strength:Math.abs(cNoon.delta), behavior:'Journal earlier in the day', text:`Days you complete your journal earlier tend to carry higher Daily Discipline Scores.` });
+
+      insights.sort((a,b)=>b.strength-a.strength);
+
+      const chron = recs.slice().sort((a,b)=>a.dk.localeCompare(b.dk));
+      const last7 = chron.slice(-7).map(r=>r.discipline), prev7 = chron.slice(-14,-7).map(r=>r.discipline);
+      const growthScore = Math.round(avg(last7)*10);
+      const trend = prev7.length ? Math.round((avg(last7)-avg(prev7))*10) : null;
+
+      const positives = insights.filter(i=>i.good && i.strength>=0.3);
+      const best = positives.slice(0,3).map(i=>i.behavior);
+      const pattern = positives[0] || null;
+      const blindspot = insights.filter(i=>!i.good).sort((a,b)=>b.strength-a.strength)[0] || null;
+
+      return { ready:true, days, insights, growthScore, trend, best, pattern, blindspot };
+    }
+
+    // Hoisted to module scope so it isn't re-created on every CheckInView render.
+    const Stat=({label,value,sub})=>(
+      <div style={{ flex:1, textAlign:'center' }}>
+        <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{value}</div>
+        <div style={{ fontSize:9, color:'#6b7280', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:3 }}>{label}</div>
+        {sub && <div style={{ fontSize:9, color:NAVYL, marginTop:2 }}>{sub}</div>}
+      </div>
+    );
+    function CheckInView(){
+      const [data,setData]=useState(null); const [loading,setLoading]=useState(true);
+      const [period,setPeriod]=useState('week'); const [wOff,setWOff]=useState(0); const [mOff,setMOff]=useState(0);
+      const [refl,setRefl]=useState({}); const [draft,setDraft]=useState({}); const [savedFlash,setSavedFlash]=useState(false);
+      useEffect(()=>{ let on=true; loadTrackerData().then(d=>{ if(on){ setData(d); setLoading(false); } }).catch(()=>{ if(on) setLoading(false); }); return ()=>{on=false;}; },[]);
+      const isMonth=period==='month'; const offset=isMonth?mOff:wOff;
+      const setOff=(v)=>{ const nv=Math.min(0,v); if(isMonth) setMOff(nv); else setWOff(nv); };
+      const keys=isMonth?ciMonthKeys(mOff):ciWeekKeys(wOff);
+      const A=data?ciAggregate(data,keys):null;
+      const rKey = isMonth ? ('m_'+keys[0].slice(0,7)) : ('w_'+keys[0]);
+      useEffect(()=>{ (async()=>{ try{ const v=await window.storage.get('checkin_reflections'); if(v&&typeof v==='object'){ setRefl(v); setDraft(v[rKey]||{}); } }catch(e){} })(); },[]);
+      // Load the saved reflection for the current period when navigating (rKey only — must NOT
+      // depend on `refl`, or every save/async-load would wipe the in-progress draft mid-typing).
+      useEffect(()=>{ setDraft(refl[rKey]||{}); },[rKey]);
+      const title=isMonth?(ciMonthLabel(mOff).toUpperCase()+' CHECK-IN'):'WEEKLY CHECK-IN';
+      const rangeLbl=isMonth?(keys.length+' days'):ciRange(keys[0],keys[6]);
+      const pctOf=(a,b)=> b>0?Math.round(a/b*100):0;
+      const box={ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:'14px 16px', marginBottom:12 };
+      const lbl={ fontSize:10, letterSpacing:'0.14em', color:NAVYL, textTransform:'uppercase', marginBottom:8 };
+      const navBtn={ background:'transparent', color:NAVYL, border:`1px solid ${BR}`, borderRadius:8, padding:'2px 12px', fontSize:18, cursor:'pointer', lineHeight:1.4 };
+      const note=(<div style={{ fontSize:10, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>◆ Auto-filled from your trackers</div>);
+      const inp={ width:'100%', background:C2, border:`1px solid ${__GRAY ? 'rgba(255,255,255,0.22)' : 'rgba(230,201,140,0.55)'}`, borderRadius:9, padding:'10px 12px', color:'#e5e7eb', fontSize:13, outline:'none', fontFamily:"'Inter', system-ui, -apple-system, sans-serif", boxSizing:'border-box', caretColor:NAVYL };
+      const ta={ ...inp, lineHeight:1.6, resize:'vertical', minHeight:54 };
+      const upd=(k,v)=>setDraft(p=>({...p,[k]:v}));
+      const updArr=(k,i,v)=>setDraft(p=>{ const a=Array.isArray(p[k])?p[k].slice():[]; a[i]=v; return {...p,[k]:a}; });
+      const rfield=(label,k,multi)=>(<div style={{ marginBottom:11 }} key={k}><div style={lbl}>{label}</div>{multi?<textarea value={draft[k]||''} onChange={e=>upd(k,e.target.value)} rows={2} style={ta}/>:<input value={draft[k]||''} onChange={e=>upd(k,e.target.value)} style={inp}/>}</div>);
+      const rnum=(k,i)=>(<div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }} key={k+i}><span style={{ color:NAVYL, fontSize:13, fontWeight:700, width:14, textAlign:'center' }}>{i+1}</span><input value={(draft[k]||[])[i]||''} onChange={e=>updArr(k,i,e.target.value)} style={{ ...inp, flex:1 }}/></div>);
+      const twoCol=(a,b)=>(<div style={{ display:'flex', gap:10 }}><div style={{ flex:1 }}>{a}</div><div style={{ flex:1 }}>{b}</div></div>);
+      const saveRefl=async()=>{ const next={...refl,[rKey]:draft}; setRefl(next); try{ await window.storage.set('checkin_reflections',next); }catch(e){} setSavedFlash(true); setTimeout(()=>setSavedFlash(false),1500); };
+      const saveBtn=(<button onClick={saveRefl} style={{ width:'100%', padding:'13px', marginTop:14, background:savedFlash?GOLD:'transparent', color:savedFlash?'#0a0a0a':NAVYL, border:`2px solid ${savedFlash?GOLD:NAVY}`, borderRadius:11, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:13, letterSpacing:'2px', fontWeight:700, cursor:'pointer' }}>{savedFlash?(<span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>SAVED</span>):'SAVE CHECK-IN'}</button>);
+      return (
+        <div style={{ padding:'18px 20px' }}>
+          <div style={{ display:'flex', gap:6, marginBottom:14, background:C2, border:`1px solid ${BR}`, borderRadius:10, padding:4 }}>
+            {[['week','WEEKLY'],['month','MONTHLY']].map(pr=>(
+              <button key={pr[0]} onClick={()=>setPeriod(pr[0])} style={{ flex:1, padding:'9px', background:period===pr[0]?NAVY:'transparent', color:period===pr[0]?(__GRAY?'#0a0a0a':'#fff'):NAVYL, border:'none', borderRadius:7, fontFamily:"'Inter', system-ui, -apple-system, sans-serif", fontSize:11, letterSpacing:'0.12em', fontWeight:700, cursor:'pointer' }}>{pr[1]}</button>
+            ))}
+          </div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+            <div>
+              <div style={{ fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'0.04em' }}>{title}</div>
+              <div style={{ fontSize:11, color:NAVYL, marginTop:2 }}>{rangeLbl}</div>
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              <button onClick={()=>setOff(offset-1)} style={navBtn}>‹</button>
+              <button onClick={()=>setOff(offset+1)} disabled={offset>=0} style={{ ...navBtn, opacity:offset>=0?0.4:1, cursor:offset>=0?'default':'pointer' }}>›</button>
+            </div>
+          </div>
+          {loading ? (
+            <div style={{ textAlign:'center', padding:'40px 0', color:NAVYL, fontSize:13 }}>Pulling your data…</div>
+          ) : isMonth ? (
+            <>
+              {note}
+              <div style={box}>
+                <div style={lbl}>Financial Summary</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Income" value={ciMoney(A.income)} />
+                  <Stat label="Spent" value={ciMoney(A.spending)} sub={A.income>0?pctOf(A.spending,A.income)+'% of inc':null} />
+                  <Stat label="Net" value={ciMoney(A.net)} sub={A.income>0?pctOf(A.net,A.income)+'%':null} />
+                </div>
+              </div>
+              <div style={box}>
+                <div style={lbl}>Routines</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Total Done" value={A.dayTotal+'/'+(keys.length*15)} />
+                  <Stat label="Avg / Day" value={A.dayAvg+'/15'} />
+                  <Stat label="Completion" value={pctOf(A.dayTotal, keys.length*15)+'%'} />
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:12, marginBottom:12 }}>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Physical</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{A.workouts}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>workouts this month</div>
+                </div>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Sleep</div>
+                  <div style={{ fontSize:13, color:'#fff', marginTop:4 }}>Wake · {A.avgWake}</div>
+                  <div style={{ fontSize:13, color:'#fff', marginTop:3 }}>Sleep · {A.avgSleep}</div>
+                </div>
+              </div>
+              <div style={box}><div style={lbl}>Jobs</div>{twoCol(rfield('Tasks','tasks'), rfield('Revenue','revenue'))}</div>
+              <div style={box}><div style={lbl}>Learned</div>{twoCol(rfield('Book','book'), rfield('AI','ai'))}</div>
+              <div style={box}><div style={lbl}>Workflows</div>{twoCol(rfield('Automation','automation'), rfield('Improved','improved'))}</div>
+              <div style={box}><div style={lbl}>Top Accomplishments</div>{rnum('acc',0)}{rnum('acc',1)}{rnum('acc',2)}{rnum('acc',3)}</div>
+              <div style={box}>{rfield('Next Month Target','target',true)}{rfield('Biggest Lesson','lesson',true)}</div>
+              {saveBtn}
+            </>
+          ) : (
+            <>
+              {note}
+              <div style={box}>
+                <div style={lbl}>Habits</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="MRN" value={A.mrn+'/35'} sub={'avg '+A.mrnAvg+'/5'} />
+                  <Stat label="WRK" value={A.wrk+'/35'} sub={'avg '+A.wrkAvg+'/5'} />
+                  <Stat label="NGT" value={A.ngt+'/35'} sub={'avg '+A.ngtAvg+'/5'} />
+                  <Stat label="DAY" value={A.dayTotal+'/105'} sub={'avg '+A.dayAvg+'/15'} />
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:12, marginBottom:12 }}>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Spending</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{ciMoney(A.spending)}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>Income {ciMoney(A.income)} · Net {ciMoney(A.net)}</div>
+                </div>
+                <div style={{ ...box, flex:1, marginBottom:0 }}>
+                  <div style={lbl}>Physical</div>
+                  <div style={{ fontSize:22, fontWeight:800, color:'#fff' }}>{A.workouts}</div>
+                  <div style={{ fontSize:10, color:'#6b7280', marginTop:3 }}>workouts this week</div>
+                </div>
+              </div>
+              <div style={box}>
+                <div style={lbl}>Sleep</div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <Stat label="Avg Wake" value={A.avgWake} />
+                  <Stat label="Avg Sleep" value={A.avgSleep} />
+                </div>
+              </div>
+              <div style={box}><div style={lbl}>Jobs</div>{twoCol(rfield('Tasks','tasks'), rfield('Revenue','revenue'))}</div>
+              <div style={box}><div style={lbl}>Top 3 Accomplishments</div>{rnum('acc',0)}{rnum('acc',1)}{rnum('acc',2)}</div>
+              <div style={box}>{rfield('Next Week Focus','focus',true)}</div>
+              <div style={box}><div style={lbl}>Adjustments</div>{rfield('To Stop','stop')}{rfield('To Start','start')}{rfield('To Continue','continue')}</div>
+              {saveBtn}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    window.JournalApp = JournalApp;
+  
