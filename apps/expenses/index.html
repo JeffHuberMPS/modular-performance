@@ -837,22 +837,25 @@ const DEFAULT_RULES = [
   { k: 'Claude', c: 'Other' }, { k: 'OpenAI', c: 'Other' },
   { k: 'Make', c: 'Other' }, { k: 'Zapier', c: 'Other' }
 ];
+/* Generic SAMPLE budget for new customers — round example numbers, NOT anyone's real data.
+   It gives them a starting template they can freely edit (change amounts, remove bills, add
+   their own). Every value here is just an illustrative placeholder. */
 const DEFAULT_BUDGET = [
-  { bill: 'Rent', m: 1030, w: 515 }, { bill: 'Car', m: 200, w: 100 },
-  { bill: 'Insurance', m: 100, w: 50 }, { bill: 'Phone', m: 30, w: 15 },
-  { bill: 'Water', m: 60, w: 30 }, { bill: 'Electric', m: 60, w: 30 },
-  { bill: 'Groceries', m: 400, w: 200 }, { bill: 'Car Gas', m: 200, w: 100 },
-  { bill: 'Crunch', m: 0, w: 0 }, { bill: 'Subscriptions', m: 200, w: 100 },
-  { bill: 'Miscellaneous', m: 0, w: 0 }, { bill: 'Savings', m: 200, w: 100 },
-  { bill: 'Investments', m: 600, w: 300 }
+  { bill: 'Rent', m: 1500, w: 750 }, { bill: 'Groceries', m: 500, w: 250 },
+  { bill: 'Car', m: 400, w: 200 }, { bill: 'Car Gas', m: 200, w: 100 },
+  { bill: 'Phone', m: 100, w: 50 }, { bill: 'Utilities', m: 300, w: 150 },
+  { bill: 'Insurance', m: 200, w: 100 }, { bill: 'Subscriptions', m: 100, w: 50 },
+  { bill: 'Gym', m: 50, w: 25 }, { bill: 'Dining Out', m: 300, w: 150 },
+  { bill: 'Savings', m: 500, w: 250 }, { bill: 'Investments', m: 500, w: 250 },
+  { bill: 'Miscellaneous', m: 350, w: 175 }
 ];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 let state = {
   entries: load(STORE.entries, []),
   rules: load(STORE.rules, DEFAULT_RULES),
   budget: load(STORE.budget, DEFAULT_BUDGET),
-  cap: load(STORE.cap, 3000),
-  paycheck: load(STORE.paycheck, 3000),
+  cap: load(STORE.cap, 5000),        // generic sample cap for new customers (editable)
+  paycheck: load(STORE.paycheck, 5000),  // generic sample income for new customers (editable)
   selectedMonth: load(STORE.selectedMonth, new Date().getMonth()),
   selectedYear: new Date().getFullYear(),
   sync: load(STORE.sync, { webhook: '' }),
