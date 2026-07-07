@@ -924,15 +924,29 @@ function toggleFav(id){
 
 function openServing(foodId){
   var f=foodById(foodId);
+  // meal dropdown: default to the meal you came from if it's one you track, else your first meal
+  var defMeal = (S.meals.indexOf(searchMeal)>=0) ? searchMeal : (S.meals[0]||'Breakfast');
+  var mealOpts = S.meals.map(function(m){ return '<option value="'+esc(m)+'"'+(m===defMeal?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
+  var isFav = S.favorites.indexOf(foodId)>=0;
   document.getElementById('modal').innerHTML=
     '<div class="modal-head"><h2>Add Food</h2><span class="x" onclick="closeModal()">×</span></div>'
-    +'<div class="serv-food"><span class="se">'+catIcon(f.cat)+'</span><div><div class="sn">'+f.n+'</div><div class="sc">Base serving: '+f.serv+'</div></div></div>'
-    +'<div class="serv-row"><div><label>Quantity</label><input type="number" id="servQty" value="1" min="0.25" step="0.25" oninput="updMacro(\''+foodId+'\')"></div>'
+    +'<div class="serv-food"><span class="se">'+catIcon(f.cat)+'</span><div style="flex:1;min-width:0"><div class="sn">'+f.n+'</div><div class="sc">Base serving: '+f.serv+'</div></div>'
+      +'<span class="res-fav '+(isFav?'star-on':'star-off')+'" id="servFav" title="Favorite" style="font-size:24px;cursor:pointer;flex-shrink:0" onclick="toggleFavServing(\''+foodId+'\')">'+(isFav?'★':'☆')+'</span></div>'
+    +'<label>Add to which meal?</label><select id="servMeal">'+mealOpts+'</select>'
+    +'<div class="serv-row" style="margin-top:4px"><div><label>Quantity</label><input type="number" id="servQty" value="1" min="0.25" step="0.25" oninput="updMacro(\''+foodId+'\')"></div>'
     +'<div><label>Serving</label><select id="servSel" onchange="updMacro(\''+foodId+'\')"><option value="1">'+f.serv+'</option><option value="0.5">Half serving</option><option value="2">Double serving</option></select></div></div>'
     +'<div class="macro-preview" id="macroPrev"></div>'
-    +'<div class="modal-actions"><button class="save" onclick="logFood(\''+foodId+'\')">Add to '+searchMeal+'</button>'
-    +'<button class="cancel" onclick="openSearch(\''+searchMeal+'\')">Back</button></div>';
+    +'<div class="modal-actions"><button class="save" onclick="logFood(\''+foodId+'\')">Log Food</button>'
+    +'<button class="cancel" onclick="closeModal()">Back</button></div>';
   updMacro(foodId);
+}
+function toggleFavServing(id){
+  if(S.favorites.indexOf(id)>=0) S.favorites=S.favorites.filter(function(x){return x!==id;});
+  else S.favorites.push(id);
+  save();
+  var on=S.favorites.indexOf(id)>=0, el=document.getElementById('servFav');
+  if(el){ el.textContent=on?'★':'☆'; el.className='res-fav '+(on?'star-on':'star-off')+' '; el.style.fontSize='24px'; el.style.cursor='pointer'; el.style.flexShrink='0'; }
+  toast(on?'Added to favorites':'Removed from favorites');
 }
 function curMult(){
   var q=parseFloat(document.getElementById('servQty').value)||1;
@@ -954,12 +968,15 @@ function updMacro(foodId){
 }
 function logFood(foodId){
   var f=foodById(foodId); var mult=curMult();
-  var entry={ id:'e'+Date.now()+Math.floor(Math.random()*1000), meal:searchMeal, foodId:foodId, name:f.n, emoji:f.e, qty:mult, m:scaledMacros(f,mult) };
+  var mealSel=document.getElementById('servMeal');
+  var meal=(mealSel && mealSel.value) ? mealSel.value : searchMeal;
+  searchMeal=meal;   // remember the choice for next time
+  var entry={ id:'e'+Date.now()+Math.floor(Math.random()*1000), meal:meal, foodId:foodId, name:f.n, emoji:f.e, qty:mult, m:scaledMacros(f,mult) };
   if(!S.log[curDate]) S.log[curDate]=[];
   S.log[curDate].push(entry);
   S.recent=[foodId].concat(S.recent.filter(x=>x!==foodId)).slice(0,20);
   save(); closeModal(); renderToday();
-  toast(f.n+' added to '+searchMeal);
+  toast(f.n+' added to '+meal);
 }
 function closeModal(){ stopCam(); document.getElementById('overlay').classList.remove('active'); }
 document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') closeModal(); });
