@@ -166,7 +166,11 @@
     var _bTimer=null,_bBusy=false;
     window.sleepScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,700); };
     var _TS_KEY='sleep_synced_ts';   // ts of the cloud state this device is synced to (enables safe delete propagation)
-    function _bNow(){ if(_bBusy) return; _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_bCollect(),ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+    function _bNow(){ if(_bBusy) return; var _data=_bCollect();
+      // NEVER back up an empty state — writing {} would wipe the cloud (and, via sync, every device).
+      // A device with no entries just skips; a device that HAS data keeps the cloud whole.
+      if(!Object.keys(_data).length) return;
+      _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
     // Flush any pending backup the instant the app is hidden or closing. Mobile pauses/kills timers
     // when you background or leave the app, which was dropping just-saved entries before the debounce
     // fired -- so they never reached the cloud. This makes saves durable across devices.
@@ -183,12 +187,18 @@
       var localTs=0; try{ localTs=parseInt(localStorage.getItem(_TS_KEY)||'0',10)||0; }catch(e){}
       if(cloudTs<=localTs) return;           // our own write or older → ignore
       var localKeys=[]; try{ for(var i=0;i<localStorage.length;i++){ var lk=localStorage.key(i); if(_bMatch(lk)) localKeys.push(lk); } }catch(e){}
-      var changed=false;
-      localKeys.forEach(function(k){ if(!(k in d)) changed=true; });          // a deletion?
-      for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }   // an add/edit?
+      var deletions=localKeys.filter(function(k){ return !(k in d); });
+      var cloudCount=Object.keys(d).filter(_bMatch).length;
+      // SAFETY: an empty (or delete-everything) cloud is a BAD state, never a real user action. Never
+      // let it delete your local data. Keep local, re-upload it to heal the cloud, and still apply any
+      // genuine adds the cloud may also have.
+      var unsafe = deletions.length && (cloudCount===0 || deletions.length===localKeys.length);
       try{ localStorage.setItem(_TS_KEY, String(cloudTs)); }catch(e){}
+      if(unsafe){ Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} }); try{ window.sleepScheduleBackup && window.sleepScheduleBackup(); }catch(e){} return; }
+      var changed = deletions.length > 0;
+      for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }   // an add/edit?
       if(!changed) return;
-      localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });               // apply deletions
+      localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });               // apply (safe) deletions
       Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });      // apply adds/edits
       location.reload();
     }); }catch(e){} }
