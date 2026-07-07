@@ -80,9 +80,13 @@
         return Promise.resolve(v !== null ? { value: v } : null);
       },
       set: function(key, value) {
-        try { localStorage.setItem(key, value); } catch (e) {}
-        try { window.habitsScheduleBackup && window.habitsScheduleBackup(); } catch (e) {}
-        return Promise.resolve(true);
+        var wrote = false;
+        try { localStorage.setItem(key, value); wrote = true; } catch (e) {}
+        try {
+          if (wrote) { window.habitsScheduleBackup && window.habitsScheduleBackup(); }
+          else { window.habitsCloudSet && window.habitsCloudSet(key, value); }   // local blocked/full -> save straight to the cloud
+        } catch (e) {}
+        return Promise.resolve(true);   // saved to local and/or cloud — never a false failure
       },
       delete: function(key) {
         try { localStorage.removeItem(key); } catch (e) {}
@@ -105,30 +109,46 @@
     function _bCollect(){ var d={}; _bKeys.forEach(function(k){ try{ var v=localStorage.getItem(k); if(v!==null) d[k]=v; }catch(e){} }); return d; }
     function _bHasLocal(){ for(var i=0;i<_bKeys.length;i++){ try{ if(localStorage.getItem(_bKeys[i])!==null) return true; }catch(e){} } return false; }
     var _bTimer=null,_bBusy=false;
-    window.habitsScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
+    window.habitsScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,700); };
     var _TS_KEY='habits_synced_ts';   // ts of the cloud state this device is synced to (enables safe delete propagation)
-    function _bNow(){ if(_bBusy) return; _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_bCollect(),ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+    function _bNow(){ if(_bBusy) return; var _data=_bCollect();
+      // NEVER back up an empty state — writing {} would wipe the cloud (and, via sync, every device).
+      // A device with no entries just skips; a device that HAS data keeps the cloud whole.
+      if(!Object.keys(_data).length) return;
+      _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
     // Flush a pending debounced backup immediately (used on tab close so the last change isn't dropped).
     function _bFlush(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); }
+    window.habitsBackupNow = _bFlush;
+    // If localStorage is unavailable on this device (full, or blocked in the mobile iframe), save the
+    // value STRAIGHT to the cloud so nothing is ever lost. Merges a single key into the backup doc.
+    window.habitsCloudSet = function(key, value){ try{ _bDoc.get().then(function(s){ var d=(s.exists&&s.data()&&s.data().data)?s.data().data:{}; d[key]=value; var ts=Date.now(); _bDoc.set({data:d,ts:ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(ts));}catch(e){} }); }); }catch(e){} };
     window.addEventListener('pagehide', _bFlush);
     document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') _bFlush(); });
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
     // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (habits) =====
-    // Real-time listener. When ANOTHER device saves (cloud ts > our synced ts), make local match
-    // cloud EXACTLY — adds, edits, AND deletions. ts-gating means our own writes (and any older
-    // cloud state) are ignored, so we never overwrite or wipe newer local data.
+    // Real-time listener. When ANOTHER device saves (cloud ts > our synced ts), apply adds, edits,
+    // and SAFE deletions. ts-gating means our own writes (and older cloud state) are ignored, so we
+    // never overwrite newer local data. An empty/delete-all cloud is treated as corruption, not a
+    // command — we heal it from local instead of wiping (see the SAFETY guard below).
     function _bWatchLive(){ try{ _bDoc.onSnapshot(function(s){
       if(!s.exists||!s.data()) return;
       var d=(s.data().data)||{};
       var cloudTs=s.data().ts||0;
       var localTs=0; try{ localTs=parseInt(localStorage.getItem(_TS_KEY)||'0',10)||0; }catch(e){}
       if(cloudTs<=localTs) return;            // our own write or older → ignore (never overwrite)
-      var changed=false;
-      _bKeys.forEach(function(k){ if(!(k in d) && localStorage.getItem(k)!==null) changed=true; });  // a deletion?
-      for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }                          // an add/edit?
+      var localKeys=_bKeys.filter(function(k){ try{ return localStorage.getItem(k)!==null; }catch(e){ return false; } });
+      var deletions=localKeys.filter(function(k){ return !(k in d); });
+      var cloudCount=_bKeys.filter(function(k){ return (k in d); }).length;
       try{ localStorage.setItem(_TS_KEY, String(cloudTs)); }catch(e){}   // advance synced marker either way
+      // SAFETY: an empty (or delete-everything) cloud is a BAD state, never a real user action. Never
+      // let it delete your local data. Keep local, re-upload it to heal the cloud, and still apply any
+      // genuine adds the cloud may also have.
+      var unsafe = deletions.length && (cloudCount===0 || deletions.length===localKeys.length);
+      if(unsafe){ Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} }); try{ window.habitsScheduleBackup && window.habitsScheduleBackup(); }catch(e){} return; }
+      var changed = deletions.length>0;
+      for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }                          // an add/edit?
       if(!changed) return;                    // already matches cloud — no reload needed
-      _bKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });                // apply deletions
+      localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });               // apply (safe) deletions
       Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });   // apply adds/edits
       location.reload();
     }); }catch(e){} }
