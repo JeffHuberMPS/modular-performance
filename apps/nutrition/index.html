@@ -284,8 +284,10 @@
     var _busy = false, _timer = null;
 
     function _push(){
-      if (_busy) return; _busy = true; var ts = Date.now(), val = null;
+      if (_busy) return; var val = null;
       try { val = localStorage.getItem(KEY); } catch(e){}
+      if (val == null || val === '') return;   // never back up an empty state over the cloud
+      _busy = true; var ts = Date.now();
       try { _bDoc.set({ data: val, ts: ts, v: 1 }).then(function(){
         try { localStorage.setItem(TS_KEY, String(ts)); } catch(e){} _busy = false;
       }).catch(function(){ _busy = false; }); } catch(e){ _busy = false; }
@@ -322,7 +324,10 @@
         try { localStorage.setItem(TS_KEY, String(cloudTs)); } catch(e){}
         var cur = null; try { cur = localStorage.getItem(KEY); } catch(e){}
         if (cur === cloud) return;
-        try { if (cloud == null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, cloud); } catch(e){}
+        // SAFETY: a null/empty cloud is a bad state — never wipe local to match it. Keep local and
+        // re-upload to heal the cloud. (An explicit reset clears local on that device directly.)
+        if (cloud == null || cloud === '') { if (cur != null && cur !== '') { try { window.nutritionScheduleBackup && window.nutritionScheduleBackup(); } catch(e){} } return; }
+        try { localStorage.setItem(KEY, cloud); } catch(e){}
         location.reload();
       }); } catch(e){}
     }
