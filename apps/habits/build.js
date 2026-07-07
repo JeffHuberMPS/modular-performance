@@ -22,7 +22,11 @@ const out = Babel.transform(src, { presets: ['react'], compact: false }).code;
 let html = fs.readFileSync(HTML, 'utf8');
 const block = /<script id="habits-app">[\s\S]*?<\/script>/;
 if (!block.test(html)) { console.error('Could not find <script id="habits-app"> in index.html'); process.exit(1); }
-html = html.replace(block,
+// Use a REPLACEMENT FUNCTION, not a string. Compiled code can contain '$' sequences (e.g. a
+// money formatter's '$') and String.replace treats $&, $', $`, $$ in a STRING replacement as
+// special patterns — that would silently splice unrelated content into the code. A function
+// replacement disables that substitution entirely.
+html = html.replace(block, () =>
   '<script id="habits-app">\n/* PRE-COMPILED from app.src.jsx — do NOT hand-edit. Edit app.src.jsx then run build.js. */\n' + out + '\n</script>');
 fs.writeFileSync(HTML, html, 'utf8');
 console.log('Built: app.src.jsx (' + src.length + ') -> compiled ' + out.length + ' chars into index.html');
