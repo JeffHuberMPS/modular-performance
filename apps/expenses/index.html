@@ -861,9 +861,13 @@ let state = {
 // Webhook is user-supplied via Settings — never hardcode a personal endpoint here.
 function load(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
 function save(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); }
-  catch (e) { try { flash('Could not save — storage full'); } catch (e2) {} console.error('localStorage.setItem failed', e); return; }
-  try { window.expenseScheduleBackup && window.expenseScheduleBackup(); } catch (e) {}
+  var wrote = false;
+  try { localStorage.setItem(key, JSON.stringify(val)); wrote = true; }
+  catch (e) { console.error('localStorage cache full', e); }
+  try {
+    if (wrote) { window.expenseScheduleBackup && window.expenseScheduleBackup(); }
+    else { window.expenseCloudSet && window.expenseCloudSet(key, JSON.stringify(val)); }   // local blocked/full -> save straight to the cloud
+  } catch (e) {}
 }
 
 // ===== SILENT CLOUD BACKUP (expenses) =====
@@ -878,7 +882,12 @@ function save(key, val) {
   function _collect(){ var d={}; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(_match(k)) d[k]=localStorage.getItem(k); } }catch(e){} return d; }
   function _hasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_match(localStorage.key(i))) return true; } }catch(e){} return false; }
   var _t=null,_busy=false;
-  window.expenseScheduleBackup=function(){ if(_t) clearTimeout(_t); _t=setTimeout(_now,1800); };
+  window.expenseScheduleBackup=function(){ if(_t) clearTimeout(_t); _t=setTimeout(_now,700); };
+  function _flush(){ if(_t){ clearTimeout(_t); _t=null; } _now(); }
+  window.expenseBackupNow=_flush;
+  // localStorage blocked/full -> merge a single key STRAIGHT into the backup doc so nothing is lost.
+  window.expenseCloudSet=function(key,value){ var doc=_doc(); if(!doc) return; try{ doc.get().then(function(s){ var d=(s.exists&&s.data()&&s.data().data)?s.data().data:{}; d[key]=value; var ts=Date.now(); doc.set({data:d,ts:ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(ts));}catch(e){} }); }); }catch(e){} };
+  try{ document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') _flush(); }); window.addEventListener('pagehide', _flush); }catch(e){}
   function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); if(!Object.keys(data).length) return; try{ var size=0; try{ size=new Blob([JSON.stringify(data)]).size; }catch(e){ size=JSON.stringify(data).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return; } }catch(e){} _busy=true; var _ts=Date.now(); try{ doc.set({data:data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(_ts));}catch(e){} _busy=false; }).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
   function _restoreIfEmpty(){ var doc=_doc(); if(!doc) return Promise.resolve(false); if(_hasLocal()) return Promise.resolve(false); return doc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
   // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (expenses) =====
