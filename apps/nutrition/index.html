@@ -293,7 +293,13 @@
       }).catch(function(){ _busy = false; }); } catch(e){ _busy = false; }
     }
     // debounced backup, called from the app's save()
-    window.nutritionScheduleBackup = function(){ if (_timer) clearTimeout(_timer); _timer = setTimeout(_push, 1500); };
+    window.nutritionScheduleBackup = function(){ if (_timer) clearTimeout(_timer); _timer = setTimeout(_push, 700); };
+    // Immediate flush + flush on tab hide/close so mobile never drops the last change before the debounce fires.
+    function _flush(){ if (_timer){ clearTimeout(_timer); _timer = null; } _push(); }
+    window.nutritionBackupNow = _flush;
+    // If localStorage is blocked/full on this device, write the in-memory blob STRAIGHT to the cloud so nothing is lost.
+    window.nutritionCloudSet = function(val){ if (val == null || val === '') return; var ts = Date.now(); try { _bDoc.set({ data: val, ts: ts, v: 1 }).then(function(){ try { localStorage.setItem(TS_KEY, String(ts)); } catch(e){} }); } catch(e){} };
+    try { document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'hidden') _flush(); }); window.addEventListener('pagehide', _flush); } catch(e){}
     // wipe → push an empty state to the cloud with a fresh ts so the reset propagates (and restore won't undo it)
     window.nutritionPushWipe = function(){
       var ts = Date.now(); try { localStorage.setItem(TS_KEY, String(ts)); } catch(e){}
@@ -510,7 +516,7 @@ function load(){ try{ var d=JSON.parse(localStorage.getItem('mps_nutrition')); i
   if(!S.supplementTemplates) S.supplementTemplates=[];
   if(!S.supplementLog) S.supplementLog={};
 }
-function save(){ localStorage.setItem('mps_nutrition', JSON.stringify(S)); try{ if(window.nutritionScheduleBackup) window.nutritionScheduleBackup(); }catch(e){} }
+function save(){ var _json=JSON.stringify(S); var _wrote=false; try{ localStorage.setItem('mps_nutrition', _json); _wrote=true; }catch(e){} try{ if(_wrote){ window.nutritionScheduleBackup && window.nutritionScheduleBackup(); } else { window.nutritionCloudSet && window.nutritionCloudSet(_json); } }catch(e){} }
 function allFoods(){ return FOODS.concat(S.customFoods); }
 function foodById(id){ return allFoods().find(f=>f.id===id); }
 /* When embedded in the hub, follow the hub's tier (Core/Elite/Premium); standalone uses the Settings switcher. */
