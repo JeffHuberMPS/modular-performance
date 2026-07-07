@@ -129,29 +129,42 @@
     var db   = firebase.firestore();
     var COLL = 'users/' + uid + '/sleep_entries';
 
-    // window.storage — bonus Firestore sync layer
-    // The component's module-level storage uses localStorage as primary
-    // and calls window.storage.set() as a cloud backup
+    // window.storage — LOCAL-FIRST persistence (data-loss fix).
+    // BUG (fixed here): the component's `storage` identifier resolves to THIS window.storage at
+    // runtime, and it used to write to a users/{uid}/sleep_entries Firestore subcollection that
+    // NOTHING read back. Restore-on-open, the live two-way sync, and the Home dashboard all read
+    // localStorage rr_sleep:* + the settings/sleep_backup doc — never that subcollection. So every
+    // saved entry silently vanished on refresh. Now every write goes to localStorage rr_sleep:* and
+    // triggers the sleep_backup cloud mirror (the same durable system every other pillar uses).
+    var _slpK = function(key){ return 'rr_sleep:' + key; };
     window.storage = {
       get: function(key) {
-        return db.doc(COLL + '/' + key).get()
-          .then(function(snap) {
-            return snap.exists ? snap.data().value : null;
-          })
-          .catch(function() { return null; });
+        try { return Promise.resolve(localStorage.getItem(_slpK(key))); }
+        catch(e){ return Promise.resolve(null); }
       },
       set: function(key, value) {
-        return db.doc(COLL + '/' + key).set({ value: value })
-          .then(function() { return true; })
-          .catch(function() { return false; });
+        var wrote = false;
+        try { localStorage.setItem(_slpK(key), value); wrote = true; } catch(e){}
+        try {
+          if (wrote) { window.sleepScheduleBackup && window.sleepScheduleBackup(); window.sleepBackupNow && window.sleepBackupNow(); }
+          else { window.sleepCloudSet && window.sleepCloudSet(_slpK(key), value); }   // local blocked/full -> save straight to the cloud
+        } catch(e){}
+        return Promise.resolve(true);
       },
       delete: function(key) {
-        return db.doc(COLL + '/' + key).delete().catch(function() {});
+        try { localStorage.removeItem(_slpK(key)); } catch(e){}
+        try { window.sleepScheduleBackup && window.sleepScheduleBackup(); window.sleepBackupNow && window.sleepBackupNow(); } catch(e){}
+        return Promise.resolve();
       },
       list: function() {
-        return db.collection(COLL).get()
-          .then(function(snap) { return snap.docs.map(function(d) { return d.id; }); })
-          .catch(function() { return []; });
+        var keys = [];
+        try {
+          for (var i=0;i<localStorage.length;i++){
+            var k = localStorage.key(i);
+            if (k && k.indexOf('rr_sleep:')===0 && k !== 'rr_sleep:wearable_interest') keys.push(k.slice('rr_sleep:'.length));
+          }
+        } catch(e){}
+        return Promise.resolve(keys);
       }
     };
 
