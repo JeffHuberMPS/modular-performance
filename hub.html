@@ -224,7 +224,12 @@
     .home-section-label { font-family: 'Bebas Neue',sans-serif; font-size: 0.85rem; letter-spacing: 0.22em; color: #8a8472; margin: 24px 2px 12px; }
     .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px; max-width: 924px; margin: 0 auto; }
     .metric-card:nth-child(5) { grid-column: 1 / -1; width: calc(50% - 22px); justify-self: center; }
-    @media (max-width: 640px) { .home-grid { gap: 14px; } .metric-card:nth-child(5) { width: calc(50% - 7px); } }
+    @media (max-width: 640px) { .home-grid { gap: 14px; } .metric-card:nth-child(5) { width: calc(50% - 7px); }
+      /* Cheaper paint per tile so Home scrolls buttery on phones: big blur shadows + the accent-bar
+         glow re-rasterize on every card as it scrolls in. Lighter shadow, drop the glow. */
+      .dcard, .metric-card { box-shadow: 0 4px 12px rgba(0,0,0,0.38); }
+      .metric-card::before { box-shadow: none; }
+    }
     .metric-card { position: relative; overflow: hidden; cursor: pointer; background: linear-gradient(180deg, rgba(28,28,28,0.7) 0%, rgba(13,13,13,0.7) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 22px rgba(0,0,0,0.4); padding: 20px 22px 22px; transition: transform 0.18s ease, border-color 0.18s ease; }
     .metric-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
     .metric-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 50%, rgba(255,255,255,0.1)); }
@@ -478,7 +483,7 @@
     const IS_GUEST = (()=>{ try { return new URLSearchParams(location.search).get('guest') === '1'; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '363';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '364';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
