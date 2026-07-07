@@ -472,7 +472,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '365';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '366';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -952,8 +952,16 @@
          Read the SAME source the apps write, so REAL logging updates the Home — not just demo data. */
       const sget = (key) => { try { const v = localStorage.getItem(key); return v != null ? JSON.parse(v) : null; } catch(e){ return null; } };
 
+      /* CLOUD-FIRST HOME: the cloud backup docs are the source of truth. Pull all six once, in
+         parallel, so ANY entry made on ANY device (or before this device's frame has restored to
+         localStorage) still shows on Home. Rule: if there's data anywhere, there's data on Home. */
+      const _cloudGet = async (app) => { try { const d = await firebase.firestore().doc('users/'+uid+'/settings/'+app+'_backup').get(); return (d.exists && d.data()) ? (d.data().data || null) : null; } catch(e){ return null; } };
+      const [_wb,_hb,_eb,_jb,_nb,_sb] = await Promise.all([_cloudGet('workout'),_cloudGet('habits'),_cloudGet('expenses'),_cloudGet('journal'),_cloudGet('nutrition'),_cloudGet('sleep')]);
+      /* Merged getter: prefer fresh local; fall back to the cloud backup map (key -> stringified value). */
+      const sgetM = (key, cloudMap) => { const loc = sget(key); if (loc != null) return loc; try { if (cloudMap && cloudMap[key] != null) return JSON.parse(cloudMap[key]); } catch(e){} return null; };
+
       try {
-        const days = (sget('mps_v3_history') || []).filter(d => d && d.date);
+        const days = (sgetM('mps_v3_history', _wb) || []).filter(d => d && d.date);
         /* All-time Strength Score — matches the Workout app exactly: total volume / total sets (raw). */
         let vol=0, sets=0;
         days.forEach(h => {
@@ -980,8 +988,8 @@
 
       try {
         /* Habits store under users/{uid}/app_storage/{habits_v4, blocks_v4} (NOT habit_logs). */
-        const hlog = sget('habits_v4') || {};   // { dateKey: { habitId: bool } }
-        const blocks = sget('blocks_v4') || {
+        const hlog = sgetM('habits_v4', _hb) || {};   // { dateKey: { habitId: bool } }
+        const blocks = sgetM('blocks_v4', _hb) || {
           MRN: { habits: [{id:'h_wake'},{id:'h_gymtr'},{id:'h_breath'},{id:'h_read'},{id:'h_cold'}] },
           WRK: { habits: [{id:'h_mind'},{id:'h_course'},{id:'h_outr'},{id:'h_chess'},{id:'h_auto'}] },
           NGT: { habits: [{id:'h_journ'},{id:'h_pray'},{id:'h_bible'},{id:'h_guit'},{id:'h_sleep'}] }
@@ -1017,8 +1025,7 @@
            date; local wins on a same-date conflict. */
         let _cloudLogs = [];
         try {
-          const _sdoc = await firebase.firestore().doc('users/'+uid+'/settings/sleep_backup').get();
-          const _sd = (_sdoc.exists && _sdoc.data()) ? (_sdoc.data().data || {}) : {};
+          const _sd = _sb || {};
           _cloudLogs = Object.keys(_sd).filter(k => k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest')
             .map(k => { try { return JSON.parse(_sd[k]); } catch(e){ return null; } }).filter(Boolean);
         } catch(e) {}
@@ -1044,7 +1051,7 @@
       } catch(e){ setCardMetrics('sleep', []); }
 
       try {
-        const entries = (sget('mps_expense:entries') || []).filter(e => e && e.date);
+        const entries = (sgetM('mps_expense:entries', _eb) || []).filter(e => e && e.date);
         // Match the Expense app exactly (v156): every outflow is spend (incl. transfers/investments);
         // only Income/Paycheck are excluded, and amounts are summed as absolute values.
         const purch = entries.filter(e => e.item !== 'Income' && e.item !== 'Paycheck');
@@ -1069,7 +1076,7 @@
       } catch(e){ setCardMetrics('expenses', []); }
 
       try {
-        const jmap = sget('mps_jnl_' + uid + '_journal_v1') || {};
+        const jmap = sgetM('mps_jnl_' + uid + '_journal_v1', _jb) || {};
         const dateList = Object.keys(jmap).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort().reverse();
         const set = new Set(dateList);
         sig.journal = set.has(todayKey);
@@ -1085,7 +1092,10 @@
       try {
         /* Nutrition stores one JSON blob under 'mps_nutrition' → { log:{ 'YYYY-MM-DD':[entries] }, targets, profile }.
            Date keys match ymd() exactly (the app's todayISO() is identical). */
-        const nut = sget('mps_nutrition') || {};
+        /* Nutrition's cloud backup stores the whole blob as ONE JSON string (not a key map). */
+        let nut = sget('mps_nutrition');
+        if (nut == null && _nb) { try { nut = JSON.parse(_nb); } catch(e){} }
+        nut = nut || {};
         const nlog = nut.log || {};
         const ntargets = nut.targets || {};
         const todayEntries = nlog[todayKey] || [];
@@ -1119,12 +1129,17 @@
 
         /* Overall Discipline Score — rolling average of how complete you are on the days you show up.
            Same 4 systems as the focus cards, scored per day over the active days in the last 30. */
-        const wSet = new Set((sget('mps_v3_history')||[]).filter(d=>d&&d.date).map(d=>d.date));
-        const hl = sget('habits_v4')||{};
-        const slSet = new Set(Object.keys(localStorage)
+        const wSet = new Set((sgetM('mps_v3_history',_wb)||[]).filter(d=>d&&d.date).map(d=>d.date));
+        const hl = sgetM('habits_v4',_hb)||{};
+        const _slLocal = Object.keys(localStorage)
           .filter(k=>k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest')
-          .map(k=>sget(k)).filter(Boolean).map(l=>l&&l.date).filter(Boolean));
-        const nlog2 = (sget('mps_nutrition')||{}).log || {};
+          .map(k=>sget(k)).filter(Boolean);
+        const _slCloud = _sb ? Object.keys(_sb)
+          .filter(k=>k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest')
+          .map(k=>{ try { return JSON.parse(_sb[k]); } catch(e){ return null; } }).filter(Boolean) : [];
+        const slSet = new Set(_slLocal.concat(_slCloud).map(l=>l&&l.date).filter(Boolean));
+        const _nutBlob2 = (function(){ const l=sget('mps_nutrition'); if(l!=null) return l; try{ return _nb?JSON.parse(_nb):{}; }catch(e){ return {}; } })() || {};
+        const nlog2 = _nutBlob2.log || {};
         const dayActive = dk => wSet.has(dk) || slSet.has(dk) || (nlog2[dk]||[]).length>0 || Object.values(hl[dk]||{}).some(Boolean);
         const dayScore = dk => {
           const w = wSet.has(dk)?100:0;
