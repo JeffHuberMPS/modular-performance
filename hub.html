@@ -483,7 +483,7 @@
     const IS_GUEST = (()=>{ try { return new URLSearchParams(location.search).get('guest') === '1'; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '380';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '381';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -954,7 +954,17 @@
          parallel, so ANY entry made on ANY device (or before this device's frame has restored to
          localStorage) still shows on Home. Rule: if there's data anywhere, there's data on Home. */
       const _cloudGet = async (app) => { try { const d = await firebase.firestore().doc('users/'+uid+'/settings/'+app+'_backup').get(); return (d.exists && d.data()) ? (d.data().data || null) : null; } catch(e){ return null; } };
-      const [_wb,_hb,_eb,_jb,_nb,_sb] = await Promise.all([_cloudGet('workout'),_cloudGet('habits'),_cloudGet('expenses'),_cloudGet('journal'),_cloudGet('nutrition'),_cloudGet('sleep')]);
+      /* Short-lived cache (8s, keyed by uid): Home re-renders several times on load (tab-switch +
+         storage events + safety timers). Without this each render fired 6 Firestore reads. Local is
+         still read fresh every render (sgetM below), so this only reuses the cloud FALLBACK — no
+         staleness the user can see. uid-keyed so a different signed-in user never gets cached data. */
+      let _wb,_hb,_eb,_jb,_nb,_sb; const _nowT = Date.now(); const _cc = window._mpsHomeCloud;
+      if (_cc && _cc.uid === uid && (_nowT - _cc.at) < 8000) {
+        [_wb,_hb,_eb,_jb,_nb,_sb] = _cc.data;
+      } else {
+        [_wb,_hb,_eb,_jb,_nb,_sb] = await Promise.all([_cloudGet('workout'),_cloudGet('habits'),_cloudGet('expenses'),_cloudGet('journal'),_cloudGet('nutrition'),_cloudGet('sleep')]);
+        window._mpsHomeCloud = { uid: uid, at: _nowT, data: [_wb,_hb,_eb,_jb,_nb,_sb] };
+      }
       /* Merged getter: prefer fresh local; fall back to the cloud backup map (key -> stringified value). */
       const sgetM = (key, cloudMap) => { const loc = sget(key); if (loc != null) return loc; try { if (cloudMap && cloudMap[key] != null) return JSON.parse(cloudMap[key]); } catch(e){} return null; };
 
