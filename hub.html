@@ -478,7 +478,7 @@
     const IS_GUEST = (()=>{ try { return new URLSearchParams(location.search).get('guest') === '1'; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '362';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '363';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -716,7 +716,7 @@
        the frames still end up warm for instant switching. */
     function prewarmFrames() {
       // Safety re-renders so Home catches up to cloud data on a fresh device (storage event also handles this).
-      [3000, 7000, 13000].forEach(ms => setTimeout(() => { if (activeId === 'home') loadDashboard(); }, ms));
+      [3000, 7000, 13000].forEach(ms => setTimeout(scheduleDashboard, ms));
       // NOTE: tracker frames are NO LONGER pre-loaded in the background. Booting the heavy apps while
       // you sit on Home blocked the main thread — that's what froze the scroll and made taps need 4-5
       // tries. Each tracker now loads the instant you open it (with the stage loader), so Home stays
@@ -1572,12 +1572,22 @@
        frame fills it as it restores from the cloud (and on every later edit). The cross-document
        `storage` event fires here whenever a frame writes a tracker key — so re-render the dashboard
        and the numbers update to the real data. This is why Home now matches the apps on every device. */
-    let _dashRefreshTimer = null;
+    /* Idle-debounced Home refresh. loadDashboard() crunches all history across five pillars, and the
+       warm app frames fire many `storage` writes as they sync — running it eagerly janked scrolling.
+       Coalesce every trigger into ONE run scheduled on idle time, so the heavy work never blocks a
+       scroll or a tap. */
+    let _dashQueued = false;
+    function scheduleDashboard() {
+      if (activeId !== 'home' || _dashQueued) return;
+      _dashQueued = true;
+      const run = () => { _dashQueued = false; if (activeId === 'home') loadDashboard(); };
+      if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 1500 });
+      else setTimeout(run, 400);
+    }
     window.addEventListener('storage', (e) => {
       const k = e.key || '';
       if (!/^(mps_|rr_sleep:|habits_v4|blocks_v4)/.test(k)) return;   // only tracker data
-      clearTimeout(_dashRefreshTimer);
-      _dashRefreshTimer = setTimeout(() => { if (activeId === 'home') loadDashboard(); }, 350);
+      scheduleDashboard();
     });
 
     function refreshTabLocks() {
