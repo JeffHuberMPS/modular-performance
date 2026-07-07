@@ -171,6 +171,7 @@
     // when you background or leave the app, which was dropping just-saved entries before the debounce
     // fired -- so they never reached the cloud. This makes saves durable across devices.
     var _bFlush=function(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); };
+    window.sleepBackupNow = _bFlush;   // every save calls this -> immediate cloud sync, every time
     try{ document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") _bFlush(); }); window.addEventListener("pagehide", _bFlush); }catch(e){}
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
     // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (sleep) =====
@@ -382,6 +383,7 @@ function SleepTracker() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => setSaveSuccess(false), 1500);
     const ok = await storage.set(form.date, JSON.stringify(entry));
+    try { window.sleepBackupNow && window.sleepBackupNow(); } catch(e){}   // sync to cloud immediately on every save
     if (!ok) setSaveError("Could not persist entry");
   };
 
@@ -1146,7 +1148,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
     {/* Row 2: Recovery · Energy · Soreness · Clarity · Restlessness */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12.48 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48 }}>
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
