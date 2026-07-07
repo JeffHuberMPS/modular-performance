@@ -25,8 +25,8 @@ window.STRIPE_CONFIG = (function() {
       premium_onetime: 'price_1TkstIJr8jtgHpa2N2LL5KSR'    // $99 once
     },
     live: {
-      elite_monthly:   'price_1Tm1QDQswWRvVfC8EApuHW2N',   // $5.99/mo
-      premium_monthly: 'price_1Tm1QDQswWRvVfC8ZN3f6u3G',   // $14.99/mo
+      elite_monthly:   'price_1Tm1QDQswWRvVfC8EApuHW2N',   // $9.99/mo
+      premium_monthly: 'price_1Tm1QDQswWRvVfC8ZN3f6u3G',   // $19.99/mo
       elite_onetime:   'price_1Tmu74QswWRvVfC8Ya0P6oX9',   // $299 once
       premium_onetime: 'price_1Tm1QEQswWRvVfC8WMFOLP3R'    // $499 once
     }
