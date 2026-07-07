@@ -472,7 +472,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '368';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '369';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1542,6 +1542,27 @@
       let _swReloading = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => { if (_swReloading) return; _swReloading = true; location.reload(); });
     }
+
+    /* ── FORCE-FRESH VERSION GUARD ─────────────────────────────────────────────
+       A stuck old service worker or a backgrounded/reopened PWA can keep running
+       OLD code even after a deploy — which silently broke saves before. This makes
+       the newest deploy always win: on load, fetch the live version (cache-bypassed)
+       and if this page is older, hard-purge every cache + service worker and reload.
+       No-ops when already current; runs at most once per deployed version per session. */
+    (async function _mpsVersionGuard(){
+      try {
+        const res = await fetch('/hub.html?vcheck=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const m = (await res.text()).match(/APP_VERSION = '(\d+)'/);
+        const serverVer = m && m[1];
+        if (!serverVer || serverVer === APP_VERSION) return;           // already current
+        if (sessionStorage.getItem('mps_forced_fresh') === serverVer) return;   // tried this version already
+        try { sessionStorage.setItem('mps_forced_fresh', serverVer); } catch(e){}
+        try { if (window.caches) { const cs = await caches.keys(); await Promise.all(cs.map(c => caches.delete(c))); } } catch(e){}
+        try { if ('serviceWorker' in navigator) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); } } catch(e){}
+        location.reload();
+      } catch(e){}
+    })();
 
     buildTabs();
     buildDashCards();
