@@ -913,36 +913,23 @@ function renderResults(){
   else if(searchCat!=='all') list=list.filter(f=>f.cat===searchCat);
   if(searchQuery) list=list.filter(f=>f.n.toLowerCase().includes(searchQuery));
   list=list.slice().sort((a,b)=>{var fa=S.favorites.includes(a.id)?0:1,fb=S.favorites.includes(b.id)?0:1; return fa-fb;});
-<<<<<<< Updated upstream
-  var el=document.getElementById('results');
-  if(!list.length){ el.innerHTML='<div class="res-empty">No foods found. '+(tierOK('elite')?'Add a custom food in Settings.':'')+'</div>'; return; }
-  el.innerHTML=list.map(f=>{
-    var fav=S.favorites.includes(f.id);
-    var favBtn = tierOK('elite')
-      ? '<span class="res-fav '+(fav?'star-on':'star-off')+'" onclick="event.stopPropagation();toggleFav(\''+f.id+'\')">'+(fav?'★':'☆')+'</span>'
-      : '';
-    return '<div class="res-item" onclick="openServing(\''+f.id+'\')">'
-      +'<div class="res-info"><div class="rn">'+f.n+'</div><div class="rm">'+f.serv+' · P'+f.m.p+' C'+f.m.c+' F'+f.m.f+' · '+f.m.cal+'cal</div></div>'
-      +favBtn+'</div>';
-  }).join('');
-=======
   var el=document.getElementById('results'); if(!el) return;
   var html='';
   if(list.length){
     html += list.map(f=>{
       var fav=S.favorites.includes(f.id);
       var favBtn = tierOK('elite') ? '<span class="res-fav '+(fav?'star-on':'star-off')+'" onclick="event.stopPropagation();toggleFav(\''+f.id+'\')">'+(fav?'★':'☆')+'</span>' : '';
-      return '<div class="res-item" onclick="openServing(\''+f.id+'\')"><span class="res-emoji">'+catIcon(f.cat)+'</span>'
+      return '<div class="res-item" onclick="openServing(\''+f.id+'\')">'
         +'<div class="res-info"><div class="rn">'+f.n+'</div><div class="rm">'+f.serv+' · P'+f.m.p+' C'+f.m.c+' F'+f.m.f+' · '+f.m.cal+'cal</div></div>'+favBtn+'</div>';
     }).join('');
   }
-  // online results (Open Food Facts + USDA)
+  // online results (USDA FoodData Central + Open Food Facts)
   if(searchCat==='all' && searchQuery.length>=2){
     if(_liveStatus) html+='<div style="font-size:12px;color:#8a93a0;text-align:center;padding:10px">'+esc(_liveStatus)+'</div>';
     if(_liveResults.length){
       html+='<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#8a93a0;margin:12px 4px 4px">Online · millions of foods</div>';
       html+=_liveResults.map(function(f){
-        return '<div class="res-item" onclick="livePick(\''+f.id+'\')"><span class="res-emoji">'+catIcon(f.cat)+'</span>'
+        return '<div class="res-item" onclick="livePick(\''+f.id+'\')">'
           +'<div class="res-info"><div class="rn">'+esc(f.n)+' <span style="font-size:10px;color:#5f6a76">· '+f._src+'</span></div>'
           +'<div class="rm">'+esc(f.serv)+' · P'+Math.round(f.m.p)+' C'+Math.round(f.m.c)+' F'+Math.round(f.m.f)+' · '+Math.round(f.m.cal)+'cal</div></div></div>';
       }).join('');
@@ -1002,7 +989,6 @@ function livePick(id){
   var f=_liveResults.find(function(x){return x.id===id;}); if(!f) return;
   if(!S.customFoods.find(function(x){return x.id===f.id;})){ S.customFoods.push(f); save(); }
   openServing(f.id);
->>>>>>> Stashed changes
 }
 function toggleFav(id){
   if(S.favorites.includes(id)) S.favorites=S.favorites.filter(x=>x!==id);
