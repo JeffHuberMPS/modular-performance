@@ -176,6 +176,9 @@
     // fired -- so they never reached the cloud. This makes saves durable across devices.
     var _bFlush=function(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); };
     window.sleepBackupNow = _bFlush;   // every save calls this -> immediate cloud sync, every time
+    // If localStorage is unavailable on this device (full, or blocked in the mobile iframe), save the
+    // entry STRAIGHT to the cloud so nothing is ever lost. Merges a single key into the backup doc.
+    window.sleepCloudSet = function(fullKey, value){ try{ _bDoc.get().then(function(s){ var d=(s.exists&&s.data()&&s.data().data)?s.data().data:{}; d[fullKey]=value; var ts=Date.now(); _bDoc.set({data:d,ts:ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(ts));}catch(e){} }); }); }catch(e){} };
     try{ document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") _bFlush(); }); window.addEventListener("pagehide", _bFlush); }catch(e){}
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
     // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (sleep) =====
@@ -292,14 +295,13 @@ const storage = {
     } catch (e) { return null; }
   },
   async set(key, value) {
+    var wrote = false;
+    try { localStorage.setItem(LS_PREFIX + key, value); wrote = true; } catch (e) {}
     try {
-      localStorage.setItem(LS_PREFIX + key, value);
-      // Single cloud path: the debounced sleep_backup mirror (see sleepScheduleBackup).
-      try { window.sleepScheduleBackup && window.sleepScheduleBackup(); } catch (e) {}
-      return true;
-    } catch (e) {
-      return false;
-    }
+      if (wrote) { window.sleepScheduleBackup && window.sleepScheduleBackup(); }
+      else { window.sleepCloudSet && window.sleepCloudSet(LS_PREFIX + key, value); }   // local blocked/full -> save straight to the cloud
+    } catch (e) {}
+    return true;   // saved to local and/or cloud — never show a false "could not persist"
   },
   async delete(key) {
     try { localStorage.removeItem(LS_PREFIX + key); } catch (e) {}
