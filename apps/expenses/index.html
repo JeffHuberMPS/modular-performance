@@ -871,7 +871,7 @@ function save(key, val) {
   function _hasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_match(localStorage.key(i))) return true; } }catch(e){} return false; }
   var _t=null,_busy=false;
   window.expenseScheduleBackup=function(){ if(_t) clearTimeout(_t); _t=setTimeout(_now,1800); };
-  function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); try{ var size=0; try{ size=new Blob([JSON.stringify(data)]).size; }catch(e){ size=JSON.stringify(data).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return; } }catch(e){} _busy=true; var _ts=Date.now(); try{ doc.set({data:data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(_ts));}catch(e){} _busy=false; }).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
+  function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); if(!Object.keys(data).length) return; try{ var size=0; try{ size=new Blob([JSON.stringify(data)]).size; }catch(e){ size=JSON.stringify(data).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return; } }catch(e){} _busy=true; var _ts=Date.now(); try{ doc.set({data:data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(_ts));}catch(e){} _busy=false; }).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
   function _restoreIfEmpty(){ var doc=_doc(); if(!doc) return Promise.resolve(false); if(_hasLocal()) return Promise.resolve(false); return doc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
   // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (expenses) =====
   // ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
@@ -882,10 +882,15 @@ function save(key, val) {
     var localTs=0; try{ localTs=parseInt(localStorage.getItem('expenses_synced_ts')||'0',10)||0; }catch(e){}
     if(cloudTs<=localTs) return;
     var localKeys=[]; try{ for(var i=0;i<localStorage.length;i++){ var lk=localStorage.key(i); if(_match(lk)) localKeys.push(lk); } }catch(e){}
-    var changed=false;
-    localKeys.forEach(function(k){ if(!(k in d)) changed=true; });
-    for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }
+    var deletions=localKeys.filter(function(k){ return !(k in d); });
+    var cloudCount=Object.keys(d).filter(_match).length;
+    // SAFETY: an empty (or delete-everything) cloud is a bad state, never a real user action. Never let
+    // it delete your local data — keep local, re-upload to heal the cloud, and apply only genuine adds.
+    var unsafe = deletions.length && (cloudCount===0 || deletions.length===localKeys.length);
     try{ localStorage.setItem('expenses_synced_ts', String(cloudTs)); }catch(e){}
+    if(unsafe){ Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} }); try{ if(window.expenseScheduleBackup) window.expenseScheduleBackup(); }catch(e){} return; }
+    var changed = deletions.length > 0;
+    for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }
     if(!changed) return;
     localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });
     Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
