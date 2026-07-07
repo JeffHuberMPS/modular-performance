@@ -911,7 +911,7 @@ function renderResults(){
     var favBtn = tierOK('elite')
       ? '<span class="res-fav '+(fav?'star-on':'star-off')+'" onclick="event.stopPropagation();toggleFav(\''+f.id+'\')">'+(fav?'★':'☆')+'</span>'
       : '';
-    return '<div class="res-item" onclick="openServing(\''+f.id+'\')"><span class="res-emoji">'+catIcon(f.cat)+'</span>'
+    return '<div class="res-item" onclick="openServing(\''+f.id+'\')">'
       +'<div class="res-info"><div class="rn">'+f.n+'</div><div class="rm">'+f.serv+' · P'+f.m.p+' C'+f.m.c+' F'+f.m.f+' · '+f.m.cal+'cal</div></div>'
       +favBtn+'</div>';
   }).join('');
