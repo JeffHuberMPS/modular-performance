@@ -164,9 +164,14 @@
     function _bCollect(){ var d={}; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(_bMatch(k)) d[k]=localStorage.getItem(k); } }catch(e){} return d; }
     function _bHasLocal(){ try{ for(var i=0;i<localStorage.length;i++){ if(_bMatch(localStorage.key(i))) return true; } }catch(e){} return false; }
     var _bTimer=null,_bBusy=false;
-    window.sleepScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,1800); };
+    window.sleepScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,700); };
     var _TS_KEY='sleep_synced_ts';   // ts of the cloud state this device is synced to (enables safe delete propagation)
     function _bNow(){ if(_bBusy) return; _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_bCollect(),ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+    // Flush any pending backup the instant the app is hidden or closing. Mobile pauses/kills timers
+    // when you background or leave the app, which was dropping just-saved entries before the debounce
+    // fired -- so they never reached the cloud. This makes saves durable across devices.
+    var _bFlush=function(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); };
+    try{ document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") _bFlush(); }); window.addEventListener("pagehide", _bFlush); }catch(e){}
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
     // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (sleep) =====
     // ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
