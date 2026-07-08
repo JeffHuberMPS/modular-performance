@@ -473,14 +473,14 @@ function SleepTracker() {
         {showForm && (
           <div style={styles.formCard}>
             <div style={styles.formGrid}>
-              <Field label="Date">
-                <input type="date" value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  style={styles.input} />
-              </Field>
               <Field label="Wake Time">
                 <input type="time" value={form.wakeTime}
                   onChange={(e) => setForm({ ...form, wakeTime: e.target.value })}
+                  style={styles.input} />
+              </Field>
+              <Field label="Date">
+                <input type="date" value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
                   style={styles.input} />
               </Field>
               <Field label="Sleep Time">
