@@ -939,16 +939,6 @@ function SleepTracker() {
   }, /*#__PURE__*/React.createElement("div", {
     style: styles.formGrid
   }, /*#__PURE__*/React.createElement(Field, {
-    label: "Date"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "date",
-    value: form.date,
-    onChange: e => setForm({
-      ...form,
-      date: e.target.value
-    }),
-    style: styles.input
-  })), /*#__PURE__*/React.createElement(Field, {
     label: "Wake Time"
   }, /*#__PURE__*/React.createElement("input", {
     type: "time",
@@ -956,6 +946,16 @@ function SleepTracker() {
     onChange: e => setForm({
       ...form,
       wakeTime: e.target.value
+    }),
+    style: styles.input
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Date"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: form.date,
+    onChange: e => setForm({
+      ...form,
+      date: e.target.value
     }),
     style: styles.input
   })), /*#__PURE__*/React.createElement(Field, {
