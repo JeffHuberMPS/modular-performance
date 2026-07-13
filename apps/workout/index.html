@@ -1284,6 +1284,88 @@ function _wkEmpty(data) {
   try { if (typeof K_CONDITIONING !== 'undefined' && data[K_CONDITIONING]) { const c = JSON.parse(data[K_CONDITIONING]); if (c && ((c.length) || (typeof c === 'object' && Object.keys(c).length))) return false; } } catch (e) { return false; }
   return true;
 }
+// ===== ADDITIVE MERGE (workout) =====
+// The cloud doc's `data` is { <k>_state: json, <k>_history: json, <k>_prs: json, <k>_conditioning: json }
+// — each VALUE is its own JSON blob, so we merge per key by policy (never drop a day/PR/session):
+//   *_state       : overlay wins scalars, BUT selectedDate stays base (transient cursor); days union by date
+//   *_history     : union by date, FULLER record wins (the app's dedupe scoring); one record per date
+//   *_prs         : union by exercise, HIGHER weight wins (never regress a PR)
+//   *_conditioning: generic union (entries have no id/date -> JSON-value dedup; multiple per day allowed)
+// overlay = the winning side (local at backup, newer-cloud at watch). Unit-tested before ship.
+function _isObj(x){ return !!x && typeof x==='object' && !Array.isArray(x); }
+function _keyOf(o){ if(!_isObj(o)) return null; if(o.id!=null) return 'id:'+o.id; if(o.date!=null) return 'date:'+o.date; return null; }
+function _unionArr(a, b){
+  a=Array.isArray(a)?a:[]; b=Array.isArray(b)?b:[]; var keyed=false,i;
+  for(i=0;i<a.length;i++){ if(_keyOf(a[i])){ keyed=true; break; } }
+  if(!keyed){ for(i=0;i<b.length;i++){ if(_keyOf(b[i])){ keyed=true; break; } } }
+  var out=[];
+  if(keyed){ var idx={};
+    for(i=0;i<a.length;i++){ var ka=_keyOf(a[i]); out.push(a[i]); if(ka!=null) idx[ka]=out.length-1; }
+    for(i=0;i<b.length;i++){ var kb=_keyOf(b[i]); if(kb!=null && (kb in idx)){ out[idx[kb]]=_deepUnion(out[idx[kb]], b[i]); } else { out.push(b[i]); if(kb!=null) idx[kb]=out.length-1; } }
+    return out; }
+  var seen={};
+  for(i=0;i<a.length;i++){ try{seen[JSON.stringify(a[i])]=1;}catch(e){} out.push(a[i]); }
+  for(i=0;i<b.length;i++){ var s; try{s=JSON.stringify(b[i]);}catch(e){s=null;} if(s==null || !(s in seen)){ if(s!=null) seen[s]=1; out.push(b[i]); } }
+  return out;
+}
+function _deepUnion(base, overlay){
+  if(overlay===undefined) return base; if(base===undefined) return overlay;
+  if(overlay===null) return base===null?null:base; if(base===null) return overlay;
+  if(Array.isArray(base) && Array.isArray(overlay)) return _unionArr(base, overlay);
+  if(_isObj(base) && _isObj(overlay)){ var out={},k; for(k in base) out[k]=base[k]; for(k in overlay){ out[k]=(k in base)?_deepUnion(base[k],overlay[k]):overlay[k]; } return out; }
+  return overlay;
+}
+function _histScore(r){ return ((r&&r.circuitCount||0)*10000)+((r&&(r.roundCount||r.setCount)||0)*100)+((r&&r.exerciseCount)||0); }
+function _mergeHistory(a, b){
+  a=Array.isArray(a)?a:[]; b=Array.isArray(b)?b:[]; var byDate={}, extras=[], extraSeen={}, i;
+  function add(r){
+    if(r && r.date!=null){ var d=r.date; if(!(d in byDate) || _histScore(r) >= _histScore(byDate[d])) byDate[d]=r; }
+    else { var s; try{s=JSON.stringify(r);}catch(e){s=null;} if(s==null||!(s in extraSeen)){ if(s!=null) extraSeen[s]=1; extras.push(r); } }
+  }
+  for(i=0;i<a.length;i++) add(a[i]);
+  for(i=0;i<b.length;i++) add(b[i]);
+  var out=Object.keys(byDate).map(function(d){return byDate[d];}).concat(extras);
+  out.sort(function(x,y){ return String(x&&x.date||'').localeCompare(String(y&&y.date||'')); });
+  return out;
+}
+function _prWeight(v){ if(v==null) return -Infinity; if(typeof v==='number') return v; if(_isObj(v)&&v.weight!=null){ var w=parseFloat(v.weight); return isNaN(w)?-Infinity:w; } return -Infinity; }
+function _mergePRs(a, b){
+  a=_isObj(a)?a:{}; b=_isObj(b)?b:{}; var out={}, k;
+  for(k in a) out[k]=a[k];
+  for(k in b){ if(!(k in out)) out[k]=b[k]; else out[k]=(_prWeight(b[k])>=_prWeight(a[k]))?b[k]:a[k]; }
+  return out;
+}
+function _mergeState(base, overlay){
+  base=_isObj(base)?base:{}; overlay=_isObj(overlay)?overlay:{}; var out={}, k;
+  for(k in base) out[k]=base[k];
+  for(k in overlay) out[k]=overlay[k];            // overlay wins scalars (targetRounds, etc.)
+  if('selectedDate' in base) out.selectedDate = base.selectedDate;   // keep base's cursor (stability -> no reload loop)
+  var da=_isObj(base.days)?base.days:{}, db=_isObj(overlay.days)?overlay.days:{}, days={}, d;
+  for(d in da) days[d]=da[d];
+  for(d in db) days[d]=db[d];                      // overlay day wins on a shared date (whole, no Frankenstein)
+  out.days = days;
+  return out;
+}
+function _mergeWkKey(key, baseStr, overStr){
+  try{
+    var b=(baseStr==null||baseStr==='')?null:JSON.parse(baseStr);
+    var o=(overStr==null||overStr==='')?null:JSON.parse(overStr);
+    if(b==null) return overStr==null?baseStr:overStr; if(o==null) return baseStr;
+    var m;
+    if(/_history$/.test(key)) m=_mergeHistory(b,o);
+    else if(/_prs$/.test(key)) m=_mergePRs(b,o);
+    else if(/_state$/.test(key)) m=_mergeState(b,o);
+    else m=_deepUnion(b,o);
+    return JSON.stringify(m);
+  }catch(e){ return (overStr||'').length>=(baseStr||'').length?(overStr||baseStr):(baseStr||overStr); }
+}
+// base/overlay = { key: jsonString }. overlay wins. Never drops a key or shrinks a value.
+function _mergeWorkoutData(base, overlay){
+  base=_isObj(base)?base:{}; overlay=_isObj(overlay)?overlay:{}; var out={}, k;
+  for(k in base) out[k]=base[k];
+  for(k in overlay){ out[k]=(k in base)?_mergeWkKey(k, base[k], overlay[k]):overlay[k]; }
+  return out;
+}
 let _cloudTimer = null, _cloudBusy = false;
 function scheduleCloudBackup() {
   if (_cloudTimer) clearTimeout(_cloudTimer);
@@ -1306,17 +1388,26 @@ async function cloudBackupNow() {
     // "custom Object". Rebuild it via the parent's JSON.parse so set() accepts it.
     const PJSON = (window.parent && window.parent.JSON) ? window.parent.JSON : JSON;
     const _ts = Date.now();
-    const payload = PJSON.parse(JSON.stringify({ data: _data, ts: _ts, v: 1 }));
+    // ADDITIVE UNION: merge this device's snapshot with the cloud (local wins on conflicts) so a backup
+    // NEVER drops a day/PR/session another device added. We do NOT advance workout_synced_ts on the merge
+    // path — the watcher then pulls the union back so every device converges to the same full state.
+    let _merged = _data;
+    try {
+      const _snap = await doc.get();
+      const _cloud = (_snap && _snap.exists && _snap.data()) ? _snap.data().data : null;
+      if (_cloud && !_wkEmpty(_cloud)) _merged = _mergeWorkoutData(_cloud, _data);   // local (_data) overlays cloud
+    } catch (e) { _merged = _data; }   // read failed -> write this device's data (never empty, never loses local)
+    const payload = PJSON.parse(JSON.stringify({ data: _merged, ts: _ts, v: 1 }));
     await doc.set(payload);
-    try { localStorage.setItem('workout_synced_ts', String(_ts)); } catch (e) {}
     try { localStorage.setItem(K_LAST_BACKUP, new Date().toISOString()); } catch (e) {}
     try { updateBackupStatus(); } catch (e) {}
     _cloudBusy = false;
     return true;
   } catch (e) { _cloudBusy = false; return false; }
 }
-// ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (workout) =====
-// ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
+// ===== LIVE TWO-WAY ADDITIVE SYNC (workout) =====
+// ts-gated: a NEWER cloud state is MERGED into local (adds/edits ONLY, never deletions). Every device
+// converges to the UNION of all days/PRs/sessions, so a cross-device mismatch can never delete your data.
 function watchCloudLive() {
   const doc = _cloudDoc();
   if (!doc) return;
@@ -1335,13 +1426,15 @@ function watchCloudLive() {
         try { scheduleCloudBackup(); } catch (e) {}
         return;
       }
+      // ADDITIVE: union the newer cloud INTO local per key (cloud wins on conflicts; union never shrinks).
+      // NEVER remove a local key/day/PR just because the cloud is missing it — that delete-propagation is
+      // what lost data. Reload only when the merge actually added something (also breaks any sync loop).
+      let merged = {}; try { merged = _mergeWorkoutData(mine, d); } catch (e) { merged = mine; }
       let changed = false;
-      for (const k in mine) { if (!(k in d)) changed = true; }      // a deletion (whole key gone)?
-      for (const k in d) { if (d[k] !== mine[k]) changed = true; }  // an add/edit?
+      for (const k in merged) { if (merged[k] !== mine[k]) changed = true; }
       try { localStorage.setItem('workout_synced_ts', String(cloudTs)); } catch (e) {}
       if (!changed) return;
-      Object.keys(mine).forEach(function (k) { if (!(k in d)) localStorage.removeItem(k); });   // apply deletions
-      Object.keys(d).forEach(function (k) { try { localStorage.setItem(k, d[k]); } catch (e) {} });  // apply adds/edits
+      Object.keys(merged).forEach(function (k) { try { localStorage.setItem(k, merged[k]); } catch (e) {} });
       location.reload();
     });
   } catch (e) {}
