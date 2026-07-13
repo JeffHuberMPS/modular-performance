@@ -883,10 +883,24 @@ function save(key, val) {
   // localStorage blocked/full -> merge a single key STRAIGHT into the backup doc so nothing is lost.
   window.expenseCloudSet=function(key,value){ var doc=_doc(); if(!doc) return; try{ doc.get().then(function(s){ var d=(s.exists&&s.data()&&s.data().data)?s.data().data:{}; d[key]=value; var ts=Date.now(); doc.set({data:d,ts:ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(ts));}catch(e){} }); }); }catch(e){} };
   try{ document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') _flush(); }); window.addEventListener('pagehide', _flush); }catch(e){}
-  function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); if(!Object.keys(data).length) return; try{ var size=0; try{ size=new Blob([JSON.stringify(data)]).size; }catch(e){ size=JSON.stringify(data).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return; } }catch(e){} _busy=true; var _ts=Date.now(); try{ doc.set({data:data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(_ts));}catch(e){} _busy=false; }).catch(function(){_busy=false;}); }catch(e){_busy=false;} }
+  function _sizeOK(o){ var size=0; try{ size=new Blob([JSON.stringify(o)]).size; }catch(e){ size=JSON.stringify(o).length; } if(size>900000){ console.warn('Expenses cloud backup skipped: payload too large ('+size+' bytes, ~1 MiB Firestore doc limit).'); return false; } return true; }
+  // ADDITIVE UNION: MERGE with the cloud so a backup NEVER removes entries another device added. We do
+  // NOT advance synced_ts on the merge path — the live watcher then pulls any cloud-only entries in.
+  function _now(){ var doc=_doc(); if(!doc||_busy) return; var data=_collect(); if(!Object.keys(data).length) return; _busy=true; var _ts=Date.now();
+    try{ doc.get().then(function(s){
+      var cloud=(s.exists&&s.data()&&s.data().data)?s.data().data:{}, merged={}, k;
+      for(k in cloud) merged[k]=cloud[k];        // keep every device's existing entries
+      for(k in data) merged[k]=data[k];          // this device's values win for the keys it holds
+      if(!_sizeOK(merged)){ _busy=false; return; }
+      doc.set({data:merged,ts:_ts,v:1}).then(function(){ _busy=false; }).catch(function(){_busy=false;});
+    }).catch(function(){ // read failed -> plain write of this device's data (still never empty, never loses local)
+      if(!_sizeOK(data)){ _busy=false; return; }
+      doc.set({data:data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem('expenses_synced_ts',String(_ts));}catch(e){} _busy=false; }).catch(function(){_busy=false;});
+    }); }catch(e){_busy=false;} }
   function _restoreIfEmpty(){ var doc=_doc(); if(!doc) return Promise.resolve(false); if(_hasLocal()) return Promise.resolve(false); return doc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
-  // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (expenses) =====
-  // ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
+  // ===== LIVE TWO-WAY ADDITIVE SYNC (expenses) =====
+  // ts-gated: a NEWER cloud state applies adds/edits ONLY (never deletions). Every device converges to
+  // the UNION of all entries, so a cross-device mismatch can never delete your data.
   function _watchLive(){ var doc=_doc(); if(!doc) return; try{ doc.onSnapshot(function(s){
     if(!s.exists||!s.data()) return;
     var d=(s.data().data)||{};
@@ -901,10 +915,11 @@ function save(key, val) {
     var unsafe = deletions.length && (cloudCount===0 || deletions.length===localKeys.length);
     try{ localStorage.setItem('expenses_synced_ts', String(cloudTs)); }catch(e){}
     if(unsafe){ Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} }); try{ if(window.expenseScheduleBackup) window.expenseScheduleBackup(); }catch(e){} return; }
-    var changed = deletions.length > 0;
-    for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }
+    // ADDITIVE: apply only adds/edits from the cloud; NEVER remove a local entry just because a newer
+    // cloud snapshot is missing it — that cross-device delete-propagation is what lost data.
+    var changed = false;
+    for(var ck in d){ if(_match(ck) && localStorage.getItem(ck)!==d[ck]) changed=true; }
     if(!changed) return;
-    localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });
     Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
     // Data is already applied above. Guard the visual refresh so a sync can NEVER loop or yank you
     // out of the app mid-use: settle for 6s after load, then reload at most once per 15s.
