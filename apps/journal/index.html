@@ -130,7 +130,18 @@
         function _bNow(){ if(_bBusy) return; var _data=_bCollect();
           // NEVER back up an empty state — writing {} would wipe the cloud (and, via sync, every device).
           if(!Object.keys(_data).length) return;
-          _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+          _bBusy=true; var _ts=Date.now();
+          // ADDITIVE UNION: MERGE with the cloud so a backup NEVER removes entries another device added.
+          // We do NOT advance _synced_ts here on purpose — the live watcher then pulls any cloud-only
+          // entries into this device and refreshes, so every device converges to the SAME full set.
+          try{ _bDoc.get().then(function(s){
+            var cloud=(s.exists&&s.data()&&s.data().data)?s.data().data:{}, merged={}, k;
+            for(k in cloud) merged[k]=cloud[k];      // keep every device's existing entries
+            for(k in _data) merged[k]=_data[k];      // this device's values win for the keys it holds
+            _bDoc.set({data:merged,ts:_ts,v:1}).then(function(){ _bBusy=false; }).catch(function(){_bBusy=false;});
+          }).catch(function(){ // read failed -> plain write (still never empty, never loses this device's data)
+            _bDoc.set({data:_data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;});
+          }); }catch(e){_bBusy=false;} }
         // Flush a pending debounced backup immediately, and flush on tab-hide/close so mobile never drops the last change.
         function _bFlush(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); }
         window.journalBackupNow = _bFlush;
@@ -138,8 +149,9 @@
         window.journalCloudSet = function(fullKey, value){ try{ _bDoc.get().then(function(s){ var d=(s.exists&&s.data()&&s.data().data)?s.data().data:{}; d[fullKey]=value; var ts=Date.now(); _bDoc.set({data:d,ts:ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(ts));}catch(e){} }); }); }catch(e){} };
         try{ document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") _bFlush(); }); window.addEventListener("pagehide", _bFlush); }catch(e){}
         function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
-        // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (journal) =====
-        // ts-gated: only a NEWER cloud state is applied (adds, edits, AND deletions); older/own writes ignored → no overwrite.
+        // ===== LIVE TWO-WAY ADDITIVE SYNC (journal) =====
+        // ts-gated: a NEWER cloud state applies adds/edits ONLY (never deletions). Every device converges
+        // to the UNION of all entries, so a cross-device mismatch can never delete your data.
         function _bWatchLive(){ try{ _bDoc.onSnapshot(function(s){
           if(!s.exists||!s.data()) return;
           var d=(s.data().data)||{};
@@ -149,15 +161,16 @@
           var localKeys=[]; try{ for(var i=0;i<localStorage.length;i++){ var lk=localStorage.key(i); if(_bMatch(lk)) localKeys.push(lk); } }catch(e){}
           var deletions=localKeys.filter(function(k){ return !(k in d); });
           var cloudCount=Object.keys(d).filter(_bMatch).length;
-          try{ localStorage.setItem(_TS_KEY, String(cloudTs)); }catch(e){}
-          // SAFETY: an empty (or delete-everything) cloud is a BAD state, never a real user action. Keep local,
-          // re-upload to heal the cloud, and still apply any genuine adds it may also carry.
+          // SAFETY: an empty (or delete-everything) cloud is a BAD state, never a real user action. Never let
+          // it delete your local data. Keep local, re-upload to heal the cloud, and still apply any genuine adds.
           var unsafe = deletions.length && (cloudCount===0 || deletions.length===localKeys.length);
+          try{ localStorage.setItem(_TS_KEY, String(cloudTs)); }catch(e){}
           if(unsafe){ Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} }); try{ window.journalScheduleBackup && window.journalScheduleBackup(); }catch(e){} return; }
-          var changed = deletions.length>0;
-          for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }
+          // ADDITIVE: apply only adds/edits from the cloud; NEVER remove a local entry just because a newer
+          // cloud snapshot is missing it — that cross-device delete-propagation is what lost data.
+          var changed = false;
+          for(var ck in d){ if(_bMatch(ck) && localStorage.getItem(ck)!==d[ck]) changed=true; }
           if(!changed) return;
-          localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });
           Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });
           location.reload();
         }); }catch(e){} }
