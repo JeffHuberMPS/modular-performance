@@ -483,7 +483,7 @@
     const IS_GUEST = (()=>{ try { return new URLSearchParams(location.search).get('guest') === '1'; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '388';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '389';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1056,12 +1056,22 @@
         const avgEnergy = eAll.length ? Math.round(eAll.reduce((a,b)=>a+b,0)/eAll.length*10)/10 : null;
         const sAll = logs.map(l=>Number(l.soreness)).filter(n=>!isNaN(n));
         const avgSor = sAll.length ? Math.round(sAll.reduce((a,b)=>a+b,0)/sAll.length*10)/10 : null;
+        // AVG RECOVERY: the app's recovery score per entry, averaged (matches apps/sleep calcRecovery).
+        const _rnum = (v,d)=>{ const x=Number(v); return isNaN(x)?d:x; };
+        const recScores = logs.map(l=>{ const h=calcHours(l.sleepTime,l.wakeTime); if(!(h>0)) return null;
+          const e=_rnum(l.energy,5), s=_rnum(l.soreness,5), c=_rnum(l.clarity,5), r=_rnum(l.restlessness,3);
+          return Math.round(Math.min(h/7,1)*25 + (e/10)*20 + (c/10)*20 + ((10-s)/10)*15 + ((10-r)/10)*20);
+        }).filter(v=>v!=null);
+        const avgRec = recScores.length ? Math.round(recScores.reduce((a,b)=>a+b,0)/recScores.length) : null;
+        // streak: consecutive days (from today back) with a Recovery entry
+        const recDates = new Set(logs.map(l=>l.date).filter(Boolean));
+        let recStreak=0; for(let i=0;;i++){ if(recDates.has(ymd(daysAgo(i)))) recStreak++; else break; }
         setCardMetrics('sleep', [
           [(avgDur!=null ? avgDur : 0)+'H','avg duration'],
           [(avgEnergy!=null ? avgEnergy : 0)+' / 10','avg energy'],
           [(avgSor!=null ? avgSor : 0)+' / 10','avg soreness'],
-          [(avgE!=null ? avgE : 0)+' / 10','avg energy 7d'],
-          [String(logs.length),'entries (30d)']
+          [(avgRec!=null ? avgRec : 0)+'%','avg recovery'],
+          [String(recStreak),'streak']
         ]);
       } catch(e){ setCardMetrics('sleep', []); }
 
