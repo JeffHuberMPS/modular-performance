@@ -283,14 +283,60 @@
     var _bDoc = firebase.firestore().doc('users/' + user.uid + '/settings/nutrition_backup');
     var _busy = false, _timer = null;
 
+    // ===== ADDITIVE DEEP-UNION MERGE =====
+    // The nutrition state is ONE JSON blob, so union-by-localStorage-key can't merge inside it. This
+    // deep-union merges two blobs: arrays union (by id/date when present, else by JSON value), object
+    // maps union their keys, and scalars take the OVERLAY side. Result never has fewer days/entries
+    // than either input, so a cross-device sync can never delete data. Unit-tested before ship.
+    function _isObj(x){ return !!x && typeof x==='object' && !Array.isArray(x); }
+    function _keyOf(o){ if(!_isObj(o)) return null; if(o.id!=null) return 'id:'+o.id; if(o.date!=null) return 'date:'+o.date; return null; }
+    function _unionArr(a, b){
+      a=Array.isArray(a)?a:[]; b=Array.isArray(b)?b:[]; var keyed=false,i;
+      for(i=0;i<a.length;i++){ if(_keyOf(a[i])){ keyed=true; break; } }
+      if(!keyed){ for(i=0;i<b.length;i++){ if(_keyOf(b[i])){ keyed=true; break; } } }
+      var out=[];
+      if(keyed){ var idx={};
+        for(i=0;i<a.length;i++){ var ka=_keyOf(a[i]); out.push(a[i]); if(ka!=null) idx[ka]=out.length-1; }
+        for(i=0;i<b.length;i++){ var kb=_keyOf(b[i]); if(kb!=null && (kb in idx)){ out[idx[kb]]=_deepUnion(out[idx[kb]], b[i]); } else { out.push(b[i]); if(kb!=null) idx[kb]=out.length-1; } }
+        return out; }
+      var seen={};
+      for(i=0;i<a.length;i++){ try{seen[JSON.stringify(a[i])]=1;}catch(e){} out.push(a[i]); }
+      for(i=0;i<b.length;i++){ var s; try{s=JSON.stringify(b[i]);}catch(e){s=null;} if(s==null || !(s in seen)){ if(s!=null) seen[s]=1; out.push(b[i]); } }
+      return out;
+    }
+    function _deepUnion(base, overlay){
+      if(overlay===undefined) return base; if(base===undefined) return overlay;
+      if(overlay===null) return base===null?null:base; if(base===null) return overlay;
+      if(Array.isArray(base) && Array.isArray(overlay)) return _unionArr(base, overlay);
+      if(_isObj(base) && _isObj(overlay)){ var out={},k; for(k in base) out[k]=base[k]; for(k in overlay){ out[k]=(k in base)?_deepUnion(base[k],overlay[k]):overlay[k]; } return out; }
+      return overlay;   // scalar or type-mismatch: overlay wins
+    }
+    // Merge two JSON strings additively (overlayStr wins on conflicts). Defensive: on any parse/merge
+    // failure, return the larger non-empty input so a bad blob can never shrink your data or throw.
+    function _mergeBlob(baseStr, overlayStr){
+      try{
+        var b=(baseStr==null||baseStr==='')?undefined:JSON.parse(baseStr);
+        var o=(overlayStr==null||overlayStr==='')?undefined:JSON.parse(overlayStr);
+        if(b===undefined) return overlayStr; if(o===undefined) return baseStr;
+        return JSON.stringify(_deepUnion(b,o));
+      }catch(e){ var bl=(baseStr||'').length, ol=(overlayStr||'').length; return ol>=bl?(overlayStr||baseStr):(baseStr||overlayStr); }
+    }
+
     function _push(){
       if (_busy) return; var val = null;
       try { val = localStorage.getItem(KEY); } catch(e){}
       if (val == null || val === '') return;   // never back up an empty state over the cloud
       _busy = true; var ts = Date.now();
-      try { _bDoc.set({ data: val, ts: ts, v: 1 }).then(function(){
-        try { localStorage.setItem(TS_KEY, String(ts)); } catch(e){} _busy = false;
-      }).catch(function(){ _busy = false; }); } catch(e){ _busy = false; }
+      // ADDITIVE UNION: merge this device's blob with the cloud (local wins on conflicts) so a backup
+      // NEVER drops days/entries another device added. We do NOT advance synced_ts on the merge path —
+      // the watcher then pulls the union back so every device converges to the same full state.
+      try { _bDoc.get().then(function(s){
+        var cloud = (s.exists && s.data()) ? s.data().data : null;
+        var merged = (cloud==null||cloud==='') ? val : _mergeBlob(cloud, val);   // local (val) overlays cloud
+        _bDoc.set({ data: merged, ts: ts, v: 1 }).then(function(){ _busy=false; }).catch(function(){ _busy=false; });
+      }).catch(function(){   // read failed -> plain write of this device's data (never empty, never loses local)
+        try { _bDoc.set({ data: val, ts: ts, v: 1 }).then(function(){ try{localStorage.setItem(TS_KEY,String(ts));}catch(e){} _busy=false; }).catch(function(){ _busy=false; }); } catch(e){ _busy=false; }
+      }); } catch(e){ _busy = false; }
     }
     // debounced backup, called from the app's save()
     window.nutritionScheduleBackup = function(){ if (_timer) clearTimeout(_timer); _timer = setTimeout(_push, 700); };
@@ -320,7 +366,8 @@
       }).catch(function(){ return false; });
     }
 
-    // Live two-way: apply ONLY a strictly-newer cloud state (ts-gated → ignores our own/older writes).
+    // Live two-way ADDITIVE sync: apply a strictly-newer cloud state (ts-gated → ignores our own/older
+    // writes), MERGED into local (never a wholesale replace) so a mismatch can't delete this device's data.
     function _watchLive(){
       try { _bDoc.onSnapshot(function(s){
         if (!s.exists || !s.data()) return;
@@ -333,7 +380,11 @@
         // SAFETY: a null/empty cloud is a bad state — never wipe local to match it. Keep local and
         // re-upload to heal the cloud. (An explicit reset clears local on that device directly.)
         if (cloud == null || cloud === '') { if (cur != null && cur !== '') { try { window.nutritionScheduleBackup && window.nutritionScheduleBackup(); } catch(e){} } return; }
-        try { localStorage.setItem(KEY, cloud); } catch(e){}
+        // ADDITIVE: union the newer cloud INTO local (cloud wins on conflicts). If the merge adds nothing
+        // new, the string is identical and we skip the reload — which also prevents any sync loop.
+        var merged = (cur==null||cur==='') ? cloud : _mergeBlob(cur, cloud);   // cloud overlays local
+        if (merged === cur) return;
+        try { localStorage.setItem(KEY, merged); } catch(e){}
         location.reload();
       }); } catch(e){}
     }
