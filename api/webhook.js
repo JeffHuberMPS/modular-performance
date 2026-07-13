@@ -191,7 +191,7 @@ module.exports = async (req, res) => {
         console.log(`[Webhook] Upgraded user ${uid} to ${tier}${lifetime ? ' (lifetime)' : trialActive ? ' (trial)' : ''}`);
 
         // Elite buyers ONLY → MailerLite "Elite Buyers" group (triggers the Email #6 automation).
-        // Both Elite plans ($49 one-time + $5.99/mo) count; Premium buyers are intentionally excluded.
+        // Both Elite plans ($299 one-time + $9.99/mo) count; Premium buyers are intentionally excluded.
         if (tier === 'elite') {
           const buyerEmail = session.customer_details?.email || session.customer_email || null;
           await addEliteBuyerToMailerLite(buyerEmail);
