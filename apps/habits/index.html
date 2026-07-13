@@ -110,12 +110,66 @@
     function _bHasLocal(){ for(var i=0;i<_bKeys.length;i++){ try{ if(localStorage.getItem(_bKeys[i])!==null) return true; }catch(e){} } return false; }
     var _bTimer=null,_bBusy=false;
     window.habitsScheduleBackup = function(){ if(_bTimer) clearTimeout(_bTimer); _bTimer=setTimeout(_bNow,700); };
-    var _TS_KEY='habits_synced_ts';   // ts of the cloud state this device is synced to (enables safe delete propagation)
+    var _TS_KEY='habits_synced_ts';   // ts of the cloud state this device is synced to
+    // ===== ADDITIVE DEEP-UNION MERGE (habits) =====
+    // Each of the 3 blobs is its own JSON, so a key-level union can't merge inside them. This generic
+    // deep-union merges two blobs: object maps union their keys (recurse on shared), arrays union by
+    // id/date (else JSON value), scalars take the OVERLAY side. For habits that means: completion days
+    // union, per-day habit checks union (a habit done on EITHER device stays done), gym days union, and
+    // block definitions union by id. Result never has fewer completions than either device. Unit-tested.
+    function _isObj(x){ return !!x && typeof x==='object' && !Array.isArray(x); }
+    function _keyOf(o){ if(!_isObj(o)) return null; if(o.id!=null) return 'id:'+o.id; if(o.date!=null) return 'date:'+o.date; return null; }
+    function _unionArr(a, b){
+      a=Array.isArray(a)?a:[]; b=Array.isArray(b)?b:[]; var keyed=false,i;
+      for(i=0;i<a.length;i++){ if(_keyOf(a[i])){ keyed=true; break; } }
+      if(!keyed){ for(i=0;i<b.length;i++){ if(_keyOf(b[i])){ keyed=true; break; } } }
+      var out=[];
+      if(keyed){ var idx={};
+        for(i=0;i<a.length;i++){ var ka=_keyOf(a[i]); out.push(a[i]); if(ka!=null) idx[ka]=out.length-1; }
+        for(i=0;i<b.length;i++){ var kb=_keyOf(b[i]); if(kb!=null && (kb in idx)){ out[idx[kb]]=_deepUnion(out[idx[kb]], b[i]); } else { out.push(b[i]); if(kb!=null) idx[kb]=out.length-1; } }
+        return out; }
+      var seen={};
+      for(i=0;i<a.length;i++){ try{seen[JSON.stringify(a[i])]=1;}catch(e){} out.push(a[i]); }
+      for(i=0;i<b.length;i++){ var s; try{s=JSON.stringify(b[i]);}catch(e){s=null;} if(s==null || !(s in seen)){ if(s!=null) seen[s]=1; out.push(b[i]); } }
+      return out;
+    }
+    function _deepUnion(base, overlay){
+      if(overlay===undefined) return base; if(base===undefined) return overlay;
+      if(overlay===null) return base===null?null:base; if(base===null) return overlay;
+      if(Array.isArray(base) && Array.isArray(overlay)) return _unionArr(base, overlay);
+      if(_isObj(base) && _isObj(overlay)){ var out={},k; for(k in base) out[k]=base[k]; for(k in overlay){ out[k]=(k in base)?_deepUnion(base[k],overlay[k]):overlay[k]; } return out; }
+      return overlay;
+    }
+    function _mergeBlob(baseStr, overlayStr){
+      try{
+        var b=(baseStr==null||baseStr==='')?undefined:JSON.parse(baseStr);
+        var o=(overlayStr==null||overlayStr==='')?undefined:JSON.parse(overlayStr);
+        if(b===undefined) return overlayStr; if(o===undefined) return baseStr;
+        return JSON.stringify(_deepUnion(b,o));
+      }catch(e){ var bl=(baseStr||'').length, ol=(overlayStr||'').length; return ol>=bl?(overlayStr||baseStr):(baseStr||overlayStr); }
+    }
+    // base/overlay = { key: jsonString }. overlay wins. Never drops a key or shrinks a blob.
+    function _mergeHabitsData(base, overlay){
+      base=_isObj(base)?base:{}; overlay=_isObj(overlay)?overlay:{}; var out={}, k;
+      for(k in base) out[k]=base[k];
+      for(k in overlay){ out[k]=(k in base)?_mergeBlob(base[k], overlay[k]):overlay[k]; }
+      return out;
+    }
     function _bNow(){ if(_bBusy) return; var _data=_bCollect();
       // NEVER back up an empty state — writing {} would wipe the cloud (and, via sync, every device).
       // A device with no entries just skips; a device that HAS data keeps the cloud whole.
       if(!Object.keys(_data).length) return;
-      _bBusy=true; var _ts=Date.now(); try{ _bDoc.set({data:_data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;}); }catch(e){_bBusy=false;} }
+      _bBusy=true; var _ts=Date.now();
+      // ADDITIVE UNION: merge cloud+local per blob (local wins on conflicts) so a backup NEVER drops a
+      // completion/day/habit another device added. We do NOT advance synced_ts on the merge path — the
+      // watcher then pulls the union back so every device converges to the same full state.
+      try{ _bDoc.get().then(function(s){
+        var cloud=(s.exists&&s.data()&&s.data().data)?s.data().data:null;
+        var merged=(cloud && Object.keys(cloud).length)? _mergeHabitsData(cloud, _data) : _data;   // local overlays cloud
+        _bDoc.set({data:merged,ts:_ts,v:1}).then(function(){ _bBusy=false; }).catch(function(){_bBusy=false;});
+      }).catch(function(){ // read failed -> plain write of this device's data (never empty, never loses local)
+        _bDoc.set({data:_data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;});
+      }); }catch(e){_bBusy=false;} }
     // Flush a pending debounced backup immediately (used on tab close so the last change isn't dropped).
     function _bFlush(){ if(_bTimer){ clearTimeout(_bTimer); _bTimer=null; } _bNow(); }
     window.habitsBackupNow = _bFlush;
@@ -125,11 +179,11 @@
     window.addEventListener('pagehide', _bFlush);
     document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') _bFlush(); });
     function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return true; } return false; }).catch(function(){return false;}); }
-    // ===== LIVE TWO-WAY SYNC + DELETE PROPAGATION (habits) =====
-    // Real-time listener. When ANOTHER device saves (cloud ts > our synced ts), apply adds, edits,
-    // and SAFE deletions. ts-gating means our own writes (and older cloud state) are ignored, so we
-    // never overwrite newer local data. An empty/delete-all cloud is treated as corruption, not a
-    // command — we heal it from local instead of wiping (see the SAFETY guard below).
+    // ===== LIVE TWO-WAY ADDITIVE SYNC (habits) =====
+    // Real-time listener. When ANOTHER device saves (cloud ts > our synced ts), MERGE each newer cloud
+    // blob INTO local (adds/edits ONLY, never deletions). ts-gating ignores our own/older writes. An
+    // empty/delete-all cloud is treated as corruption, not a command — we heal it from local instead of
+    // wiping. Every device converges to the UNION of all completions, so a mismatch can't delete data.
     function _bWatchLive(){ try{ _bDoc.onSnapshot(function(s){
       if(!s.exists||!s.data()) return;
       var d=(s.data().data)||{};
@@ -145,11 +199,13 @@
       // genuine adds the cloud may also have.
       var unsafe = deletions.length && (cloudCount===0 || deletions.length===localKeys.length);
       if(unsafe){ Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} }); try{ window.habitsScheduleBackup && window.habitsScheduleBackup(); }catch(e){} return; }
-      var changed = deletions.length>0;
-      for(var ck in d){ if(localStorage.getItem(ck)!==d[ck]) changed=true; }                          // an add/edit?
-      if(!changed) return;                    // already matches cloud — no reload needed
-      localKeys.forEach(function(k){ if(!(k in d)) localStorage.removeItem(k); });               // apply (safe) deletions
-      Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });   // apply adds/edits
+      // ADDITIVE: merge each newer cloud blob INTO local (cloud wins on conflicts; union never shrinks).
+      // NEVER remove a local key just because the cloud lacks it. Reload only when the merge changed local.
+      var mine={}; _bKeys.forEach(function(k){ try{ var v=localStorage.getItem(k); if(v!==null) mine[k]=v; }catch(e){} });
+      var merged=_mergeHabitsData(mine, d);   // cloud (d) overlays local
+      var changed=false; for(var mk in merged){ if(merged[mk]!==mine[mk]) changed=true; }
+      if(!changed) return;                    // already the union — no reload needed
+      Object.keys(merged).forEach(function(k){ try{ localStorage.setItem(k,merged[k]); }catch(e){} });
       location.reload();
     }); }catch(e){} }
 
