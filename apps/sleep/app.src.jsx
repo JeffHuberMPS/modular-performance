@@ -1308,11 +1308,22 @@ const PlanCard = ({ e, onSave }) => {
   }, [e.date, chosen]);
 
   return (
-    <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
-                      borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
-      <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-                    color: LBL, marginBottom: 6 }}>Today&rsquo;s Plan</div>
-      <div style={{ fontSize: 14, lineHeight: 1.45, marginBottom: 12, color: "#f5f5f5" }}>
+    // This is the ONLY action on the whole dashboard, so it must NOT blend into the background.
+    // It was rgba(255,255,255,0.02) on black with a 0.13 border — invisible, and it got overlooked.
+    // Now it wears the app's CTA colour: gold-tinted fill, a gold left bar, a gold border and a
+    // soft gold glow, so it reads as "do this" the moment the card loads.
+    <section style={{ background: "linear-gradient(180deg, rgba(201,160,32,0.12), rgba(201,160,32,0.05))",
+                      border: "1px solid rgba(201,160,32,0.45)", borderLeft: "4px solid #C9A020",
+                      borderRadius: 12, padding: "16px 18px", marginBottom: 14,
+                      boxShadow: "0 0 0 1px rgba(201,160,32,0.10), 0 6px 18px rgba(0,0,0,0.45)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <span aria-hidden="true" style={{ color: "#C9A020", display: "inline-flex" }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/></svg>
+        </span>
+        <span style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase",
+                       color: "#C9A020", fontWeight: 800 }}>Today&rsquo;s Plan</span>
+      </div>
+      <div style={{ fontSize: 14, lineHeight: 1.45, marginBottom: 12, color: "#f5f5f5", fontWeight: 600 }}>
         {RecoveryActions.planMessage(metric)}
       </div>
 
