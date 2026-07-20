@@ -915,10 +915,11 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: __GRAY ? "#999999" : "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
       </div>
     </div>
-    {/* Row 1: Wake · Sleep · Duration */}
+    {/* Row 1: Sleep · Wake · Duration — chronological (went to bed, got up, total slept) so the
+        night reads as one sentence in a single pass instead of needing mental reordering. */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginBottom: 12.48 }}>
-      <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
+      <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
     {/* Recovery · Energy · Physical Recovery / Clarity · Calmness. All 1-10 values read 10 = good.
