@@ -240,8 +240,36 @@
       for(var ck in d){ if(_bMatch(ck) && localStorage.getItem(ck)!==d[ck]) changed=true; }   // an add/edit?
       if(!changed) return;
       Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });   // apply adds/edits only
+      // The data is already applied above. The reload only exists to re-render from localStorage,
+      // so it must never yank you out of the pillar mid-use. Recovery was the ONLY pillar without a
+      // guard here (Expenses has had one), and because the additive backup deliberately does not
+      // advance synced_ts, every save produced a newer snapshot and therefore a reload. That is why
+      // the page kept jumping to the top while you were reading a chart.
+      //   settle  - never reload in the first 6s after load
+      //   throttle- at most one reload per 15s
+      //   restore - remember scrollY and put you back where you were
+      try{
+        if(performance.now() < 6000) return;
+        var _last=parseInt(sessionStorage.getItem('sleep_last_reload')||'0',10)||0;
+        if(Date.now()-_last < 15000) return;
+        sessionStorage.setItem('sleep_last_reload', String(Date.now()));
+        var _se=document.scrollingElement||document.documentElement;
+        sessionStorage.setItem('sleep_scroll', String(_se?_se.scrollTop:0));
+      }catch(e){}
       location.reload();
     }); }catch(e){} }
+
+    // Put the page back where it was after a sync reload, so a background sync is invisible
+    // instead of throwing you to the top of the pillar.
+    try{
+      var _sy=parseInt(sessionStorage.getItem('sleep_scroll')||'-1',10);
+      if(_sy>=0){
+        sessionStorage.removeItem('sleep_scroll');
+        window.addEventListener('load', function(){
+          setTimeout(function(){ try{ var e=document.scrollingElement||document.documentElement; if(e) e.scrollTop=_sy; }catch(err){} }, 60);
+        });
+      }
+    }catch(e){}
 
     // Restore first (download on fresh device), then reveal; seed cloud on open.
     var _revealed=false;
