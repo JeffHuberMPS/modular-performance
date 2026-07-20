@@ -1964,14 +1964,18 @@ const InsightRow = ({
 const LogBlock = ({
   label,
   value,
-  accent
+  accent,
+  col
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
     background: "rgba(150,150,150,0.06)",
     border: `1px solid rgba(${BRDR},0.12)`,
     borderLeft: "3px solid rgba(150,150,150,0.55)",
     borderRadius: 8,
-    padding: "8px 10px"
+    padding: "8px 10px",
+    ...(col ? {
+      gridColumn: col
+    } : null) // pin to a column so it stacks under the block above it
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
@@ -2107,11 +2111,13 @@ const LogCard = ({
   value: e.restlessness != null ? `${e.calmness}/10` : "—"
 }), e.restingHR ? /*#__PURE__*/React.createElement(LogBlock, {
   label: "Resting HR",
-  value: `${e.restingHR} bpm`
+  value: `${e.restingHR} bpm`,
+  col: 3
 }) : null, e.hrv ? /*#__PURE__*/React.createElement(LogBlock, {
   label: "HRV",
   value: `${e.hrv} ms`,
-  accent: PURPLE
+  accent: PURPLE,
+  col: 3
 }) : null));
 
 /* ── Pure SVG chart components — no external library, always renders ── */
