@@ -696,6 +696,8 @@ function SleepTracker() {
             {/* Today: engine score, dots, status, push meter */}
             <TodayCard e={enriched[enriched.length - 1]} />
             {/* Why this score — coaching from the user's own numbers */}
+            {/* What today's numbers say — strongest, weakest, what moved */}
+            <InsightsCard rows={engineRows} />
             <CoachCard rows={engineRows} />
             {/* 7-day stats */}
             <section style={styles.statsRow}>
@@ -707,6 +709,8 @@ function SleepTracker() {
             </section>
 
             {/* Progressive unlocks — weekly through lifetime */}
+            {/* Long-run tracking — averages, streaks, next milestone */}
+            <ProgressCard rows={engineRows} />
             <ReportsCard rows={engineRows} />
 
             {/* Charts */}
@@ -1014,6 +1018,81 @@ const TodayCard = ({ e }) => {
         <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
       </div>
     </section>
+  );
+};
+
+/* Shared bits for the collapsible engine sections (spec Part 17:
+   collapsed by default, one tap reveals one layer). */
+const SectionShell = ({ title, hint, children, open }) => (
+  <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
+                    borderRadius: 10, padding: "6px 16px 14px", marginBottom: 14 }}>
+    <details open={!!open}>
+      <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                        gap: 12, cursor: "pointer", padding: "12px 0", listStyle: "none" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#f5f5f5" }}>{title}</span>
+        <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL }}>
+          {hint}
+        </span>
+      </summary>
+      {children}
+    </details>
+  </section>
+);
+
+const EngineTile = ({ label, value, wide }) => (
+  <div style={{ background: "rgba(150,150,150,0.06)", border: `1px solid rgba(${BRDR},0.12)`,
+                borderLeft: "3px solid rgba(150,150,150,0.55)", borderRadius: 8,
+                padding: "8px 10px", gridColumn: wide ? "1 / -1" : "auto" }}>
+    <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: LBL, marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5" }}>{value}</div>
+  </div>
+);
+
+/* InsightsCard — spec Part 10, section 7.
+   Strongest and weakest metric today, what moved most since yesterday,
+   the current pattern, and the trend. Derived, never recalculated. */
+const InsightsCard = ({ rows }) => {
+  if (!rows || !rows.length || !window.RecoveryInsights) return null;
+  let items = null;
+  try { items = RecoveryInsights.build(rows[rows.length - 1], rows); }
+  catch (e) { return null; }
+  if (!items || !items.length) return null;
+  return (
+    <SectionShell title="Insights" hint={`${items.length} today`}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginTop: 4 }}>
+        {items.map(i => <EngineTile key={i.key} label={i.label} value={i.value} />)}
+      </div>
+    </SectionShell>
+  );
+};
+
+/* ProgressCard — spec Part 10, section 9.
+   Long-run tracking. Current streak is deliberately separate from longest
+   streak: they answer different questions. */
+const ProgressCard = ({ rows }) => {
+  if (!rows || !rows.length || !window.RecoveryInsights) return null;
+  let p = null;
+  try { p = RecoveryInsights.progress(rows); } catch (e) { return null; }
+  if (!p) return null;
+  return (
+    <SectionShell title="Progress" hint={`${p.daysTracked} ${p.daysTracked === 1 ? "day" : "days"}`}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 4 }}>
+        <EngineTile label="Average"        value={`${p.average}%`} />
+        <EngineTile label="Highest"        value={`${p.highest}%`} />
+        <EngineTile label="Lowest"         value={`${p.lowest}%`} />
+        <EngineTile label="Current streak" value={p.currentStreak} />
+        <EngineTile label="Longest streak" value={p.longestStreak} />
+        <EngineTile label="Consistency"    value={`${p.consistency}%`} />
+        <EngineTile label="7-day average"  value={`${p.weeklyAverage}%`} />
+        <EngineTile label="30-day average" value={`${p.monthlyAverage}%`} />
+        <EngineTile label="Days tracked"   value={p.daysTracked} />
+        <EngineTile wide label="Next milestone" value={
+          p.nextMilestone
+            ? `${p.nextMilestone.remaining} more ${p.nextMilestone.remaining === 1 ? "day" : "days"} to your ${p.nextMilestone.title}`
+            : "Every milestone unlocked"} />
+      </div>
+    </SectionShell>
   );
 };
 
