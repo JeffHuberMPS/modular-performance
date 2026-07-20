@@ -1101,7 +1101,10 @@ const TodayCard = ({ e }) => {
             return (
               <i key={i} style={{
                 flex: 1, borderRadius: 2,
-                height: `${32 + i * 7.5}%`,
+                // Step per bar is 20% steeper than before (7.5 -> 9). The start drops from 32% to
+                // 19% so the tallest bar still lands exactly on 100% and nothing overflows the row.
+                // First-to-last ratio goes from about 3x to about 5x, so the climb is unmistakable.
+                height: `${19 + i * 9}%`,
                 background: on ? hex : "rgba(255,255,255,0.07)",
                 opacity: on ? (0.6 + (i / 9) * 0.4) : 1
               }} />
