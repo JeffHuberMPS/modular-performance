@@ -1830,7 +1830,7 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
       {/* Daily / Weekly / Monthly (spec Part 13). Locked views stay visible
           but disabled, with the unlock rule as the tooltip, so the user can
           see what is coming rather than wondering where it went. */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 12, width: "100%" }}>
         {["daily", "weekly", "monthly"].map(nm => {
           const on = views.indexOf(nm) > -1;
           const sel = nm === active;
@@ -1841,9 +1841,14 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
               style={{ background: sel ? PURPLE : "transparent",
                        border: `1px solid ${sel ? PURPLE : `rgba(${BRDR},0.2)`}`,
                        color: sel ? "#0a0a0a" : (on ? LBL : "#4a4255"),
-                       borderRadius: 99, padding: "6px 13px", fontSize: 10, fontWeight: 700,
-                       letterSpacing: "0.1em", textTransform: "uppercase",
+                       borderRadius: 99, padding: "6px 4px", fontSize: 9.5, fontWeight: 700,
+                       letterSpacing: "0.04em", textTransform: "uppercase",
                        cursor: on ? "pointer" : "not-allowed", minHeight: 32,
+                       /* Share the row equally and be allowed to shrink. Fixed 13px padding plus
+                          0.1em tracking made the three pills wider than a narrow chart card, so
+                          MONTHLY hung ~17px past the right edge and was clipped. */
+                       flex: "1 1 0", minWidth: 0, whiteSpace: "nowrap",
+                       overflow: "hidden", textOverflow: "ellipsis",
                        opacity: on ? 1 : 0.45 }}>
               {nm}
             </button>
