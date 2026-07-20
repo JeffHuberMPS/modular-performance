@@ -1587,18 +1587,32 @@ const LogGroup = ({ title, children, last }) => (
   </div>
 );
 
+/* ONE CARD PER DAY, and it has to LOOK like one. The card used to be rgba(255,255,255,0.02) on a
+   month panel of rgba(18,18,20,0.85), which is almost no contrast, so consecutive days melted into
+   a single continuous slab. Four changes make each day read as its own object:
+     a lighter raised surface, so the day sits ABOVE the month panel (and the dark group wells
+       inside it sit below again, giving three clear layers)
+     a properly visible border instead of a 0.13 whisper
+     a drop shadow, which is what actually separates stacked cards
+     a real gap between days (16 -> 26) plus a ruled date header, so the eye gets a hard stop */
 const LogCard = ({ e, onEdit, onDelete }) => (
   <div style={{
-    background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
-    borderRadius: 10, padding: "14px 16px", marginBottom: 16,
+    background: "rgba(255,255,255,0.055)",
+    border: `1px solid rgba(${BRDR},0.38)`,
+    borderRadius: 13,
+    padding: "15px 17px 17px",
+    marginBottom: 26,
+    boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
   }}>
-    {/* Date header */}
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: PURPLE }}>
+    {/* Date header — ruled off, so the day announces itself before its numbers start */}
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginBottom: 14, paddingBottom: 11,
+                  borderBottom: `1px solid rgba(${BRDR},0.22)` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: PURPLE, letterSpacing: "0.01em" }}>
           {e.date.split("-").slice(1).concat(e.date.split("-").slice(0,1)).join("/").replace(/(\d+)\/(\d+)\/(\d+)/, (_, m, d, y) => `${m.padStart(2,"0")}/${d.padStart(2,"0")}/${y}`)}
         </span>
-        <span style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: GOLD }}>
+        <span style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: GOLD, fontWeight: 700 }}>
           {e.weekday}
         </span>
       </div>
