@@ -847,6 +847,10 @@ function SleepTracker() {
       pushMeter: v4 ? v4.pushMeter : null,
       pushMessage: v4 ? v4.pushMessage : null,
       sleepQuality: _c10(e.sleepQuality ?? 10 - (e.restlessness ?? 3)),
+      // Numeric axes for the Bedtime / Wake Time charts. Computed by the
+      // engine so the midnight wrap is handled in exactly one place.
+      bedAxis: hasSleep && window.RecoveryCharts ? RecoveryCharts.bedtimeAxis(e.sleepTime) : null,
+      wakeAxis: e.wakeTime && window.RecoveryCharts ? RecoveryCharts.wakeAxis(e.wakeTime) : null,
       // POSITIVE-DIRECTION VIEW: every slider now reads "10 = good". The stored fields stay
       // soreness/restlessness (low = good) so NO historical data is rewritten or lost — we only
       // flip them for display. physicalRecovery = 10 - soreness, calmness = 10 - restlessness.
@@ -875,6 +879,25 @@ function SleepTracker() {
     actionCompleted: !!e.actionCompleted,
     updatedAt: e.updatedAt || ""
   })), [enriched]);
+
+  // Weapon 5 writes only the action fields onto an existing entry. It never
+  // touches the sliders or times, so the score cannot shift as a side effect
+  // of picking or ticking an action.
+  const saveAction = async (date, patch) => {
+    const target = entries.find(e => e.date === date);
+    if (!target) return;
+    const updated = {
+      ...target,
+      ...patch
+    };
+    setEntries(entries.map(e => e.date === date ? updated : e));
+    try {
+      await storage.set(date, JSON.stringify(updated));
+    } catch (err) {}
+    try {
+      window.sleepBackupNow && window.sleepBackupNow();
+    } catch (err) {}
+  };
   const last30 = enriched.slice(-30);
   const last7 = enriched.slice(-7);
   const avg = (arr, key) => {
@@ -1312,6 +1335,9 @@ function SleepTracker() {
     }
   }, "\u2191 UNLOCK WITH ELITE")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(TodayCard, {
     e: enriched[enriched.length - 1]
+  }), /*#__PURE__*/React.createElement(PlanCard, {
+    e: enriched[enriched.length - 1],
+    onSave: saveAction
   }), /*#__PURE__*/React.createElement(InsightsCard, {
     rows: engineRows
   }), /*#__PURE__*/React.createElement(CoachCard, {
@@ -1375,6 +1401,24 @@ function SleepTracker() {
     domain: [0, 100],
     ticks: [0, 20, 40, 60, 80, 100],
     refY: 70
+  })), /*#__PURE__*/React.createElement(ChartCard, {
+    title: "Bedtime",
+    sub: "when you went to bed \xB7 last 30"
+  }, /*#__PURE__*/React.createElement(SvgChart.Bar, {
+    data: last30,
+    dataKey: "bedAxis",
+    domain: [0, 720],
+    ticks: [0, 180, 360, 540, 720],
+    fmt: t => RecoveryCharts.bedFromAxis(t)
+  })), /*#__PURE__*/React.createElement(ChartCard, {
+    title: "Wake Time",
+    sub: "when you got up \xB7 last 30"
+  }, /*#__PURE__*/React.createElement(SvgChart.Bar, {
+    data: last30,
+    dataKey: "wakeAxis",
+    domain: [180, 600],
+    ticks: [180, 300, 420, 540],
+    fmt: t => RecoveryCharts.fmtClock(t)
   })), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Energy vs Physical Recovery",
     sub: "1\u201310 scale \xB7 last 30"
@@ -2061,6 +2105,122 @@ const TodayCard = ({
   }, e.pushMessage)));
 };
 
+/* PlanCard — Today's Plan and action selector (spec Parts 8, 9, 10).
+   The weakest metric picks the category; the user picks the action.
+   Changing the action clears a stale tick, so a checkmark can never carry
+   over onto a different action. */
+const PlanCard = ({
+  e,
+  onSave
+}) => {
+  if (!e || !e.v4 || !window.RecoveryActions) return null;
+  const metric = e.v4.lowestMetric;
+  const actions = RecoveryActions.forMetric(metric);
+  if (!actions || !actions.length) return null;
+  const chosen = e.selectedAction || "";
+  const done = !!e.actionCompleted;
+  const hex = e.dotHex || PURPLE;
+  return /*#__PURE__*/React.createElement("section", {
+    style: {
+      background: "rgba(255,255,255,0.02)",
+      border: `1px solid rgba(${BRDR},0.13)`,
+      borderRadius: 10,
+      padding: "14px 16px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      letterSpacing: "0.14em",
+      textTransform: "uppercase",
+      color: LBL,
+      marginBottom: 6
+    }
+  }, "Today\u2019s Plan"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      lineHeight: 1.45,
+      marginBottom: 12,
+      color: "#f5f5f5"
+    }
+  }, RecoveryActions.planMessage(metric)), /*#__PURE__*/React.createElement("select", {
+    value: chosen,
+    onChange: ev => onSave(e.date, {
+      selectedAction: ev.target.value || null,
+      actionCompleted: false
+    }),
+    style: {
+      width: "100%",
+      background: "rgba(150,150,150,0.06)",
+      border: `1px solid rgba(${BRDR},0.2)`,
+      borderRadius: 8,
+      color: "#f5f5f5",
+      padding: "12px 14px",
+      fontSize: 15,
+      minHeight: 46,
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Choose an action"), actions.map(a => /*#__PURE__*/React.createElement("option", {
+    key: a,
+    value: a
+  }, a))), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      marginTop: 14,
+      minHeight: 44,
+      cursor: chosen ? "pointer" : "not-allowed",
+      opacity: chosen ? 1 : 0.5,
+      userSelect: "none"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: done,
+    disabled: !chosen,
+    onChange: ev => onSave(e.date, {
+      actionCompleted: ev.target.checked
+    }),
+    style: {
+      position: "absolute",
+      opacity: 0,
+      width: 0,
+      height: 0
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      flexShrink: 0,
+      border: `2px solid ${done ? hex : "rgba(255,255,255,0.22)"}`,
+      background: done ? hex : "transparent",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, done && /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 24 24",
+    style: {
+      width: 13,
+      height: 13,
+      fill: "none",
+      stroke: "#0a0a0a",
+      strokeWidth: 3.4,
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M4 12l5 5L20 6"
+  }))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      color: done ? "#f5f5f5" : "#9a9a9a"
+    }
+  }, done ? "Done today. Good work." : chosen ? "Complete today's action" : "Pick an action first")));
+};
+
 /* Shared bits for the collapsible engine sections (spec Part 17:
    collapsed by default, one tap reveals one layer). */
 const SectionShell = ({
@@ -2695,7 +2855,8 @@ const SvgChart = (() => {
   const xs = (i, n) => PAD.left + (i + 0.5) * (pw / n);
   const YAxisLines = ({
     ticks,
-    domain
+    domain,
+    fmt
   }) => {
     const [min, max] = domain;
     return /*#__PURE__*/React.createElement(React.Fragment, null, ticks.map(t => {
@@ -2716,7 +2877,7 @@ const SvgChart = (() => {
         fill: "#f5f5f5",
         fontSize: 16,
         fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
-      }, t));
+      }, fmt ? fmt(t) : t));
     }));
   };
   const XLabels = ({
@@ -2738,7 +2899,8 @@ const SvgChart = (() => {
     dataKey,
     domain,
     ticks,
-    refY
+    refY,
+    fmt
   }) => {
     const [min, max] = domain;
     const bw = Math.max(3, pw / data.length * 0.6);
@@ -2763,7 +2925,8 @@ const SvgChart = (() => {
       stopColor: BAR_BOT
     }))), /*#__PURE__*/React.createElement(YAxisLines, {
       ticks: ticks,
-      domain: domain
+      domain: domain,
+      fmt: fmt
     }), refY != null && /*#__PURE__*/React.createElement("line", {
       x1: PAD.left,
       y1: ys(refY, min, max),
@@ -2807,7 +2970,8 @@ const SvgChart = (() => {
       }
     }, /*#__PURE__*/React.createElement(YAxisLines, {
       ticks: ticks,
-      domain: domain
+      domain: domain,
+      fmt: fmt
     }), refY != null && /*#__PURE__*/React.createElement("line", {
       x1: PAD.left,
       y1: ys(refY, min, max),
