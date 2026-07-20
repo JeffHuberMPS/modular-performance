@@ -795,28 +795,28 @@ function SleepTracker() {
             <section style={styles.chartsGrid}>
 
               {/* Sleep Duration — pure SVG, always renders */}
-              <ChartCard title="Sleep Duration" sub="hours per night"
+              <ChartCard title="Sleep Duration" metric="duration" sub="hours per night"
                 allRows={enriched} get={r => r.hours} fmt={v => `${v.toFixed(1)}h`}
                 domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} refY={7} />
 
-              <ChartCard title="Recovery Score" sub="%"
+              <ChartCard title="Recovery Score" metric="recovery" sub="%"
                 allRows={enriched} get={r => r.recovery} fmt={v => `${Math.round(v)}%`}
                 domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} refY={80} />
 
               {/* Bedtime uses the engine's 6pm-anchored axis, so 1am plots
                   LATER than 11pm instead of leaping to the far end. A plain
                   midnight axis turns a gradual drift later into a cliff. */}
-              <ChartCard title="Bedtime" sub="clock time" kind="clock"
+              <ChartCard title="Bedtime" metric="bedtime" sub="clock time" kind="clock"
                 allRows={enriched} get={r => r.bedAxis}
                 fmt={v => RecoveryCharts.bedFromAxis(v)}
                 domain={[0, 720]} ticks={[0, 180, 360, 540, 720]} />
 
-              <ChartCard title="Wake Time" sub="clock time" kind="clock"
+              <ChartCard title="Wake Time" metric="wake" sub="clock time" kind="clock"
                 allRows={enriched} get={r => r.wakeAxis}
                 fmt={v => RecoveryCharts.fmtClock(v)}
                 domain={[180, 600]} ticks={[180, 300, 420, 540]} />
 
-              <ChartCard title="Energy" sub="1–10 scale"
+              <ChartCard title="Energy" metric="energy" sub="1–10 scale"
                 allRows={enriched} get={r => r.energy} fmt={v => `${v.toFixed(1)} / 10`}
                 domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
             </section>
@@ -906,9 +906,9 @@ function SleepTracker() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
                       <span>{mes.length} {mes.length === 1 ? "entry" : "entries"}</span>
-                      <span style={{ display: "inline-block", fontSize: 13, lineHeight: 1,
+                      <span style={{ display: "inline-flex", alignItems: "center",
                                      transform: closedMonths[month] ? "rotate(-90deg)" : "rotate(0deg)",
-                                     transition: "transform 0.18s ease" }}>∨</span>
+                                     transition: "transform 0.18s ease" }}><ChevronDown size={16} /></span>
                     </div>
                   </div>
                   {/* Week groups — hidden while this month is collapsed */}
@@ -1176,7 +1176,7 @@ const TodayCard = ({ e }) => {
               <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>Why This Score</span>
               <span style={{ opacity: 0.65 }}>· tap for the math</span>
             </span>
-            <span className="mps-chev" style={{ display: "inline-block", fontSize: 12, lineHeight: 1, color: GOLD, flexShrink: 0, paddingLeft: 8 }}>∨</span>
+            <span className="mps-chev" style={{ display: "inline-flex", alignItems: "center", color: GOLD, flexShrink: 0, paddingLeft: 8 }}><ChevronDown size={15} /></span>
           </summary>
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL, marginBottom: 10 }}>
@@ -1822,7 +1822,40 @@ const SvgChart = (() => {
 /* ChartCard */
 /* Turns a series into the engine's stats block plus a plain-English read.
    Reuses RecoveryCharts.stats so the maths lives in exactly one place. */
-const chartDrill = (rows, get, fmt, kind) => {
+// Per-metric ADVICE. The stat tiles above (average/highest/lowest/trend/consistency) already state
+// the facts, so the bottom line must NOT restate them. It gives the next move: what to do about it.
+// Reads the same stats, but returns an instruction tuned to which chart it is and where it stands.
+const chartAdvice = (metric, st) => {
+  const falling = st.trend === "falling", rising = st.trend === "rising";
+  const cons = st.consistency;
+  const n = parseFloat(String(st.averageLabel));   // numeric part of the average, when there is one
+  switch (metric) {
+    case "duration":
+      if (n && n < 7)  return "You're short on sleep. Move bedtime 30 minutes earlier and hold it — this is the single biggest lever on your score.";
+      if (falling)      return "Sleep is slipping. Guard your bedtime this week before it drags recovery down with it.";
+      return "Duration is where it should be. Keep this bedtime locked.";
+    case "recovery":
+      if (falling)      return "Recovery is sliding. Take a lighter training day and put sleep first until it climbs back.";
+      if (n && n < 70)  return "Recovery is running low. Sleep and rest days move this faster than anything else — start there.";
+      return "Recovery is holding. Keep the routine that got you here and don't add load yet.";
+    case "bedtime":
+      if (cons < 70)    return "Your bedtime is scattered. Pick ONE time and hit it for the next 7 nights — a steady bedtime drives recovery more than the exact hour does.";
+      if (cons < 85)    return "Close. Tighten it so you're in bed inside the same 30-minute window every night.";
+      return "Bedtime is locked in and that consistency is doing real work. Protect it, especially on weekends.";
+    case "wake":
+      if (cons < 70)    return "Wake time is all over the place. A fixed wake time anchors the whole cycle — set one alarm and keep it, even on days off.";
+      if (cons < 85)    return "Almost dialed. Wake inside the same 30-minute window daily and your sleep will follow.";
+      return "Consistent wake time — the cheapest recovery win there is, and you've got it. Keep it on weekends too.";
+    case "energy":
+      if (falling)      return "Energy is fading, and it usually trails sleep. Tighten bedtime for a few nights and watch it come back.";
+      if (n && n < 6)   return "Energy is low. Before anything else, check your sleep duration and take a rest day.";
+      return "Energy is steady. Whatever you're doing is working — keep it and don't over-reach.";
+    default:
+      return falling ? "Trending down — tighten your sleep routine this week." : "Holding steady. Keep it up.";
+  }
+};
+
+const chartDrill = (rows, get, fmt, kind, metric) => {
   if (!window.RecoveryCharts || !rows || !rows.length) return null;
   const points = rows
     .map(r => ({ value: get(r) }))
@@ -1830,25 +1863,10 @@ const chartDrill = (rows, get, fmt, kind) => {
   if (points.length < 2) return null;
   const st = RecoveryCharts.stats(points, { format: fmt });
   if (!st) return null;
-
-  // One sentence the user can act on, rather than six bare numbers.
-  let insight;
-  if (kind === "clock") {
-    insight = st.consistency >= 85
-      ? "Very consistent. Your body knows when this is coming."
-      : st.consistency >= 65
-        ? `Fairly consistent, drifting between ${st.lowestLabel} and ${st.highestLabel}.`
-        : "All over the place. A steadier time here is the cheapest win available.";
-  } else {
-    const dir = st.trend === "rising" ? "up" : st.trend === "falling" ? "down" : "flat";
-    insight = dir === "flat"
-      ? `Holding steady around ${st.averageLabel}.`
-      : `Trending ${dir}. Best ${st.highestLabel}, worst ${st.lowestLabel}.`;
-  }
-  return { st, insight };
+  return { st, insight: chartAdvice(metric, st) };
 };
 
-const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind }) => {
+const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind, metric }) => {
   const [view, setView] = useState("daily");
 
   const rows = allRows || [];
@@ -1863,7 +1881,7 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
     ? RecoveryCharts.aggregate(source, chartCfg, active)
     : [];
 
-  const drill = chartDrill(points, p => p.value, fmt, kind);
+  const drill = chartDrill(points, p => p.value, fmt, kind, metric);
   const unit = active === "daily" ? "last 30 nights"
              : active === "weekly" ? "weekly averages" : "monthly averages";
 
@@ -1956,7 +1974,7 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, paddingLeft: 8 }}>
               <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
-              <span className="mps-chev" style={{ display: "inline-block", fontSize: 12, lineHeight: 1, color: GOLD }}>∨</span>
+              <span className="mps-chev" style={{ display: "inline-flex", alignItems: "center", color: GOLD }}><ChevronDown size={15} /></span>
             </span>
           </summary>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(88px, 1fr))", gap: 8, marginTop: 8 }}>
@@ -1967,9 +1985,15 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
             <EngineTile label="Trend"       value={drill.st.trend} />
             <EngineTile label="Tracked"     value={`${drill.st.count} ${active === "daily" ? "days" : active === "weekly" ? "weeks" : "months"}`} />
           </div>
-          <div style={{ fontSize: 13, color: "#9a9a9a", lineHeight: 1.5, marginTop: 10,
-                        paddingLeft: 12, borderLeft: `3px solid ${PURPLE}` }}>
-            {drill.insight}
+          {/* ADVICE, not a recap. The tiles above already state the numbers, so this is labelled and
+              gives the next move instead of repeating best/worst/trend. */}
+          <div style={{ marginTop: 12, paddingLeft: 12, borderLeft: `3px solid ${GOLD}` }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: GOLD, fontWeight: 700, marginBottom: 4 }}>
+              What to do
+            </div>
+            <div style={{ fontSize: 13, color: "#d7d0e0", lineHeight: 1.5 }}>
+              {drill.insight}
+            </div>
           </div>
         </details>
       )}
