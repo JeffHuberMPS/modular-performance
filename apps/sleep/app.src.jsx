@@ -896,12 +896,13 @@ const InsightRow = ({ label, value, accent }) => (
 );
 
 /* LogBlock — single stat cell inside a log entry card */
-const LogBlock = ({ label, value, accent }) => (
+const LogBlock = ({ label, value, accent, col }) => (
   <div style={{
     background: "rgba(150,150,150,0.06)",
     border: `1px solid rgba(${BRDR},0.12)`,
     borderLeft: "3px solid rgba(150,150,150,0.55)",
     borderRadius: 8, padding: "8px 10px",
+    ...(col ? { gridColumn: col } : null),   // pin to a column so it stacks under the block above it
   }}>
     <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 4 }}>
       {label}
@@ -948,8 +949,8 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
       <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
-      {e.restingHR ? <LogBlock label="Resting HR" value={`${e.restingHR} bpm`} /> : null}
-      {e.hrv       ? <LogBlock label="HRV"        value={`${e.hrv} ms`} accent={PURPLE} /> : null}
+      {e.restingHR ? <LogBlock label="Resting HR" value={`${e.restingHR} bpm`} col={3} /> : null}
+      {e.hrv       ? <LogBlock label="HRV"        value={`${e.hrv} ms`} accent={PURPLE} col={3} /> : null}
     </div>
   </div>
 );
