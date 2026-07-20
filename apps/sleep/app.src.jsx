@@ -894,15 +894,17 @@ function SleepTracker() {
                   <div role="button" tabIndex={0}
                     onClick={() => setClosedMonths(p => ({ ...p, [month]: !p[month] }))}
                     onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setClosedMonths(p => ({ ...p, [month]: !p[month] })); } }}
-                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px",
+                    style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px",
                              borderBottom: closedMonths[month] ? "none" : "1px solid rgba(150,150,150,0.08)",
                              cursor: "pointer", userSelect: "none", minHeight: 44 }}>
-                    {/* Month is the top of the hierarchy, so it must outrank the 25px date inside
-                        the cards below it. 20px made it SMALLER than its own children. */}
-                    <div style={{ fontSize: 33, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5", letterSpacing: "-0.01em" }}>
+                    {/* Month is CENTERED across the header via a 3-column grid (spacer | month | count),
+                        so it no longer hugs the left corner. Bumped to 40px: it is the top of the
+                        hierarchy and should clearly out-size the 25px date in the cards below. */}
+                    <span />
+                    <div style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5", letterSpacing: "-0.01em", textAlign: "center", whiteSpace: "nowrap" }}>
                       {fmtMonth(month + "-01")}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
                       <span>{mes.length} {mes.length === 1 ? "entry" : "entries"}</span>
                       <span style={{ display: "inline-block", fontSize: 13, lineHeight: 1,
                                      transform: closedMonths[month] ? "rotate(-90deg)" : "rotate(0deg)",
@@ -1157,6 +1159,50 @@ const TodayCard = ({ e }) => {
         </div>
         <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
       </div>
+
+      {/* WHY THIS SCORE — the math, on demand. Users asked to see how the number was reached so they
+          can investigate what dragged it down. The engine already returns both halves, so this shows
+          exactly what it computed: score = average of the Sleep Duration half and the five-ratings
+          half. Uses the shared .mps-drill affordance so it looks and behaves like the chart drills. */}
+      {e.v4 && (
+        <details className="mps-drill" style={{ marginTop: 16, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+          <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                            cursor: "pointer", padding: "0 10px", listStyle: "none", marginTop: 12,
+                            height: 36, boxSizing: "border-box", borderRadius: 8,
+                            background: "rgba(155,107,201,0.10)", border: `1px solid rgba(${BRDR},0.25)`,
+                            fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                            whiteSpace: "nowrap", overflow: "hidden", color: LBL }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+              <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>Why This Score</span>
+              <span style={{ opacity: 0.65 }}>· tap for the math</span>
+            </span>
+            <span className="mps-chev" style={{ display: "inline-block", fontSize: 12, lineHeight: 1, color: GOLD, flexShrink: 0, paddingLeft: 8 }}>∨</span>
+          </summary>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL, marginBottom: 10 }}>
+              Your score is the average of two halves
+            </div>
+            {/* the two halves */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+              <EngineTile label={`Sleep Duration · ${e.hours}h`} value={`${e.v4.sleepDurationScore} / 100`} />
+              <EngineTile label="How You Felt · 5 ratings" value={`${e.v4.sliderAverage} / 100`} />
+            </div>
+            {/* the five ratings that made the second half */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))", gap: 6, marginBottom: 12 }}>
+              <EngineTile label="Sleep Quality"     value={`${e.sleepQuality}/10`} />
+              <EngineTile label="Energy"            value={`${e.energy}/10`} />
+              <EngineTile label="Clarity"           value={`${e.clarity}/10`} />
+              <EngineTile label="Physical Recovery" value={`${e.physicalRecovery}/10`} />
+              <EngineTile label="Calmness"          value={`${e.calmness}/10`} />
+            </div>
+            {/* the arithmetic, spelled out */}
+            <div style={{ fontSize: 13, color: "#c9c2d6", lineHeight: 1.55, paddingLeft: 12, borderLeft: `3px solid ${hex}` }}>
+              ({e.v4.sleepDurationScore} + {e.v4.sliderAverage}) ÷ 2 = <b style={{ color: hex }}>{e.recovery}%</b>.
+              {" "}Your lowest input today was {e.v4.lowestMetric ? String(e.v4.lowestMetric).replace(/([a-z])([A-Z])/g,"$1 $2").replace(/\+/g," + ").toLowerCase() : "none"}. Raise it and this number moves the most.
+            </div>
+          </div>
+        </details>
+      )}
     </section>
   );
 };
