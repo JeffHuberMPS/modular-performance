@@ -1617,9 +1617,12 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     background: "rgba(255,255,255,0.055)",
     border: `1px solid rgba(${BRDR},0.38)`,
     borderRadius: 13,
-    padding: "15px 17px 17px",
-    marginBottom: 26,
-    boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+    // Slightly roomier inside and a bigger gap outside. Whitespace is what makes a list read as
+    // disciplined: 36px between cards is unmistakable as a day boundary while still looking
+    // deliberate rather than gappy, and a deeper shadow lifts each day off the month panel.
+    padding: "17px 19px 19px",
+    marginBottom: 36,
+    boxShadow: "0 6px 18px rgba(0,0,0,0.55)",
   }}>
     {/* Date header — ruled off, so the day announces itself before its numbers start */}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
