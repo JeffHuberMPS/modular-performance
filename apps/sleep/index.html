@@ -1433,7 +1433,13 @@ function SleepTracker() {
     rows: engineRows
   }), /*#__PURE__*/React.createElement(ReportsCard, {
     rows: engineRows
-  }), /*#__PURE__*/React.createElement("section", {
+  }), /*#__PURE__*/React.createElement("style", null, `
+              .mps-drill > summary::-webkit-details-marker { display: none; }
+              .mps-drill > summary::marker { content: ""; }
+              .mps-drill > summary .mps-chev { transition: transform .18s ease; }
+              .mps-drill[open] > summary .mps-chev { transform: rotate(180deg); }
+              .mps-drill > summary:hover { background: rgba(155,107,201,0.18) !important; }
+            `), /*#__PURE__*/React.createElement("section", {
     style: styles.chartsGrid
   }, /*#__PURE__*/React.createElement(ChartCard, {
     title: "Sleep Duration",
@@ -3492,6 +3498,7 @@ const ChartCard = ({
     refY: refY,
     fmt: fmt
   }), drill && /*#__PURE__*/React.createElement("details", {
+    className: "mps-drill",
     style: {
       marginTop: 12,
       borderTop: "1px solid rgba(150,150,150,0.12)"
@@ -3502,18 +3509,51 @@ const ChartCard = ({
       justifyContent: "space-between",
       alignItems: "center",
       cursor: "pointer",
-      padding: "12px 0 4px",
+      padding: "10px 9px",
       listStyle: "none",
+      marginTop: 8,
+      borderRadius: 8,
+      background: "rgba(155,107,201,0.10)",
+      border: `1px solid rgba(${BRDR},0.25)`,
       fontSize: 9,
       letterSpacing: "0.12em",
       textTransform: "uppercase",
       color: LBL
     }
-  }, /*#__PURE__*/React.createElement("span", null, "Statistics"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: GOLD,
+      fontWeight: 700
+    }
+  }, "Statistics"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      opacity: 0.65
+    }
+  }, "\xB7 tap for insight")), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 7
+    }
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#8a7fa5"
     }
-  }, "avg ", drill.st.averageLabel)), /*#__PURE__*/React.createElement("div", {
+  }, "avg ", drill.st.averageLabel), /*#__PURE__*/React.createElement("span", {
+    className: "mps-chev",
+    style: {
+      display: "inline-block",
+      fontSize: 12,
+      lineHeight: 1,
+      color: GOLD
+    }
+  }, "\u2228"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "repeat(3, 1fr)",

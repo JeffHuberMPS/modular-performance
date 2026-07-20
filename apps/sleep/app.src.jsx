@@ -1843,12 +1843,12 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
       )}
 
       {/* Drill-down (spec Part 13): chart -> statistics -> insight.
-          Collapsed by default so the chart itself stays the hero. */}
+          Collapsed by default so the chart itself stays the hero.
+          This always WORKED, it just did not look like it would: listStyle:none strips the
+          disclosure triangle, so the row read as a static caption and nobody would think to tap it.
+          It is now an obvious control: tinted bar, "tap for insight" hint, and a chevron that
+          rotates when open (see the .mps-drill rules injected alongside the charts). */}
       {drill && (
-        {/* This drill-down always WORKED, it just did not look like it would. listStyle:none strips
-            the disclosure triangle, so the row read as a static caption and nobody would think to
-            tap it. Now it is an obvious control: a tinted bar, a "more" label, and a chevron that
-            rotates when open (see the .mps-drill rules injected with the charts). */}
         <details className="mps-drill" style={{ marginTop: 12, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
           <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
                             cursor: "pointer", padding: "10px 9px", listStyle: "none",
