@@ -80,15 +80,22 @@ const RecoveryScoring = (function(){
     [77,'C+'],[74,'C'],[70,'C-'],[67,'D+'],[64,'D'],[60,'D-'],[0,'F']
   ];
 
-  /* ---------- PART 6: status tiers, dots, color progression (locked) ---------- */
-  // Hex values come from the MPS design system (shared/styles.css), not
-  // a generic palette, so the pillar matches the rest of the app.
+  /* ---------- PART 6: status tiers, dots, color progression ---------- */
+  // The tier THRESHOLDS, dot counts and status names are locked per spec.
+  // The HEX VALUES are not: the originals claimed to be MPS design-system colours but only
+  // purple and gold actually were. Blue (#4ab3f4) and green (#16a34a) were generic, and the
+  // blue dominated the whole card because the score, dots, status and push meter all inherit
+  // this hex. Remapped to the real MPS palette on Jeff's call:
+  //   healthy end  = MPS purple -> MPS gold   (brand)
+  //   warning end  = amber -> orange -> red   (universally read as "back off")
+  // Green is gone entirely: it read as "good" while sitting in the 3rd tier, which was
+  // actively misleading.
   const TIERS = [
     {min:90,status:'READY',    dots:5,color:'purple',hex:'#9b6bc9',level:'Elite Recovery'},
-    {min:80,status:'MODERATE', dots:4,color:'blue',  hex:'#4ab3f4',level:'Strong Recovery'},
-    {min:70,status:'CAUTION',  dots:3,color:'green', hex:'#16a34a',level:'Good Recovery'},
-    {min:60,status:'NEEDS',    dots:2,color:'yellow',hex:'#C9A020',level:'Needs Recovery'},
-    {min:50,status:'URGENT',   dots:1,color:'orange',hex:'#d97706',level:'Recovery Urgent'},
+    {min:80,status:'MODERATE', dots:4,color:'gold',  hex:'#C9A020',level:'Strong Recovery'},
+    {min:70,status:'CAUTION',  dots:3,color:'amber', hex:'#d9a441',level:'Good Recovery'},
+    {min:60,status:'NEEDS',    dots:2,color:'orange',hex:'#d97706',level:'Needs Recovery'},
+    {min:50,status:'URGENT',   dots:1,color:'deep',  hex:'#e05d2a',level:'Recovery Urgent'},
     {min:0, status:'RECOVER',  dots:1,color:'red',   hex:'#dc2626',level:'Recovery Priority'}
   ];
 

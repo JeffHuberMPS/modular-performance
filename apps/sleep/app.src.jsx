@@ -163,8 +163,12 @@ function SleepTracker() {
         // Only fills dates that have no real entry, so it can never
         // overwrite something you actually logged. Clear it with Reset
         // Trackers on the hub.
+        // HOST-GATED to preview builds. On the production domain this is inert, so a real
+        // customer hitting ?seed=14 can never inject 14 fake nights into their own account
+        // (which would then sync to their cloud backup). Works as before on *.vercel.app.
+        const _seedAllowed = (() => { try { return /vercel\.app$/i.test(location.hostname); } catch (e) { return false; } })();
         const seedN = new URLSearchParams(location.search).get('seed');
-        if (seedN && loaded.length < 40) {
+        if (seedN && _seedAllowed && loaded.length < 40) {
           const n = Math.min(60, parseInt(seedN, 10) || 14);
           const have = new Set(loaded.map(e => e.date));
           const pad = v => String(v).padStart(2, '0');
@@ -696,6 +700,10 @@ function SleepTracker() {
             ══════════════════════════════════════════ */}
         {activeTab === "dashboard" && (
           <>
+            {/* Engine score card FIRST — the headline number is what you open the pillar to see,
+                so it leads. The raw Woke/Slept/Energy snapshot follows underneath as detail.
+                Elite/Premium only, same gate as the rest of the v4 dashboard. */}
+            {!__CORE && <TodayCard e={enriched[enriched.length - 1]} />}
             {/* Today snapshot */}
             <section style={styles.todayCard}>
               <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
@@ -718,7 +726,8 @@ function SleepTracker() {
                 <a href="/billing.html" target="_top" style={{ display: "inline-block", padding: "12px 26px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 13, letterSpacing: 1, borderRadius: 10, textDecoration: "none" }}>↑ UNLOCK WITH ELITE</a>
               </section>
             ) : (<>
-            {/* Today: engine score, dots, status, push meter */}
+            {/* TodayCard renders at the very TOP of the dashboard (above the snapshot), so only
+                the milestone celebration overlay sits here. */}
             <CelebrationOverlay level={celebration} rows={engineRows}
               onClose={() => {
                 // markCelebrated is what guarantees a milestone fires once
@@ -726,7 +735,6 @@ function SleepTracker() {
                 try { RecoveryReports.markCelebrated(RecoveryEngineUser(), celebration.id); } catch (err) {}
                 setCelebration(null);
               }} />
-            <TodayCard e={enriched[enriched.length - 1]} />
             {/* Why this score — coaching from the user's own numbers */}
             {/* Today's Plan — the weakest metric and one action for it */}
             <PlanCard e={enriched[enriched.length - 1]} onSave={saveAction} />
@@ -1012,7 +1020,24 @@ function _fmt12(t) {
 const TodayCard = ({ e }) => {
   if (!e || !e.v4) return null;
   const hex  = e.dotHex || PURPLE;
-  const dots = "●".repeat(e.dotCount) + "○".repeat(5 - e.dotCount);
+  // Five dots, filled to the tier (spec Part 6). Rendered as sized circles rather than the
+  // ● / ○ glyphs: those two characters draw at different optical sizes, so the EMPTY dot came
+  // out bigger than the filled ones, which reads backwards. Filled = large and solid,
+  // remaining = small and dim, so earned progress is what stands out.
+  const dots = Array.from({ length: 5 }, (_, i) => {
+    const on = i < e.dotCount;
+    return (
+      <span key={i} style={{
+        display: "inline-block", borderRadius: "50%", verticalAlign: "middle",
+        width:  on ? 13 : 7,
+        height: on ? 13 : 7,
+        margin: on ? "0 5px" : "0 8px",
+        background: on ? hex : "transparent",
+        border: on ? "none" : `1.5px solid ${hex}`,
+        opacity: on ? 1 : 0.4
+      }} />
+    );
+  });
   return (
     <section style={{ background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.13)`,
                       borderRadius: 12, padding: "20px 16px", marginBottom: 14 }}>
@@ -1028,8 +1053,7 @@ const TodayCard = ({ e }) => {
       </div>
 
       {/* Five dots always, filled to the tier (spec Part 6) */}
-      <div style={{ textAlign: "center", letterSpacing: 9, fontSize: 18,
-                    color: hex, margin: "14px 0 10px" }}>{dots}</div>
+      <div style={{ textAlign: "center", margin: "16px 0 12px", lineHeight: 1 }}>{dots}</div>
 
       <div style={{ textAlign: "center", fontSize: 17, fontWeight: 800,
                     letterSpacing: "0.12em", color: hex }}>{e.recoveryStatus}</div>
@@ -1049,11 +1073,22 @@ const TodayCard = ({ e }) => {
             {e.pushMeter}<span style={{ fontSize: 12, color: LBL }}> / 10</span>
           </span>
         </div>
-        <div style={{ display: "flex", gap: 4, margin: "10px 0 9px" }}>
-          {[0,1,2,3,4,5,6,7,8,9].map(i => (
-            <i key={i} style={{ flex: 1, height: 6, borderRadius: 2,
-                 background: i < e.pushMeter ? hex : "rgba(255,255,255,0.08)" }} />
-          ))}
+        {/* Ten segments that RAMP in height, short on the left and tall on the right, so the shape
+            itself says "how hard to go today". Ten identical full-width blocks read like a download
+            progress bar and competed with the score above. Unfilled segments stay as faint stubs so
+            the ramp is still legible when the meter is low. */}
+        <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 24, margin: "12px 0 10px" }}>
+          {[0,1,2,3,4,5,6,7,8,9].map(i => {
+            const on = i < e.pushMeter;
+            return (
+              <i key={i} style={{
+                flex: 1, borderRadius: 2,
+                height: `${32 + i * 7.5}%`,
+                background: on ? hex : "rgba(255,255,255,0.07)",
+                opacity: on ? (0.6 + (i / 9) * 0.4) : 1
+              }} />
+            );
+          })}
         </div>
         <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
       </div>
@@ -1152,6 +1187,14 @@ const PlanCard = ({ e, onSave }) => {
   const chosen = e.selectedAction || "";
   const done = !!e.actionCompleted;
   const hex = e.dotHex || PURPLE;
+  // Suggested action, from the engine's rotation. Without this every option looked equally likely
+  // and you could be handed "Meditate" five days running. recommend() rests a repeat for 3 days
+  // (1 when the score is under 60, where repeating is the point). Computed once per entry so a
+  // re-render cannot advance the rotation, and only while nothing is chosen yet.
+  const suggested = React.useMemo(() => {
+    if (chosen) return "";
+    try { return RecoveryActions.recommend(e.v4, RecoveryEngineUser()) || ""; } catch (err) { return ""; }
+  }, [e.date, chosen]);
 
   return (
     <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
@@ -1168,8 +1211,15 @@ const PlanCard = ({ e, onSave }) => {
                  border: `1px solid rgba(${BRDR},0.2)`, borderRadius: 8, color: "#f5f5f5",
                  padding: "12px 14px", fontSize: 15, minHeight: 46,
                  fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
-        <option value="">Choose an action</option>
-        {actions.map(a => <option key={a} value={a}>{a}</option>)}
+        {/* Options need their OWN colours. The select is styled for the dark card, but the native
+            dropdown popup paints on a white system background, so inheriting near-white text made
+            every choice invisible. Setting both per-option fixes it on Windows/Chrome and Android. */}
+        <option value="" style={{ background: "#141416", color: "#f5f5f5" }}>Choose an action</option>
+        {actions.map(a => (
+          <option key={a} value={a} style={{ background: "#141416", color: "#f5f5f5" }}>
+            {a}{a === suggested ? "  ·  suggested" : ""}
+          </option>
+        ))}
       </select>
 
       <label style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14,
@@ -1489,7 +1539,24 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
       <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
+      <LogBlock label="Sleep Quality" value={e.sleepQuality != null ? `${e.sleepQuality}/10` : "—"} accent={PURPLE} />
     </div>
+    {/* v4 engine values. The log used to speak the OLD language while the top of the page spoke the
+        new one: no grade, status, push meter or chosen action down here. These all already exist on
+        the enriched entry, so this is display only, nothing is recalculated. Hidden for Core (the
+        engine score is an Elite feature) and for old entries that predate the engine. */}
+    {!__CORE && e.v4 && (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginTop: 12.48 }}>
+        <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />
+        <LogBlock label="Status"     value={e.recoveryStatus || "—"} />
+        <LogBlock label="Push Meter" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />
+        {e.selectedAction && (
+          <LogBlock label={e.actionCompleted ? "Action · done" : "Action"}
+                    value={e.selectedAction}
+                    accent={e.actionCompleted ? GOLD : undefined} col="1 / -1" />
+        )}
+      </div>
+    )}
   </div>
 );
 

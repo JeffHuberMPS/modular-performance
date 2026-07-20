@@ -627,8 +627,18 @@ function SleepTracker() {
         // Only fills dates that have no real entry, so it can never
         // overwrite something you actually logged. Clear it with Reset
         // Trackers on the hub.
+        // HOST-GATED to preview builds. On the production domain this is inert, so a real
+        // customer hitting ?seed=14 can never inject 14 fake nights into their own account
+        // (which would then sync to their cloud backup). Works as before on *.vercel.app.
+        const _seedAllowed = (() => {
+          try {
+            return /vercel\.app$/i.test(location.hostname);
+          } catch (e) {
+            return false;
+          }
+        })();
         const seedN = new URLSearchParams(location.search).get('seed');
-        if (seedN && loaded.length < 40) {
+        if (seedN && _seedAllowed && loaded.length < 40) {
           const n = Math.min(60, parseInt(seedN, 10) || 14);
           const have = new Set(loaded.map(e => e.date));
           const pad = v => String(v).padStart(2, '0');
@@ -1241,7 +1251,9 @@ function SleepTracker() {
       fontSize: 11,
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
     }
-  }, saveError)), activeTab === "dashboard" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
+  }, saveError)), activeTab === "dashboard" && /*#__PURE__*/React.createElement(React.Fragment, null, !__CORE && /*#__PURE__*/React.createElement(TodayCard, {
+    e: enriched[enriched.length - 1]
+  }), /*#__PURE__*/React.createElement("section", {
     style: styles.todayCard
   }, /*#__PURE__*/React.createElement("div", {
     style: styles.eyebrow
@@ -1353,8 +1365,6 @@ function SleepTracker() {
       } catch (err) {}
       setCelebration(null);
     }
-  }), /*#__PURE__*/React.createElement(TodayCard, {
-    e: enriched[enriched.length - 1]
   }), /*#__PURE__*/React.createElement(PlanCard, {
     e: enriched[enriched.length - 1],
     onSave: saveAction
@@ -1979,7 +1989,29 @@ const TodayCard = ({
 }) => {
   if (!e || !e.v4) return null;
   const hex = e.dotHex || PURPLE;
-  const dots = "●".repeat(e.dotCount) + "○".repeat(5 - e.dotCount);
+  // Five dots, filled to the tier (spec Part 6). Rendered as sized circles rather than the
+  // ● / ○ glyphs: those two characters draw at different optical sizes, so the EMPTY dot came
+  // out bigger than the filled ones, which reads backwards. Filled = large and solid,
+  // remaining = small and dim, so earned progress is what stands out.
+  const dots = Array.from({
+    length: 5
+  }, (_, i) => {
+    const on = i < e.dotCount;
+    return /*#__PURE__*/React.createElement("span", {
+      key: i,
+      style: {
+        display: "inline-block",
+        borderRadius: "50%",
+        verticalAlign: "middle",
+        width: on ? 13 : 7,
+        height: on ? 13 : 7,
+        margin: on ? "0 5px" : "0 8px",
+        background: on ? hex : "transparent",
+        border: on ? "none" : `1.5px solid ${hex}`,
+        opacity: on ? 1 : 0.4
+      }
+    });
+  });
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: "rgba(18,18,20,0.85)",
@@ -2016,10 +2048,8 @@ const TodayCard = ({
   }, "%")), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      letterSpacing: 9,
-      fontSize: 18,
-      color: hex,
-      margin: "14px 0 10px"
+      margin: "16px 0 12px",
+      lineHeight: 1
     }
   }, dots), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2073,18 +2103,24 @@ const TodayCard = ({
   }, " / 10"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      gap: 4,
-      margin: "10px 0 9px"
+      gap: 3,
+      alignItems: "flex-end",
+      height: 24,
+      margin: "12px 0 10px"
     }
-  }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => /*#__PURE__*/React.createElement("i", {
-    key: i,
-    style: {
-      flex: 1,
-      height: 6,
-      borderRadius: 2,
-      background: i < e.pushMeter ? hex : "rgba(255,255,255,0.08)"
-    }
-  }))), /*#__PURE__*/React.createElement("div", {
+  }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => {
+    const on = i < e.pushMeter;
+    return /*#__PURE__*/React.createElement("i", {
+      key: i,
+      style: {
+        flex: 1,
+        borderRadius: 2,
+        height: `${32 + i * 7.5}%`,
+        background: on ? hex : "rgba(255,255,255,0.07)",
+        opacity: on ? 0.6 + i / 9 * 0.4 : 1
+      }
+    });
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#9a9a9a"
@@ -2266,6 +2302,18 @@ const PlanCard = ({
   const chosen = e.selectedAction || "";
   const done = !!e.actionCompleted;
   const hex = e.dotHex || PURPLE;
+  // Suggested action, from the engine's rotation. Without this every option looked equally likely
+  // and you could be handed "Meditate" five days running. recommend() rests a repeat for 3 days
+  // (1 when the score is under 60, where repeating is the point). Computed once per entry so a
+  // re-render cannot advance the rotation, and only while nothing is chosen yet.
+  const suggested = React.useMemo(() => {
+    if (chosen) return "";
+    try {
+      return RecoveryActions.recommend(e.v4, RecoveryEngineUser()) || "";
+    } catch (err) {
+      return "";
+    }
+  }, [e.date, chosen]);
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: "rgba(255,255,255,0.02)",
@@ -2307,11 +2355,19 @@ const PlanCard = ({
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
     }
   }, /*#__PURE__*/React.createElement("option", {
-    value: ""
+    value: "",
+    style: {
+      background: "#141416",
+      color: "#f5f5f5"
+    }
   }, "Choose an action"), actions.map(a => /*#__PURE__*/React.createElement("option", {
     key: a,
-    value: a
-  }, a))), /*#__PURE__*/React.createElement("label", {
+    value: a,
+    style: {
+      background: "#141416",
+      color: "#f5f5f5"
+    }
+  }, a, a === suggested ? "  ·  suggested" : ""))), /*#__PURE__*/React.createElement("label", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -2983,6 +3039,33 @@ const LogCard = ({
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Calmness",
   value: e.restlessness != null ? `${e.calmness}/10` : "—"
+}), /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Sleep Quality",
+  value: e.sleepQuality != null ? `${e.sleepQuality}/10` : "—",
+  accent: PURPLE
+})), !__CORE && e.v4 && /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 12.48,
+    marginTop: 12.48
+  }
+}, /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Grade",
+  value: e.recoveryGrade || "—",
+  accent: GOLD
+}), /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Status",
+  value: e.recoveryStatus || "—"
+}), /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Push Meter",
+  value: e.pushMeter != null ? `${e.pushMeter}/10` : "—",
+  accent: PURPLE
+}), e.selectedAction && /*#__PURE__*/React.createElement(LogBlock, {
+  label: e.actionCompleted ? "Action · done" : "Action",
+  value: e.selectedAction,
+  accent: e.actionCompleted ? GOLD : undefined,
+  col: "1 / -1"
 })));
 
 /* ── Pure SVG chart components — no external library, always renders ── */
