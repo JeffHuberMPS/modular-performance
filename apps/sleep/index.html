@@ -2591,17 +2591,17 @@ const PlanCard = ({
     /*#__PURE__*/
     // This is the ONLY action on the whole dashboard, so it must NOT blend into the background.
     // It was rgba(255,255,255,0.02) on black with a 0.13 border — invisible, and it got overlooked.
-    // Now it wears the app's CTA colour: gold-tinted fill, a gold left bar, a gold border and a
-    // soft gold glow, so it reads as "do this" the moment the card loads.
+    // Now it wears the Recovery pillar's purple: a purple-tinted fill, a purple left bar, a purple
+    // border and a soft purple glow, so it reads as "do this" the moment the card loads.
     React.createElement("section", {
       style: {
-        background: "linear-gradient(180deg, rgba(201,160,32,0.12), rgba(201,160,32,0.05))",
-        border: "1px solid rgba(201,160,32,0.45)",
-        borderLeft: "4px solid #C9A020",
+        background: "linear-gradient(180deg, rgba(155,107,201,0.14), rgba(155,107,201,0.05))",
+        border: "1px solid rgba(155,107,201,0.5)",
+        borderLeft: "4px solid #9b6bc9",
         borderRadius: 12,
         padding: "16px 18px",
         marginBottom: 14,
-        boxShadow: "0 0 0 1px rgba(201,160,32,0.10), 0 6px 18px rgba(0,0,0,0.45)"
+        boxShadow: "0 0 0 1px rgba(155,107,201,0.10), 0 6px 18px rgba(0,0,0,0.45)"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2613,7 +2613,7 @@ const PlanCard = ({
     }, /*#__PURE__*/React.createElement("span", {
       "aria-hidden": "true",
       style: {
-        color: "#C9A020",
+        color: "#b48fd6",
         display: "inline-flex"
       }
     }, /*#__PURE__*/React.createElement("svg", {
@@ -2643,7 +2643,7 @@ const PlanCard = ({
         fontSize: 11,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
-        color: "#C9A020",
+        color: "#b48fd6",
         fontWeight: 800
       }
     }, "Today\u2019s Plan")), /*#__PURE__*/React.createElement("div", {
@@ -2677,9 +2677,9 @@ const PlanCard = ({
           alignItems: "center",
           gap: 7,
           cursor: "pointer",
-          background: filled ? "#C9A020" : "transparent",
-          border: filled ? "1px solid #C9A020" : "1px solid rgba(201,160,32,0.5)",
-          color: filled ? "#1a1305" : "#E8C55A",
+          background: filled ? "#9b6bc9" : "transparent",
+          border: filled ? "1px solid #9b6bc9" : "1px solid rgba(155,107,201,0.55)",
+          color: filled ? "#ffffff" : "#c9aee6",
           fontWeight: filled ? 800 : 600,
           fontSize: 14,
           lineHeight: 1.2,
@@ -2693,7 +2693,7 @@ const PlanCard = ({
           width: 13,
           height: 13,
           fill: "none",
-          stroke: "#1a1305",
+          stroke: "#ffffff",
           strokeWidth: 3.2,
           strokeLinecap: "round",
           strokeLinejoin: "round"
@@ -2704,8 +2704,8 @@ const PlanCard = ({
         style: {
           fontSize: 9,
           letterSpacing: "0.1em",
-          background: "rgba(0,0,0,0.22)",
-          color: "#1a1305",
+          background: "rgba(255,255,255,0.24)",
+          color: "#ffffff",
           padding: "2px 6px",
           borderRadius: 999,
           fontWeight: 800
@@ -2740,7 +2740,7 @@ const PlanCard = ({
         height: 22,
         borderRadius: 6,
         flexShrink: 0,
-        border: `2px solid ${done ? hex : "#C9A020"}`,
+        border: `2px solid ${done ? hex : "#9b6bc9"}`,
         background: done ? hex : "transparent",
         display: "grid",
         placeItems: "center"
