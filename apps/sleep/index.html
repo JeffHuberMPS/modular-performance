@@ -1994,11 +1994,11 @@ const LogCard = ({
     marginBottom: 12.48
   }
 }, /*#__PURE__*/React.createElement(LogBlock, {
-  label: "Sleep",
-  value: _fmt12(e.sleepTime)
-}), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Wake",
   value: _fmt12(e.wakeTime)
+}), /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Bedtime",
+  value: _fmt12(e.sleepTime)
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Duration",
   value: e.hours != null && e.hours > 0 ? `${e.hours}h` : "—",
