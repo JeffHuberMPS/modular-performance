@@ -1496,7 +1496,11 @@ const LogCard = ({ e, onEdit, onDelete }) => (
 
 /* ── Pure SVG chart components — no external library, always renders ── */
 const SvgChart = (() => {
-  const PAD = { top: 12, right: 10, bottom: 46, left: 48 };
+  // left:86 not 48 — clock axes render labels like "12:00 AM", which at
+  // 16px are ~70px wide. Anchored end-aligned at left-8, a 48px gutter
+  // pushed them off the viewBox and the browser clipped them to "0 AM".
+  // Numeric labels are right-aligned in the same gutter and unaffected.
+  const PAD = { top: 12, right: 10, bottom: 46, left: 86 };
   const W = 600, H = 440;
   const pw = W - PAD.left - PAD.right;
   const ph = H - PAD.top - PAD.bottom;
