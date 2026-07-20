@@ -920,9 +920,9 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         Leading with it keeps the card consistent with its own date. "Bedtime" (not "Sleep") makes
         clear it is the night before, and stops it reading like hours-slept. */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginBottom: 12.48 }}>
-      <LogBlock label="Wake"     value={_fmt12(e.wakeTime)} />
-      <LogBlock label="Bedtime"  value={_fmt12(e.sleepTime)} />
-      <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
+      <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
+      <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
+      <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
     {/* Recovery · Energy · Physical Recovery / Clarity · Calmness. All 1-10 values read 10 = good.
         Resting HR + HRV are not displayed (see the form note) until wearable sync lands. */}
