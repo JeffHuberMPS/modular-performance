@@ -1134,7 +1134,7 @@ const TodayCard = ({ e }) => {
       <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
           <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: LBL }}>
-            Push Meter
+            Directive
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: LBL, whiteSpace: "nowrap" }}>
             {e.pushMeter} / 10
@@ -1749,7 +1749,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       {!__CORE && e.v4 && <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />}
       {!__CORE && e.v4 && <LogBlock label="Readiness"  value={e.recoveryStatus || "—"} />}
-      {!__CORE && e.v4 && <LogBlock label="Push Meter" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />}
+      {!__CORE && e.v4 && <LogBlock label="Directive" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />}
       {!__CORE && e.v4 && e.selectedAction && (
         <LogBlock label={e.actionCompleted ? "Action · done" : "Action"}
                   value={e.selectedAction}
