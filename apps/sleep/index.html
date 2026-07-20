@@ -2691,8 +2691,8 @@ const PlanCard = ({
         gap: 12,
         marginTop: 14,
         minHeight: 44,
-        cursor: chosen ? "pointer" : "not-allowed",
-        opacity: chosen ? 1 : 0.5,
+        cursor: chosen ? "pointer" : "default",
+        opacity: chosen ? 1 : 0.85,
         userSelect: "none"
       }
     }, /*#__PURE__*/React.createElement("input", {
@@ -2714,7 +2714,7 @@ const PlanCard = ({
         height: 22,
         borderRadius: 6,
         flexShrink: 0,
-        border: `2px solid ${done ? hex : "rgba(255,255,255,0.22)"}`,
+        border: `2px solid ${done ? hex : chosen ? "#C9A020" : "rgba(255,255,255,0.35)"}`,
         background: done ? hex : "transparent",
         display: "grid",
         placeItems: "center"
@@ -2735,9 +2735,9 @@ const PlanCard = ({
     }))), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 14,
-        color: done ? "#f5f5f5" : "#9a9a9a"
+        color: done ? "#f5f5f5" : chosen ? "#f5f5f5" : "#b0b0b0"
       }
-    }, done ? "Done today. Good work." : chosen ? "Complete today's action" : "Pick an action first")))
+    }, done ? "Done today. Good work." : chosen ? "Check the box when it's done." : "Choose an action above to begin.")))
   );
 };
 

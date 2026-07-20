@@ -1354,21 +1354,21 @@ const PlanCard = ({ e, onSave }) => {
       </select>
 
       <label style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14,
-                      minHeight: 44, cursor: chosen ? "pointer" : "not-allowed",
-                      opacity: chosen ? 1 : 0.5, userSelect: "none" }}>
+                      minHeight: 44, cursor: chosen ? "pointer" : "default",
+                      opacity: chosen ? 1 : 0.85, userSelect: "none" }}>
         <input type="checkbox" checked={done} disabled={!chosen}
           onChange={(ev) => onSave(e.date, { actionCompleted: ev.target.checked })}
           style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
         <span style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                       border: `2px solid ${done ? hex : "rgba(255,255,255,0.22)"}`,
+                       border: `2px solid ${done ? hex : chosen ? "#C9A020" : "rgba(255,255,255,0.35)"}`,
                        background: done ? hex : "transparent",
                        display: "grid", placeItems: "center" }}>
           {done && <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: "none",
             stroke: "#0a0a0a", strokeWidth: 3.4, strokeLinecap: "round", strokeLinejoin: "round" }}>
             <path d="M4 12l5 5L20 6" /></svg>}
         </span>
-        <span style={{ fontSize: 14, color: done ? "#f5f5f5" : "#9a9a9a" }}>
-          {done ? "Done today. Good work." : chosen ? "Complete today's action" : "Pick an action first"}
+        <span style={{ fontSize: 14, color: done ? "#f5f5f5" : chosen ? "#f5f5f5" : "#b0b0b0" }}>
+          {done ? "Done today. Good work." : chosen ? "Check the box when it's done." : "Choose an action above to begin."}
         </span>
       </label>
     </section>
