@@ -569,6 +569,9 @@ const storage = {
    ══════════════════════════════════════════════════ */
 function SleepTracker() {
   const [entries, setEntries] = useState([]);
+  // Which month sections are collapsed in the Log tab. The header always LOOKED like a dropdown
+  // (it rendered a bare chevron character) but had no handler, so tapping it did nothing.
+  const [closedMonths, setClosedMonths] = useState({});
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -1699,12 +1702,30 @@ function SleepTracker() {
         overflow: "hidden"
       }
     }, /*#__PURE__*/React.createElement("div", {
+      role: "button",
+      tabIndex: 0,
+      onClick: () => setClosedMonths(p => ({
+        ...p,
+        [month]: !p[month]
+      })),
+      onKeyDown: ev => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          setClosedMonths(p => ({
+            ...p,
+            [month]: !p[month]
+          }));
+        }
+      },
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         padding: "12px 16px",
-        borderBottom: "1px solid rgba(150,150,150,0.08)"
+        borderBottom: closedMonths[month] ? "none" : "1px solid rgba(150,150,150,0.08)",
+        cursor: "pointer",
+        userSelect: "none",
+        minHeight: 44
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -1715,11 +1736,22 @@ function SleepTracker() {
       }
     }, fmtMonth(month + "-01")), /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
         fontSize: 10,
         fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
         color: LBL
       }
-    }, mes.length, " ", mes.length === 1 ? "entry" : "entries", " \u2228")), (() => {
+    }, /*#__PURE__*/React.createElement("span", null, mes.length, " ", mes.length === 1 ? "entry" : "entries"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "inline-block",
+        fontSize: 13,
+        lineHeight: 1,
+        transform: closedMonths[month] ? "rotate(-90deg)" : "rotate(0deg)",
+        transition: "transform 0.18s ease"
+      }
+    }, "\u2228"))), !closedMonths[month] && (() => {
       const byWeek = {};
       mes.forEach(e => {
         const ws = dateToStr(startOfWeek(e.date));
@@ -3027,10 +3059,27 @@ const LogCard = ({
   size: 12
 })))), /*#__PURE__*/React.createElement("div", {
   style: {
+    background: "rgba(0,0,0,0.28)",
+    border: `1px solid rgba(${BRDR},0.16)`,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontSize: 8.5,
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: LBL,
+    opacity: 0.7,
+    marginBottom: 9
+  }
+}, "Sleep Window"), /*#__PURE__*/React.createElement("div", {
+  style: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 15,
-    marginBottom: 15
+    gap: 15
   }
 }, /*#__PURE__*/React.createElement(LogBlock, {
   label: "Wake Time",
@@ -3042,7 +3091,7 @@ const LogCard = ({
   label: "Sleep Duration",
   value: e.hours != null && e.hours > 0 ? `${e.hours}h` : "—",
   accent: PURPLE
-})), /*#__PURE__*/React.createElement("div", {
+}))), /*#__PURE__*/React.createElement("div", {
   style: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
