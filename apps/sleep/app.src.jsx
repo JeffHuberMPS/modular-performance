@@ -109,6 +109,7 @@ function SleepTracker() {
   const [showForm, setShowForm] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [celebration, setCelebration] = useState(null);   // pending milestone card
   const [activeTab, setActiveTab] = useState(__CORE ? "log" : "dashboard");
   const [form, setForm] = useState(() => {
     const d = new Date();
@@ -216,6 +217,14 @@ function SleepTracker() {
     setEntries(next);
     setShowForm(false);
     setSaveSuccess(true);
+    // Milestone check belongs here, not in render: a render-path check
+    // would re-fire every time the user scrolled past. spec Part 14.
+    try {
+      if (window.RecoveryReports) {
+        const lvl = RecoveryReports.pendingCelebration(next.length, RecoveryEngineUser());
+        if (lvl) setCelebration(lvl);
+      }
+    } catch (err) {}
     setSaveError(null);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => setSaveSuccess(false), 1500);
@@ -710,6 +719,13 @@ function SleepTracker() {
               </section>
             ) : (<>
             {/* Today: engine score, dots, status, push meter */}
+            <CelebrationOverlay level={celebration} rows={engineRows}
+              onClose={() => {
+                // markCelebrated is what guarantees a milestone fires once
+                // and never again, even across devices and reloads.
+                try { RecoveryReports.markCelebrated(RecoveryEngineUser(), celebration.id); } catch (err) {}
+                setCelebration(null);
+              }} />
             <TodayCard e={enriched[enriched.length - 1]} />
             {/* Why this score — coaching from the user's own numbers */}
             {/* Today's Plan — the weakest metric and one action for it */}
@@ -1050,6 +1066,85 @@ const TodayCard = ({ e }) => {
         <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
       </div>
     </section>
+  );
+};
+
+/* CelebrationOverlay — milestone card (spec Part 14).
+   Gold sparkle burst, card pop-in, the user's own progress, one CTA.
+   Fires from the SAVE path only, and markCelebrated means a milestone can
+   never fire twice. Keyframes are scoped here because sleep.css is not
+   linked into this page and index.html is generated. */
+const CelebrationOverlay = ({ level, rows, onClose }) => {
+  if (!level) return null;
+  let data = null;
+  try { data = RecoveryReports.celebrationData(level, rows || []); } catch (e) {}
+  const sparks = Array.from({ length: 14 }, (_, i) => i);
+
+  const Row = ({ label, value }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13,
+                  padding: "9px 0", borderTop: "1px solid rgba(150,150,150,0.15)", textAlign: "left" }}>
+      <span style={{ color: "#8a7fa5" }}>{label}</span>
+      <b style={{ fontSize: 15, color: GOLD, fontWeight: 800, whiteSpace: "nowrap" }}>{value}</b>
+    </div>
+  );
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.82)",
+                  display: "grid", placeItems: "center", padding: 20 }}
+         onClick={onClose} role="dialog" aria-label={level.headline}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes mpsCelPop{from{opacity:0;transform:scale(.86) translateY(14px)}to{opacity:1;transform:none}}
+        @keyframes mpsCelSpark{0%{opacity:0;transform:rotate(var(--a)) translateY(0) scale(.4)}
+          35%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--d)*-1)) scale(.9)}}
+        @media(prefers-reduced-motion:reduce){.mps-cel-card{animation:none!important}.mps-cel-burst{display:none}}
+      ` }} />
+      <div className="mps-cel-card" onClick={(ev) => ev.stopPropagation()}
+           style={{ position: "relative", background: "#111",
+                    border: "1px solid rgba(201,160,32,0.4)", borderRadius: 16,
+                    padding: "32px 26px 26px", maxWidth: 380, width: "100%",
+                    textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
+                    animation: "mpsCelPop .45s cubic-bezier(.2,.9,.3,1.3) both" }}>
+        <div className="mps-cel-burst" style={{ position: "absolute", top: 34, left: "50%",
+                                                width: 0, height: 0, pointerEvents: "none" }}>
+          {sparks.map(i => (
+            <i key={i} style={{ position: "absolute", width: 4, height: 4, borderRadius: "50%",
+              background: GOLD, opacity: 0,
+              "--a": `${i * (360 / 14)}deg`, "--d": `${40 + (i % 4) * 14}px`,
+              animation: `mpsCelSpark 1.1s ease-out ${(i % 5) * 40}ms both` }} />
+          ))}
+        </div>
+
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.16em",
+                      textTransform: "uppercase", color: GOLD, marginBottom: 10 }}>
+          {level.days} Days Complete
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.01em", marginBottom: 9 }}>
+          {level.headline}
+        </div>
+        <div style={{ fontSize: 14, color: "#9a9a9a", lineHeight: 1.5, marginBottom: 18 }}>
+          {level.message}
+        </div>
+
+        {data && (
+          <div>
+            <Row label="Recovery Score" value={`${data.scoreFrom}% → ${data.scoreTo}%`} />
+            <Row label="Average sleep"  value={`${data.sleepFrom} → ${data.sleepTo}`} />
+            {data.mover && (
+              <Row label="Biggest move"
+                   value={`${data.mover.label} ${data.mover.delta >= 0 ? "+" : ""}${data.mover.delta}`} />
+            )}
+          </div>
+        )}
+
+        <div style={{ fontSize: 13, color: "#9a9a9a", margin: "18px 0 16px" }}>Keep building.</div>
+        <button onClick={onClose}
+          style={{ width: "100%", background: GOLD, color: "#0a0a0a", border: 0,
+                   borderRadius: 10, padding: "13px 20px", fontWeight: 800, fontSize: 13,
+                   letterSpacing: "0.06em", cursor: "pointer", minHeight: 46 }}>
+          View {level.title}
+        </button>
+      </div>
+    </div>
   );
 };
 
