@@ -1666,7 +1666,7 @@ const SvgChart = (() => {
       const y = ys(t, min, max);
       return <g key={t}>
         <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1}/>
-        <text x={PAD.left - 8} y={y + 5} textAnchor="end" fill="#f5f5f5" fontSize={16} fontFamily="'Inter', system-ui, -apple-system, sans-serif">{fmt ? fmt(t) : t}</text>
+        <text x={PAD.left - 8} y={y + 5} textAnchor="end" fill="#f5f5f5" fontSize={22} fontFamily="'Inter', system-ui, -apple-system, sans-serif">{fmt ? fmt(t) : t}</text>
       </g>;
     })}</>;
   };
@@ -1674,7 +1674,7 @@ const SvgChart = (() => {
   const XLabels = ({ data }) => {
     const step = Math.max(1, Math.ceil(data.length / 7));
     return <>{data.map((d, i) => i % step === 0
-      ? <text key={i} x={xs(i, data.length)} y={H - 6} textAnchor="middle" fill="#8a8a8a" fontSize={15} fontFamily="'Inter', system-ui, -apple-system, sans-serif">{d.label}</text>
+      ? <text key={i} x={xs(i, data.length)} y={H - 6} textAnchor="middle" fill="#8a8a8a" fontSize={21} fontFamily="'Inter', system-ui, -apple-system, sans-serif">{d.label}</text>
       : null
     )}</>;
   };
@@ -1683,7 +1683,7 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const bw = Math.max(3, pw / data.length * 0.6);
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:440,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block"}}>
         <defs>
           <linearGradient id="svgBarGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={BAR_TOP}/><stop offset="100%" stopColor={BAR_BOT}/>
@@ -1708,7 +1708,7 @@ const SvgChart = (() => {
     const [min, max] = domain;
     const n = data.length;
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:440,display:"block"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block"}}>
         <YAxisLines ticks={ticks} domain={domain} fmt={fmt}/>
         {refY != null && <line x1={PAD.left} y1={ys(refY,min,max)} x2={W-PAD.right} y2={ys(refY,min,max)} stroke={GOLD} strokeDasharray="3 5" opacity={0.35}/>}
         {lines.map(({key, stroke}) => {
@@ -1890,7 +1890,7 @@ const styles = {
   statsRow:    { display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 },
 
   /* Charts grid */
-  chartsGrid:  { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 12px" },
+  chartsGrid:  { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0 12px" },   /* 220 so all FIVE charts fit one row at 100% zoom; wraps on narrow screens */
 
   /* Log tab */
   empty:       { fontSize: 11, color: "#4a4255", fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
