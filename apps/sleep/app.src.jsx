@@ -1461,7 +1461,10 @@ const SvgChart = (() => {
     );
   };
 
-  const Lines = ({ data, lines, domain, ticks, refY }) => {
+  // `fmt` MUST be declared here. The body passes fmt={fmt} down to YAxisLines, and without it in
+  // the props that is a bare undeclared identifier, which throws ReferenceError and blanks the
+  // entire Recovery pillar instead of just skipping the optional formatter.
+  const Lines = ({ data, lines, domain, ticks, refY, fmt }) => {
     const [min, max] = domain;
     const n = data.length;
     return (
