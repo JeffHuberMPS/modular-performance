@@ -120,6 +120,7 @@ function SleepTracker() {
       sleepTime: "",
       wakeTime: "04:00",
       energy: 7,
+      sleepQuality: 7,
       soreness: 3,
       clarity: 7,
       restlessness: 3,
@@ -144,6 +145,7 @@ function SleepTracker() {
               if (!parsed || !parsed.date) continue; // skip anything that isn't a dated entry (prevents a blank/crashed app)
               loaded.push({
                 ...parsed,
+                sleepQuality: parsed.sleepQuality ?? (10 - (parsed.restlessness ?? 3)),
                 energy: parsed.energy ?? 5,
                 clarity: parsed.clarity ?? 5,
                 soreness: parsed.soreness ?? 5,
@@ -153,6 +155,55 @@ function SleepTracker() {
           }
         }
         loaded.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+        // TEST DATA — opt in with ?seed=14 in the URL. Generates 14 days of
+        // varied entries so the v4 weapons can be exercised without waiting
+        // two weeks. Deterministic, so reloading gives the same numbers.
+        // Only fills dates that have no real entry, so it can never
+        // overwrite something you actually logged. Clear it with Reset
+        // Trackers on the hub.
+        // HOST-GATED to preview builds. On the production domain this is inert, so a real
+        // customer hitting ?seed=14 can never inject 14 fake nights into their own account
+        // (which would then sync to their cloud backup). Works as before on *.vercel.app.
+        const _seedAllowed = (() => { try { return /vercel\.app$/i.test(location.hostname); } catch (e) { return false; } })();
+        const seedN = new URLSearchParams(location.search).get('seed');
+        if (seedN && _seedAllowed && loaded.length < 40) {
+          const n = Math.min(60, parseInt(seedN, 10) || 14);
+          const have = new Set(loaded.map(e => e.date));
+          const pad = v => String(v).padStart(2, '0');
+          const made = [];
+          for (let i = n - 1; i >= 0; i--) {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            if (have.has(date)) continue;
+            // A rough arc: rough first week, better second, with wobble.
+            const arc = Math.round((n - 1 - i) / Math.max(1, n - 1) * 3);
+            const w = [0, 1, -1, 2, 0, -1, 1][i % 7];
+            const clamp = v => Math.max(1, Math.min(10, v));
+            const bedM = 22 * 60 + 15 + ([0, 25, -20, 45, 10, -15, 30][i % 7]);
+            const wakeM = 5 * 60 + 30 + ([0, 15, -10, 20, 5, -20, 10][i % 7]);
+            const entry = {
+              date,
+              sleepTime: `${pad(Math.floor(bedM / 60) % 24)}:${pad(bedM % 60)}`,
+              wakeTime:  `${pad(Math.floor(wakeM / 60) % 24)}:${pad(wakeM % 60)}`,
+              sleepQuality: clamp(5 + arc + w),
+              energy:       clamp(5 + arc + w),
+              clarity:      clamp(6 + arc - w),
+              soreness:     clamp(5 - arc + w),      // stored inverted
+              restlessness: clamp(4 - arc - w),      // stored inverted
+              restingHR: 58 + (i % 5),
+              hrv: 55 + (i % 9),
+              weight: 180
+            };
+            made.push(entry);
+            try { await storage.set(date, JSON.stringify(entry)); } catch (err) {}
+          }
+          if (made.length) {
+            loaded.push(...made);
+            loaded.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+          }
+        }
+
         setEntries(loaded);
       } catch (e) {
       } finally {
@@ -189,6 +240,7 @@ function SleepTracker() {
       date: entry.date,
       sleepTime: entry.sleepTime || "",
       wakeTime: entry.wakeTime || "",
+      sleepQuality: entry.sleepQuality ?? (10 - (entry.restlessness ?? 3)),
       energy: entry.energy ?? 5,
       soreness: entry.soreness ?? 5,
       clarity: entry.clarity ?? 5,
@@ -289,14 +341,59 @@ function SleepTracker() {
     return Math.round(sleepScore + energyScore + clarityScore + soreScore + restScore);
   };
 
+  // ── Recovery Engine v4.0 ────────────────────────────────────────────
+  // The locked spec's scoring replaces the old weighted formula.
+  // Field adaptation. No stored data is rewritten:
+  //   energy       -> energy            direct
+  //   clarity      -> mentalClarity     direct
+  //   soreness     -> physicalRecovery  10 - x, already the display value
+  //   restlessness -> calmness          10 - x, already the display value
+  //   sleepQuality -> NEW. Historical entries have no source, so they fall
+  //                   back to inverted restlessness: restless sleep is
+  //                   poor-quality sleep. That is a proxy, not a
+  //                   measurement. New entries capture it directly.
+  // 10 - soreness can reach 0, outside the spec's 1-10 range, so every
+  // adapted value is clamped.
+  const _c10 = v => Math.max(1, Math.min(10, Math.round(v)));
+  const v4Score = (e) => {
+    if (!window.RecoveryScoring || !e.sleepTime || !e.wakeTime) return null;
+    try {
+      return RecoveryScoring.score({
+        date: e.date,
+        bedtime: e.sleepTime,
+        wakeTime: e.wakeTime,
+        sleepQuality:     _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
+        energy:           _c10(e.energy ?? 5),
+        mentalClarity:    _c10(e.clarity ?? 5),
+        physicalRecovery: _c10(10 - (e.soreness ?? 5)),
+        calmness:         _c10(10 - (e.restlessness ?? 3))
+      }, []);
+    } catch (err) { return null; }
+  };
+
   const enriched = useMemo(() =>
     entries.map((e) => {
       const hours    = calcHours(e.sleepTime, e.wakeTime);
       const hasSleep = !!e.sleepTime;
+      const v4       = hasSleep ? v4Score(e) : null;
       return {
         ...e,
         hours:    hasSleep ? hours : null,
-        recovery: hasSleep ? calcRecovery(hours, e.energy ?? 5, e.soreness ?? 5, e.clarity ?? 5, e.restlessness ?? 3) : null,
+        // Engine score when available, old formula as a safety net so the
+        // pillar keeps working if the engine script fails to load.
+        recovery: hasSleep
+          ? (v4 ? v4.recoveryScore
+                : calcRecovery(hours, e.energy ?? 5, e.soreness ?? 5, e.clarity ?? 5, e.restlessness ?? 3))
+          : null,
+        // Everything the dashboard, plan and coaching stages need next.
+        v4,
+        recoveryGrade:  v4 ? v4.recoveryGrade  : null,
+        recoveryStatus: v4 ? v4.recoveryStatus : null,
+        dotCount:       v4 ? v4.dotCount       : null,
+        dotHex:         v4 ? v4.dotHex         : null,
+        pushMeter:      v4 ? v4.pushMeter      : null,
+        pushMessage:    v4 ? v4.pushMessage    : null,
+        sleepQuality:   _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
         // POSITIVE-DIRECTION VIEW: every slider now reads "10 = good". The stored fields stay
         // soreness/restlessness (low = good) so NO historical data is rewritten or lost — we only
         // flip them for display. physicalRecovery = 10 - soreness, calmness = 10 - restlessness.
@@ -311,6 +408,24 @@ function SleepTracker() {
     }),
     [entries]
   );
+
+  // Engine-shaped rows. The coaching and reports modules expect the v4
+  // schema (sleepQuality/mentalClarity/physicalRecovery/calmness plus the
+  // derived score fields); the app stores the older field names. One
+  // adapter here means neither module has to know about the old shape.
+  const engineRows = useMemo(() => enriched
+    .filter(e => e.v4)
+    .map(e => ({
+      ...e.v4,
+      date: e.date,
+      sleepQuality:     _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
+      energy:           _c10(e.energy ?? 5),
+      mentalClarity:    _c10(e.clarity ?? 5),
+      physicalRecovery: _c10(10 - (e.soreness ?? 5)),
+      calmness:         _c10(10 - (e.restlessness ?? 3)),
+      actionCompleted:  !!e.actionCompleted,
+      updatedAt:        e.updatedAt || ""
+    })), [enriched]);
 
   const last30 = enriched.slice(-30);
   const last7  = enriched.slice(-7);
@@ -493,6 +608,15 @@ function SleepTracker() {
                   onChange={(e) => setForm({ ...form, sleepTime: e.target.value })}
                   style={styles.input} />
               </Field>
+              {/* Sleep Quality — the one genuinely new input in the v4 spec.
+                  Old entries have no source for it and fall back to inverted
+                  restlessness as a proxy. Capturing it directly makes the
+                  score honest from here on. */}
+              <Field label={`Sleep Quality · ${form.sleepQuality}/10`}>
+                <input type="range" min="1" max="10" value={form.sleepQuality}
+                  onChange={(e) => setForm({ ...form, sleepQuality: +e.target.value })}
+                  style={{ ...styles.range, accentColor: PURPLE }} />
+              </Field>
               <Field label={`Energy · ${form.energy}/10`}>
                 <input type="range" min="1" max="10" value={form.energy}
                   onChange={(e) => setForm({ ...form, energy: +e.target.value })}
@@ -573,6 +697,12 @@ function SleepTracker() {
                 <a href="/billing.html" target="_top" style={{ display: "inline-block", padding: "12px 26px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 13, letterSpacing: 1, borderRadius: 10, textDecoration: "none" }}>↑ UNLOCK WITH ELITE</a>
               </section>
             ) : (<>
+            {/* Today: engine score, dots, status, push meter */}
+            <TodayCard e={enriched[enriched.length - 1]} />
+            {/* Why this score — coaching from the user's own numbers */}
+            {/* What today's numbers say — strongest, weakest, what moved */}
+            <InsightsCard rows={engineRows} />
+            <CoachCard rows={engineRows} />
             {/* 7-day stats */}
             <section style={styles.statsRow}>
               <StatBlock label="Avg Sleep"    value={`${stats.hours}h`}        sub="7-day" trend={trend("hours")}    good="up" />
@@ -581,6 +711,11 @@ function SleepTracker() {
               <StatBlock label="Avg Physical Recovery" value={`${stats.physicalRecovery}/10`} sub="7-day" trend={trend("physicalRecovery")} good="up" />
               <StatBlock label="Avg Recovery" value={`${stats.recovery}%`}     sub="7-day" trend={trend("recovery")} good="up" />
             </section>
+
+            {/* Progressive unlocks — weekly through lifetime */}
+            {/* Long-run tracking — averages, streaks, next milestone */}
+            <ProgressCard rows={engineRows} />
+            <ReportsCard rows={engineRows} />
 
             {/* Charts */}
             <section style={styles.chartsGrid}>
@@ -832,6 +967,259 @@ function _fmt12(t) {
   const p = h >= 12 ? "PM" : "AM";
   return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${p}`;
 }
+
+/* TodayCard — Recovery Engine v4.0 dashboard (spec Parts 6, 7, 10, 17).
+   Answers "how recovered am I today, and how hard should I go", which the
+   7-day averages below never did.
+   Reads the newest entry's engine values and calculates NOTHING itself,
+   so it can never disagree with the score shown elsewhere. */
+const TodayCard = ({ e }) => {
+  if (!e || !e.v4) return null;
+  const hex  = e.dotHex || PURPLE;
+  const dots = "●".repeat(e.dotCount) + "○".repeat(5 - e.dotCount);
+  return (
+    <section style={{ background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.13)`,
+                      borderRadius: 12, padding: "20px 16px", marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                    fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: LBL, marginBottom: 14 }}>
+        <span>Today</span><span>{e.weekday}</span>
+      </div>
+
+      <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 0.9, letterSpacing: "-0.03em",
+                    textAlign: "center", color: hex }}>
+        {e.recovery}<span style={{ fontSize: 24, opacity: 0.5 }}>%</span>
+      </div>
+
+      {/* Five dots always, filled to the tier (spec Part 6) */}
+      <div style={{ textAlign: "center", letterSpacing: 9, fontSize: 18,
+                    color: hex, margin: "14px 0 10px" }}>{dots}</div>
+
+      <div style={{ textAlign: "center", fontSize: 17, fontWeight: 800,
+                    letterSpacing: "0.12em", color: hex }}>{e.recoveryStatus}</div>
+
+      <div style={{ textAlign: "center", fontSize: 10, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: LBL, marginTop: 5 }}>
+        Grade {e.recoveryGrade} · slept {e.hours}h
+      </div>
+
+      {/* Push Meter — how hard to go today (spec Part 7) */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+          <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: LBL }}>
+            Push Meter
+          </span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: hex, whiteSpace: "nowrap" }}>
+            {e.pushMeter}<span style={{ fontSize: 12, color: LBL }}> / 10</span>
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 4, margin: "10px 0 9px" }}>
+          {[0,1,2,3,4,5,6,7,8,9].map(i => (
+            <i key={i} style={{ flex: 1, height: 6, borderRadius: 2,
+                 background: i < e.pushMeter ? hex : "rgba(255,255,255,0.08)" }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
+      </div>
+    </section>
+  );
+};
+
+/* Shared bits for the collapsible engine sections (spec Part 17:
+   collapsed by default, one tap reveals one layer). */
+const SectionShell = ({ title, hint, children, open }) => (
+  <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
+                    borderRadius: 10, padding: "6px 16px 14px", marginBottom: 14 }}>
+    <details open={!!open}>
+      <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                        gap: 12, cursor: "pointer", padding: "12px 0", listStyle: "none" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#f5f5f5" }}>{title}</span>
+        <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL }}>
+          {hint}
+        </span>
+      </summary>
+      {children}
+    </details>
+  </section>
+);
+
+const EngineTile = ({ label, value, wide }) => (
+  <div style={{ background: "rgba(150,150,150,0.06)", border: `1px solid rgba(${BRDR},0.12)`,
+                borderLeft: "3px solid rgba(150,150,150,0.55)", borderRadius: 8,
+                padding: "8px 10px", gridColumn: wide ? "1 / -1" : "auto" }}>
+    <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: LBL, marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5" }}>{value}</div>
+  </div>
+);
+
+/* InsightsCard — spec Part 10, section 7.
+   Strongest and weakest metric today, what moved most since yesterday,
+   the current pattern, and the trend. Derived, never recalculated. */
+const InsightsCard = ({ rows }) => {
+  if (!rows || !rows.length || !window.RecoveryInsights) return null;
+  let items = null;
+  try { items = RecoveryInsights.build(rows[rows.length - 1], rows); }
+  catch (e) { return null; }
+  if (!items || !items.length) return null;
+  return (
+    <SectionShell title="Insights" hint={`${items.length} today`}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginTop: 4 }}>
+        {items.map(i => <EngineTile key={i.key} label={i.label} value={i.value} />)}
+      </div>
+    </SectionShell>
+  );
+};
+
+/* ProgressCard — spec Part 10, section 9.
+   Long-run tracking. Current streak is deliberately separate from longest
+   streak: they answer different questions. */
+const ProgressCard = ({ rows }) => {
+  if (!rows || !rows.length || !window.RecoveryInsights) return null;
+  let p = null;
+  try { p = RecoveryInsights.progress(rows); } catch (e) { return null; }
+  if (!p) return null;
+  return (
+    <SectionShell title="Progress" hint={`${p.daysTracked} ${p.daysTracked === 1 ? "day" : "days"}`}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 4 }}>
+        <EngineTile label="Average"        value={`${p.average}%`} />
+        <EngineTile label="Highest"        value={`${p.highest}%`} />
+        <EngineTile label="Lowest"         value={`${p.lowest}%`} />
+        <EngineTile label="Current streak" value={p.currentStreak} />
+        <EngineTile label="Longest streak" value={p.longestStreak} />
+        <EngineTile label="Consistency"    value={`${p.consistency}%`} />
+        <EngineTile label="7-day average"  value={`${p.weeklyAverage}%`} />
+        <EngineTile label="30-day average" value={`${p.monthlyAverage}%`} />
+        <EngineTile label="Days tracked"   value={p.daysTracked} />
+        <EngineTile wide label="Next milestone" value={
+          p.nextMilestone
+            ? `${p.nextMilestone.remaining} more ${p.nextMilestone.remaining === 1 ? "day" : "days"} to your ${p.nextMilestone.title}`
+            : "Every milestone unlocked"} />
+      </div>
+    </SectionShell>
+  );
+};
+
+/* CoachCard — Recovery Engine v4.0 coaching (spec Parts 11, 12).
+   Explains WHY today's score is what it is, using the user's own numbers.
+   62 templates with conditions and cooldowns live in the engine; this
+   only renders the winner.
+   commit:false — merely viewing the page must not burn a template's
+   cooldown, or a refresh would churn through the library. */
+const CoachCard = ({ rows }) => {
+  if (!rows || !rows.length || !window.RecoveryCoaching) return null;
+  let c = null;
+  try { c = RecoveryCoaching.select(rows[rows.length - 1], rows, { commit: false }); }
+  catch (e) { return null; }
+  if (!c || !c.primary) return null;
+  const hex = (rows[rows.length - 1].dotHex) || PURPLE;
+  return (
+    <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
+                      borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
+      <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: LBL, marginBottom: 10 }}>Why this score</div>
+      <div style={{ fontSize: 14, lineHeight: 1.55, color: "#f5f5f5",
+                    paddingLeft: 12, borderLeft: `3px solid ${hex}` }}>
+        {c.primary.text}
+      </div>
+      {c.secondary && c.secondary.length > 0 && (
+        <details style={{ marginTop: 12 }}>
+          <summary style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                            color: LBL, cursor: "pointer", padding: "8px 0" }}>
+            More detail
+          </summary>
+          {c.secondary.map((s, i) => (
+            <div key={i} style={{ fontSize: 13, lineHeight: 1.55, color: "#9a9a9a",
+                                  padding: "10px 0 0 12px",
+                                  borderLeft: "1px solid rgba(150,150,150,0.2)", marginTop: 8 }}>
+              {s.text}
+            </div>
+          ))}
+        </details>
+      )}
+    </section>
+  );
+};
+
+/* ReportsCard — Recovery Engine v4.0 progressive unlocks (spec Part 14).
+   Seven levels from 7 days to multi-year. Shows what is unlocked, opens
+   the chosen report inline, and tracks progress toward the next one. */
+const ReportsCard = ({ rows }) => {
+  const [open, setOpen] = useState(null);
+  if (!rows || !window.RecoveryReports) return null;
+  const n = rows.length;
+  const R8 = RecoveryReports;
+  const unlocked = R8.unlocked(n);
+  const next = R8.nextLevel(n);
+  let rep = null;
+  if (open) { try { rep = R8.build(open, rows); } catch (e) { rep = null; } }
+  const hex = rep ? RecoveryScoring.tier(rep.summary.averageScore).hex : PURPLE;
+
+  return (
+    <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
+                      borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
+      <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: LBL, marginBottom: 10 }}>
+        Reports · {n} {n === 1 ? "entry" : "entries"}
+      </div>
+
+      {unlocked.length === 0 && (
+        <div style={{ fontSize: 13, color: "#9a9a9a" }}>
+          Seven days unlocks your first report.
+        </div>
+      )}
+
+      {unlocked.map(l => (
+        <button key={l.id} onClick={() => setOpen(open === l.id ? null : l.id)}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                   width: "100%", background: open === l.id ? "rgba(155,107,201,0.14)" : "rgba(150,150,150,0.06)",
+                   border: `1px solid rgba(${BRDR},${open === l.id ? "0.4" : "0.12"})`,
+                   borderRadius: 8, padding: "12px 14px", marginBottom: 8, cursor: "pointer" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#f5f5f5" }}>{l.title}</span>
+          <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL }}>
+            {l.days} days
+          </span>
+        </button>
+      ))}
+
+      {next && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            <div style={{ height: "100%", borderRadius: 99, background: PURPLE,
+                          width: `${Math.min(100, Math.round(n / next.days * 100))}%` }} />
+          </div>
+          <div style={{ fontSize: 12, color: "#8a7fa5", marginTop: 8 }}>
+            {next.days - n} more {next.days - n === 1 ? "day" : "days"} to unlock your {next.title}.
+          </div>
+        </div>
+      )}
+
+      {rep && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                        gap: 12, marginBottom: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 800 }}>{rep.title}</span>
+            <span style={{ fontSize: 26, fontWeight: 800, color: hex }}>
+              {rep.summary.averageScore}%
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+            {rep.sections.map((s, i) => (
+              <div key={i} style={{ background: "rgba(150,150,150,0.06)",
+                                    border: `1px solid rgba(${BRDR},0.12)`,
+                                    borderLeft: "3px solid rgba(150,150,150,0.55)",
+                                    borderRadius: 8, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                              color: LBL, marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5" }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
 
 /* StatBlock — 7-day summary stat */
 const StatBlock = ({ label, value, sub, trend, good }) => {
