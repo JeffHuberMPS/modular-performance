@@ -1502,18 +1502,25 @@ const InsightRow = ({ label, value, accent }) => (
 );
 
 /* LogBlock — single stat cell inside a log entry card */
+/* Each tile has to read as its OWN container, not as one run-on block of numbers. Previously the
+   surface (0.06 grey) and border (0.12) were both so faint that neighbouring tiles visually merged.
+   Three changes give separation without shouting:
+     surface + border are stronger, and a dark rim shadow cuts each tile away from its neighbour
+     the left accent bar is now the tile's actual colour rather than flat grey
+     label and value are pushed further apart in size and weight, so the eye lands on the value */
 const LogBlock = ({ label, value, accent, col }) => (
   <div style={{
-    background: "rgba(150,150,150,0.06)",
-    border: `1px solid rgba(${BRDR},0.12)`,
-    borderLeft: "3px solid rgba(150,150,150,0.55)",
-    borderRadius: 8, padding: "8px 10px",
+    background: "rgba(255,255,255,0.045)",
+    border: `1px solid rgba(${BRDR},0.22)`,
+    borderLeft: `3px solid ${accent || PURPLE}`,
+    borderRadius: 9, padding: "11px 12px",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.45)",
     ...(col ? { gridColumn: col } : null),   // pin to a column so it stacks under the block above it
   }}>
-    <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 4 }}>
+    <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 6, opacity: 0.85 }}>
       {label}
     </div>
-    <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: accent || "#f5f5f5", lineHeight: 1 }}>
+    <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: accent || "#f5f5f5", lineHeight: 1, letterSpacing: "-0.01em" }}>
       {value}
     </div>
   </div>
@@ -1544,14 +1551,14 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         later sleepTime back a day), so waking is the only value that happened on the header date.
         Leading with it keeps the card consistent with its own date. "Bedtime" (not "Sleep") makes
         clear it is the night before, and stops it reading like hours-slept. */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginBottom: 12.48 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 15 }}>
       <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
       <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
       <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
     {/* Recovery · Energy · Physical Recovery / Clarity · Calmness. All 1-10 values read 10 = good.
         Resting HR + HRV are not displayed (see the form note) until wearable sync lands. */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15 }}>
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
@@ -1564,7 +1571,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         the enriched entry, so this is display only, nothing is recalculated. Hidden for Core (the
         engine score is an Elite feature) and for old entries that predate the engine. */}
     {!__CORE && e.v4 && (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginTop: 12.48 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginTop: 15 }}>
         <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />
         <LogBlock label="Status"     value={e.recoveryStatus || "—"} />
         <LogBlock label="Push Meter" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />
