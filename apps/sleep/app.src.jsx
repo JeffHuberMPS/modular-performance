@@ -691,6 +691,10 @@ function SleepTracker() {
             ══════════════════════════════════════════ */}
         {activeTab === "dashboard" && (
           <>
+            {/* Engine score card FIRST — the headline number is what you open the pillar to see,
+                so it leads. The raw Woke/Slept/Energy snapshot follows underneath as detail.
+                Elite/Premium only, same gate as the rest of the v4 dashboard. */}
+            {!__CORE && <TodayCard e={enriched[enriched.length - 1]} />}
             {/* Today snapshot */}
             <section style={styles.todayCard}>
               <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
@@ -713,8 +717,7 @@ function SleepTracker() {
                 <a href="/billing.html" target="_top" style={{ display: "inline-block", padding: "12px 26px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 13, letterSpacing: 1, borderRadius: 10, textDecoration: "none" }}>↑ UNLOCK WITH ELITE</a>
               </section>
             ) : (<>
-            {/* Today: engine score, dots, status, push meter */}
-            <TodayCard e={enriched[enriched.length - 1]} />
+            {/* (TodayCard now renders at the very top of the dashboard, above the snapshot.) */}
             {/* Why this score — coaching from the user's own numbers */}
             {/* Today's Plan — the weakest metric and one action for it */}
             <PlanCard e={enriched[enriched.length - 1]} onSave={saveAction} />
@@ -1008,7 +1011,24 @@ function _fmt12(t) {
 const TodayCard = ({ e }) => {
   if (!e || !e.v4) return null;
   const hex  = e.dotHex || PURPLE;
-  const dots = "●".repeat(e.dotCount) + "○".repeat(5 - e.dotCount);
+  // Five dots, filled to the tier (spec Part 6). Rendered as sized circles rather than the
+  // ● / ○ glyphs: those two characters draw at different optical sizes, so the EMPTY dot came
+  // out bigger than the filled ones, which reads backwards. Filled = large and solid,
+  // remaining = small and dim, so earned progress is what stands out.
+  const dots = Array.from({ length: 5 }, (_, i) => {
+    const on = i < e.dotCount;
+    return (
+      <span key={i} style={{
+        display: "inline-block", borderRadius: "50%", verticalAlign: "middle",
+        width:  on ? 13 : 7,
+        height: on ? 13 : 7,
+        margin: on ? "0 5px" : "0 8px",
+        background: on ? hex : "transparent",
+        border: on ? "none" : `1.5px solid ${hex}`,
+        opacity: on ? 1 : 0.4
+      }} />
+    );
+  });
   return (
     <section style={{ background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.13)`,
                       borderRadius: 12, padding: "20px 16px", marginBottom: 14 }}>
@@ -1024,8 +1044,7 @@ const TodayCard = ({ e }) => {
       </div>
 
       {/* Five dots always, filled to the tier (spec Part 6) */}
-      <div style={{ textAlign: "center", letterSpacing: 9, fontSize: 18,
-                    color: hex, margin: "14px 0 10px" }}>{dots}</div>
+      <div style={{ textAlign: "center", margin: "16px 0 12px", lineHeight: 1 }}>{dots}</div>
 
       <div style={{ textAlign: "center", fontSize: 17, fontWeight: 800,
                     letterSpacing: "0.12em", color: hex }}>{e.recoveryStatus}</div>
@@ -1085,8 +1104,11 @@ const PlanCard = ({ e, onSave }) => {
                  border: `1px solid rgba(${BRDR},0.2)`, borderRadius: 8, color: "#f5f5f5",
                  padding: "12px 14px", fontSize: 15, minHeight: 46,
                  fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
-        <option value="">Choose an action</option>
-        {actions.map(a => <option key={a} value={a}>{a}</option>)}
+        {/* Options need their OWN colours. The select is styled for the dark card, but the native
+            dropdown popup paints on a white system background, so inheriting near-white text made
+            every choice invisible. Setting both per-option fixes it on Windows/Chrome and Android. */}
+        <option value="" style={{ background: "#141416", color: "#f5f5f5" }}>Choose an action</option>
+        {actions.map(a => <option key={a} value={a} style={{ background: "#141416", color: "#f5f5f5" }}>{a}</option>)}
       </select>
 
       <label style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14,
