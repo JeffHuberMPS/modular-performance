@@ -1873,18 +1873,26 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
           rotates when open (see the .mps-drill rules injected alongside the charts). */}
       {drill && (
         <details className="mps-drill" style={{ marginTop: 12, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+          {/* Every bar must be the SAME size in every card. Previously the contents were allowed to
+              wrap, so a longer average ("avg 10:00 pm" vs "avg 7.0h") pushed its bar onto two or
+              three lines and each chart's bar ended up a different height. Now: fixed height, no
+              wrapping anywhere, the hint truncates instead of wrapping, and the average plus chevron
+              are pinned right and never shrink. Identical bar in all five charts. */}
           <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-                            cursor: "pointer", padding: "10px 9px", listStyle: "none",
+                            cursor: "pointer", padding: "0 9px", listStyle: "none",
                             marginTop: 8, borderRadius: 8,
+                            height: 34, boxSizing: "border-box",
                             background: "rgba(155,107,201,0.10)",
                             border: `1px solid rgba(${BRDR},0.25)`,
                             fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                            whiteSpace: "nowrap", overflow: "hidden",
                             color: LBL }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ color: GOLD, fontWeight: 700 }}>Statistics</span>
-              <span style={{ opacity: 0.65 }}>· tap for insight</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6,
+                           minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+              <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>Statistics</span>
+              <span style={{ opacity: 0.65, overflow: "hidden", textOverflow: "ellipsis" }}>· tap for insight</span>
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, paddingLeft: 8 }}>
               <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
               <span className="mps-chev" style={{ display: "inline-block", fontSize: 12, lineHeight: 1, color: GOLD }}>∨</span>
             </span>
