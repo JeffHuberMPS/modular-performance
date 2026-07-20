@@ -1047,9 +1047,13 @@ const TodayCard = ({ e }) => {
         <span>Today</span><span>{e.weekday}</span>
       </div>
 
+      {/* The headline number stays WHITE, not the tier colour. It is the one value you read every
+          time you open the pillar, so it should not change colour on you day to day, and white
+          matches the big numbers on every other pillar. The dots, status word and push meter still
+          carry the tier colour, so the status information is not lost. */}
       <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 0.9, letterSpacing: "-0.03em",
-                    textAlign: "center", color: hex }}>
-        {e.recovery}<span style={{ fontSize: 24, opacity: 0.5 }}>%</span>
+                    textAlign: "center", color: "#f5f5f5" }}>
+        {e.recovery}<span style={{ fontSize: 24, color: LBL }}>%</span>
       </div>
 
       {/* Five dots always, filled to the tier (spec Part 6) */}
