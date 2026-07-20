@@ -2551,113 +2551,158 @@ const PlanCard = ({
       return "";
     }
   }, [e.date, chosen]);
-  return /*#__PURE__*/React.createElement("section", {
-    style: {
-      background: "rgba(255,255,255,0.02)",
-      border: `1px solid rgba(${BRDR},0.13)`,
-      borderRadius: 10,
-      padding: "14px 16px",
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      letterSpacing: "0.14em",
-      textTransform: "uppercase",
-      color: LBL,
-      marginBottom: 6
-    }
-  }, "Today\u2019s Plan"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      lineHeight: 1.45,
-      marginBottom: 12,
-      color: "#f5f5f5"
-    }
-  }, RecoveryActions.planMessage(metric)), /*#__PURE__*/React.createElement("select", {
-    value: chosen,
-    onChange: ev => onSave(e.date, {
-      selectedAction: ev.target.value || null,
-      actionCompleted: false
-    }),
-    style: {
-      width: "100%",
-      background: "rgba(150,150,150,0.06)",
-      border: `1px solid rgba(${BRDR},0.2)`,
-      borderRadius: 8,
-      color: "#f5f5f5",
-      padding: "12px 14px",
-      fontSize: 15,
-      minHeight: 46,
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
-    }
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "",
-    style: {
-      background: "#141416",
-      color: "#f5f5f5"
-    }
-  }, "Choose an action"), actions.map(a => /*#__PURE__*/React.createElement("option", {
-    key: a,
-    value: a,
-    style: {
-      background: "#141416",
-      color: "#f5f5f5"
-    }
-  }, a, a === suggested ? "  ·  suggested" : ""))), /*#__PURE__*/React.createElement("label", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      marginTop: 14,
-      minHeight: 44,
-      cursor: chosen ? "pointer" : "not-allowed",
-      opacity: chosen ? 1 : 0.5,
-      userSelect: "none"
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: done,
-    disabled: !chosen,
-    onChange: ev => onSave(e.date, {
-      actionCompleted: ev.target.checked
-    }),
-    style: {
-      position: "absolute",
-      opacity: 0,
-      width: 0,
-      height: 0
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      width: 22,
-      height: 22,
-      borderRadius: 6,
-      flexShrink: 0,
-      border: `2px solid ${done ? hex : "rgba(255,255,255,0.22)"}`,
-      background: done ? hex : "transparent",
-      display: "grid",
-      placeItems: "center"
-    }
-  }, done && /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 24 24",
-    style: {
-      width: 13,
-      height: 13,
+  return (
+    /*#__PURE__*/
+    // This is the ONLY action on the whole dashboard, so it must NOT blend into the background.
+    // It was rgba(255,255,255,0.02) on black with a 0.13 border — invisible, and it got overlooked.
+    // Now it wears the app's CTA colour: gold-tinted fill, a gold left bar, a gold border and a
+    // soft gold glow, so it reads as "do this" the moment the card loads.
+    React.createElement("section", {
+      style: {
+        background: "linear-gradient(180deg, rgba(201,160,32,0.12), rgba(201,160,32,0.05))",
+        border: "1px solid rgba(201,160,32,0.45)",
+        borderLeft: "4px solid #C9A020",
+        borderRadius: 12,
+        padding: "16px 18px",
+        marginBottom: 14,
+        boxShadow: "0 0 0 1px rgba(201,160,32,0.10), 0 6px 18px rgba(0,0,0,0.45)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      "aria-hidden": "true",
+      style: {
+        color: "#C9A020",
+        display: "inline-flex"
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "15",
+      height: "15",
+      viewBox: "0 0 24 24",
       fill: "none",
-      stroke: "#0a0a0a",
-      strokeWidth: 3.4,
+      stroke: "currentColor",
+      strokeWidth: 2.4,
       strokeLinecap: "round",
       strokeLinejoin: "round"
-    }
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M4 12l5 5L20 6"
-  }))), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14,
-      color: done ? "#f5f5f5" : "#9a9a9a"
-    }
-  }, done ? "Done today. Good work." : chosen ? "Complete today's action" : "Pick an action first")));
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "4.5"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "0.6",
+      fill: "currentColor"
+    }))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        letterSpacing: "0.16em",
+        textTransform: "uppercase",
+        color: "#C9A020",
+        fontWeight: 800
+      }
+    }, "Today\u2019s Plan")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        lineHeight: 1.45,
+        marginBottom: 12,
+        color: "#f5f5f5",
+        fontWeight: 600
+      }
+    }, RecoveryActions.planMessage(metric)), /*#__PURE__*/React.createElement("select", {
+      value: chosen,
+      onChange: ev => onSave(e.date, {
+        selectedAction: ev.target.value || null,
+        actionCompleted: false
+      }),
+      style: {
+        width: "100%",
+        background: "rgba(150,150,150,0.06)",
+        border: `1px solid rgba(${BRDR},0.2)`,
+        borderRadius: 8,
+        color: "#f5f5f5",
+        padding: "12px 14px",
+        fontSize: 15,
+        minHeight: 46,
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
+      }
+    }, /*#__PURE__*/React.createElement("option", {
+      value: "",
+      style: {
+        background: "#141416",
+        color: "#f5f5f5"
+      }
+    }, "Choose an action"), actions.map(a => /*#__PURE__*/React.createElement("option", {
+      key: a,
+      value: a,
+      style: {
+        background: "#141416",
+        color: "#f5f5f5"
+      }
+    }, a, a === suggested ? "  ·  suggested" : ""))), /*#__PURE__*/React.createElement("label", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginTop: 14,
+        minHeight: 44,
+        cursor: chosen ? "pointer" : "not-allowed",
+        opacity: chosen ? 1 : 0.5,
+        userSelect: "none"
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      checked: done,
+      disabled: !chosen,
+      onChange: ev => onSave(e.date, {
+        actionCompleted: ev.target.checked
+      }),
+      style: {
+        position: "absolute",
+        opacity: 0,
+        width: 0,
+        height: 0
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 22,
+        height: 22,
+        borderRadius: 6,
+        flexShrink: 0,
+        border: `2px solid ${done ? hex : "rgba(255,255,255,0.22)"}`,
+        background: done ? hex : "transparent",
+        display: "grid",
+        placeItems: "center"
+      }
+    }, done && /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 24 24",
+      style: {
+        width: 13,
+        height: 13,
+        fill: "none",
+        stroke: "#0a0a0a",
+        strokeWidth: 3.4,
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M4 12l5 5L20 6"
+    }))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 14,
+        color: done ? "#f5f5f5" : "#9a9a9a"
+      }
+    }, done ? "Done today. Good work." : chosen ? "Complete today's action" : "Pick an action first")))
+  );
 };
 
 /* Shared bits for the collapsible engine sections (spec Part 17:
