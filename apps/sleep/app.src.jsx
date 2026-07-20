@@ -105,6 +105,9 @@ const storage = {
    ══════════════════════════════════════════════════ */
 function SleepTracker() {
   const [entries, setEntries] = useState([]);
+  // Which month sections are collapsed in the Log tab. The header always LOOKED like a dropdown
+  // (it rendered a bare chevron character) but had no handler, so tapping it did nothing.
+  const [closedMonths, setClosedMonths] = useState({});
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -866,18 +869,27 @@ function SleepTracker() {
               )}
               {Object.entries(byMonth).map(([month, mes]) => (
                 <div key={month} style={{ background: "rgba(18,18,20,0.85)", border: "1px solid rgba(150,150,150,0.15)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
-                  {/* Month header */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(150,150,150,0.08)" }}>
+                  {/* Month header — now a REAL dropdown. It always rendered a chevron but had no
+                      handler, so it advertised behaviour it did not have. Tapping anywhere on the
+                      row collapses or expands that month; the chevron rotates to match. */}
+                  <div role="button" tabIndex={0}
+                    onClick={() => setClosedMonths(p => ({ ...p, [month]: !p[month] }))}
+                    onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setClosedMonths(p => ({ ...p, [month]: !p[month] })); } }}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px",
+                             borderBottom: closedMonths[month] ? "none" : "1px solid rgba(150,150,150,0.08)",
+                             cursor: "pointer", userSelect: "none", minHeight: 44 }}>
                     <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5" }}>
                       {fmtMonth(month + "-01")}
                     </div>
-                    <div style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
-                      {mes.length} {mes.length === 1 ? "entry" : "entries"} ∨
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
+                      <span>{mes.length} {mes.length === 1 ? "entry" : "entries"}</span>
+                      <span style={{ display: "inline-block", fontSize: 13, lineHeight: 1,
+                                     transform: closedMonths[month] ? "rotate(-90deg)" : "rotate(0deg)",
+                                     transition: "transform 0.18s ease" }}>∨</span>
                     </div>
                   </div>
-
-                  {/* Week groups */}
-                  {(() => {
+                  {/* Week groups — hidden while this month is collapsed */}
+                  {!closedMonths[month] && (() => {
                     const byWeek = {};
                     mes.forEach(e => {
                       const ws = dateToStr(startOfWeek(e.date));
@@ -1554,10 +1566,22 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         later sleepTime back a day), so waking is the only value that happened on the header date.
         Leading with it keeps the card consistent with its own date. "Bedtime" (not "Sleep") makes
         clear it is the night before, and stops it reading like hours-slept. */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 15 }}>
-      <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
-      <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
-      <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
+    {/* The three sleep-clock values live in their OWN sub-container inside the day card. They answer
+        one question (when did you sleep) while everything below scores how it went, so grouping them
+        gives hierarchy without breaking the day apart: a bordered inset panel, still clearly within
+        the same day. */}
+    <div style={{ background: "rgba(0,0,0,0.28)", border: `1px solid rgba(${BRDR},0.16)`,
+                  borderRadius: 10, padding: 12, marginBottom: 15 }}>
+      <div style={{ fontSize: 8.5, fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                    letterSpacing: "0.16em", textTransform: "uppercase", color: LBL,
+                    opacity: 0.7, marginBottom: 9 }}>
+        Sleep Window
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15 }}>
+        <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
+        <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
+        <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
+      </div>
     </div>
     {/* Recovery · Energy · Physical Recovery / Clarity · Calmness. All 1-10 values read 10 = good.
         Resting HR + HRV are not displayed (see the form note) until wearable sync lands. */}
