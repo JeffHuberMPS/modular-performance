@@ -455,6 +455,20 @@ function SleepTracker() {
   const last30 = enriched.slice(-30);
   const last7  = enriched.slice(-7);
 
+  // The newest entry that the engine could actually score, walking BACKWARDS from the end.
+  // Do not use enriched[length-1] for this: entries are sorted by date, so a single malformed or
+  // future-dated record (a stray {date:'2099-12-31', energy:5} did exactly this on sandbox) sorts
+  // last, has no bedtime/waketime, fails scoring, and silently blanks the whole score card.
+  // Future dates are skipped too, so a typo'd year cannot hijack "today" either.
+  const latestScored = useMemo(() => {
+    const today = todayStr();
+    for (let i = enriched.length - 1; i >= 0; i--) {
+      const en = enriched[i];
+      if (en && en.v4 && (!en.date || en.date <= today)) return en;
+    }
+    return null;
+  }, [enriched]);
+
   const avg = (arr, key) => {
     const vals = arr.map((x) => x[key]).filter((v) => v !== undefined && v !== null && !isNaN(v));
     return vals.length ? +(vals.reduce((s, x) => s + x, 0) / vals.length).toFixed(1) : 0;
@@ -703,7 +717,7 @@ function SleepTracker() {
             {/* Engine score card FIRST — the headline number is what you open the pillar to see,
                 so it leads. The raw Woke/Slept/Energy snapshot follows underneath as detail.
                 Elite/Premium only, same gate as the rest of the v4 dashboard. */}
-            {!__CORE && <TodayCard e={enriched[enriched.length - 1]} />}
+            {!__CORE && <TodayCard e={latestScored} />}
             {/* Today snapshot */}
             <section style={styles.todayCard}>
               <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
@@ -737,7 +751,7 @@ function SleepTracker() {
               }} />
             {/* Why this score — coaching from the user's own numbers */}
             {/* Today's Plan — the weakest metric and one action for it */}
-            <PlanCard e={enriched[enriched.length - 1]} onSave={saveAction} />
+            <PlanCard e={latestScored} onSave={saveAction} />
             {/* What today's numbers say — strongest, weakest, what moved */}
             <InsightsCard rows={engineRows} />
             <CoachCard rows={engineRows} />
