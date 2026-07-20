@@ -516,29 +516,10 @@ function SleepTracker() {
                   style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
             </div>
-            {__PREMIUM ? (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: LBL, textTransform: "uppercase", marginBottom: 8 }}>Biometrics</div>
-                <div style={styles.formGrid}>
-                  <Field label="Resting HR (bpm)">
-                    <input type="number" inputMode="numeric" value={form.restingHR}
-                      onChange={(e) => setForm({ ...form, restingHR: e.target.value })}
-                      placeholder="—" style={styles.input} />
-                  </Field>
-                  <Field label="HRV (ms)">
-                    <input type="number" inputMode="numeric" value={form.hrv}
-                      onChange={(e) => setForm({ ...form, hrv: e.target.value })}
-                      placeholder="—" style={styles.input} />
-                  </Field>
-                </div>
-              </div>
-            ) : (
-              <div style={{ marginTop: 12, padding: "12px 14px", background: "rgba(201,160,32,0.08)", border: "1px solid rgba(201,160,32,0.35)", borderRadius: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#C9A020", letterSpacing: "0.04em", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>Biometrics</div>
-                <div style={{ fontSize: 11, color: "#9a9a9a", marginTop: 4, lineHeight: 1.5, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>Log resting heart rate and HRV with <b style={{ color: "#C9A020" }}>Premium</b>.</div>
-                <a href="/billing.html" target="_top" style={{ display: "inline-block", marginTop: 8, padding: "7px 18px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", borderRadius: 8, textDecoration: "none", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>↑ Unlock with Premium</a>
-              </div>
-            )}
+            {/* BIOMETRICS (Resting HR + HRV) INTENTIONALLY REMOVED — they are not in the locked v3.0
+                spec and hand-typing them every morning is friction with no payoff. Bring them back when
+                real wearable sync lands. Existing restingHR/hrv values stay in storage untouched (the
+                edit form still carries them through on save), so nothing is lost when they return. */}
             <div style={styles.formFoot}>
               <div style={styles.preview}>
                 {form.sleepTime ? (
@@ -940,17 +921,14 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
-    {/* Recovery · Energy · Physical Recovery / Clarity · Calmness · Resting HR / HRV.
-        Biometrics flow into the SAME grid (not a separate row) so Resting HR lands in column 3,
-        directly beneath Physical Recovery. All 1-10 values read 10 = good. */}
+    {/* Recovery · Energy · Physical Recovery / Clarity · Calmness. All 1-10 values read 10 = good.
+        Resting HR + HRV are not displayed (see the form note) until wearable sync lands. */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48 }}>
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
       <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
-      {e.restingHR ? <LogBlock label="Resting HR" value={`${e.restingHR} bpm`} col={3} /> : null}
-      {e.hrv       ? <LogBlock label="HRV"        value={`${e.hrv} ms`} accent={PURPLE} col={3} /> : null}
     </div>
   </div>
 );
