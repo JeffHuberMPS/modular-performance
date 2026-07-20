@@ -297,6 +297,11 @@ function SleepTracker() {
         ...e,
         hours:    hasSleep ? hours : null,
         recovery: hasSleep ? calcRecovery(hours, e.energy ?? 5, e.soreness ?? 5, e.clarity ?? 5, e.restlessness ?? 3) : null,
+        // POSITIVE-DIRECTION VIEW: every slider now reads "10 = good". The stored fields stay
+        // soreness/restlessness (low = good) so NO historical data is rewritten or lost — we only
+        // flip them for display. physicalRecovery = 10 - soreness, calmness = 10 - restlessness.
+        physicalRecovery: 10 - (e.soreness ?? 5),
+        calmness:         10 - (e.restlessness ?? 3),
         label:    e.date.slice(5),
         weekday: (() => {
           const [yy, mm, dd] = e.date.split("-").map(Number);
@@ -319,7 +324,7 @@ function SleepTracker() {
     hours:    avg(last7, "hours"),
     energy:   avg(last7, "energy"),
     clarity:  avg(last7, "clarity"),
-    soreness: avg(last7, "soreness"),
+    physicalRecovery: avg(last7, "physicalRecovery"),
     recovery: avg(last7, "recovery"),
   };
 
@@ -365,7 +370,7 @@ function SleepTracker() {
       avgDuration:  stats.hours    > 0 ? `${stats.hours} hrs`    : null,
       avgEnergy:    stats.energy   > 0 ? `${stats.energy}/10`   : null,
       avgClarity:   stats.clarity  > 0 ? `${stats.clarity}/10`  : null,
-      avgSoreness:  stats.soreness > 0 ? `${stats.soreness}/10` : null,
+      avgPhysRecovery: stats.physicalRecovery > 0 ? `${stats.physicalRecovery}/10` : null,
       bestDay,
       worstDay,
       entryCount: last7.length,
@@ -493,9 +498,10 @@ function SleepTracker() {
                   onChange={(e) => setForm({ ...form, energy: +e.target.value })}
                   style={styles.range} />
               </Field>
-              <Field label={`Soreness · ${form.soreness}/10`}>
-                <input type="range" min="1" max="10" value={form.soreness}
-                  onChange={(e) => setForm({ ...form, soreness: +e.target.value })}
+              {/* 10 = fully recovered. Stored as soreness (inverted) so old entries stay valid. */}
+              <Field label={`Physical Recovery · ${10 - form.soreness}/10`}>
+                <input type="range" min="1" max="10" value={10 - form.soreness}
+                  onChange={(e) => setForm({ ...form, soreness: 10 - +e.target.value })}
                   style={styles.range} />
               </Field>
               <Field label={`Mental Clarity · ${form.clarity}/10`}>
@@ -503,9 +509,10 @@ function SleepTracker() {
                   onChange={(e) => setForm({ ...form, clarity: +e.target.value })}
                   style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
-              <Field label={`Restlessness · ${form.restlessness}/10`}>
-                <input type="range" min="1" max="10" value={form.restlessness}
-                  onChange={(e) => setForm({ ...form, restlessness: +e.target.value })}
+              {/* 10 = slept calm and still. Stored as restlessness (inverted) for back-compat. */}
+              <Field label={`Calmness · ${10 - form.restlessness}/10`}>
+                <input type="range" min="1" max="10" value={10 - form.restlessness}
+                  onChange={(e) => setForm({ ...form, restlessness: 10 - +e.target.value })}
                   style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
             </div>
@@ -523,17 +530,12 @@ function SleepTracker() {
                       onChange={(e) => setForm({ ...form, hrv: e.target.value })}
                       placeholder="—" style={styles.input} />
                   </Field>
-                  <Field label="Weight (lbs)">
-                    <input type="number" inputMode="decimal" value={form.weight}
-                      onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                      placeholder="—" style={styles.input} />
-                  </Field>
                 </div>
               </div>
             ) : (
               <div style={{ marginTop: 12, padding: "12px 14px", background: "rgba(201,160,32,0.08)", border: "1px solid rgba(201,160,32,0.35)", borderRadius: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#C9A020", letterSpacing: "0.04em", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>Biometrics</div>
-                <div style={{ fontSize: 11, color: "#9a9a9a", marginTop: 4, lineHeight: 1.5, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>Log resting heart rate, HRV, and weight with <b style={{ color: "#C9A020" }}>Premium</b>.</div>
+                <div style={{ fontSize: 11, color: "#9a9a9a", marginTop: 4, lineHeight: 1.5, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>Log resting heart rate and HRV with <b style={{ color: "#C9A020" }}>Premium</b>.</div>
                 <a href="/billing.html" target="_top" style={{ display: "inline-block", marginTop: 8, padding: "7px 18px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", borderRadius: 8, textDecoration: "none", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>↑ Unlock with Premium</a>
               </div>
             )}
@@ -575,7 +577,7 @@ function SleepTracker() {
                 <TodayStat icon={<IconSun />}       label="Woke"     value={today?.wakeTime ? fmt12(today.wakeTime) : "—"} accent={PURPLE} />
                 <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? `${today.hours}h` : "—"} accent={PURPLE} />
                 <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent={PURPLE} />
-                <TodayStat icon={<IconHeart />}     label="Soreness" value={today ? `${today.soreness}/10` : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconHeart />}     label="Physical Recovery" value={today ? `${today.physicalRecovery}/10` : "—"} accent={PURPLE} />
                 <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent={PURPLE} />
                 <TodayStat icon={<IconBattery />}   label="Recovery" value={__CORE ? "🔒" : (today?.recovery != null ? `${today.recovery}%` : "—")} accent={PURPLE} />
               </div>
@@ -595,7 +597,7 @@ function SleepTracker() {
               <StatBlock label="Avg Sleep"    value={`${stats.hours}h`}        sub="7-day" trend={trend("hours")}    good="up" />
               <StatBlock label="Avg Energy"   value={`${stats.energy}/10`}     sub="7-day" trend={trend("energy")}   good="up" />
               <StatBlock label="Avg Clarity"  value={`${stats.clarity}/10`}    sub="7-day" trend={trend("clarity")}  good="up" />
-              <StatBlock label="Avg Soreness" value={`${stats.soreness}/10`}   sub="7-day" trend={trend("soreness")} good="down" />
+              <StatBlock label="Avg Physical Recovery" value={`${stats.physicalRecovery}/10`} sub="7-day" trend={trend("physicalRecovery")} good="up" />
               <StatBlock label="Avg Recovery" value={`${stats.recovery}%`}     sub="7-day" trend={trend("recovery")} good="up" />
             </section>
 
@@ -612,12 +614,12 @@ function SleepTracker() {
                 <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:GOLD}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
               </ChartCard>
 
-              {/* Energy vs Soreness — pure SVG, always renders */}
-              <ChartCard title="Energy vs Soreness" sub="1–10 scale · last 30">
-                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:GOLD},{key:"soreness",stroke:PURPLE}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
+              {/* Energy vs Physical Recovery — pure SVG, always renders. Both lines run 10 = good. */}
+              <ChartCard title="Energy vs Physical Recovery" sub="1–10 scale · last 30">
+                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:GOLD},{key:"physicalRecovery",stroke:PURPLE}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
                 <div style={{display:"flex",gap:16,marginTop:8,fontSize:12,fontFamily:"'Inter', system-ui, -apple-system, sans-serif"}}>
                   <span style={{color:"#9aa3b2"}}><span style={{color:GOLD}}>——</span> energy</span>
-                  <span style={{color:"#9aa3b2"}}><span style={{color:PURPLE}}>——</span> soreness</span>
+                  <span style={{color:"#9aa3b2"}}><span style={{color:PURPLE}}>——</span> physical recovery</span>
                 </div>
               </ChartCard>
 
@@ -649,7 +651,7 @@ function SleepTracker() {
             <InsightRow label="Average Duration"    value={insights.avgDuration       || "—"} accent={GOLD} />
             <InsightRow label="Average Energy"      value={insights.avgEnergy         || "—"} accent={GOLD} />
             <InsightRow label="Average Clarity"     value={insights.avgClarity        || "—"} accent={PURPLE} />
-            <InsightRow label="Average Soreness"    value={insights.avgSoreness       || "—"} accent={GOLD} />
+            <InsightRow label="Avg Physical Recovery" value={insights.avgPhysRecovery  || "—"} accent={GOLD} />
             <InsightRow label="Best Recovery Day"   value={insights.bestDay  ? `${dayOfWeek(insights.bestDay.date)} · ${insights.bestDay.recovery}%`  : "—"} accent={GOLD} />
             <InsightRow label="Lowest Recovery Day" value={insights.worstDay ? `${dayOfWeek(insights.worstDay.date)} · ${insights.worstDay.recovery}%` : "—"} accent={PURPLE} />
           </section>
@@ -937,19 +939,18 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
-    {/* Row 2: Recovery · Energy · Soreness · Clarity · Restlessness */}
+    {/* Row 2: Recovery · Energy · Physical Recovery · Clarity · Calmness — all read 10 = good */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48 }}>
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
-      <LogBlock label="Soreness" value={e.soreness != null ? `${e.soreness}/10` : "—"} />
+      <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
-      <LogBlock label="Restless" value={e.restlessness != null ? `${e.restlessness}/10` : "—"} />
+      <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
     </div>
-    {(e.restingHR || e.hrv || e.weight) && (
+    {(e.restingHR || e.hrv) && (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginTop: 12.48 }}>
         <LogBlock label="Resting HR" value={e.restingHR ? `${e.restingHR} bpm` : "—"} />
         <LogBlock label="HRV"        value={e.hrv ? `${e.hrv} ms` : "—"} accent={PURPLE} />
-        <LogBlock label="Weight"     value={e.weight ? `${e.weight} lbs` : "—"} accent={GOLD} />
       </div>
     )}
   </div>

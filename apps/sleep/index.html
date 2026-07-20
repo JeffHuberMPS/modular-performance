@@ -740,6 +740,11 @@ function SleepTracker() {
       ...e,
       hours: hasSleep ? hours : null,
       recovery: hasSleep ? calcRecovery(hours, e.energy ?? 5, e.soreness ?? 5, e.clarity ?? 5, e.restlessness ?? 3) : null,
+      // POSITIVE-DIRECTION VIEW: every slider now reads "10 = good". The stored fields stay
+      // soreness/restlessness (low = good) so NO historical data is rewritten or lost — we only
+      // flip them for display. physicalRecovery = 10 - soreness, calmness = 10 - restlessness.
+      physicalRecovery: 10 - (e.soreness ?? 5),
+      calmness: 10 - (e.restlessness ?? 3),
       label: e.date.slice(5),
       weekday: (() => {
         const [yy, mm, dd] = e.date.split("-").map(Number);
@@ -757,7 +762,7 @@ function SleepTracker() {
     hours: avg(last7, "hours"),
     energy: avg(last7, "energy"),
     clarity: avg(last7, "clarity"),
-    soreness: avg(last7, "soreness"),
+    physicalRecovery: avg(last7, "physicalRecovery"),
     recovery: avg(last7, "recovery")
   };
 
@@ -801,7 +806,7 @@ function SleepTracker() {
       avgDuration: stats.hours > 0 ? `${stats.hours} hrs` : null,
       avgEnergy: stats.energy > 0 ? `${stats.energy}/10` : null,
       avgClarity: stats.clarity > 0 ? `${stats.clarity}/10` : null,
-      avgSoreness: stats.soreness > 0 ? `${stats.soreness}/10` : null,
+      avgPhysRecovery: stats.physicalRecovery > 0 ? `${stats.physicalRecovery}/10` : null,
       bestDay,
       worstDay,
       entryCount: last7.length
@@ -994,15 +999,15 @@ function SleepTracker() {
     }),
     style: styles.range
   })), /*#__PURE__*/React.createElement(Field, {
-    label: `Soreness · ${form.soreness}/10`
+    label: `Physical Recovery · ${10 - form.soreness}/10`
   }, /*#__PURE__*/React.createElement("input", {
     type: "range",
     min: "1",
     max: "10",
-    value: form.soreness,
+    value: 10 - form.soreness,
     onChange: e => setForm({
       ...form,
-      soreness: +e.target.value
+      soreness: 10 - +e.target.value
     }),
     style: styles.range
   })), /*#__PURE__*/React.createElement(Field, {
@@ -1021,15 +1026,15 @@ function SleepTracker() {
       accentColor: PURPLE
     }
   })), /*#__PURE__*/React.createElement(Field, {
-    label: `Restlessness · ${form.restlessness}/10`
+    label: `Calmness · ${10 - form.restlessness}/10`
   }, /*#__PURE__*/React.createElement("input", {
     type: "range",
     min: "1",
     max: "10",
-    value: form.restlessness,
+    value: 10 - form.restlessness,
     onChange: e => setForm({
       ...form,
-      restlessness: +e.target.value
+      restlessness: 10 - +e.target.value
     }),
     style: {
       ...styles.range,
@@ -1074,18 +1079,6 @@ function SleepTracker() {
     }),
     placeholder: "\u2014",
     style: styles.input
-  })), /*#__PURE__*/React.createElement(Field, {
-    label: "Weight (lbs)"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    inputMode: "decimal",
-    value: form.weight,
-    onChange: e => setForm({
-      ...form,
-      weight: e.target.value
-    }),
-    placeholder: "\u2014",
-    style: styles.input
   })))) : /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
@@ -1110,7 +1103,7 @@ function SleepTracker() {
       lineHeight: 1.5,
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
     }
-  }, "Log resting heart rate, HRV, and weight with ", /*#__PURE__*/React.createElement("b", {
+  }, "Log resting heart rate and HRV with ", /*#__PURE__*/React.createElement("b", {
     style: {
       color: "#C9A020"
     }
@@ -1184,8 +1177,8 @@ function SleepTracker() {
     accent: PURPLE
   }), /*#__PURE__*/React.createElement(TodayStat, {
     icon: /*#__PURE__*/React.createElement(IconHeart, null),
-    label: "Soreness",
-    value: today ? `${today.soreness}/10` : "—",
+    label: "Physical Recovery",
+    value: today ? `${today.physicalRecovery}/10` : "—",
     accent: PURPLE
   }), /*#__PURE__*/React.createElement(TodayStat, {
     icon: /*#__PURE__*/React.createElement(IconActivity, null),
@@ -1283,11 +1276,11 @@ function SleepTracker() {
     trend: trend("clarity"),
     good: "up"
   }), /*#__PURE__*/React.createElement(StatBlock, {
-    label: "Avg Soreness",
-    value: `${stats.soreness}/10`,
+    label: "Avg Physical Recovery",
+    value: `${stats.physicalRecovery}/10`,
     sub: "7-day",
-    trend: trend("soreness"),
-    good: "down"
+    trend: trend("physicalRecovery"),
+    good: "up"
   }), /*#__PURE__*/React.createElement(StatBlock, {
     label: "Avg Recovery",
     value: `${stats.recovery}%`,
@@ -1318,7 +1311,7 @@ function SleepTracker() {
     ticks: [0, 20, 40, 60, 80, 100],
     refY: 70
   })), /*#__PURE__*/React.createElement(ChartCard, {
-    title: "Energy vs Soreness",
+    title: "Energy vs Physical Recovery",
     sub: "1\u201310 scale \xB7 last 30"
   }, /*#__PURE__*/React.createElement(SvgChart.Lines, {
     data: last30,
@@ -1326,7 +1319,7 @@ function SleepTracker() {
       key: "energy",
       stroke: GOLD
     }, {
-      key: "soreness",
+      key: "physicalRecovery",
       stroke: PURPLE
     }],
     domain: [0, 10],
@@ -1355,7 +1348,7 @@ function SleepTracker() {
     style: {
       color: PURPLE
     }
-  }, "\u2014\u2014"), " soreness")))), __PREMIUM && /*#__PURE__*/React.createElement(DevicesCard, null))), activeTab === "insights" && __CORE && /*#__PURE__*/React.createElement("section", {
+  }, "\u2014\u2014"), " physical recovery")))), __PREMIUM && /*#__PURE__*/React.createElement(DevicesCard, null))), activeTab === "insights" && __CORE && /*#__PURE__*/React.createElement("section", {
     style: {
       padding: "4px 0",
       textAlign: "center"
@@ -1451,8 +1444,8 @@ function SleepTracker() {
     value: insights.avgClarity || "—",
     accent: PURPLE
   }), /*#__PURE__*/React.createElement(InsightRow, {
-    label: "Average Soreness",
-    value: insights.avgSoreness || "—",
+    label: "Avg Physical Recovery",
+    value: insights.avgPhysRecovery || "—",
     accent: GOLD
   }), /*#__PURE__*/React.createElement(InsightRow, {
     label: "Best Recovery Day",
@@ -2103,16 +2096,16 @@ const LogCard = ({
   label: "Energy",
   value: e.energy != null ? `${e.energy}/10` : "—"
 }), /*#__PURE__*/React.createElement(LogBlock, {
-  label: "Soreness",
-  value: e.soreness != null ? `${e.soreness}/10` : "—"
+  label: "Physical Recovery",
+  value: e.soreness != null ? `${e.physicalRecovery}/10` : "—"
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Clarity",
   value: e.clarity != null ? `${e.clarity}/10` : "—",
   accent: PURPLE
 }), /*#__PURE__*/React.createElement(LogBlock, {
-  label: "Restless",
-  value: e.restlessness != null ? `${e.restlessness}/10` : "—"
-})), (e.restingHR || e.hrv || e.weight) && /*#__PURE__*/React.createElement("div", {
+  label: "Calmness",
+  value: e.restlessness != null ? `${e.calmness}/10` : "—"
+})), (e.restingHR || e.hrv) && /*#__PURE__*/React.createElement("div", {
   style: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
@@ -2126,10 +2119,6 @@ const LogCard = ({
   label: "HRV",
   value: e.hrv ? `${e.hrv} ms` : "—",
   accent: PURPLE
-}), /*#__PURE__*/React.createElement(LogBlock, {
-  label: "Weight",
-  value: e.weight ? `${e.weight} lbs` : "—",
-  accent: GOLD
 })));
 
 /* ── Pure SVG chart components — no external library, always renders ── */
