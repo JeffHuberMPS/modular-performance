@@ -1461,7 +1461,7 @@ function SleepTracker() {
     refY: 80
   }), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Bedtime",
-    sub: "when you went to bed",
+    sub: "clock time",
     kind: "clock",
     allRows: enriched,
     get: r => r.bedAxis,
@@ -1470,7 +1470,7 @@ function SleepTracker() {
     ticks: [0, 180, 360, 540, 720]
   }), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Wake Time",
-    sub: "when you got up",
+    sub: "clock time",
     kind: "clock",
     allRows: enriched,
     get: r => r.wakeAxis,
@@ -2533,6 +2533,11 @@ const SectionShell = ({
     color: LBL
   }
 }, hint)), children));
+
+/* minWidth:0 is the fix for stats spilling outside the chart card. As a grid item this defaults to
+   min-width:auto, meaning it refuses to shrink below its content, so in a narrow card the row of
+   tiles pushed past the card edge and values like "TRACKED 2 days" were clipped. With minWidth:0
+   the tile shrinks to its track and long values wrap inside their own box instead of escaping it. */
 const EngineTile = ({
   label,
   value,
@@ -2544,7 +2549,9 @@ const EngineTile = ({
     borderLeft: "3px solid rgba(150,150,150,0.55)",
     borderRadius: 8,
     padding: "8px 10px",
-    gridColumn: wide ? "1 / -1" : "auto"
+    gridColumn: wide ? "1 / -1" : "auto",
+    minWidth: 0,
+    overflow: "hidden"
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
@@ -2552,13 +2559,18 @@ const EngineTile = ({
     letterSpacing: "0.12em",
     textTransform: "uppercase",
     color: LBL,
-    marginBottom: 4
+    marginBottom: 4,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
   }
 }, label), /*#__PURE__*/React.createElement("div", {
   style: {
     fontSize: 15,
     fontWeight: 700,
-    color: "#f5f5f5"
+    color: "#f5f5f5",
+    overflowWrap: "anywhere",
+    lineHeight: 1.25
   }
 }, value));
 
@@ -2613,7 +2625,7 @@ const ProgressCard = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
+      gridTemplateColumns: "repeat(auto-fit, minmax(88px, 1fr))",
       gap: 8,
       marginTop: 4
     }
@@ -3430,164 +3442,179 @@ const ChartCard = ({
   const points = window.RecoveryCharts ? RecoveryCharts.aggregate(source, chartCfg, active) : [];
   const drill = chartDrill(points, p => p.value, fmt, kind);
   const unit = active === "daily" ? "last 30 nights" : active === "weekly" ? "weekly averages" : "monthly averages";
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "rgba(18,18,20,0.85)",
-      border: `1px solid rgba(${BRDR},0.12)`,
-      borderRadius: 12,
-      padding: "16px",
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      fontSize: 12,
-      letterSpacing: "0.14em",
-      textTransform: "uppercase",
-      color: "#f5f5f5",
-      marginBottom: 3
-    }
-  }, title), sub && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "#C9A020",
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      marginBottom: 10
-    }
-  }, sub, " \xB7 ", unit), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      marginBottom: 12
-    }
-  }, ["daily", "weekly", "monthly"].map(nm => {
-    const on = views.indexOf(nm) > -1;
-    const sel = nm === active;
-    return /*#__PURE__*/React.createElement("button", {
-      key: nm,
-      disabled: !on,
-      title: on ? "" : RecoveryCharts.lockMessage(nm),
-      onClick: () => setView(nm),
+  return (
+    /*#__PURE__*/
+    // minWidth:0 matters: this card is a grid item, and grid items default to min-width:auto, so
+    // wide content (the open drill-down) could push the card past its track and spill outside.
+    // overflow:hidden is the backstop. Both together keep every chart inside its own container.
+    React.createElement("div", {
       style: {
-        background: sel ? PURPLE : "transparent",
-        border: `1px solid ${sel ? PURPLE : `rgba(${BRDR},0.2)`}`,
-        color: sel ? "#0a0a0a" : on ? LBL : "#4a4255",
-        borderRadius: 99,
-        padding: "6px 13px",
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        cursor: on ? "pointer" : "not-allowed",
-        minHeight: 32,
-        opacity: on ? 1 : 0.45
+        background: "rgba(18,18,20,0.85)",
+        border: `1px solid rgba(${BRDR},0.12)`,
+        borderRadius: 12,
+        padding: "16px",
+        marginBottom: 12,
+        minWidth: 0,
+        overflow: "hidden"
       }
-    }, nm);
-  })), points.length === 0 ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: "#8a7fa5",
-      padding: "24px 0",
-      textAlign: "center"
-    }
-  }, "No data for this view yet.") : /*#__PURE__*/React.createElement(SvgChart.Bar, {
-    data: points,
-    dataKey: "value",
-    domain: domain,
-    ticks: ticks,
-    refY: refY,
-    fmt: fmt
-  }), drill && /*#__PURE__*/React.createElement("details", {
-    className: "mps-drill",
-    style: {
-      marginTop: 12,
-      borderTop: "1px solid rgba(150,150,150,0.12)"
-    }
-  }, /*#__PURE__*/React.createElement("summary", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      cursor: "pointer",
-      padding: "10px 9px",
-      listStyle: "none",
-      marginTop: 8,
-      borderRadius: 8,
-      background: "rgba(155,107,201,0.10)",
-      border: `1px solid rgba(${BRDR},0.25)`,
-      fontSize: 9,
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
-      color: LBL
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: GOLD,
-      fontWeight: 700
-    }
-  }, "Statistics"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      opacity: 0.65
-    }
-  }, "\xB7 tap for insight")), /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 7
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#8a7fa5"
-    }
-  }, "avg ", drill.st.averageLabel), /*#__PURE__*/React.createElement("span", {
-    className: "mps-chev",
-    style: {
-      display: "inline-block",
-      fontSize: 12,
-      lineHeight: 1,
-      color: GOLD
-    }
-  }, "\u2228"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
-      gap: 8,
-      marginTop: 8
-    }
-  }, /*#__PURE__*/React.createElement(EngineTile, {
-    label: "Average",
-    value: drill.st.averageLabel
-  }), /*#__PURE__*/React.createElement(EngineTile, {
-    label: "Highest",
-    value: drill.st.highestLabel
-  }), /*#__PURE__*/React.createElement(EngineTile, {
-    label: "Lowest",
-    value: drill.st.lowestLabel
-  }), /*#__PURE__*/React.createElement(EngineTile, {
-    label: "Consistency",
-    value: `${drill.st.consistency}%`
-  }), /*#__PURE__*/React.createElement(EngineTile, {
-    label: "Trend",
-    value: drill.st.trend
-  }), /*#__PURE__*/React.createElement(EngineTile, {
-    label: "Tracked",
-    value: `${drill.st.count} ${active === "daily" ? "days" : active === "weekly" ? "weeks" : "months"}`
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: "#9a9a9a",
-      lineHeight: 1.5,
-      marginTop: 10,
-      paddingLeft: 12,
-      borderLeft: `3px solid ${PURPLE}`
-    }
-  }, drill.insight)));
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        fontSize: 12,
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        color: "#f5f5f5",
+        marginBottom: 3,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      }
+    }, title), sub && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#C9A020",
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        marginBottom: 10,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        lineHeight: 1.35
+      }
+    }, sub, " \xB7 ", unit), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        marginBottom: 12
+      }
+    }, ["daily", "weekly", "monthly"].map(nm => {
+      const on = views.indexOf(nm) > -1;
+      const sel = nm === active;
+      return /*#__PURE__*/React.createElement("button", {
+        key: nm,
+        disabled: !on,
+        title: on ? "" : RecoveryCharts.lockMessage(nm),
+        onClick: () => setView(nm),
+        style: {
+          background: sel ? PURPLE : "transparent",
+          border: `1px solid ${sel ? PURPLE : `rgba(${BRDR},0.2)`}`,
+          color: sel ? "#0a0a0a" : on ? LBL : "#4a4255",
+          borderRadius: 99,
+          padding: "6px 13px",
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          cursor: on ? "pointer" : "not-allowed",
+          minHeight: 32,
+          opacity: on ? 1 : 0.45
+        }
+      }, nm);
+    })), points.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#8a7fa5",
+        padding: "24px 0",
+        textAlign: "center"
+      }
+    }, "No data for this view yet.") : /*#__PURE__*/React.createElement(SvgChart.Bar, {
+      data: points,
+      dataKey: "value",
+      domain: domain,
+      ticks: ticks,
+      refY: refY,
+      fmt: fmt
+    }), drill && /*#__PURE__*/React.createElement("details", {
+      className: "mps-drill",
+      style: {
+        marginTop: 12,
+        borderTop: "1px solid rgba(150,150,150,0.12)"
+      }
+    }, /*#__PURE__*/React.createElement("summary", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        cursor: "pointer",
+        padding: "10px 9px",
+        listStyle: "none",
+        marginTop: 8,
+        borderRadius: 8,
+        background: "rgba(155,107,201,0.10)",
+        border: `1px solid rgba(${BRDR},0.25)`,
+        fontSize: 9,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: LBL
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: GOLD,
+        fontWeight: 700
+      }
+    }, "Statistics"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        opacity: 0.65
+      }
+    }, "\xB7 tap for insight")), /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 7
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#8a7fa5"
+      }
+    }, "avg ", drill.st.averageLabel), /*#__PURE__*/React.createElement("span", {
+      className: "mps-chev",
+      style: {
+        display: "inline-block",
+        fontSize: 12,
+        lineHeight: 1,
+        color: GOLD
+      }
+    }, "\u2228"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(88px, 1fr))",
+        gap: 8,
+        marginTop: 8
+      }
+    }, /*#__PURE__*/React.createElement(EngineTile, {
+      label: "Average",
+      value: drill.st.averageLabel
+    }), /*#__PURE__*/React.createElement(EngineTile, {
+      label: "Highest",
+      value: drill.st.highestLabel
+    }), /*#__PURE__*/React.createElement(EngineTile, {
+      label: "Lowest",
+      value: drill.st.lowestLabel
+    }), /*#__PURE__*/React.createElement(EngineTile, {
+      label: "Consistency",
+      value: `${drill.st.consistency}%`
+    }), /*#__PURE__*/React.createElement(EngineTile, {
+      label: "Trend",
+      value: drill.st.trend
+    }), /*#__PURE__*/React.createElement(EngineTile, {
+      label: "Tracked",
+      value: `${drill.st.count} ${active === "daily" ? "days" : active === "weekly" ? "weeks" : "months"}`
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#9a9a9a",
+        lineHeight: 1.5,
+        marginTop: 10,
+        paddingLeft: 12,
+        borderLeft: `3px solid ${PURPLE}`
+      }
+    }, drill.insight)))
+  );
 };
 
 /* ══════════════════════════════════════════════════════════
