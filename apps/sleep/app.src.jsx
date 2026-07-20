@@ -810,7 +810,7 @@ function SleepTracker() {
                 allRows={enriched} get={r => r.energy} fmt={v => `${v.toFixed(1)} / 10`}
                 domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
             </section>
-            {__PREMIUM && <DevicesCard />}
+            {WEARABLES_ENABLED && __PREMIUM && <DevicesCard />}
             </>)}
           </>
         )}
@@ -960,6 +960,13 @@ const Field = ({ label, children }) => (
    options are present and the flow is glitch-free, but it does NOT fake a sync.
    Live providers (Oura/Fitbit/etc.) wire into a real OAuth backend in Phase 2;
    for now "Notify me" registers interest so the user can opt in seamlessly. */
+/* Devices & Wearables is HIDDEN until live sync actually exists. It promised six integrations that
+   none of them can do yet, and a "Notify me" list is not worth the space it took on every Premium
+   dashboard. The card and its component are left fully intact, so switching this to true brings the
+   whole section back, and anyone who already tapped Notify me keeps their saved interest
+   (rr_sleep:wearable_interest is untouched). Flip this when a provider genuinely connects. */
+const WEARABLES_ENABLED = false;
+
 const WEARABLES = [
   { id:"apple",  name:"Apple Health / Watch", note:"Needs the MPS iPhone app (in development)" },
   { id:"oura",   name:"Oura Ring",            note:"HRV · sleep · readiness" },
