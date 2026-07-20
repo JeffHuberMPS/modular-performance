@@ -1336,28 +1336,35 @@ const PlanCard = ({ e, onSave }) => {
         {RecoveryActions.planMessage(metric)}
       </div>
 
-      <select value={chosen}
-        onChange={(ev) => onSave(e.date, { selectedAction: ev.target.value || null, actionCompleted: false })}
-        style={{ width: "100%", background: "rgba(150,150,150,0.06)",
-                 border: `1px solid rgba(${BRDR},0.2)`, borderRadius: 8, color: "#f5f5f5",
-                 padding: "12px 14px", fontSize: 15, minHeight: 46,
-                 fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
-        {/* Options need their OWN colours. The select is styled for the dark card, but the native
-            dropdown popup paints on a white system background, so inheriting near-white text made
-            every choice invisible. Setting both per-option fixes it on Windows/Chrome and Android. */}
-        <option value="" style={{ background: "#141416", color: "#f5f5f5" }}>Choose an action</option>
-        {actions.map(a => (
-          <option key={a} value={a} style={{ background: "#141416", color: "#f5f5f5" }}>
-            {a}{a === suggested ? "  ·  suggested" : ""}
-          </option>
-        ))}
-      </select>
-
-      {!chosen && (
-        <div style={{ fontSize: 12.5, color: "#8a8a8a", marginTop: 12, lineHeight: 1.5 }}>
-          Pick an action to start. You'll check it off once it's done.
-        </div>
-      )}
+      {/* Tappable action buttons — the choices are surfaced, not hidden in a native <select> that
+          read as an unfilled form field. The engine's suggested action is pre-highlighted so there
+          is always an obvious first move; the selected action fills and shows a check. Tapping the
+          selected pill again clears it. */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 2 }}>
+        {actions.map(a => {
+          const isSel = chosen === a;
+          const isSug = !chosen && a === suggested;
+          const filled = isSel || isSug;
+          return (
+            <button key={a} type="button"
+              onClick={() => onSave(e.date, { selectedAction: isSel ? null : a, actionCompleted: false })}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
+                       background: filled ? "#C9A020" : "transparent",
+                       border: filled ? "1px solid #C9A020" : "1px solid rgba(201,160,32,0.5)",
+                       color: filled ? "#1a1305" : "#E8C55A",
+                       fontWeight: filled ? 800 : 600, fontSize: 14, lineHeight: 1.2,
+                       padding: "9px 15px", borderRadius: 999,
+                       fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+              {isSel && <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: "none",
+                stroke: "#1a1305", strokeWidth: 3.2, strokeLinecap: "round", strokeLinejoin: "round" }}>
+                <path d="M4 12l5 5L20 6" /></svg>}
+              {a}
+              {isSug && <span style={{ fontSize: 9, letterSpacing: "0.1em", background: "rgba(0,0,0,0.22)",
+                color: "#1a1305", padding: "2px 6px", borderRadius: 999, fontWeight: 800 }}>SUGGESTED</span>}
+            </button>
+          );
+        })}
+      </div>
       {chosen && (
       <label style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14,
                       minHeight: 44, cursor: "pointer", userSelect: "none" }}>
