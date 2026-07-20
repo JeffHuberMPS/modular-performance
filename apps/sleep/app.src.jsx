@@ -1073,11 +1073,22 @@ const TodayCard = ({ e }) => {
             {e.pushMeter}<span style={{ fontSize: 12, color: LBL }}> / 10</span>
           </span>
         </div>
-        <div style={{ display: "flex", gap: 4, margin: "10px 0 9px" }}>
-          {[0,1,2,3,4,5,6,7,8,9].map(i => (
-            <i key={i} style={{ flex: 1, height: 6, borderRadius: 2,
-                 background: i < e.pushMeter ? hex : "rgba(255,255,255,0.08)" }} />
-          ))}
+        {/* Ten segments that RAMP in height, short on the left and tall on the right, so the shape
+            itself says "how hard to go today". Ten identical full-width blocks read like a download
+            progress bar and competed with the score above. Unfilled segments stay as faint stubs so
+            the ramp is still legible when the meter is low. */}
+        <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 24, margin: "12px 0 10px" }}>
+          {[0,1,2,3,4,5,6,7,8,9].map(i => {
+            const on = i < e.pushMeter;
+            return (
+              <i key={i} style={{
+                flex: 1, borderRadius: 2,
+                height: `${32 + i * 7.5}%`,
+                background: on ? hex : "rgba(255,255,255,0.07)",
+                opacity: on ? (0.6 + (i / 9) * 0.4) : 1
+              }} />
+            );
+          })}
         </div>
         <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
       </div>
