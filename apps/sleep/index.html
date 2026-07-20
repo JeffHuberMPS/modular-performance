@@ -259,13 +259,44 @@
       location.reload();
     }); }catch(e){} }
 
-    // Do NOT add manual scroll anchoring for the <details> dropdowns here. v425 tried exactly that
-    // (record the summary's viewport offset on click, re-apply it after layout) and it made things
-    // worse: browsers already do native scroll anchoring, so the manual correction stacked on top
-    // of the browser's own and overshot, dumping the page at scrollTop 0 every time you closed a
-    // drill-down. Proven by toggling via the .open property, which bypasses the click handler:
-    // the page stayed exactly where it was, so the added code was the cause, not the cure.
-    // The genuine cause of the original "jumps to the top" was the sync reload, guarded below.
+    // KEEP THE PAGE STILL WHEN A DROPDOWN CLOSES.
+    // Root cause: closing a <details> removes a few hundred px of content. If you were scrolled below
+    // that content, the page becomes shorter than your scroll position and the browser CLAMPS
+    // scrollTop, which on a short-ish page dumps you at the very top. Toggling via the .open property
+    // does not do this because there's no timing gap; a real click does, which is why it only bit on
+    // real use and my synthetic tests missed it.
+    // Fix: record the scroll position the instant the summary is pressed (pointerdown/keydown, BEFORE
+    // the collapse), then on the resulting `toggle` restore that ABSOLUTE position, clamped to the new
+    // maximum, synchronously and again after two frames so nothing can beat it. Absolute (not a delta)
+    // means it can never over-correct the way the reverted v425 version did.
+    (function(){
+      var saved = null;
+      function arm(ev){
+        try {
+          var s = ev.target && ev.target.closest ? ev.target.closest('summary') : null;
+          if (!s) { saved = null; return; }
+          var se = document.scrollingElement || document.documentElement;
+          saved = se ? se.scrollTop : null;
+        } catch(e){ saved = null; }
+      }
+      document.addEventListener('pointerdown', arm, true);
+      document.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' ') arm(ev); }, true);
+      document.addEventListener('toggle', function(){
+        if (saved === null) return;
+        var want = saved; saved = null;
+        function put(){
+          try {
+            var se = document.scrollingElement || document.documentElement;
+            if (!se) return;
+            var max = Math.max(0, se.scrollHeight - se.clientHeight);
+            var target = Math.min(want, max);
+            if (se.scrollTop !== target) se.scrollTop = target;
+          } catch(e){}
+        }
+        put();                                                         // before paint
+        requestAnimationFrame(function(){ put(); requestAnimationFrame(put); });   // and after layout settles
+      }, true);
+    })();
 
     // Put the page back where it was after a sync reload, so a background sync is invisible
     // instead of throwing you to the top of the pillar.
