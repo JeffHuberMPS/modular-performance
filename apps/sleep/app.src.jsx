@@ -939,20 +939,18 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Sleep"    value={_fmt12(e.sleepTime)} />
       <LogBlock label="Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
     </div>
-    {/* Row 2: Recovery · Energy · Physical Recovery · Clarity · Calmness — all read 10 = good */}
+    {/* Recovery · Energy · Physical Recovery / Clarity · Calmness · Resting HR / HRV.
+        Biometrics flow into the SAME grid (not a separate row) so Resting HR lands in column 3,
+        directly beneath Physical Recovery. All 1-10 values read 10 = good. */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48 }}>
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
       <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
       <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
+      {e.restingHR ? <LogBlock label="Resting HR" value={`${e.restingHR} bpm`} /> : null}
+      {e.hrv       ? <LogBlock label="HRV"        value={`${e.hrv} ms`} accent={PURPLE} /> : null}
     </div>
-    {(e.restingHR || e.hrv) && (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginTop: 12.48 }}>
-        <LogBlock label="Resting HR" value={e.restingHR ? `${e.restingHR} bpm` : "—"} />
-        <LogBlock label="HRV"        value={e.hrv ? `${e.hrv} ms` : "—"} accent={PURPLE} />
-      </div>
-    )}
   </div>
 );
 
