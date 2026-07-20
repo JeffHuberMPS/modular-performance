@@ -910,6 +910,7 @@ function SleepTracker() {
       dotCount: v4 ? v4.dotCount : null,
       dotHex: v4 ? v4.dotHex : null,
       pushMeter: v4 ? v4.pushMeter : null,
+      pushCommand: v4 ? v4.pushCommand : null,
       pushMessage: v4 ? v4.pushMessage : null,
       sleepQuality: _c10(e.sleepQuality ?? 10 - (e.restlessness ?? 3)),
       // Numeric axes for the Bedtime / Wake Time charts. Computed by the
@@ -2206,17 +2207,21 @@ const TodayCard = ({
     }
   }, "Push Meter"), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 22,
-      fontWeight: 800,
-      color: hex,
+      fontSize: 12,
+      fontWeight: 700,
+      color: LBL,
       whiteSpace: "nowrap"
     }
-  }, e.pushMeter, /*#__PURE__*/React.createElement("span", {
+  }, e.pushMeter, " / 10")), e.pushCommand && /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12,
-      color: LBL
+      fontSize: 26,
+      fontWeight: 800,
+      letterSpacing: "0.06em",
+      color: hex,
+      margin: "6px 0 2px",
+      lineHeight: 1
     }
-  }, " / 10"))), /*#__PURE__*/React.createElement("div", {
+  }, e.pushCommand), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 3,
