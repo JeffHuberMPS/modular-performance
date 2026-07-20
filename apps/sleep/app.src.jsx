@@ -405,6 +405,24 @@ function SleepTracker() {
     [entries]
   );
 
+  // Engine-shaped rows. The coaching and reports modules expect the v4
+  // schema (sleepQuality/mentalClarity/physicalRecovery/calmness plus the
+  // derived score fields); the app stores the older field names. One
+  // adapter here means neither module has to know about the old shape.
+  const engineRows = useMemo(() => enriched
+    .filter(e => e.v4)
+    .map(e => ({
+      ...e.v4,
+      date: e.date,
+      sleepQuality:     _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
+      energy:           _c10(e.energy ?? 5),
+      mentalClarity:    _c10(e.clarity ?? 5),
+      physicalRecovery: _c10(10 - (e.soreness ?? 5)),
+      calmness:         _c10(10 - (e.restlessness ?? 3)),
+      actionCompleted:  !!e.actionCompleted,
+      updatedAt:        e.updatedAt || ""
+    })), [enriched]);
+
   const last30 = enriched.slice(-30);
   const last7  = enriched.slice(-7);
 
@@ -677,6 +695,8 @@ function SleepTracker() {
             ) : (<>
             {/* Today: engine score, dots, status, push meter */}
             <TodayCard e={enriched[enriched.length - 1]} />
+            {/* Why this score — coaching from the user's own numbers */}
+            <CoachCard rows={engineRows} />
             {/* 7-day stats */}
             <section style={styles.statsRow}>
               <StatBlock label="Avg Sleep"    value={`${stats.hours}h`}        sub="7-day" trend={trend("hours")}    good="up" />
@@ -685,6 +705,9 @@ function SleepTracker() {
               <StatBlock label="Avg Physical Recovery" value={`${stats.physicalRecovery}/10`} sub="7-day" trend={trend("physicalRecovery")} good="up" />
               <StatBlock label="Avg Recovery" value={`${stats.recovery}%`}     sub="7-day" trend={trend("recovery")} good="up" />
             </section>
+
+            {/* Progressive unlocks — weekly through lifetime */}
+            <ReportsCard rows={engineRows} />
 
             {/* Charts */}
             <section style={styles.chartsGrid}>
@@ -990,6 +1013,127 @@ const TodayCard = ({ e }) => {
         </div>
         <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
       </div>
+    </section>
+  );
+};
+
+/* CoachCard — Recovery Engine v4.0 coaching (spec Parts 11, 12).
+   Explains WHY today's score is what it is, using the user's own numbers.
+   62 templates with conditions and cooldowns live in the engine; this
+   only renders the winner.
+   commit:false — merely viewing the page must not burn a template's
+   cooldown, or a refresh would churn through the library. */
+const CoachCard = ({ rows }) => {
+  if (!rows || !rows.length || !window.RecoveryCoaching) return null;
+  let c = null;
+  try { c = RecoveryCoaching.select(rows[rows.length - 1], rows, { commit: false }); }
+  catch (e) { return null; }
+  if (!c || !c.primary) return null;
+  const hex = (rows[rows.length - 1].dotHex) || PURPLE;
+  return (
+    <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
+                      borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
+      <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: LBL, marginBottom: 10 }}>Why this score</div>
+      <div style={{ fontSize: 14, lineHeight: 1.55, color: "#f5f5f5",
+                    paddingLeft: 12, borderLeft: `3px solid ${hex}` }}>
+        {c.primary.text}
+      </div>
+      {c.secondary && c.secondary.length > 0 && (
+        <details style={{ marginTop: 12 }}>
+          <summary style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                            color: LBL, cursor: "pointer", padding: "8px 0" }}>
+            More detail
+          </summary>
+          {c.secondary.map((s, i) => (
+            <div key={i} style={{ fontSize: 13, lineHeight: 1.55, color: "#9a9a9a",
+                                  padding: "10px 0 0 12px",
+                                  borderLeft: "1px solid rgba(150,150,150,0.2)", marginTop: 8 }}>
+              {s.text}
+            </div>
+          ))}
+        </details>
+      )}
+    </section>
+  );
+};
+
+/* ReportsCard — Recovery Engine v4.0 progressive unlocks (spec Part 14).
+   Seven levels from 7 days to multi-year. Shows what is unlocked, opens
+   the chosen report inline, and tracks progress toward the next one. */
+const ReportsCard = ({ rows }) => {
+  const [open, setOpen] = useState(null);
+  if (!rows || !window.RecoveryReports) return null;
+  const n = rows.length;
+  const R8 = RecoveryReports;
+  const unlocked = R8.unlocked(n);
+  const next = R8.nextLevel(n);
+  let rep = null;
+  if (open) { try { rep = R8.build(open, rows); } catch (e) { rep = null; } }
+  const hex = rep ? RecoveryScoring.tier(rep.summary.averageScore).hex : PURPLE;
+
+  return (
+    <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
+                      borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
+      <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: LBL, marginBottom: 10 }}>
+        Reports · {n} {n === 1 ? "entry" : "entries"}
+      </div>
+
+      {unlocked.length === 0 && (
+        <div style={{ fontSize: 13, color: "#9a9a9a" }}>
+          Seven days unlocks your first report.
+        </div>
+      )}
+
+      {unlocked.map(l => (
+        <button key={l.id} onClick={() => setOpen(open === l.id ? null : l.id)}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                   width: "100%", background: open === l.id ? "rgba(155,107,201,0.14)" : "rgba(150,150,150,0.06)",
+                   border: `1px solid rgba(${BRDR},${open === l.id ? "0.4" : "0.12"})`,
+                   borderRadius: 8, padding: "12px 14px", marginBottom: 8, cursor: "pointer" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#f5f5f5" }}>{l.title}</span>
+          <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL }}>
+            {l.days} days
+          </span>
+        </button>
+      ))}
+
+      {next && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            <div style={{ height: "100%", borderRadius: 99, background: PURPLE,
+                          width: `${Math.min(100, Math.round(n / next.days * 100))}%` }} />
+          </div>
+          <div style={{ fontSize: 12, color: "#8a7fa5", marginTop: 8 }}>
+            {next.days - n} more {next.days - n === 1 ? "day" : "days"} to unlock your {next.title}.
+          </div>
+        </div>
+      )}
+
+      {rep && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                        gap: 12, marginBottom: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 800 }}>{rep.title}</span>
+            <span style={{ fontSize: 26, fontWeight: 800, color: hex }}>
+              {rep.summary.averageScore}%
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+            {rep.sections.map((s, i) => (
+              <div key={i} style={{ background: "rgba(150,150,150,0.06)",
+                                    border: `1px solid rgba(${BRDR},0.12)`,
+                                    borderLeft: "3px solid rgba(150,150,150,0.55)",
+                                    borderRadius: 8, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                              color: LBL, marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5" }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
