@@ -1848,87 +1848,126 @@ function _fmt12(t) {
 }
 
 /* TodayCard — Recovery Engine v4.0 dashboard (spec Parts 6, 7, 10, 17).
-   Answers "how recovered am I today" above the 7-day averages.
-   Reads the newest entry's engine values. Calculates nothing itself, so
-   it can never disagree with the score shown elsewhere. */
-const TodayCard = ({ e }) => {
+   Answers "how recovered am I today, and how hard should I go", which the
+   7-day averages below never did.
+   Reads the newest entry's engine values and calculates NOTHING itself,
+   so it can never disagree with the score shown elsewhere. */
+const TodayCard = ({
+  e
+}) => {
   if (!e || !e.v4) return null;
   const hex = e.dotHex || PURPLE;
   const dots = "●".repeat(e.dotCount) + "○".repeat(5 - e.dotCount);
-  const seg = i => ({
-    flex: 1, height: 6, borderRadius: 2,
-    background: i < e.pushMeter ? hex : "rgba(255,255,255,0.08)"
-  });
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: "rgba(18,18,20,0.85)",
       border: `1px solid rgba(${BRDR},0.13)`,
-      borderRadius: 12, padding: "20px 16px", marginBottom: 14
+      borderRadius: 12,
+      padding: "20px 16px",
+      marginBottom: 14
     }
-  },
-    /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-        color: LBL, marginBottom: 14
-      }
-    }, "Today", /*#__PURE__*/React.createElement("span", null, e.weekday)),
-
-    /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 64, fontWeight: 800, lineHeight: 0.9, letterSpacing: "-0.03em",
-        textAlign: "center", color: hex
-      }
-    }, e.recovery, /*#__PURE__*/React.createElement("span", {
-      style: { fontSize: 24, opacity: 0.5 }
-    }, "%")),
-
-    /*#__PURE__*/React.createElement("div", {
-      style: { textAlign: "center", letterSpacing: 9, fontSize: 18, color: hex, margin: "14px 0 10px" }
-    }, dots),
-
-    /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center", fontSize: 17, fontWeight: 800,
-        letterSpacing: "0.12em", color: hex
-      }
-    }, e.recoveryStatus),
-
-    /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center", fontSize: 10, letterSpacing: "0.1em",
-        textTransform: "uppercase", color: LBL, marginTop: 5
-      }
-    }, `Grade ${e.recoveryGrade} · slept ${e.hours}h`),
-
-    /* Push meter — how hard to go today (spec Part 7) */
-    /*#__PURE__*/React.createElement("div", {
-      style: { marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(150,150,150,0.12)" }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }
-      },
-        /*#__PURE__*/React.createElement("span", {
-          style: {
-            fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: LBL
-          }
-        }, "Push Meter"),
-        /*#__PURE__*/React.createElement("span", {
-          style: { fontSize: 22, fontWeight: 800, color: hex, whiteSpace: "nowrap" }
-        }, e.pushMeter, /*#__PURE__*/React.createElement("span", {
-          style: { fontSize: 12, color: LBL }
-        }, " / 10"))
-      ),
-      /*#__PURE__*/React.createElement("div", {
-        style: { display: "flex", gap: 4, margin: "10px 0 9px" }
-      }, [0,1,2,3,4,5,6,7,8,9].map(i =>
-        /*#__PURE__*/React.createElement("i", { key: i, style: seg(i) })
-      )),
-      /*#__PURE__*/React.createElement("div", {
-        style: { fontSize: 12, color: "#9a9a9a" }
-      }, e.pushMessage)
-    )
-  );
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      fontSize: 9,
+      letterSpacing: "0.14em",
+      textTransform: "uppercase",
+      color: LBL,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Today"), /*#__PURE__*/React.createElement("span", null, e.weekday)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 64,
+      fontWeight: 800,
+      lineHeight: 0.9,
+      letterSpacing: "-0.03em",
+      textAlign: "center",
+      color: hex
+    }
+  }, e.recovery, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24,
+      opacity: 0.5
+    }
+  }, "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      letterSpacing: 9,
+      fontSize: 18,
+      color: hex,
+      margin: "14px 0 10px"
+    }
+  }, dots), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      fontSize: 17,
+      fontWeight: 800,
+      letterSpacing: "0.12em",
+      color: hex
+    }
+  }, e.recoveryStatus), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      fontSize: 10,
+      letterSpacing: "0.1em",
+      textTransform: "uppercase",
+      color: LBL,
+      marginTop: 5
+    }
+  }, "Grade ", e.recoveryGrade, " \xB7 slept ", e.hours, "h"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 20,
+      paddingTop: 16,
+      borderTop: "1px solid rgba(150,150,150,0.12)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 9,
+      letterSpacing: "0.12em",
+      textTransform: "uppercase",
+      color: LBL
+    }
+  }, "Push Meter"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 22,
+      fontWeight: 800,
+      color: hex,
+      whiteSpace: "nowrap"
+    }
+  }, e.pushMeter, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: LBL
+    }
+  }, " / 10"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 4,
+      margin: "10px 0 9px"
+    }
+  }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => /*#__PURE__*/React.createElement("i", {
+    key: i,
+    style: {
+      flex: 1,
+      height: 6,
+      borderRadius: 2,
+      background: i < e.pushMeter ? hex : "rgba(255,255,255,0.08)"
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#9a9a9a"
+    }
+  }, e.pushMessage)));
 };
 
 /* StatBlock — 7-day summary stat */

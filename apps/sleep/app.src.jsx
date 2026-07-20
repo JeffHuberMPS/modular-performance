@@ -618,6 +618,8 @@ function SleepTracker() {
                 <a href="/billing.html" target="_top" style={{ display: "inline-block", padding: "12px 26px", background: "#C9A020", color: "#0a0a0a", fontWeight: 800, fontSize: 13, letterSpacing: 1, borderRadius: 10, textDecoration: "none" }}>↑ UNLOCK WITH ELITE</a>
               </section>
             ) : (<>
+            {/* Today: engine score, dots, status, push meter */}
+            <TodayCard e={enriched[enriched.length - 1]} />
             {/* 7-day stats */}
             <section style={styles.statsRow}>
               <StatBlock label="Avg Sleep"    value={`${stats.hours}h`}        sub="7-day" trend={trend("hours")}    good="up" />
@@ -877,6 +879,63 @@ function _fmt12(t) {
   const p = h >= 12 ? "PM" : "AM";
   return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${p}`;
 }
+
+/* TodayCard — Recovery Engine v4.0 dashboard (spec Parts 6, 7, 10, 17).
+   Answers "how recovered am I today, and how hard should I go", which the
+   7-day averages below never did.
+   Reads the newest entry's engine values and calculates NOTHING itself,
+   so it can never disagree with the score shown elsewhere. */
+const TodayCard = ({ e }) => {
+  if (!e || !e.v4) return null;
+  const hex  = e.dotHex || PURPLE;
+  const dots = "●".repeat(e.dotCount) + "○".repeat(5 - e.dotCount);
+  return (
+    <section style={{ background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.13)`,
+                      borderRadius: 12, padding: "20px 16px", marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                    fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: LBL, marginBottom: 14 }}>
+        <span>Today</span><span>{e.weekday}</span>
+      </div>
+
+      <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 0.9, letterSpacing: "-0.03em",
+                    textAlign: "center", color: hex }}>
+        {e.recovery}<span style={{ fontSize: 24, opacity: 0.5 }}>%</span>
+      </div>
+
+      {/* Five dots always, filled to the tier (spec Part 6) */}
+      <div style={{ textAlign: "center", letterSpacing: 9, fontSize: 18,
+                    color: hex, margin: "14px 0 10px" }}>{dots}</div>
+
+      <div style={{ textAlign: "center", fontSize: 17, fontWeight: 800,
+                    letterSpacing: "0.12em", color: hex }}>{e.recoveryStatus}</div>
+
+      <div style={{ textAlign: "center", fontSize: 10, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: LBL, marginTop: 5 }}>
+        Grade {e.recoveryGrade} · slept {e.hours}h
+      </div>
+
+      {/* Push Meter — how hard to go today (spec Part 7) */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+          <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: LBL }}>
+            Push Meter
+          </span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: hex, whiteSpace: "nowrap" }}>
+            {e.pushMeter}<span style={{ fontSize: 12, color: LBL }}> / 10</span>
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 4, margin: "10px 0 9px" }}>
+          {[0,1,2,3,4,5,6,7,8,9].map(i => (
+            <i key={i} style={{ flex: 1, height: 6, borderRadius: 2,
+                 background: i < e.pushMeter ? hex : "rgba(255,255,255,0.08)" }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: "#9a9a9a" }}>{e.pushMessage}</div>
+      </div>
+    </section>
+  );
+};
 
 /* StatBlock — 7-day summary stat */
 const StatBlock = ({ label, value, sub, trend, good }) => {
