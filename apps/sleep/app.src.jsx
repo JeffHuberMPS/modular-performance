@@ -751,12 +751,14 @@ function SleepTracker() {
             <section style={styles.chartsGrid}>
 
               {/* Sleep Duration — pure SVG, always renders */}
-              <ChartCard title="Sleep Duration" sub="hours per night · last 30">
+              <ChartCard title="Sleep Duration" sub="hours per night · last 30"
+                drill={chartDrill(last30, r => r.hours, v => `${v.toFixed(1)}h`)}>
                 <SvgChart.Bar data={last30} dataKey="hours" domain={[0,10]} ticks={[0,2,4,6,8,10]} refY={7}/>
               </ChartCard>
 
               {/* Recovery Score — pure SVG, always renders */}
-              <ChartCard title="Recovery Score" sub="% · last 30 nights">
+              <ChartCard title="Recovery Score" sub="% · last 30 nights"
+                drill={chartDrill(last30, r => r.recovery, v => `${Math.round(v)}%`)}>
                 <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:GOLD}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
               </ChartCard>
 
@@ -765,17 +767,20 @@ function SleepTracker() {
                   Bedtime uses the engine's 6pm-anchored axis, so 1am plots
                   LATER than 11pm instead of leaping to the far end. A plain
                   midnight axis turns a gradual drift later into a cliff. */}
-              <ChartCard title="Bedtime" sub="when you went to bed · last 30">
+              <ChartCard title="Bedtime" sub="when you went to bed · last 30"
+                drill={chartDrill(last30, r => r.bedAxis, v => RecoveryCharts.bedFromAxis(v), "clock")}>
                 <SvgChart.Bar data={last30} dataKey="bedAxis"
                   domain={[0, 720]} ticks={[0, 180, 360, 540, 720]}
                   fmt={(t) => RecoveryCharts.bedFromAxis(t)} />
               </ChartCard>
-              <ChartCard title="Wake Time" sub="when you got up · last 30">
+              <ChartCard title="Wake Time" sub="when you got up · last 30"
+                drill={chartDrill(last30, r => r.wakeAxis, v => RecoveryCharts.fmtClock(v), "clock")}>
                 <SvgChart.Bar data={last30} dataKey="wakeAxis"
                   domain={[180, 600]} ticks={[180, 300, 420, 540]}
                   fmt={(t) => RecoveryCharts.fmtClock(t)} />
               </ChartCard>
-              <ChartCard title="Energy vs Physical Recovery" sub="1–10 scale · last 30">
+              <ChartCard title="Energy vs Physical Recovery" sub="1–10 scale · last 30"
+                drill={chartDrill(last30, r => r.energy, v => `${v.toFixed(1)} / 10`)}>
                 <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:GOLD},{key:"physicalRecovery",stroke:PURPLE}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
                 <div style={{display:"flex",gap:16,marginTop:8,fontSize:12,fontFamily:"'Inter', system-ui, -apple-system, sans-serif"}}>
                   <span style={{color:"#9aa3b2"}}><span style={{color:GOLD}}>——</span> energy</span>
@@ -1575,7 +1580,35 @@ const SvgChart = (() => {
 })();
 
 /* ChartCard */
-const ChartCard = ({ title, sub, children }) => (
+/* Turns a series into the engine's stats block plus a plain-English read.
+   Reuses RecoveryCharts.stats so the maths lives in exactly one place. */
+const chartDrill = (rows, get, fmt, kind) => {
+  if (!window.RecoveryCharts || !rows || !rows.length) return null;
+  const points = rows
+    .map(r => ({ value: get(r) }))
+    .filter(p => p.value !== null && p.value !== undefined && isFinite(p.value));
+  if (points.length < 2) return null;
+  const st = RecoveryCharts.stats(points, { format: fmt });
+  if (!st) return null;
+
+  // One sentence the user can act on, rather than six bare numbers.
+  let insight;
+  if (kind === "clock") {
+    insight = st.consistency >= 85
+      ? "Very consistent. Your body knows when this is coming."
+      : st.consistency >= 65
+        ? `Fairly consistent, drifting between ${st.lowestLabel} and ${st.highestLabel}.`
+        : "All over the place. A steadier time here is the cheapest win available.";
+  } else {
+    const dir = st.trend === "rising" ? "up" : st.trend === "falling" ? "down" : "flat";
+    insight = dir === "flat"
+      ? `Holding steady around ${st.averageLabel}.`
+      : `Trending ${dir}. Best ${st.highestLabel}, worst ${st.lowestLabel}.`;
+  }
+  return { st, insight };
+};
+
+const ChartCard = ({ title, sub, children, drill }) => (
   <div style={{
     background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
     borderRadius: 12, padding: "16px", marginBottom: 12,
@@ -1586,6 +1619,32 @@ const ChartCard = ({ title, sub, children }) => (
     </div>
     {sub && <div style={{ fontSize: 12, color: "#C9A020", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", marginBottom: 14 }}>{sub}</div>}
     {children}
+
+    {/* Drill-down (spec Part 13): chart -> statistics -> insight.
+        Collapsed by default so the chart itself stays the hero. */}
+    {drill && (
+      <details style={{ marginTop: 12, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+        <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                          cursor: "pointer", padding: "12px 0 4px", listStyle: "none",
+                          fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                          color: LBL }}>
+          <span>Statistics</span>
+          <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
+        </summary>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 8 }}>
+          <EngineTile label="Average"     value={drill.st.averageLabel} />
+          <EngineTile label="Highest"     value={drill.st.highestLabel} />
+          <EngineTile label="Lowest"      value={drill.st.lowestLabel} />
+          <EngineTile label="Consistency" value={`${drill.st.consistency}%`} />
+          <EngineTile label="Trend"       value={drill.st.trend} />
+          <EngineTile label="Tracked"     value={`${drill.st.count} days`} />
+        </div>
+        <div style={{ fontSize: 13, color: "#9a9a9a", lineHeight: 1.5, marginTop: 10,
+                      paddingLeft: 12, borderLeft: `3px solid ${PURPLE}` }}>
+          {drill.insight}
+        </div>
+      </details>
+    )}
   </div>
 );
 
