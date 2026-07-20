@@ -897,7 +897,9 @@ function SleepTracker() {
                     style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px",
                              borderBottom: closedMonths[month] ? "none" : "1px solid rgba(150,150,150,0.08)",
                              cursor: "pointer", userSelect: "none", minHeight: 44 }}>
-                    <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5" }}>
+                    {/* Month is the top of the hierarchy, so it must outrank the 25px date inside
+                        the cards below it. 20px made it SMALLER than its own children. */}
+                    <div style={{ fontSize: 33, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5", letterSpacing: "-0.01em" }}>
                       {fmtMonth(month + "-01")}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
@@ -920,8 +922,10 @@ function SleepTracker() {
                       const isCurrent = ws === todayWs;
                       return (
                         <div key={ws} style={{ padding: "10px 12px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                            <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: LBL, textTransform: "uppercase" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 4 }}>
+                            {/* White, not purple, and large enough to actually divide the month. At
+                                9px purple it read as a faint caption and the weeks blurred together. */}
+                            <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.2em", color: "#f5f5f5", textTransform: "uppercase" }}>
                               Week of {fmtWeekRange(wsDate)}
                             </div>
                             {isCurrent && (
