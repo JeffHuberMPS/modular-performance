@@ -2105,21 +2105,14 @@ const LogCard = ({
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Calmness",
   value: e.restlessness != null ? `${e.calmness}/10` : "—"
-})), (e.restingHR || e.hrv) && /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 12.48,
-    marginTop: 12.48
-  }
-}, /*#__PURE__*/React.createElement(LogBlock, {
+}), e.restingHR ? /*#__PURE__*/React.createElement(LogBlock, {
   label: "Resting HR",
-  value: e.restingHR ? `${e.restingHR} bpm` : "—"
-}), /*#__PURE__*/React.createElement(LogBlock, {
+  value: `${e.restingHR} bpm`
+}) : null, e.hrv ? /*#__PURE__*/React.createElement(LogBlock, {
   label: "HRV",
-  value: e.hrv ? `${e.hrv} ms` : "—",
+  value: `${e.hrv} ms`,
   accent: PURPLE
-})));
+}) : null));
 
 /* ── Pure SVG chart components — no external library, always renders ── */
 const SvgChart = (() => {
