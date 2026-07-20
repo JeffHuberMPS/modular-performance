@@ -1682,7 +1682,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     <LogGroup title="Your Score" last>
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       {!__CORE && e.v4 && <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />}
-      {!__CORE && e.v4 && <LogBlock label="Status"     value={e.recoveryStatus || "—"} />}
+      {!__CORE && e.v4 && <LogBlock label="Readiness"  value={e.recoveryStatus || "—"} />}
       {!__CORE && e.v4 && <LogBlock label="Push Meter" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />}
       {!__CORE && e.v4 && e.selectedAction && (
         <LogBlock label={e.actionCompleted ? "Action · done" : "Action"}

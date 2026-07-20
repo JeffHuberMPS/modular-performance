@@ -90,23 +90,29 @@ const RecoveryScoring = (function(){
   //   warning end  = amber -> orange -> red   (universally read as "back off")
   // Green is gone entirely: it read as "good" while sitting in the 3rd tier, which was
   // actively misleading.
+  // STATUS is a STATE word (how recovered you are), NOT a command — the Push Meter below already
+  // gives the command, so the two never repeat. Renamed on Jeff's call: the old set mixed a
+  // prestige word (READY) with alarm words (CAUTION/URGENT) and one tier even contradicted itself
+  // (status CAUTION but level "Good Recovery"). New ladder is a clean state scale, high to low.
+  // `level` is realigned to match so it can never contradict the status if it is ever shown.
   const TIERS = [
-    {min:90,status:'READY',    dots:5,color:'purple',hex:'#9b6bc9',level:'Elite Recovery'},
-    {min:80,status:'MODERATE', dots:4,color:'gold',  hex:'#C9A020',level:'Strong Recovery'},
-    {min:70,status:'CAUTION',  dots:3,color:'amber', hex:'#d9a441',level:'Good Recovery'},
-    {min:60,status:'NEEDS',    dots:2,color:'orange',hex:'#d97706',level:'Needs Recovery'},
-    {min:50,status:'URGENT',   dots:1,color:'deep',  hex:'#e05d2a',level:'Recovery Urgent'},
-    {min:0, status:'RECOVER',  dots:1,color:'red',   hex:'#dc2626',level:'Recovery Priority'}
+    {min:90,status:'PRIMED',   dots:5,color:'purple',hex:'#9b6bc9',level:'Peak Recovery'},
+    {min:80,status:'STRONG',   dots:4,color:'gold',  hex:'#C9A020',level:'Strong Recovery'},
+    {min:70,status:'FAIR',     dots:3,color:'amber', hex:'#d9a441',level:'Fair Recovery'},
+    {min:60,status:'LOW',      dots:2,color:'orange',hex:'#d97706',level:'Low Recovery'},
+    {min:50,status:'DRAINED',  dots:1,color:'deep',  hex:'#e05d2a',level:'Drained'},
+    {min:0, status:'DEPLETED', dots:1,color:'red',   hex:'#dc2626',level:'Depleted'}
   ];
 
   /* ---------- PART 7: push meter (locked) ---------- */
+  // Keyed by the STATUS word, so these keys must match the TIERS status names exactly.
   const PUSH_BASE = {
-    READY:   {push:10, msg:'Excellent recovery. Push hard today.'},
-    MODERATE:{push:8,  msg:'Good recovery. Train normally.'},
-    CAUTION: {push:6,  msg:'Reduce intensity. Avoid unnecessary fatigue.'},
-    NEEDS:   {push:4,  msg:'Reduce intensity. Focus on recovery.'},
-    URGENT:  {push:3,  msg:'Prioritize recovery today.'},
-    RECOVER: {push:2,  msg:'Today is for recovery. Do not push hard.'}
+    PRIMED:  {push:10, msg:'Excellent recovery. Push hard today.'},
+    STRONG:  {push:8,  msg:'Good recovery. Train normally.'},
+    FAIR:    {push:6,  msg:'Reduce intensity. Avoid unnecessary fatigue.'},
+    LOW:     {push:4,  msg:'Reduce intensity. Focus on recovery.'},
+    DRAINED: {push:3,  msg:'Prioritize recovery today.'},
+    DEPLETED:{push:2,  msg:'Today is for recovery. Do not push hard.'}
   };
 
   /* ---------- calculations ---------- */
@@ -1142,7 +1148,7 @@ const RecoveryReports = (function(){
         .map(([k,v]) => ({key:k, score:r0(avg(v.map(x=>x.recoveryScore)))}))
         .sort((a,b)=> a.key < b.key ? -1 : 1);
       rep.months = months;
-      const dist = {READY:0, MODERATE:0, CAUTION:0, NEEDS:0, URGENT:0, RECOVER:0};
+      const dist = {PRIMED:0, STRONG:0, FAIR:0, LOW:0, DRAINED:0, DEPLETED:0};
       rows.forEach(r => dist[r.recoveryStatus]++);
       rep.distribution = dist;
       rep.sections.push({label:'Annual grade', value:rep.summary.grade});
