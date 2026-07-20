@@ -106,13 +106,15 @@ const RecoveryScoring = (function(){
 
   /* ---------- PART 7: push meter (locked) ---------- */
   // Keyed by the STATUS word, so these keys must match the TIERS status names exactly.
+  // `cmd` is the one-word COMMAND for the Push Meter — what to DO. Pairs with the tier's status
+  // word (the state): READINESS says how you are, PUSH METER says what to do about it, no overlap.
   const PUSH_BASE = {
-    PRIMED:  {push:10, msg:'Excellent recovery. Push hard today.'},
-    STRONG:  {push:8,  msg:'Good recovery. Train normally.'},
-    FAIR:    {push:6,  msg:'Reduce intensity. Avoid unnecessary fatigue.'},
-    LOW:     {push:4,  msg:'Reduce intensity. Focus on recovery.'},
-    DRAINED: {push:3,  msg:'Prioritize recovery today.'},
-    DEPLETED:{push:2,  msg:'Today is for recovery. Do not push hard.'}
+    PRIMED:  {push:10, cmd:'PUSH',    msg:'Excellent recovery. Push hard today.'},
+    STRONG:  {push:8,  cmd:'TRAIN',   msg:'Good recovery. Train normally.'},
+    FAIR:    {push:6,  cmd:'LIGHTEN', msg:'Reduce intensity. Avoid unnecessary fatigue.'},
+    LOW:     {push:4,  cmd:'RECOVER', msg:'Reduce intensity. Focus on recovery.'},
+    DRAINED: {push:3,  cmd:'REST',    msg:'Prioritize recovery today.'},
+    DEPLETED:{push:2,  cmd:'RESET',   msg:'Today is for recovery. Do not push hard.'}
   };
 
   /* ---------- calculations ---------- */
@@ -178,7 +180,7 @@ const RecoveryScoring = (function(){
     if (e.sleepQuality <= 3) p -= 1;
     if (e.physicalRecovery >= 8 && e.energy >= 8) p += 1;
     p = Math.max(1, Math.min(10, p));
-    return {pushMeter:p, pushMessage:base.msg};
+    return {pushMeter:p, pushCommand:base.cmd, pushMessage:base.msg};
   }
 
   // PART 8 steps 1-3: lowest metric with 7-day lookback tie-break.
@@ -237,6 +239,7 @@ const RecoveryScoring = (function(){
       dotHex: t.hex,
       dotString: dots(total),
       pushMeter: push.pushMeter,
+      pushCommand: push.pushCommand,
       pushMessage: push.pushMessage,
       lowestMetric: lowestMetric(input, history)
     };

@@ -410,6 +410,7 @@ function SleepTracker() {
         dotCount:       v4 ? v4.dotCount       : null,
         dotHex:         v4 ? v4.dotHex         : null,
         pushMeter:      v4 ? v4.pushMeter      : null,
+        pushCommand:    v4 ? v4.pushCommand    : null,
         pushMessage:    v4 ? v4.pushMessage    : null,
         sleepQuality:   _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
       // Numeric axes for the Bedtime / Wake Time charts. Computed by the
@@ -1127,16 +1128,24 @@ const TodayCard = ({ e }) => {
         Grade {e.recoveryGrade} · slept {e.hours}h
       </div>
 
-      {/* Push Meter — how hard to go today (spec Part 7) */}
+      {/* Push Meter — how hard to go today (spec Part 7). The COMMAND word is the headline now:
+          a bare "9 / 10" made you decode the number, whereas TRAIN / LIGHTEN / REST says it outright.
+          The number stays as the finer-grained detail. Command pairs with the READINESS state above. */}
       <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
           <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: LBL }}>
             Push Meter
           </span>
-          <span style={{ fontSize: 22, fontWeight: 800, color: hex, whiteSpace: "nowrap" }}>
-            {e.pushMeter}<span style={{ fontSize: 12, color: LBL }}> / 10</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: LBL, whiteSpace: "nowrap" }}>
+            {e.pushMeter} / 10
           </span>
         </div>
+        {e.pushCommand && (
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "0.06em", color: hex,
+                        margin: "6px 0 2px", lineHeight: 1 }}>
+            {e.pushCommand}
+          </div>
+        )}
         {/* Ten segments that RAMP in height, short on the left and tall on the right, so the shape
             itself says "how hard to go today". Ten identical full-width blocks read like a download
             progress bar and competed with the score above. Unfilled segments stay as faint stubs so
