@@ -120,6 +120,7 @@ function SleepTracker() {
       sleepTime: "",
       wakeTime: "04:00",
       energy: 7,
+      sleepQuality: 7,
       soreness: 3,
       clarity: 7,
       restlessness: 3,
@@ -144,6 +145,7 @@ function SleepTracker() {
               if (!parsed || !parsed.date) continue; // skip anything that isn't a dated entry (prevents a blank/crashed app)
               loaded.push({
                 ...parsed,
+                sleepQuality: parsed.sleepQuality ?? (10 - (parsed.restlessness ?? 3)),
                 energy: parsed.energy ?? 5,
                 clarity: parsed.clarity ?? 5,
                 soreness: parsed.soreness ?? 5,
@@ -153,6 +155,51 @@ function SleepTracker() {
           }
         }
         loaded.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+        // TEST DATA — opt in with ?seed=14 in the URL. Generates 14 days of
+        // varied entries so the v4 weapons can be exercised without waiting
+        // two weeks. Deterministic, so reloading gives the same numbers.
+        // Only fills dates that have no real entry, so it can never
+        // overwrite something you actually logged. Clear it with Reset
+        // Trackers on the hub.
+        const seedN = new URLSearchParams(location.search).get('seed');
+        if (seedN && loaded.length < 40) {
+          const n = Math.min(60, parseInt(seedN, 10) || 14);
+          const have = new Set(loaded.map(e => e.date));
+          const pad = v => String(v).padStart(2, '0');
+          const made = [];
+          for (let i = n - 1; i >= 0; i--) {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            if (have.has(date)) continue;
+            // A rough arc: rough first week, better second, with wobble.
+            const arc = Math.round((n - 1 - i) / Math.max(1, n - 1) * 3);
+            const w = [0, 1, -1, 2, 0, -1, 1][i % 7];
+            const clamp = v => Math.max(1, Math.min(10, v));
+            const bedM = 22 * 60 + 15 + ([0, 25, -20, 45, 10, -15, 30][i % 7]);
+            const wakeM = 5 * 60 + 30 + ([0, 15, -10, 20, 5, -20, 10][i % 7]);
+            const entry = {
+              date,
+              sleepTime: `${pad(Math.floor(bedM / 60) % 24)}:${pad(bedM % 60)}`,
+              wakeTime:  `${pad(Math.floor(wakeM / 60) % 24)}:${pad(wakeM % 60)}`,
+              sleepQuality: clamp(5 + arc + w),
+              energy:       clamp(5 + arc + w),
+              clarity:      clamp(6 + arc - w),
+              soreness:     clamp(5 - arc + w),      // stored inverted
+              restlessness: clamp(4 - arc - w),      // stored inverted
+              restingHR: 58 + (i % 5),
+              hrv: 55 + (i % 9),
+              weight: 180
+            };
+            made.push(entry);
+            try { await storage.set(date, JSON.stringify(entry)); } catch (err) {}
+          }
+          if (made.length) {
+            loaded.push(...made);
+            loaded.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+          }
+        }
+
         setEntries(loaded);
       } catch (e) {
       } finally {
@@ -189,6 +236,7 @@ function SleepTracker() {
       date: entry.date,
       sleepTime: entry.sleepTime || "",
       wakeTime: entry.wakeTime || "",
+      sleepQuality: entry.sleepQuality ?? (10 - (entry.restlessness ?? 3)),
       energy: entry.energy ?? 5,
       soreness: entry.soreness ?? 5,
       clarity: entry.clarity ?? 5,
@@ -537,6 +585,15 @@ function SleepTracker() {
                 <input type="time" value={form.sleepTime}
                   onChange={(e) => setForm({ ...form, sleepTime: e.target.value })}
                   style={styles.input} />
+              </Field>
+              {/* Sleep Quality — the one genuinely new input in the v4 spec.
+                  Old entries have no source for it and fall back to inverted
+                  restlessness as a proxy. Capturing it directly makes the
+                  score honest from here on. */}
+              <Field label={`Sleep Quality · ${form.sleepQuality}/10`}>
+                <input type="range" min="1" max="10" value={form.sleepQuality}
+                  onChange={(e) => setForm({ ...form, sleepQuality: +e.target.value })}
+                  style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
               <Field label={`Energy · ${form.energy}/10`}>
                 <input type="range" min="1" max="10" value={form.energy}
