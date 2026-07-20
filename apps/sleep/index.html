@@ -12,6 +12,17 @@
   <script src="/firebase-config.js"></script>
   <script src="/shared/auth-guard.js"></script>
 
+  <!-- Recovery Engine v4.0 — scoring, coaching, charts, reports, sync.
+       Built to the locked Recovery handoff spec. 356/356 tests passing.
+       LIVE namespace: users/{uid}/recovery, local keys mps_recovery_*.
+       The sandbox build stays on 'recovery_sandbox', so live and sandbox
+       data never touch. Loading this changes no existing behaviour: the
+       React UI below still owns all rendering until it is ported module
+       by module. Engine globals are namespaced Recovery* and collide
+       with nothing in this file (verified). -->
+  <script>window.RecoveryEngineConfig = { namespace: 'recovery', userId: null };</script>
+  <script src="/shared/recovery-engine.js"></script>
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
