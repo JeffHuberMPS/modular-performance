@@ -899,7 +899,7 @@ const RecoveryCharts = (function(){
       averageLabel: chart.format(avg),
       highestLabel: chart.format(max),
       lowestLabel:  chart.format(min),
-      trend: delta > 0 ? 'rising' : delta < 0 ? 'falling' : 'flat'
+      trend: delta > 0 ? 'rising' : delta < 0 ? 'falling' : 'steady'
     };
   }
 
