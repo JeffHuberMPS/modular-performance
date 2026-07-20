@@ -1806,6 +1806,8 @@ function SleepTracker() {
       style: {
         display: "inline-flex",
         alignItems: "center",
+        fontSize: 16,
+        lineHeight: 1,
         transform: closedMonths[month] ? "rotate(-90deg)" : "rotate(0deg)",
         transition: "transform 0.18s ease"
       }
@@ -2295,7 +2297,9 @@ const TodayCard = ({
       alignItems: "center",
       color: GOLD,
       flexShrink: 0,
-      paddingLeft: 8
+      paddingLeft: 8,
+      fontSize: 15,
+      lineHeight: 1
     }
   }, /*#__PURE__*/React.createElement(ChevronDown, {
     size: 15
@@ -3803,7 +3807,9 @@ const ChartCard = ({
       style: {
         display: "inline-flex",
         alignItems: "center",
-        color: GOLD
+        color: GOLD,
+        fontSize: 15,
+        lineHeight: 1
       }
     }, /*#__PURE__*/React.createElement(ChevronDown, {
       size: 15
