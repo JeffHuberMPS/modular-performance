@@ -929,8 +929,8 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48 }}>
       <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
-      <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
+      <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
     </div>
   </div>
