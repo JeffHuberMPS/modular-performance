@@ -1319,18 +1319,18 @@ const PlanCard = ({ e, onSave }) => {
   return (
     // This is the ONLY action on the whole dashboard, so it must NOT blend into the background.
     // It was rgba(255,255,255,0.02) on black with a 0.13 border — invisible, and it got overlooked.
-    // Now it wears the app's CTA colour: gold-tinted fill, a gold left bar, a gold border and a
-    // soft gold glow, so it reads as "do this" the moment the card loads.
-    <section style={{ background: "linear-gradient(180deg, rgba(201,160,32,0.12), rgba(201,160,32,0.05))",
-                      border: "1px solid rgba(201,160,32,0.45)", borderLeft: "4px solid #C9A020",
+    // Now it wears the Recovery pillar's purple: a purple-tinted fill, a purple left bar, a purple
+    // border and a soft purple glow, so it reads as "do this" the moment the card loads.
+    <section style={{ background: "linear-gradient(180deg, rgba(155,107,201,0.14), rgba(155,107,201,0.05))",
+                      border: "1px solid rgba(155,107,201,0.5)", borderLeft: "4px solid #9b6bc9",
                       borderRadius: 12, padding: "16px 18px", marginBottom: 14,
-                      boxShadow: "0 0 0 1px rgba(201,160,32,0.10), 0 6px 18px rgba(0,0,0,0.45)" }}>
+                      boxShadow: "0 0 0 1px rgba(155,107,201,0.10), 0 6px 18px rgba(0,0,0,0.45)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <span aria-hidden="true" style={{ color: "#C9A020", display: "inline-flex" }}>
+        <span aria-hidden="true" style={{ color: "#b48fd6", display: "inline-flex" }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/></svg>
         </span>
         <span style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase",
-                       color: "#C9A020", fontWeight: 800 }}>Today&rsquo;s Plan</span>
+                       color: "#b48fd6", fontWeight: 800 }}>Today&rsquo;s Plan</span>
       </div>
       <div style={{ fontSize: 14, lineHeight: 1.45, marginBottom: 12, color: "#f5f5f5", fontWeight: 600 }}>
         {RecoveryActions.planMessage(metric)}
@@ -1349,18 +1349,18 @@ const PlanCard = ({ e, onSave }) => {
             <button key={a} type="button"
               onClick={() => onSave(e.date, { selectedAction: isSel ? null : a, actionCompleted: false })}
               style={{ display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
-                       background: filled ? "#C9A020" : "transparent",
-                       border: filled ? "1px solid #C9A020" : "1px solid rgba(201,160,32,0.5)",
-                       color: filled ? "#1a1305" : "#E8C55A",
+                       background: filled ? "#9b6bc9" : "transparent",
+                       border: filled ? "1px solid #9b6bc9" : "1px solid rgba(155,107,201,0.55)",
+                       color: filled ? "#ffffff" : "#c9aee6",
                        fontWeight: filled ? 800 : 600, fontSize: 14, lineHeight: 1.2,
                        padding: "9px 15px", borderRadius: 999,
                        fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
               {isSel && <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: "none",
-                stroke: "#1a1305", strokeWidth: 3.2, strokeLinecap: "round", strokeLinejoin: "round" }}>
+                stroke: "#ffffff", strokeWidth: 3.2, strokeLinecap: "round", strokeLinejoin: "round" }}>
                 <path d="M4 12l5 5L20 6" /></svg>}
               {a}
-              {isSug && <span style={{ fontSize: 9, letterSpacing: "0.1em", background: "rgba(0,0,0,0.22)",
-                color: "#1a1305", padding: "2px 6px", borderRadius: 999, fontWeight: 800 }}>SUGGESTED</span>}
+              {isSug && <span style={{ fontSize: 9, letterSpacing: "0.1em", background: "rgba(255,255,255,0.24)",
+                color: "#ffffff", padding: "2px 6px", borderRadius: 999, fontWeight: 800 }}>SUGGESTED</span>}
             </button>
           );
         })}
@@ -1372,7 +1372,7 @@ const PlanCard = ({ e, onSave }) => {
           onChange={(ev) => onSave(e.date, { actionCompleted: ev.target.checked })}
           style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
         <span style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                       border: `2px solid ${done ? hex : "#C9A020"}`,
+                       border: `2px solid ${done ? hex : "#9b6bc9"}`,
                        background: done ? hex : "transparent",
                        display: "grid", placeItems: "center" }}>
           {done && <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: "none",
