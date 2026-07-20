@@ -2684,15 +2684,21 @@ const PlanCard = ({
         background: "#141416",
         color: "#f5f5f5"
       }
-    }, a, a === suggested ? "  ·  suggested" : ""))), /*#__PURE__*/React.createElement("label", {
+    }, a, a === suggested ? "  ·  suggested" : ""))), !chosen && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: "#8a8a8a",
+        marginTop: 12,
+        lineHeight: 1.5
+      }
+    }, "Pick an action to start. You'll check it off once it's done."), chosen && /*#__PURE__*/React.createElement("label", {
       style: {
         display: "flex",
         alignItems: "center",
         gap: 12,
         marginTop: 14,
         minHeight: 44,
-        cursor: chosen ? "pointer" : "default",
-        opacity: chosen ? 1 : 0.85,
+        cursor: "pointer",
         userSelect: "none"
       }
     }, /*#__PURE__*/React.createElement("input", {
@@ -2714,7 +2720,7 @@ const PlanCard = ({
         height: 22,
         borderRadius: 6,
         flexShrink: 0,
-        border: `2px solid ${done ? hex : chosen ? "#C9A020" : "rgba(255,255,255,0.35)"}`,
+        border: `2px solid ${done ? hex : "#C9A020"}`,
         background: done ? hex : "transparent",
         display: "grid",
         placeItems: "center"
@@ -2735,9 +2741,9 @@ const PlanCard = ({
     }))), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 14,
-        color: done ? "#f5f5f5" : chosen ? "#f5f5f5" : "#b0b0b0"
+        color: "#f5f5f5"
       }
-    }, done ? "Done today. Good work." : chosen ? "Check the box when it's done." : "Choose an action above to begin.")))
+    }, done ? "Done today. Good work." : "Check the box when it's done.")))
   );
 };
 
