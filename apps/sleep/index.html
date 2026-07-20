@@ -2296,6 +2296,18 @@ const PlanCard = ({
   const chosen = e.selectedAction || "";
   const done = !!e.actionCompleted;
   const hex = e.dotHex || PURPLE;
+  // Suggested action, from the engine's rotation. Without this every option looked equally likely
+  // and you could be handed "Meditate" five days running. recommend() rests a repeat for 3 days
+  // (1 when the score is under 60, where repeating is the point). Computed once per entry so a
+  // re-render cannot advance the rotation, and only while nothing is chosen yet.
+  const suggested = React.useMemo(() => {
+    if (chosen) return "";
+    try {
+      return RecoveryActions.recommend(e.v4, RecoveryEngineUser()) || "";
+    } catch (err) {
+      return "";
+    }
+  }, [e.date, chosen]);
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: "rgba(255,255,255,0.02)",
@@ -2349,7 +2361,7 @@ const PlanCard = ({
       background: "#141416",
       color: "#f5f5f5"
     }
-  }, a))), /*#__PURE__*/React.createElement("label", {
+  }, a, a === suggested ? "  ·  suggested" : ""))), /*#__PURE__*/React.createElement("label", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -3021,6 +3033,33 @@ const LogCard = ({
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Calmness",
   value: e.restlessness != null ? `${e.calmness}/10` : "—"
+}), /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Sleep Quality",
+  value: e.sleepQuality != null ? `${e.sleepQuality}/10` : "—",
+  accent: PURPLE
+})), !__CORE && e.v4 && /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 12.48,
+    marginTop: 12.48
+  }
+}, /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Grade",
+  value: e.recoveryGrade || "—",
+  accent: GOLD
+}), /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Status",
+  value: e.recoveryStatus || "—"
+}), /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Push Meter",
+  value: e.pushMeter != null ? `${e.pushMeter}/10` : "—",
+  accent: PURPLE
+}), e.selectedAction && /*#__PURE__*/React.createElement(LogBlock, {
+  label: e.actionCompleted ? "Action · done" : "Action",
+  value: e.selectedAction,
+  accent: e.actionCompleted ? GOLD : undefined,
+  col: "1 / -1"
 })));
 
 /* ── Pure SVG chart components — no external library, always renders ── */

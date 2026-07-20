@@ -1176,6 +1176,14 @@ const PlanCard = ({ e, onSave }) => {
   const chosen = e.selectedAction || "";
   const done = !!e.actionCompleted;
   const hex = e.dotHex || PURPLE;
+  // Suggested action, from the engine's rotation. Without this every option looked equally likely
+  // and you could be handed "Meditate" five days running. recommend() rests a repeat for 3 days
+  // (1 when the score is under 60, where repeating is the point). Computed once per entry so a
+  // re-render cannot advance the rotation, and only while nothing is chosen yet.
+  const suggested = React.useMemo(() => {
+    if (chosen) return "";
+    try { return RecoveryActions.recommend(e.v4, RecoveryEngineUser()) || ""; } catch (err) { return ""; }
+  }, [e.date, chosen]);
 
   return (
     <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
@@ -1196,7 +1204,11 @@ const PlanCard = ({ e, onSave }) => {
             dropdown popup paints on a white system background, so inheriting near-white text made
             every choice invisible. Setting both per-option fixes it on Windows/Chrome and Android. */}
         <option value="" style={{ background: "#141416", color: "#f5f5f5" }}>Choose an action</option>
-        {actions.map(a => <option key={a} value={a} style={{ background: "#141416", color: "#f5f5f5" }}>{a}</option>)}
+        {actions.map(a => (
+          <option key={a} value={a} style={{ background: "#141416", color: "#f5f5f5" }}>
+            {a}{a === suggested ? "  ·  suggested" : ""}
+          </option>
+        ))}
       </select>
 
       <label style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14,
@@ -1516,7 +1528,24 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
       <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
       <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
+      <LogBlock label="Sleep Quality" value={e.sleepQuality != null ? `${e.sleepQuality}/10` : "—"} accent={PURPLE} />
     </div>
+    {/* v4 engine values. The log used to speak the OLD language while the top of the page spoke the
+        new one: no grade, status, push meter or chosen action down here. These all already exist on
+        the enriched entry, so this is display only, nothing is recalculated. Hidden for Core (the
+        engine score is an Elite feature) and for old entries that predate the engine. */}
+    {!__CORE && e.v4 && (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12.48, marginTop: 12.48 }}>
+        <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />
+        <LogBlock label="Status"     value={e.recoveryStatus || "—"} />
+        <LogBlock label="Push Meter" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />
+        {e.selectedAction && (
+          <LogBlock label={e.actionCompleted ? "Action · done" : "Action"}
+                    value={e.selectedAction}
+                    accent={e.actionCompleted ? GOLD : undefined} col="1 / -1" />
+        )}
+      </div>
+    )}
   </div>
 );
 
