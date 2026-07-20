@@ -1551,6 +1551,35 @@ const LogBlock = ({ label, value, accent, col }) => (
 );
 
 /* LogCard — full entry card with 7 stat blocks */
+/* A titled group inside a day card. Pronounced on purpose: a darker inset well, a visible border,
+   and a title that sits ON the top edge with a rule running off to the right, so the eye reads
+   "here is a section" instead of hunting for a faint caption. Tiles inside auto-fit at ~165px so
+   they stay compact and fill the row rather than stretching to fill a wide desktop. */
+const LogGroup = ({ title, children, last }) => (
+  <div style={{
+    position: "relative",
+    background: "rgba(0,0,0,0.34)",
+    border: `1px solid rgba(${BRDR},0.28)`,
+    borderRadius: 11,
+    padding: "17px 13px 13px",
+    marginBottom: last ? 0 : 14,
+  }}>
+    <div style={{ position: "absolute", top: -7, left: 12, right: 12,
+                  display: "flex", alignItems: "center", gap: 9 }}>
+      <span style={{ background: "#0f0f11", padding: "0 8px", fontSize: 9,
+                     fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                     letterSpacing: "0.18em", textTransform: "uppercase",
+                     color: GOLD, fontWeight: 700, whiteSpace: "nowrap" }}>
+        {title}
+      </span>
+      <span style={{ flex: 1, height: 1, background: `rgba(${BRDR},0.22)` }} />
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(165px, 1fr))", gap: 11 }}>
+      {children}
+    </div>
+  </div>
+);
+
 const LogCard = ({ e, onEdit, onDelete }) => (
   <div style={{
     background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
@@ -1571,53 +1600,42 @@ const LogCard = ({ e, onEdit, onDelete }) => (
         <button style={{ background: "transparent", border: "1px solid rgba(150,150,150,0.2)", borderRadius: 5, padding: "4px 6px", cursor: "pointer", color: __GRAY ? "#999999" : "#8b3a3a", display: "flex", alignItems: "center" }} onClick={onDelete}><Trash2 size={12} /></button>
       </div>
     </div>
-    {/* Row 1: Wake · Bedtime · Duration. The entry is DATED BY THE WAKE DAY (calcHours rolls a
-        later sleepTime back a day), so waking is the only value that happened on the header date.
-        Leading with it keeps the card consistent with its own date. "Bedtime" (not "Sleep") makes
-        clear it is the night before, and stops it reading like hours-slept. */}
-    {/* The three sleep-clock values live in their OWN sub-container inside the day card. They answer
-        one question (when did you sleep) while everything below scores how it went, so grouping them
-        gives hierarchy without breaking the day apart: a bordered inset panel, still clearly within
-        the same day. */}
-    <div style={{ background: "rgba(0,0,0,0.28)", border: `1px solid rgba(${BRDR},0.16)`,
-                  borderRadius: 10, padding: 12, marginBottom: 15 }}>
-      <div style={{ fontSize: 8.5, fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-                    letterSpacing: "0.16em", textTransform: "uppercase", color: LBL,
-                    opacity: 0.7, marginBottom: 9 }}>
-        Sleep Window
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15 }}>
-        <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
-        <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
-        <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
-      </div>
-    </div>
-    {/* Recovery · Energy · Physical Recovery / Clarity · Calmness. All 1-10 values read 10 = good.
-        Resting HR + HRV are not displayed (see the form note) until wearable sync lands. */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15 }}>
-      <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
-      <LogBlock label="Energy"   value={e.energy   != null ? `${e.energy}/10`   : "—"} />
-      <LogBlock label="Clarity"  value={e.clarity  != null ? `${e.clarity}/10`  : "—"} accent={PURPLE} />
+    {/* THREE CATEGORIES, in the order the day actually happened:
+          Sleep Window  - WHEN you slept        (clock facts)
+          How You Felt  - your five 1-10 ratings (the inputs you gave)
+          Your Score    - what the engine concluded (the outputs)
+        Previously these nine tiles sat in one undifferentiated run, mixing clock times, self-ratings
+        and engine verdicts, which is why it read as random. Inputs then outputs is the natural flow.
+
+        Tiles use auto-fit/minmax instead of a fixed 3-column grid. On a wide desktop a 3-column grid
+        stretched each tile to ~570px for a value like "8/10", leaving most of the tile empty. auto-fit
+        packs as many ~165px tiles per row as fit, so the space is actually used, and it still collapses
+        to fewer columns on a phone with no separate mobile rule. */}
+    <LogGroup title="Sleep Window">
+      <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
+      <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
+      <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
+    </LogGroup>
+
+    <LogGroup title="How You Felt">
+      <LogBlock label="Sleep Quality"     value={e.sleepQuality != null ? `${e.sleepQuality}/10` : "—"} accent={PURPLE} />
+      <LogBlock label="Energy"            value={e.energy  != null ? `${e.energy}/10`  : "—"} />
+      <LogBlock label="Clarity"           value={e.clarity != null ? `${e.clarity}/10` : "—"} accent={PURPLE} />
       <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />
-      <LogBlock label="Calmness" value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
-      <LogBlock label="Sleep Quality" value={e.sleepQuality != null ? `${e.sleepQuality}/10` : "—"} accent={PURPLE} />
-    </div>
-    {/* v4 engine values. The log used to speak the OLD language while the top of the page spoke the
-        new one: no grade, status, push meter or chosen action down here. These all already exist on
-        the enriched entry, so this is display only, nothing is recalculated. Hidden for Core (the
-        engine score is an Elite feature) and for old entries that predate the engine. */}
-    {!__CORE && e.v4 && (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginTop: 15 }}>
-        <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />
-        <LogBlock label="Status"     value={e.recoveryStatus || "—"} />
-        <LogBlock label="Push Meter" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />
-        {e.selectedAction && (
-          <LogBlock label={e.actionCompleted ? "Action · done" : "Action"}
-                    value={e.selectedAction}
-                    accent={e.actionCompleted ? GOLD : undefined} col="1 / -1" />
-        )}
-      </div>
-    )}
+      <LogBlock label="Calmness"          value={e.restlessness != null ? `${e.calmness}/10` : "—"} />
+    </LogGroup>
+
+    <LogGroup title="Your Score" last>
+      <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
+      {!__CORE && e.v4 && <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />}
+      {!__CORE && e.v4 && <LogBlock label="Status"     value={e.recoveryStatus || "—"} />}
+      {!__CORE && e.v4 && <LogBlock label="Push Meter" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />}
+      {!__CORE && e.v4 && e.selectedAction && (
+        <LogBlock label={e.actionCompleted ? "Action · done" : "Action"}
+                  value={e.selectedAction}
+                  accent={e.actionCompleted ? GOLD : undefined} col="1 / -1" />
+      )}
+    </LogGroup>
   </div>
 );
 

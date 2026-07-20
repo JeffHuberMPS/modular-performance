@@ -2993,6 +2993,58 @@ const LogBlock = ({
 }, value));
 
 /* LogCard — full entry card with 7 stat blocks */
+/* A titled group inside a day card. Pronounced on purpose: a darker inset well, a visible border,
+   and a title that sits ON the top edge with a rule running off to the right, so the eye reads
+   "here is a section" instead of hunting for a faint caption. Tiles inside auto-fit at ~165px so
+   they stay compact and fill the row rather than stretching to fill a wide desktop. */
+const LogGroup = ({
+  title,
+  children,
+  last
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    position: "relative",
+    background: "rgba(0,0,0,0.34)",
+    border: `1px solid rgba(${BRDR},0.28)`,
+    borderRadius: 11,
+    padding: "17px 13px 13px",
+    marginBottom: last ? 0 : 14
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    position: "absolute",
+    top: -7,
+    left: 12,
+    right: 12,
+    display: "flex",
+    alignItems: "center",
+    gap: 9
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    background: "#0f0f11",
+    padding: "0 8px",
+    fontSize: 9,
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: GOLD,
+    fontWeight: 700,
+    whiteSpace: "nowrap"
+  }
+}, title), /*#__PURE__*/React.createElement("span", {
+  style: {
+    flex: 1,
+    height: 1,
+    background: `rgba(${BRDR},0.22)`
+  }
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(165px, 1fr))",
+    gap: 11
+  }
+}, children));
 const LogCard = ({
   e,
   onEdit,
@@ -3065,30 +3117,8 @@ const LogCard = ({
   onClick: onDelete
 }, /*#__PURE__*/React.createElement(Trash2, {
   size: 12
-})))), /*#__PURE__*/React.createElement("div", {
-  style: {
-    background: "rgba(0,0,0,0.28)",
-    border: `1px solid rgba(${BRDR},0.16)`,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    fontSize: 8.5,
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    color: LBL,
-    opacity: 0.7,
-    marginBottom: 9
-  }
-}, "Sleep Window"), /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 15
-  }
+})))), /*#__PURE__*/React.createElement(LogGroup, {
+  title: "Sleep Window"
 }, /*#__PURE__*/React.createElement(LogBlock, {
   label: "Wake Time",
   value: _fmt12(e.wakeTime)
@@ -3099,16 +3129,12 @@ const LogCard = ({
   label: "Sleep Duration",
   value: e.hours != null && e.hours > 0 ? `${e.hours}h` : "—",
   accent: PURPLE
-}))), /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 15
-  }
+})), /*#__PURE__*/React.createElement(LogGroup, {
+  title: "How You Felt"
 }, /*#__PURE__*/React.createElement(LogBlock, {
-  label: "Recovery",
-  value: __CORE ? "🔒" : e.recovery != null ? `${e.recovery}%` : "—",
-  accent: GOLD
+  label: "Sleep Quality",
+  value: e.sleepQuality != null ? `${e.sleepQuality}/10` : "—",
+  accent: PURPLE
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Energy",
   value: e.energy != null ? `${e.energy}/10` : "—"
@@ -3122,29 +3148,25 @@ const LogCard = ({
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Calmness",
   value: e.restlessness != null ? `${e.calmness}/10` : "—"
-}), /*#__PURE__*/React.createElement(LogBlock, {
-  label: "Sleep Quality",
-  value: e.sleepQuality != null ? `${e.sleepQuality}/10` : "—",
-  accent: PURPLE
-})), !__CORE && e.v4 && /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 15,
-    marginTop: 15
-  }
+})), /*#__PURE__*/React.createElement(LogGroup, {
+  title: "Your Score",
+  last: true
 }, /*#__PURE__*/React.createElement(LogBlock, {
+  label: "Recovery",
+  value: __CORE ? "🔒" : e.recovery != null ? `${e.recovery}%` : "—",
+  accent: GOLD
+}), !__CORE && e.v4 && /*#__PURE__*/React.createElement(LogBlock, {
   label: "Grade",
   value: e.recoveryGrade || "—",
   accent: GOLD
-}), /*#__PURE__*/React.createElement(LogBlock, {
+}), !__CORE && e.v4 && /*#__PURE__*/React.createElement(LogBlock, {
   label: "Status",
   value: e.recoveryStatus || "—"
-}), /*#__PURE__*/React.createElement(LogBlock, {
+}), !__CORE && e.v4 && /*#__PURE__*/React.createElement(LogBlock, {
   label: "Push Meter",
   value: e.pushMeter != null ? `${e.pushMeter}/10` : "—",
   accent: PURPLE
-}), e.selectedAction && /*#__PURE__*/React.createElement(LogBlock, {
+}), !__CORE && e.v4 && e.selectedAction && /*#__PURE__*/React.createElement(LogBlock, {
   label: e.actionCompleted ? "Action · done" : "Action",
   value: e.selectedAction,
   accent: e.actionCompleted ? GOLD : undefined,
