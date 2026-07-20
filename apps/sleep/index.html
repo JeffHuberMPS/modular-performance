@@ -850,7 +850,14 @@ function SleepTracker() {
       return null;
     }
   };
-  const enriched = useMemo(() => entries.map(e => {
+  const enriched = useMemo(() =>
+  // Drop future-dated records before anything else sees them. You cannot have slept a night that
+  // has not happened, so these are always bad data (a typo'd year, or a half-saved form). One
+  // stray 2099 entry previously sorted to the end, became "today", failed scoring and blanked the
+  // score card, then showed up as its own month section in the log. Filtering here means the
+  // score, stats, charts and log are all protected by the same single guard. The record is left
+  // untouched in storage, just never displayed or counted.
+  entries.filter(e => !e || !e.date || e.date <= todayStr()).map(e => {
     const hours = calcHours(e.sleepTime, e.wakeTime);
     const hasSleep = !!e.sleepTime;
     const v4 = hasSleep ? v4Score(e) : null;
@@ -1153,9 +1160,10 @@ function SleepTracker() {
   }, /*#__PURE__*/React.createElement("input", {
     type: "date",
     value: form.date,
+    max: todayStr(),
     onChange: e => setForm({
       ...form,
-      date: e.target.value
+      date: e.target.value > todayStr() ? todayStr() : e.target.value
     }),
     style: styles.input
   })), /*#__PURE__*/React.createElement(Field, {
