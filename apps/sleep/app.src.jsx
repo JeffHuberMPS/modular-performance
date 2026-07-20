@@ -906,7 +906,7 @@ function SleepTracker() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
                       <span>{mes.length} {mes.length === 1 ? "entry" : "entries"}</span>
-                      <span style={{ display: "inline-flex", alignItems: "center",
+                      <span style={{ display: "inline-flex", alignItems: "center", fontSize: 16, lineHeight: 1,
                                      transform: closedMonths[month] ? "rotate(-90deg)" : "rotate(0deg)",
                                      transition: "transform 0.18s ease" }}><ChevronDown size={16} /></span>
                     </div>
@@ -1176,7 +1176,7 @@ const TodayCard = ({ e }) => {
               <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>Why This Score</span>
               <span style={{ opacity: 0.65 }}>· tap for the math</span>
             </span>
-            <span className="mps-chev" style={{ display: "inline-flex", alignItems: "center", color: GOLD, flexShrink: 0, paddingLeft: 8 }}><ChevronDown size={15} /></span>
+            <span className="mps-chev" style={{ display: "inline-flex", alignItems: "center", color: GOLD, flexShrink: 0, paddingLeft: 8, fontSize: 15, lineHeight: 1 }}><ChevronDown size={15} /></span>
           </summary>
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL, marginBottom: 10 }}>
@@ -1974,7 +1974,7 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind, m
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, paddingLeft: 8 }}>
               <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
-              <span className="mps-chev" style={{ display: "inline-flex", alignItems: "center", color: GOLD }}><ChevronDown size={15} /></span>
+              <span className="mps-chev" style={{ display: "inline-flex", alignItems: "center", color: GOLD, fontSize: 15, lineHeight: 1 }}><ChevronDown size={15} /></span>
             </span>
           </summary>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(88px, 1fr))", gap: 8, marginTop: 8 }}>
