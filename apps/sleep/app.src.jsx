@@ -1625,12 +1625,19 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
                   marginBottom: 14, paddingBottom: 11,
                   borderBottom: `1px solid rgba(${BRDR},0.22)` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: PURPLE, letterSpacing: "0.01em" }}>
+      {/* The date now OWNS the top of the card instead of hiding in the corner. It was 15px tucked
+          hard left with a wide dead gap before the edit buttons. Bigger, wider tracking, the weekday
+          spelled out in full, and the block is allowed to grow into that empty space, so each day
+          announces itself the way a section header should. */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 14, flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 25, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                       color: PURPLE, letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
           {e.date.split("-").slice(1).concat(e.date.split("-").slice(0,1)).join("/").replace(/(\d+)\/(\d+)\/(\d+)/, (_, m, d, y) => `${m.padStart(2,"0")}/${d.padStart(2,"0")}/${y}`)}
         </span>
-        <span style={{ fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.14em", color: GOLD, fontWeight: 700 }}>
-          {e.weekday}
+        <span style={{ fontSize: 13, fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                       letterSpacing: "0.3em", color: GOLD, fontWeight: 700, whiteSpace: "nowrap",
+                       overflow: "hidden", textOverflow: "ellipsis" }}>
+          {({SUN:"SUNDAY",MON:"MONDAY",TUE:"TUESDAY",WED:"WEDNESDAY",THU:"THURSDAY",FRI:"FRIDAY",SAT:"SATURDAY"})[e.weekday] || e.weekday}
         </span>
       </div>
       <div style={{ display: "flex", gap: 5 }}>
