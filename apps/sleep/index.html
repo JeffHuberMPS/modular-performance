@@ -3580,37 +3580,49 @@ const ChartCard = ({
         justifyContent: "space-between",
         alignItems: "center",
         cursor: "pointer",
-        padding: "10px 9px",
+        padding: "0 9px",
         listStyle: "none",
         marginTop: 8,
         borderRadius: 8,
+        height: 34,
+        boxSizing: "border-box",
         background: "rgba(155,107,201,0.10)",
         border: `1px solid rgba(${BRDR},0.25)`,
         fontSize: 9,
         letterSpacing: "0.12em",
         textTransform: "uppercase",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
         color: LBL
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         display: "flex",
         alignItems: "center",
-        gap: 6
+        gap: 6,
+        minWidth: 0,
+        overflow: "hidden",
+        textOverflow: "ellipsis"
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         color: GOLD,
-        fontWeight: 700
+        fontWeight: 700,
+        flexShrink: 0
       }
     }, "Statistics"), /*#__PURE__*/React.createElement("span", {
       style: {
-        opacity: 0.65
+        opacity: 0.65,
+        overflow: "hidden",
+        textOverflow: "ellipsis"
       }
     }, "\xB7 tap for insight")), /*#__PURE__*/React.createElement("span", {
       style: {
         display: "flex",
         alignItems: "center",
-        gap: 7
+        gap: 7,
+        flexShrink: 0,
+        paddingLeft: 8
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
