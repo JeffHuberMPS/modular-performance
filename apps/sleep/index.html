@@ -1040,90 +1040,7 @@ function SleepTracker() {
       ...styles.range,
       accentColor: PURPLE
     }
-  }))), __PREMIUM ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      letterSpacing: "0.14em",
-      color: LBL,
-      textTransform: "uppercase",
-      marginBottom: 8
-    }
-  }, "Biometrics"), /*#__PURE__*/React.createElement("div", {
-    style: styles.formGrid
-  }, /*#__PURE__*/React.createElement(Field, {
-    label: "Resting HR (bpm)"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    inputMode: "numeric",
-    value: form.restingHR,
-    onChange: e => setForm({
-      ...form,
-      restingHR: e.target.value
-    }),
-    placeholder: "\u2014",
-    style: styles.input
-  })), /*#__PURE__*/React.createElement(Field, {
-    label: "HRV (ms)"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    inputMode: "numeric",
-    value: form.hrv,
-    onChange: e => setForm({
-      ...form,
-      hrv: e.target.value
-    }),
-    placeholder: "\u2014",
-    style: styles.input
-  })))) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12,
-      padding: "12px 14px",
-      background: "rgba(201,160,32,0.08)",
-      border: "1px solid rgba(201,160,32,0.35)",
-      borderRadius: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#C9A020",
-      letterSpacing: "0.04em",
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
-    }
-  }, "Biometrics"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#9a9a9a",
-      marginTop: 4,
-      lineHeight: 1.5,
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
-    }
-  }, "Log resting heart rate and HRV with ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "#C9A020"
-    }
-  }, "Premium"), "."), /*#__PURE__*/React.createElement("a", {
-    href: "/billing.html",
-    target: "_top",
-    style: {
-      display: "inline-block",
-      marginTop: 8,
-      padding: "7px 18px",
-      background: "#C9A020",
-      color: "#0a0a0a",
-      fontWeight: 800,
-      fontSize: 11,
-      letterSpacing: "0.04em",
-      borderRadius: 8,
-      textDecoration: "none",
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
-    }
-  }, "\u2191 Unlock with Premium")), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     style: styles.formFoot
   }, /*#__PURE__*/React.createElement("div", {
     style: styles.preview
@@ -2109,16 +2026,7 @@ const LogCard = ({
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Calmness",
   value: e.restlessness != null ? `${e.calmness}/10` : "—"
-}), e.restingHR ? /*#__PURE__*/React.createElement(LogBlock, {
-  label: "Resting HR",
-  value: `${e.restingHR} bpm`,
-  col: 3
-}) : null, e.hrv ? /*#__PURE__*/React.createElement(LogBlock, {
-  label: "HRV",
-  value: `${e.hrv} ms`,
-  accent: PURPLE,
-  col: 3
-}) : null));
+})));
 
 /* ── Pure SVG chart components — no external library, always renders ── */
 const SvgChart = (() => {
