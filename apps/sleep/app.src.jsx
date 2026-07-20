@@ -765,9 +765,8 @@ function SleepTracker() {
             {/* Why this score — coaching from the user's own numbers */}
             {/* Today's Plan — the weakest metric and one action for it */}
             <PlanCard e={latestScored} onSave={saveAction} />
-            {/* What today's numbers say — strongest, weakest, what moved */}
+            {/* Insights now includes the "Why this score" coaching inside the same dropdown (was a separate card) */}
             <InsightsCard rows={engineRows} />
-            <CoachCard rows={engineRows} />
             {/* 7-day stats */}
             <section style={styles.statsRow}>
               <StatBlock label="Avg Sleep"    value={`${stats.hours}h`}        sub="7-day" trend={trend("hours")}    good="up" />
@@ -1428,15 +1427,42 @@ const EngineTile = ({ label, value, wide }) => (
    the current pattern, and the trend. Derived, never recalculated. */
 const InsightsCard = ({ rows }) => {
   if (!rows || !rows.length || !window.RecoveryInsights) return null;
+  const last = rows[rows.length - 1];
   let items = null;
-  try { items = RecoveryInsights.build(rows[rows.length - 1], rows); }
-  catch (e) { return null; }
-  if (!items || !items.length) return null;
+  try { items = RecoveryInsights.build(last, rows); } catch (e) { items = null; }
+  // "Why this score" coaching now lives INSIDE this one dropdown instead of its own separate card,
+  // so a single tap shows the score explanation AND the insights together, using less space.
+  let coach = null;
+  try { if (window.RecoveryCoaching) coach = RecoveryCoaching.select(last, rows, { commit: false }); }
+  catch (e) { coach = null; }
+  const hasItems = !!(items && items.length);
+  const hasCoach = !!(coach && coach.primary);
+  if (!hasItems && !hasCoach) return null;
+  const hex = last.dotHex || PURPLE;
   return (
-    <SectionShell title="Insights" hint={`${items.length} today`}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginTop: 4 }}>
-        {items.map(i => <EngineTile key={i.key} label={i.label} value={i.value} />)}
-      </div>
+    <SectionShell title="Insights" hint={hasItems ? `${items.length} today` : "why this score"}>
+      {hasCoach && (
+        <div style={{ marginTop: 4, marginBottom: hasItems ? 16 : 0 }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                        color: LBL, marginBottom: 8 }}>Why this score</div>
+          <div style={{ fontSize: 14, lineHeight: 1.55, color: "#f5f5f5",
+                        paddingLeft: 12, borderLeft: `3px solid ${hex}` }}>
+            {coach.primary.text}
+          </div>
+          {coach.secondary && coach.secondary.map((s, i) => (
+            <div key={i} style={{ fontSize: 13, lineHeight: 1.55, color: "#9a9a9a",
+                                  padding: "10px 0 0 12px",
+                                  borderLeft: "1px solid rgba(150,150,150,0.2)", marginTop: 8 }}>
+              {s.text}
+            </div>
+          ))}
+        </div>
+      )}
+      {hasItems && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginTop: hasCoach ? 0 : 4 }}>
+          {items.map(i => <EngineTile key={i.key} label={i.label} value={i.value} />)}
+        </div>
+      )}
     </SectionShell>
   );
 };
