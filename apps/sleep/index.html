@@ -259,6 +259,37 @@
       location.reload();
     }); }catch(e){} }
 
+    // SCROLL ANCHORING for every <details> in the pillar (chart drill-downs and the engine
+    // sections). Closing a dropdown removes a few hundred px of content. When the remaining page
+    // is shorter than the viewport the browser has no choice but to clamp scrollTop, which on an
+    // account with few entries dumps you at the very top and you have to scroll back down.
+    // Fix: remember where the clicked summary sat in the viewport, then after layout settles put
+    // it back at exactly that offset. Opening and closing now leave the screen visually still.
+    // Registered once, in capture phase, because 'toggle' does not bubble. Lives in the bridge
+    // (outside the generated block) so a rebuild cannot erase it.
+    (function(){
+      var anchorEl = null, anchorTop = 0;
+      document.addEventListener('click', function(ev){
+        try{
+          var s = ev.target && ev.target.closest ? ev.target.closest('summary') : null;
+          if(!s) return;
+          anchorEl = s; anchorTop = s.getBoundingClientRect().top;
+        }catch(e){}
+      }, true);
+      document.addEventListener('toggle', function(){
+        if(!anchorEl) return;
+        var el = anchorEl, top0 = anchorTop;
+        anchorEl = null;
+        requestAnimationFrame(function(){
+          try{
+            var se = document.scrollingElement || document.documentElement;
+            var delta = el.getBoundingClientRect().top - top0;
+            if(delta) se.scrollTop += delta;
+          }catch(e){}
+        });
+      }, true);
+    })();
+
     // Put the page back where it was after a sync reload, so a background sync is invisible
     // instead of throwing you to the top of the pillar.
     try{
