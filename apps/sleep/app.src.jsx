@@ -923,9 +923,11 @@ function SleepTracker() {
                       return (
                         <div key={ws} style={{ padding: "10px 12px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 4 }}>
-                            {/* White, not purple, and large enough to actually divide the month. At
-                                9px purple it read as a faint caption and the weeks blurred together. */}
-                            <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.2em", color: "#f5f5f5", textTransform: "uppercase" }}>
+                            {/* White and big enough to genuinely divide the month. It started at 9px
+                                purple (a faint caption, weeks blurred together); 14px was still too
+                                quiet next to a 33px month and a 25px date. At 20px it sits correctly
+                                between the two, so the ladder reads 33 month / 20 week / 25 date-in-card. */}
+                            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.16em", color: "#f5f5f5", textTransform: "uppercase" }}>
                               Week of {fmtWeekRange(wsDate)}
                             </div>
                             {isCurrent && (
