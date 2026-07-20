@@ -751,43 +751,30 @@ function SleepTracker() {
             <section style={styles.chartsGrid}>
 
               {/* Sleep Duration — pure SVG, always renders */}
-              <ChartCard title="Sleep Duration" sub="hours per night · last 30"
-                drill={chartDrill(last30, r => r.hours, v => `${v.toFixed(1)}h`)}>
-                <SvgChart.Bar data={last30} dataKey="hours" domain={[0,10]} ticks={[0,2,4,6,8,10]} refY={7}/>
-              </ChartCard>
+              <ChartCard title="Sleep Duration" sub="hours per night"
+                allRows={enriched} get={r => r.hours} fmt={v => `${v.toFixed(1)}h`}
+                domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} refY={7} />
 
-              {/* Recovery Score — pure SVG, always renders */}
-              <ChartCard title="Recovery Score" sub="% · last 30 nights"
-                drill={chartDrill(last30, r => r.recovery, v => `${Math.round(v)}%`)}>
-                <SvgChart.Lines data={last30} lines={[{key:"recovery",stroke:GOLD}]} domain={[0,100]} ticks={[0,20,40,60,80,100]} refY={70}/>
-              </ChartCard>
+              <ChartCard title="Recovery Score" sub="%"
+                allRows={enriched} get={r => r.recovery} fmt={v => `${Math.round(v)}%`}
+                domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} refY={80} />
 
-              {/* Energy vs Physical Recovery — pure SVG, always renders. Both lines run 10 = good. */}
-              {/* Bedtime and Wake Time complete the spec's five charts.
-                  Bedtime uses the engine's 6pm-anchored axis, so 1am plots
+              {/* Bedtime uses the engine's 6pm-anchored axis, so 1am plots
                   LATER than 11pm instead of leaping to the far end. A plain
                   midnight axis turns a gradual drift later into a cliff. */}
-              <ChartCard title="Bedtime" sub="when you went to bed · last 30"
-                drill={chartDrill(last30, r => r.bedAxis, v => RecoveryCharts.bedFromAxis(v), "clock")}>
-                <SvgChart.Bar data={last30} dataKey="bedAxis"
-                  domain={[0, 720]} ticks={[0, 180, 360, 540, 720]}
-                  fmt={(t) => RecoveryCharts.bedFromAxis(t)} />
-              </ChartCard>
-              <ChartCard title="Wake Time" sub="when you got up · last 30"
-                drill={chartDrill(last30, r => r.wakeAxis, v => RecoveryCharts.fmtClock(v), "clock")}>
-                <SvgChart.Bar data={last30} dataKey="wakeAxis"
-                  domain={[180, 600]} ticks={[180, 300, 420, 540]}
-                  fmt={(t) => RecoveryCharts.fmtClock(t)} />
-              </ChartCard>
-              <ChartCard title="Energy vs Physical Recovery" sub="1–10 scale · last 30"
-                drill={chartDrill(last30, r => r.energy, v => `${v.toFixed(1)} / 10`)}>
-                <SvgChart.Lines data={last30} lines={[{key:"energy",stroke:GOLD},{key:"physicalRecovery",stroke:PURPLE}]} domain={[0,10]} ticks={[0,2,4,6,8,10]}/>
-                <div style={{display:"flex",gap:16,marginTop:8,fontSize:12,fontFamily:"'Inter', system-ui, -apple-system, sans-serif"}}>
-                  <span style={{color:"#9aa3b2"}}><span style={{color:GOLD}}>——</span> energy</span>
-                  <span style={{color:"#9aa3b2"}}><span style={{color:PURPLE}}>——</span> physical recovery</span>
-                </div>
-              </ChartCard>
+              <ChartCard title="Bedtime" sub="when you went to bed" kind="clock"
+                allRows={enriched} get={r => r.bedAxis}
+                fmt={v => RecoveryCharts.bedFromAxis(v)}
+                domain={[0, 720]} ticks={[0, 180, 360, 540, 720]} />
 
+              <ChartCard title="Wake Time" sub="when you got up" kind="clock"
+                allRows={enriched} get={r => r.wakeAxis}
+                fmt={v => RecoveryCharts.fmtClock(v)}
+                domain={[180, 600]} ticks={[180, 300, 420, 540]} />
+
+              <ChartCard title="Energy" sub="1–10 scale"
+                allRows={enriched} get={r => r.energy} fmt={v => `${v.toFixed(1)} / 10`}
+                domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
             </section>
             {__PREMIUM && <DevicesCard />}
             </>)}
@@ -1608,45 +1595,98 @@ const chartDrill = (rows, get, fmt, kind) => {
   return { st, insight };
 };
 
-const ChartCard = ({ title, sub, children, drill }) => (
-  <div style={{
-    background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
-    borderRadius: 12, padding: "16px", marginBottom: 12,
-  }}>
-    <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 12, letterSpacing: "0.14em",
-      textTransform: "uppercase", color: "#f5f5f5", marginBottom: 3 }}>
-      {title}
-    </div>
-    {sub && <div style={{ fontSize: 12, color: "#C9A020", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", marginBottom: 14 }}>{sub}</div>}
-    {children}
+const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind }) => {
+  const [view, setView] = useState("daily");
 
-    {/* Drill-down (spec Part 13): chart -> statistics -> insight.
-        Collapsed by default so the chart itself stays the hero. */}
-    {drill && (
-      <details style={{ marginTop: 12, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
-        <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-                          cursor: "pointer", padding: "12px 0 4px", listStyle: "none",
-                          fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
-                          color: LBL }}>
-          <span>Statistics</span>
-          <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
-        </summary>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 8 }}>
-          <EngineTile label="Average"     value={drill.st.averageLabel} />
-          <EngineTile label="Highest"     value={drill.st.highestLabel} />
-          <EngineTile label="Lowest"      value={drill.st.lowestLabel} />
-          <EngineTile label="Consistency" value={`${drill.st.consistency}%`} />
-          <EngineTile label="Trend"       value={drill.st.trend} />
-          <EngineTile label="Tracked"     value={`${drill.st.count} days`} />
+  const rows = allRows || [];
+  const views = window.RecoveryCharts ? RecoveryCharts.availableViews(rows.length) : ["daily"];
+  const active = views.indexOf(view) > -1 ? view : "daily";
+
+  // Daily shows the recent window; weekly and monthly aggregate the whole
+  // history, because a 4-week trend built from 30 days is barely a trend.
+  const source = active === "daily" ? rows.slice(-30) : rows;
+  const chartCfg = { value: get, format: fmt };
+  const points = window.RecoveryCharts
+    ? RecoveryCharts.aggregate(source, chartCfg, active)
+    : [];
+
+  const drill = chartDrill(points, p => p.value, fmt, kind);
+  const unit = active === "daily" ? "last 30 nights"
+             : active === "weekly" ? "weekly averages" : "monthly averages";
+
+  return (
+    <div style={{
+      background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
+      borderRadius: 12, padding: "16px", marginBottom: 12,
+    }}>
+      <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 12, letterSpacing: "0.14em",
+        textTransform: "uppercase", color: "#f5f5f5", marginBottom: 3 }}>
+        {title}
+      </div>
+      {sub && <div style={{ fontSize: 12, color: "#C9A020", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", marginBottom: 10 }}>{sub} · {unit}</div>}
+
+      {/* Daily / Weekly / Monthly (spec Part 13). Locked views stay visible
+          but disabled, with the unlock rule as the tooltip, so the user can
+          see what is coming rather than wondering where it went. */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {["daily", "weekly", "monthly"].map(nm => {
+          const on = views.indexOf(nm) > -1;
+          const sel = nm === active;
+          return (
+            <button key={nm} disabled={!on}
+              title={on ? "" : RecoveryCharts.lockMessage(nm)}
+              onClick={() => setView(nm)}
+              style={{ background: sel ? PURPLE : "transparent",
+                       border: `1px solid ${sel ? PURPLE : `rgba(${BRDR},0.2)`}`,
+                       color: sel ? "#0a0a0a" : (on ? LBL : "#4a4255"),
+                       borderRadius: 99, padding: "6px 13px", fontSize: 10, fontWeight: 700,
+                       letterSpacing: "0.1em", textTransform: "uppercase",
+                       cursor: on ? "pointer" : "not-allowed", minHeight: 32,
+                       opacity: on ? 1 : 0.45 }}>
+              {nm}
+            </button>
+          );
+        })}
+      </div>
+
+      {points.length === 0 ? (
+        <div style={{ fontSize: 13, color: "#8a7fa5", padding: "24px 0", textAlign: "center" }}>
+          No data for this view yet.
         </div>
-        <div style={{ fontSize: 13, color: "#9a9a9a", lineHeight: 1.5, marginTop: 10,
-                      paddingLeft: 12, borderLeft: `3px solid ${PURPLE}` }}>
-          {drill.insight}
-        </div>
-      </details>
-    )}
-  </div>
-);
+      ) : (
+        <SvgChart.Bar data={points} dataKey="value" domain={domain}
+          ticks={ticks} refY={refY} fmt={fmt} />
+      )}
+
+      {/* Drill-down (spec Part 13): chart -> statistics -> insight.
+          Collapsed by default so the chart itself stays the hero. */}
+      {drill && (
+        <details style={{ marginTop: 12, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+          <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                            cursor: "pointer", padding: "12px 0 4px", listStyle: "none",
+                            fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                            color: LBL }}>
+            <span>Statistics</span>
+            <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
+          </summary>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 8 }}>
+            <EngineTile label="Average"     value={drill.st.averageLabel} />
+            <EngineTile label="Highest"     value={drill.st.highestLabel} />
+            <EngineTile label="Lowest"      value={drill.st.lowestLabel} />
+            <EngineTile label="Consistency" value={`${drill.st.consistency}%`} />
+            <EngineTile label="Trend"       value={drill.st.trend} />
+            <EngineTile label="Tracked"     value={`${drill.st.count} ${active === "daily" ? "days" : active === "weekly" ? "weeks" : "months"}`} />
+          </div>
+          <div style={{ fontSize: 13, color: "#9a9a9a", lineHeight: 1.5, marginTop: 10,
+                        paddingLeft: 12, borderLeft: `3px solid ${PURPLE}` }}>
+            {drill.insight}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+};
+
 
 /* ══════════════════════════════════════════════════════════
    STYLES

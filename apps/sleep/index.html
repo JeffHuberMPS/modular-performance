@@ -1402,87 +1402,49 @@ function SleepTracker() {
     style: styles.chartsGrid
   }, /*#__PURE__*/React.createElement(ChartCard, {
     title: "Sleep Duration",
-    sub: "hours per night \xB7 last 30",
-    drill: chartDrill(last30, r => r.hours, v => `${v.toFixed(1)}h`)
-  }, /*#__PURE__*/React.createElement(SvgChart.Bar, {
-    data: last30,
-    dataKey: "hours",
+    sub: "hours per night",
+    allRows: enriched,
+    get: r => r.hours,
+    fmt: v => `${v.toFixed(1)}h`,
     domain: [0, 10],
     ticks: [0, 2, 4, 6, 8, 10],
     refY: 7
-  })), /*#__PURE__*/React.createElement(ChartCard, {
+  }), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Recovery Score",
-    sub: "% \xB7 last 30 nights",
-    drill: chartDrill(last30, r => r.recovery, v => `${Math.round(v)}%`)
-  }, /*#__PURE__*/React.createElement(SvgChart.Lines, {
-    data: last30,
-    lines: [{
-      key: "recovery",
-      stroke: GOLD
-    }],
+    sub: "%",
+    allRows: enriched,
+    get: r => r.recovery,
+    fmt: v => `${Math.round(v)}%`,
     domain: [0, 100],
-    ticks: [0, 20, 40, 60, 80, 100],
-    refY: 70
-  })), /*#__PURE__*/React.createElement(ChartCard, {
+    ticks: [0, 25, 50, 75, 100],
+    refY: 80
+  }), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Bedtime",
-    sub: "when you went to bed \xB7 last 30",
-    drill: chartDrill(last30, r => r.bedAxis, v => RecoveryCharts.bedFromAxis(v), "clock")
-  }, /*#__PURE__*/React.createElement(SvgChart.Bar, {
-    data: last30,
-    dataKey: "bedAxis",
+    sub: "when you went to bed",
+    kind: "clock",
+    allRows: enriched,
+    get: r => r.bedAxis,
+    fmt: v => RecoveryCharts.bedFromAxis(v),
     domain: [0, 720],
-    ticks: [0, 180, 360, 540, 720],
-    fmt: t => RecoveryCharts.bedFromAxis(t)
-  })), /*#__PURE__*/React.createElement(ChartCard, {
+    ticks: [0, 180, 360, 540, 720]
+  }), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Wake Time",
-    sub: "when you got up \xB7 last 30",
-    drill: chartDrill(last30, r => r.wakeAxis, v => RecoveryCharts.fmtClock(v), "clock")
-  }, /*#__PURE__*/React.createElement(SvgChart.Bar, {
-    data: last30,
-    dataKey: "wakeAxis",
+    sub: "when you got up",
+    kind: "clock",
+    allRows: enriched,
+    get: r => r.wakeAxis,
+    fmt: v => RecoveryCharts.fmtClock(v),
     domain: [180, 600],
-    ticks: [180, 300, 420, 540],
-    fmt: t => RecoveryCharts.fmtClock(t)
-  })), /*#__PURE__*/React.createElement(ChartCard, {
-    title: "Energy vs Physical Recovery",
-    sub: "1\u201310 scale \xB7 last 30",
-    drill: chartDrill(last30, r => r.energy, v => `${v.toFixed(1)} / 10`)
-  }, /*#__PURE__*/React.createElement(SvgChart.Lines, {
-    data: last30,
-    lines: [{
-      key: "energy",
-      stroke: GOLD
-    }, {
-      key: "physicalRecovery",
-      stroke: PURPLE
-    }],
+    ticks: [180, 300, 420, 540]
+  }), /*#__PURE__*/React.createElement(ChartCard, {
+    title: "Energy",
+    sub: "1\u201310 scale",
+    allRows: enriched,
+    get: r => r.energy,
+    fmt: v => `${v.toFixed(1)} / 10`,
     domain: [0, 10],
     ticks: [0, 2, 4, 6, 8, 10]
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 16,
-      marginTop: 8,
-      fontSize: 12,
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#9aa3b2"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: GOLD
-    }
-  }, "\u2014\u2014"), " energy"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#9aa3b2"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: PURPLE
-    }
-  }, "\u2014\u2014"), " physical recovery")))), __PREMIUM && /*#__PURE__*/React.createElement(DevicesCard, null))), activeTab === "insights" && __CORE && /*#__PURE__*/React.createElement("section", {
+  })), __PREMIUM && /*#__PURE__*/React.createElement(DevicesCard, null))), activeTab === "insights" && __CORE && /*#__PURE__*/React.createElement("section", {
     style: {
       padding: "4px 0",
       textAlign: "center"
@@ -3222,89 +3184,154 @@ const chartDrill = (rows, get, fmt, kind) => {
 const ChartCard = ({
   title,
   sub,
-  children,
-  drill
-}) => /*#__PURE__*/React.createElement("div", {
-  style: {
-    background: "rgba(18,18,20,0.85)",
-    border: `1px solid rgba(${BRDR},0.12)`,
-    borderRadius: 12,
-    padding: "16px",
-    marginBottom: 12
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-    fontSize: 12,
-    letterSpacing: "0.14em",
-    textTransform: "uppercase",
-    color: "#f5f5f5",
-    marginBottom: 3
-  }
-}, title), sub && /*#__PURE__*/React.createElement("div", {
-  style: {
-    fontSize: 12,
-    color: "#C9A020",
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-    marginBottom: 14
-  }
-}, sub), children, drill && /*#__PURE__*/React.createElement("details", {
-  style: {
-    marginTop: 12,
-    borderTop: "1px solid rgba(150,150,150,0.12)"
-  }
-}, /*#__PURE__*/React.createElement("summary", {
-  style: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    cursor: "pointer",
-    padding: "12px 0 4px",
-    listStyle: "none",
-    fontSize: 9,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    color: LBL
-  }
-}, /*#__PURE__*/React.createElement("span", null, "Statistics"), /*#__PURE__*/React.createElement("span", {
-  style: {
-    color: "#8a7fa5"
-  }
-}, "avg ", drill.st.averageLabel)), /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 8,
-    marginTop: 8
-  }
-}, /*#__PURE__*/React.createElement(EngineTile, {
-  label: "Average",
-  value: drill.st.averageLabel
-}), /*#__PURE__*/React.createElement(EngineTile, {
-  label: "Highest",
-  value: drill.st.highestLabel
-}), /*#__PURE__*/React.createElement(EngineTile, {
-  label: "Lowest",
-  value: drill.st.lowestLabel
-}), /*#__PURE__*/React.createElement(EngineTile, {
-  label: "Consistency",
-  value: `${drill.st.consistency}%`
-}), /*#__PURE__*/React.createElement(EngineTile, {
-  label: "Trend",
-  value: drill.st.trend
-}), /*#__PURE__*/React.createElement(EngineTile, {
-  label: "Tracked",
-  value: `${drill.st.count} days`
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    fontSize: 13,
-    color: "#9a9a9a",
-    lineHeight: 1.5,
-    marginTop: 10,
-    paddingLeft: 12,
-    borderLeft: `3px solid ${PURPLE}`
-  }
-}, drill.insight)));
+  allRows,
+  get,
+  fmt,
+  domain,
+  ticks,
+  refY,
+  kind
+}) => {
+  const [view, setView] = useState("daily");
+  const rows = allRows || [];
+  const views = window.RecoveryCharts ? RecoveryCharts.availableViews(rows.length) : ["daily"];
+  const active = views.indexOf(view) > -1 ? view : "daily";
+
+  // Daily shows the recent window; weekly and monthly aggregate the whole
+  // history, because a 4-week trend built from 30 days is barely a trend.
+  const source = active === "daily" ? rows.slice(-30) : rows;
+  const chartCfg = {
+    value: get,
+    format: fmt
+  };
+  const points = window.RecoveryCharts ? RecoveryCharts.aggregate(source, chartCfg, active) : [];
+  const drill = chartDrill(points, p => p.value, fmt, kind);
+  const unit = active === "daily" ? "last 30 nights" : active === "weekly" ? "weekly averages" : "monthly averages";
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(18,18,20,0.85)",
+      border: `1px solid rgba(${BRDR},0.12)`,
+      borderRadius: 12,
+      padding: "16px",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      fontSize: 12,
+      letterSpacing: "0.14em",
+      textTransform: "uppercase",
+      color: "#f5f5f5",
+      marginBottom: 3
+    }
+  }, title), sub && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#C9A020",
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      marginBottom: 10
+    }
+  }, sub, " \xB7 ", unit), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginBottom: 12
+    }
+  }, ["daily", "weekly", "monthly"].map(nm => {
+    const on = views.indexOf(nm) > -1;
+    const sel = nm === active;
+    return /*#__PURE__*/React.createElement("button", {
+      key: nm,
+      disabled: !on,
+      title: on ? "" : RecoveryCharts.lockMessage(nm),
+      onClick: () => setView(nm),
+      style: {
+        background: sel ? PURPLE : "transparent",
+        border: `1px solid ${sel ? PURPLE : `rgba(${BRDR},0.2)`}`,
+        color: sel ? "#0a0a0a" : on ? LBL : "#4a4255",
+        borderRadius: 99,
+        padding: "6px 13px",
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        cursor: on ? "pointer" : "not-allowed",
+        minHeight: 32,
+        opacity: on ? 1 : 0.45
+      }
+    }, nm);
+  })), points.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#8a7fa5",
+      padding: "24px 0",
+      textAlign: "center"
+    }
+  }, "No data for this view yet.") : /*#__PURE__*/React.createElement(SvgChart.Bar, {
+    data: points,
+    dataKey: "value",
+    domain: domain,
+    ticks: ticks,
+    refY: refY,
+    fmt: fmt
+  }), drill && /*#__PURE__*/React.createElement("details", {
+    style: {
+      marginTop: 12,
+      borderTop: "1px solid rgba(150,150,150,0.12)"
+    }
+  }, /*#__PURE__*/React.createElement("summary", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer",
+      padding: "12px 0 4px",
+      listStyle: "none",
+      fontSize: 9,
+      letterSpacing: "0.12em",
+      textTransform: "uppercase",
+      color: LBL
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Statistics"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#8a7fa5"
+    }
+  }, "avg ", drill.st.averageLabel)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: 8,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(EngineTile, {
+    label: "Average",
+    value: drill.st.averageLabel
+  }), /*#__PURE__*/React.createElement(EngineTile, {
+    label: "Highest",
+    value: drill.st.highestLabel
+  }), /*#__PURE__*/React.createElement(EngineTile, {
+    label: "Lowest",
+    value: drill.st.lowestLabel
+  }), /*#__PURE__*/React.createElement(EngineTile, {
+    label: "Consistency",
+    value: `${drill.st.consistency}%`
+  }), /*#__PURE__*/React.createElement(EngineTile, {
+    label: "Trend",
+    value: drill.st.trend
+  }), /*#__PURE__*/React.createElement(EngineTile, {
+    label: "Tracked",
+    value: `${drill.st.count} ${active === "daily" ? "days" : active === "weekly" ? "weeks" : "months"}`
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#9a9a9a",
+      lineHeight: 1.5,
+      marginTop: 10,
+      paddingLeft: 12,
+      borderLeft: `3px solid ${PURPLE}`
+    }
+  }, drill.insight)));
+};
 
 /* ══════════════════════════════════════════════════════════
    STYLES
