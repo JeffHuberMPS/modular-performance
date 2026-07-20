@@ -782,6 +782,16 @@ function SleepTracker() {
             <ReportsCard rows={engineRows} />
 
             {/* Charts */}
+            {/* Affordance for every chart drill-down. Scoped to .mps-drill and injected here because
+                sleep.css is not linked into this page. Hides the native marker, rotates our own
+                chevron when the section is open, and lifts the bar on hover so it reads as a button. */}
+            <style>{`
+              .mps-drill > summary::-webkit-details-marker { display: none; }
+              .mps-drill > summary::marker { content: ""; }
+              .mps-drill > summary .mps-chev { transition: transform .18s ease; }
+              .mps-drill[open] > summary .mps-chev { transform: rotate(180deg); }
+              .mps-drill > summary:hover { background: rgba(155,107,201,0.18) !important; }
+            `}</style>
             <section style={styles.chartsGrid}>
 
               {/* Sleep Duration — pure SVG, always renders */}
@@ -1833,15 +1843,28 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
       )}
 
       {/* Drill-down (spec Part 13): chart -> statistics -> insight.
-          Collapsed by default so the chart itself stays the hero. */}
+          Collapsed by default so the chart itself stays the hero.
+          This always WORKED, it just did not look like it would: listStyle:none strips the
+          disclosure triangle, so the row read as a static caption and nobody would think to tap it.
+          It is now an obvious control: tinted bar, "tap for insight" hint, and a chevron that
+          rotates when open (see the .mps-drill rules injected alongside the charts). */}
       {drill && (
-        <details style={{ marginTop: 12, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
+        <details className="mps-drill" style={{ marginTop: 12, borderTop: "1px solid rgba(150,150,150,0.12)" }}>
           <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-                            cursor: "pointer", padding: "12px 0 4px", listStyle: "none",
+                            cursor: "pointer", padding: "10px 9px", listStyle: "none",
+                            marginTop: 8, borderRadius: 8,
+                            background: "rgba(155,107,201,0.10)",
+                            border: `1px solid rgba(${BRDR},0.25)`,
                             fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
                             color: LBL }}>
-            <span>Statistics</span>
-            <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ color: GOLD, fontWeight: 700 }}>Statistics</span>
+              <span style={{ opacity: 0.65 }}>· tap for insight</span>
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <span style={{ color: "#8a7fa5" }}>avg {drill.st.averageLabel}</span>
+              <span className="mps-chev" style={{ display: "inline-block", fontSize: 12, lineHeight: 1, color: GOLD }}>∨</span>
+            </span>
           </summary>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 8 }}>
             <EngineTile label="Average"     value={drill.st.averageLabel} />
