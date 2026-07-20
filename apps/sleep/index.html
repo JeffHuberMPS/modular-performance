@@ -3139,26 +3139,40 @@ const LogCard = ({
 }, /*#__PURE__*/React.createElement("div", {
   style: {
     display: "flex",
-    alignItems: "center",
-    gap: 9
+    alignItems: "baseline",
+    gap: 14,
+    flex: 1,
+    minWidth: 0
   }
 }, /*#__PURE__*/React.createElement("span", {
   style: {
-    fontSize: 15,
+    fontSize: 25,
     fontWeight: 800,
     fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     color: PURPLE,
-    letterSpacing: "0.01em"
+    letterSpacing: "0.06em",
+    whiteSpace: "nowrap"
   }
 }, e.date.split("-").slice(1).concat(e.date.split("-").slice(0, 1)).join("/").replace(/(\d+)\/(\d+)\/(\d+)/, (_, m, d, y) => `${m.padStart(2, "0")}/${d.padStart(2, "0")}/${y}`)), /*#__PURE__*/React.createElement("span", {
   style: {
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-    letterSpacing: "0.14em",
+    letterSpacing: "0.3em",
     color: GOLD,
-    fontWeight: 700
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
   }
-}, e.weekday)), /*#__PURE__*/React.createElement("div", {
+}, {
+  SUN: "SUNDAY",
+  MON: "MONDAY",
+  TUE: "TUESDAY",
+  WED: "WEDNESDAY",
+  THU: "THURSDAY",
+  FRI: "FRIDAY",
+  SAT: "SATURDAY"
+}[e.weekday] || e.weekday)), /*#__PURE__*/React.createElement("div", {
   style: {
     display: "flex",
     gap: 5
