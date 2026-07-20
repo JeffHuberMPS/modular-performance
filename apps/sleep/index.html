@@ -2905,6 +2905,12 @@ const InsightRow = ({
 }, value));
 
 /* LogBlock — single stat cell inside a log entry card */
+/* Each tile has to read as its OWN container, not as one run-on block of numbers. Previously the
+   surface (0.06 grey) and border (0.12) were both so faint that neighbouring tiles visually merged.
+   Three changes give separation without shouting:
+     surface + border are stronger, and a dark rim shadow cuts each tile away from its neighbour
+     the left accent bar is now the tile's actual colour rather than flat grey
+     label and value are pushed further apart in size and weight, so the eye lands on the value */
 const LogBlock = ({
   label,
   value,
@@ -2912,11 +2918,12 @@ const LogBlock = ({
   col
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
-    background: "rgba(150,150,150,0.06)",
-    border: `1px solid rgba(${BRDR},0.12)`,
-    borderLeft: "3px solid rgba(150,150,150,0.55)",
-    borderRadius: 8,
-    padding: "8px 10px",
+    background: "rgba(255,255,255,0.045)",
+    border: `1px solid rgba(${BRDR},0.22)`,
+    borderLeft: `3px solid ${accent || PURPLE}`,
+    borderRadius: 9,
+    padding: "11px 12px",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.45)",
     ...(col ? {
       gridColumn: col
     } : null) // pin to a column so it stacks under the block above it
@@ -2928,15 +2935,17 @@ const LogBlock = ({
     letterSpacing: "0.12em",
     color: LBL,
     textTransform: "uppercase",
-    marginBottom: 4
+    marginBottom: 6,
+    opacity: 0.85
   }
 }, label), /*#__PURE__*/React.createElement("div", {
   style: {
-    fontSize: 16,
-    fontWeight: 700,
+    fontSize: 18,
+    fontWeight: 800,
     fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     color: accent || "#f5f5f5",
-    lineHeight: 1
+    lineHeight: 1,
+    letterSpacing: "-0.01em"
   }
 }, value));
 
@@ -3017,8 +3026,8 @@ const LogCard = ({
   style: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 12.48,
-    marginBottom: 12.48
+    gap: 15,
+    marginBottom: 15
   }
 }, /*#__PURE__*/React.createElement(LogBlock, {
   label: "Wake Time",
@@ -3034,7 +3043,7 @@ const LogCard = ({
   style: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 12.48
+    gap: 15
   }
 }, /*#__PURE__*/React.createElement(LogBlock, {
   label: "Recovery",
@@ -3061,8 +3070,8 @@ const LogCard = ({
   style: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 12.48,
-    marginTop: 12.48
+    gap: 15,
+    marginTop: 15
   }
 }, /*#__PURE__*/React.createElement(LogBlock, {
   label: "Grade",
