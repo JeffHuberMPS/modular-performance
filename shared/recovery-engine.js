@@ -765,15 +765,26 @@ const RecoveryCharts = (function(){
   // Bedtime crosses midnight, so a raw minutes-from-midnight axis puts
   // 11pm and 1am at opposite ends. Anchor the axis at 6pm instead:
   // 22:15 -> 255, 01:00 -> 420. Late nights read as "higher".
-  function bedtimeAxis(hhmm){
-    const [h,m] = hhmm.split(':').map(Number);
-    return ((h*60+m) - 18*60 + 1440) % 1440;
-  }
-  function wakeAxis(hhmm){
-    const [h,m] = hhmm.split(':').map(Number);
+  // A missing or malformed time returns null so the caller can skip that
+  // point. Throwing here would take a whole chart down over one bad entry,
+  // and entries can legitimately be saved with no times at all.
+  function parseClock(hhmm){
+    if (typeof hhmm !== 'string') return null;
+    const parts = hhmm.split(':');
+    if (parts.length < 2) return null;
+    const h = Number(parts[0]), m = Number(parts[1]);
+    if (!isFinite(h) || !isFinite(m)) return null;
     return h*60 + m;
   }
+  function bedtimeAxis(hhmm){
+    const t = parseClock(hhmm);
+    return t === null ? null : ((t - 18*60) + 1440) % 1440;
+  }
+  function wakeAxis(hhmm){
+    return parseClock(hhmm);
+  }
   function fmtClock(mins){
+    if (!isFinite(mins)) return '--:--';
     const t = ((Math.round(mins) % 1440) + 1440) % 1440;
     let h = Math.floor(t/60); const m = t%60;
     const ap = h < 12 ? 'AM' : 'PM';
@@ -816,15 +827,20 @@ const RecoveryCharts = (function(){
     if (!rows.length) return [];
 
     if (view === 'daily'){
+      // Drop points the chart cannot compute (a missing time, say) rather
+      // than plotting null and tearing a hole in the line.
       return rows.map(r => ({key:r.date, label:r.date.slice(5),
-                             value:chart.value(r), count:1}));
+                             value:chart.value(r), count:1}))
+                 .filter(p => p.value !== null && isFinite(p.value));
     }
     const keyFn = view === 'weekly' ? weekKey : monthKey;
     const buckets = new Map();
     rows.forEach(r => {
+      const v = chart.value(r);
+      if (v === null || !isFinite(v)) return;   // skip uncomputable points
       const k = keyFn(r.date);
       if (!buckets.has(k)) buckets.set(k, []);
-      buckets.get(k).push(chart.value(r));
+      buckets.get(k).push(v);
     });
     return Array.from(buckets.entries()).map(([k,vals]) => ({
       key: k,
