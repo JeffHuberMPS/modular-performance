@@ -289,14 +289,59 @@ function SleepTracker() {
     return Math.round(sleepScore + energyScore + clarityScore + soreScore + restScore);
   };
 
+  // ── Recovery Engine v4.0 ────────────────────────────────────────────
+  // The locked spec's scoring replaces the old weighted formula.
+  // Field adaptation. No stored data is rewritten:
+  //   energy       -> energy            direct
+  //   clarity      -> mentalClarity     direct
+  //   soreness     -> physicalRecovery  10 - x, already the display value
+  //   restlessness -> calmness          10 - x, already the display value
+  //   sleepQuality -> NEW. Historical entries have no source, so they fall
+  //                   back to inverted restlessness: restless sleep is
+  //                   poor-quality sleep. That is a proxy, not a
+  //                   measurement. New entries capture it directly.
+  // 10 - soreness can reach 0, outside the spec's 1-10 range, so every
+  // adapted value is clamped.
+  const _c10 = v => Math.max(1, Math.min(10, Math.round(v)));
+  const v4Score = (e) => {
+    if (!window.RecoveryScoring || !e.sleepTime || !e.wakeTime) return null;
+    try {
+      return RecoveryScoring.score({
+        date: e.date,
+        bedtime: e.sleepTime,
+        wakeTime: e.wakeTime,
+        sleepQuality:     _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
+        energy:           _c10(e.energy ?? 5),
+        mentalClarity:    _c10(e.clarity ?? 5),
+        physicalRecovery: _c10(10 - (e.soreness ?? 5)),
+        calmness:         _c10(10 - (e.restlessness ?? 3))
+      }, []);
+    } catch (err) { return null; }
+  };
+
   const enriched = useMemo(() =>
     entries.map((e) => {
       const hours    = calcHours(e.sleepTime, e.wakeTime);
       const hasSleep = !!e.sleepTime;
+      const v4       = hasSleep ? v4Score(e) : null;
       return {
         ...e,
         hours:    hasSleep ? hours : null,
-        recovery: hasSleep ? calcRecovery(hours, e.energy ?? 5, e.soreness ?? 5, e.clarity ?? 5, e.restlessness ?? 3) : null,
+        // Engine score when available, old formula as a safety net so the
+        // pillar keeps working if the engine script fails to load.
+        recovery: hasSleep
+          ? (v4 ? v4.recoveryScore
+                : calcRecovery(hours, e.energy ?? 5, e.soreness ?? 5, e.clarity ?? 5, e.restlessness ?? 3))
+          : null,
+        // Everything the dashboard, plan and coaching stages need next.
+        v4,
+        recoveryGrade:  v4 ? v4.recoveryGrade  : null,
+        recoveryStatus: v4 ? v4.recoveryStatus : null,
+        dotCount:       v4 ? v4.dotCount       : null,
+        dotHex:         v4 ? v4.dotHex         : null,
+        pushMeter:      v4 ? v4.pushMeter      : null,
+        pushMessage:    v4 ? v4.pushMessage    : null,
+        sleepQuality:   _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
         // POSITIVE-DIRECTION VIEW: every slider now reads "10 = good". The stored fields stay
         // soreness/restlessness (low = good) so NO historical data is rewritten or lost — we only
         // flip them for display. physicalRecovery = 10 - soreness, calmness = 10 - restlessness.
