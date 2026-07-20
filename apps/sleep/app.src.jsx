@@ -806,12 +806,12 @@ function SleepTracker() {
               {/* Bedtime uses the engine's 6pm-anchored axis, so 1am plots
                   LATER than 11pm instead of leaping to the far end. A plain
                   midnight axis turns a gradual drift later into a cliff. */}
-              <ChartCard title="Bedtime" sub="when you went to bed" kind="clock"
+              <ChartCard title="Bedtime" sub="clock time" kind="clock"
                 allRows={enriched} get={r => r.bedAxis}
                 fmt={v => RecoveryCharts.bedFromAxis(v)}
                 domain={[0, 720]} ticks={[0, 180, 360, 540, 720]} />
 
-              <ChartCard title="Wake Time" sub="when you got up" kind="clock"
+              <ChartCard title="Wake Time" sub="clock time" kind="clock"
                 allRows={enriched} get={r => r.wakeAxis}
                 fmt={v => RecoveryCharts.fmtClock(v)}
                 domain={[180, 600]} ticks={[180, 300, 420, 540]} />
@@ -1321,13 +1321,20 @@ const SectionShell = ({ title, hint, children, open }) => (
   </section>
 );
 
+/* minWidth:0 is the fix for stats spilling outside the chart card. As a grid item this defaults to
+   min-width:auto, meaning it refuses to shrink below its content, so in a narrow card the row of
+   tiles pushed past the card edge and values like "TRACKED 2 days" were clipped. With minWidth:0
+   the tile shrinks to its track and long values wrap inside their own box instead of escaping it. */
 const EngineTile = ({ label, value, wide }) => (
   <div style={{ background: "rgba(150,150,150,0.06)", border: `1px solid rgba(${BRDR},0.12)`,
                 borderLeft: "3px solid rgba(150,150,150,0.55)", borderRadius: 8,
-                padding: "8px 10px", gridColumn: wide ? "1 / -1" : "auto" }}>
+                padding: "8px 10px", gridColumn: wide ? "1 / -1" : "auto",
+                minWidth: 0, overflow: "hidden" }}>
     <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
-                  color: LBL, marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5" }}>{value}</div>
+                  color: LBL, marginBottom: 4, whiteSpace: "nowrap",
+                  overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
+    <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5",
+                  overflowWrap: "anywhere", lineHeight: 1.25 }}>{value}</div>
   </div>
 );
 
@@ -1359,7 +1366,7 @@ const ProgressCard = ({ rows }) => {
   if (!p) return null;
   return (
     <SectionShell title="Progress" hint={`${p.daysTracked} ${p.daysTracked === 1 ? "day" : "days"}`}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(88px, 1fr))", gap: 8, marginTop: 4 }}>
         <EngineTile label="Average"        value={`${p.average}%`} />
         <EngineTile label="Highest"        value={`${p.highest}%`} />
         <EngineTile label="Lowest"         value={`${p.lowest}%`} />
@@ -1799,15 +1806,26 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
              : active === "weekly" ? "weekly averages" : "monthly averages";
 
   return (
+    // minWidth:0 matters: this card is a grid item, and grid items default to min-width:auto, so
+    // wide content (the open drill-down) could push the card past its track and spill outside.
+    // overflow:hidden is the backstop. Both together keep every chart inside its own container.
     <div style={{
       background: "rgba(18,18,20,0.85)", border: `1px solid rgba(${BRDR},0.12)`,
       borderRadius: 12, padding: "16px", marginBottom: 12,
+      minWidth: 0, overflow: "hidden",
     }}>
       <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: 12, letterSpacing: "0.14em",
-        textTransform: "uppercase", color: "#f5f5f5", marginBottom: 3 }}>
+        textTransform: "uppercase", color: "#f5f5f5", marginBottom: 3,
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {title}
       </div>
-      {sub && <div style={{ fontSize: 12, color: "#C9A020", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", marginBottom: 10 }}>{sub} · {unit}</div>}
+      {/* Pinned to ONE line. "when you went to bed · last 30 nights" wrapped to two lines, which
+          pushed that card's Daily/Weekly/Monthly pills and drill bar down and broke the row's
+          alignment. The copy is shorter now, and nowrap guarantees a rogue string can never
+          reintroduce the problem. */}
+      {sub && <div style={{ fontSize: 12, color: "#C9A020", fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                            marginBottom: 10, whiteSpace: "nowrap", overflow: "hidden",
+                            textOverflow: "ellipsis", lineHeight: 1.35 }}>{sub} · {unit}</div>}
 
       {/* Daily / Weekly / Monthly (spec Part 13). Locked views stay visible
           but disabled, with the unlock rule as the tooltip, so the user can
@@ -1866,7 +1884,7 @@ const ChartCard = ({ title, sub, allRows, get, fmt, domain, ticks, refY, kind })
               <span className="mps-chev" style={{ display: "inline-block", fontSize: 12, lineHeight: 1, color: GOLD }}>∨</span>
             </span>
           </summary>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(88px, 1fr))", gap: 8, marginTop: 8 }}>
             <EngineTile label="Average"     value={drill.st.averageLabel} />
             <EngineTile label="Highest"     value={drill.st.highestLabel} />
             <EngineTile label="Lowest"      value={drill.st.lowestLabel} />
