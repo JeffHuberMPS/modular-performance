@@ -599,7 +599,7 @@ const RecoveryCoaching = (function(){
       '{lowestLabel} is your weakest metric at {lowestValue}/10. Fixing your weakest input moves the score more than improving your strongest.',
       {lowestValueMax:4}),
     T('dec_push',  'declining_trend', 79, 3,
-      'Your Push Meter is down to {pushMeter}/10. Training through this window is how a light week turns into a lost month.',
+      'Your Directive is down to {pushMeter}/10. Training through this window is how a light week turns into a lost month.',
       {pushMeterMax:3}),
 
     /* --- conflicting signals (6) --- */
