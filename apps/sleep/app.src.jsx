@@ -112,6 +112,7 @@ function SleepTracker() {
   const [showForm, setShowForm] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const saveToast = React.useRef(null);   // the "Saved" toast timer, so rapid saves don't stack timers
   const [celebration, setCelebration] = useState(null);   // pending milestone card
   const [activeTab, setActiveTab] = useState(__CORE ? "log" : "dashboard");
   const [form, setForm] = useState(() => {
@@ -217,6 +218,9 @@ function SleepTracker() {
   }, []);
 
   const saveEntry = async () => {
+    // A cleared date input is empty string; saving it produced a "rr_sleep:" key that rendered as
+    // "January 0" / "undefined 0" in the Log. Reject it before it can be created.
+    if (!form.date) { setSaveError("Pick a date first."); return; }
     const entry = { ...form };
     const next = [...entries.filter((e) => e.date !== form.date), entry].sort((a, b) =>
       a.date.localeCompare(b.date)
@@ -234,7 +238,8 @@ function SleepTracker() {
     } catch (err) {}
     setSaveError(null);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-    setTimeout(() => setSaveSuccess(false), 1500);
+    if (saveToast.current) clearTimeout(saveToast.current);
+    saveToast.current = setTimeout(() => setSaveSuccess(false), 1500);
     const ok = await storage.set(form.date, JSON.stringify(entry));
     try { window.sleepBackupNow && window.sleepBackupNow(); } catch(e){}   // sync to cloud immediately on every save
     if (!ok) setSaveError("Could not persist entry");
@@ -242,7 +247,7 @@ function SleepTracker() {
 
   const deleteEntry = async (date) => {
     sleepConfirmDelete('Delete this sleep entry? This can’t be undone.', async () => {
-      setEntries(entries.filter((e) => e.date !== date));
+      setEntries((prev) => prev.filter((e) => e.date !== date));
       await storage.delete(date);
     });
   };
@@ -390,7 +395,7 @@ function SleepTracker() {
     // score card, then showed up as its own month section in the log. Filtering here means the
     // score, stats, charts and log are all protected by the same single guard. The record is left
     // untouched in storage, just never displayed or counted.
-    entries.filter((e) => !e || !e.date || e.date <= todayStr()).map((e) => {
+    entries.filter((e) => e && e.date && e.date <= todayStr()).map((e) => {
       const hours    = calcHours(e.sleepTime, e.wakeTime);
       const hasSleep = !!e.sleepTime;
       const v4       = hasSleep ? v4Score(e) : null;
@@ -457,7 +462,9 @@ function SleepTracker() {
     const target = entries.find(e => e.date === date);
     if (!target) return;
     const updated = { ...target, ...patch };
-    setEntries(entries.map(e => (e.date === date ? updated : e)));
+    // Functional updater: a delete confirm overlay is non-blocking, so `entries` captured at render
+    // can be stale by the time this runs. Merging into `prev` preserves any concurrent change.
+    setEntries((prev) => prev.map(e => (e.date === date ? { ...e, ...patch } : e)));
     try { await storage.set(date, JSON.stringify(updated)); } catch (err) {}
     try { window.sleepBackupNow && window.sleepBackupNow(); } catch (err) {}
   };
@@ -1501,7 +1508,7 @@ const ReportsCard = ({ rows }) => {
   const next = R8.nextLevel(n);
   let rep = null;
   if (open) { try { rep = R8.build(open, rows); } catch (e) { rep = null; } }
-  const hex = rep ? RecoveryScoring.tier(rep.summary.averageScore).hex : PURPLE;
+  const hex = (rep && rep.summary && window.RecoveryScoring) ? RecoveryScoring.tier(rep.summary.averageScore).hex : PURPLE;
 
   return (
     <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
