@@ -1429,6 +1429,135 @@ const RecoveryBaseline = (function(){
            fmtDur: fmtDur, WINDOW: WINDOW, MIN_N: MIN_N, FULL_N: FULL_N, METRICS: METRICS };
 })();
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   MPS RECOVERY — SLEEP NEED, DEBT AND TONIGHT'S TARGET
+   Whoop's Sleep Coach without the wrist strap. Everything here is arithmetic on
+   data the user already logs.
+
+   NEED is derived, never assumed. Bucket history by duration and find the bucket
+   where THIS person's recovery actually peaks. A fixed "everyone needs 8 hours"
+   is exactly the generic rule baselines exist to kill. Falls back to 8h until
+   there is enough evidence, and is clamped to a sane 6-10h either way so one
+   lucky 10-hour lie-in cannot set the target forever.
+
+   DEBT is a recency-weighted shortfall (half-life 3 days), so last night matters
+   far more than last Tuesday, and it is CAPPED. Uncapped debt is how these
+   systems end up demanding 14 hours of sleep after a bad week.
+
+   TONIGHT repays only a portion of the debt. Sleep debt is not repaid in one go,
+   and telling someone to sleep 11 hours is advice they will ignore.
+   Deterministic: no Date.now, no Math.random.
+   ══════════════════════════════════════════════════════════════════════════════ */
+const RecoverySleep = (function(){
+  const DEFAULT_NEED = 480;                 // 8h, used until the data earns something better
+  const MIN_NEED = 360, MAX_NEED = 600;     // never recommend below 6h or above 10h
+  const BUCKET = 30, MIN_PER_BUCKET = 3, MIN_ROWS = 14;
+  const DEBT_DAYS = 14, DEBT_HALFLIFE = 3, DEBT_CAP = 180;
+  const REPAY = 0.35, REPAY_CAP = 60;       // chip away at debt, do not demand it all tonight
+  const LATENCY = 15;                       // minutes to actually fall asleep
+
+  function valid(rows){
+    return (rows||[]).filter(function(r){
+      return r && isFinite(+r.sleepDuration) && isFinite(+r.recoveryScore);
+    });
+  }
+  function fmt(mins){
+    const m = Math.max(0, Math.round(mins)), h = Math.floor(m/60), r = m%60;
+    return h ? (h + 'h ' + (r<10?'0':'') + r + 'm') : (r + 'm');
+  }
+  function clock(mins){
+    let t = ((Math.round(mins) % 1440) + 1440) % 1440;
+    const h24 = Math.floor(t/60), mm = t%60;
+    const ap = h24 >= 12 ? 'PM' : 'AM';
+    let h = h24 % 12; if (h === 0) h = 12;
+    return h + ':' + (mm<10?'0':'') + mm + ' ' + ap;
+  }
+  function parseClockStr(s){
+    if (typeof s !== 'string') return null;
+    const m = s.match(/^(\d{1,2}):(\d{2})$/); if (!m) return null;
+    const h = +m[1], mi = +m[2];
+    if (!isFinite(h) || !isFinite(mi) || h > 23 || mi > 59) return null;
+    return h*60 + mi;
+  }
+  function med(a){
+    if (!a.length) return null;
+    const s = a.slice().sort(function(x,y){ return x-y; }), i = s.length>>1;
+    return s.length % 2 ? s[i] : (s[i-1]+s[i])/2;
+  }
+
+  /* The duration bucket where this person's recovery is genuinely highest. */
+  function need(history){
+    const rows = valid(history);
+    if (rows.length < MIN_ROWS) return { minutes: DEFAULT_NEED, source:'default', n: rows.length };
+    const buckets = {};
+    rows.forEach(function(r){
+      const d = +r.sleepDuration;
+      if (d < 180 || d > 780) return;                    // impossible nights are bad data, not signal
+      const b = Math.round(d / BUCKET) * BUCKET;
+      (buckets[b] = buckets[b] || []).push(+r.recoveryScore);
+    });
+    let best = null;
+    Object.keys(buckets).forEach(function(k){
+      const arr = buckets[k];
+      if (arr.length < MIN_PER_BUCKET) return;           // one great night is not evidence
+      const mean = arr.reduce(function(a,b){ return a+b; }, 0) / arr.length;
+      if (!best || mean > best.mean) best = { minutes:+k, mean:mean, n:arr.length };
+    });
+    if (!best) return { minutes: DEFAULT_NEED, source:'default', n: rows.length };
+    return { minutes: Math.max(MIN_NEED, Math.min(MAX_NEED, best.minutes)),
+             source:'personal', n: best.n, atScore: Math.round(best.mean) };
+  }
+
+  /* Recency-weighted shortfall over the recent window, capped. */
+  function debt(history, needMin){
+    const rows = valid(history).slice(-DEBT_DAYS);
+    if (!rows.length) return { minutes: 0, nights: 0 };
+    let mins = 0;
+    for (let i = 0; i < rows.length; i++){
+      const age = rows.length - 1 - i;                   // 0 = last night
+      mins += Math.max(0, needMin - (+rows[i].sleepDuration)) * Math.pow(0.5, age / DEBT_HALFLIFE);
+    }
+    return { minutes: Math.min(DEBT_CAP, Math.round(mins)), nights: rows.length };
+  }
+
+  /* Median wake time across history, so "bedtime" is anchored to a real habit. */
+  function usualWake(history, override){
+    const o = parseClockStr(override);
+    if (o !== null) return o;
+    const mins = [];
+    (history||[]).forEach(function(r){
+      const v = parseClockStr(r && r.wakeTime); if (v !== null) mins.push(v);
+    });
+    return mins.length ? Math.round(med(mins)) : null;
+  }
+
+  /* Tonight's recommendation. opts.trainingBonus = extra minutes for a hard session
+     (capped), opts.wakeTime pins the wake anchor. */
+  function tonight(history, opts){
+    opts = opts || {};
+    const n = need(history);
+    const d = debt(history, n.minutes);
+    const repay = Math.min(REPAY_CAP, Math.round(d.minutes * REPAY));
+    const training = Math.max(0, Math.min(45, +opts.trainingBonus || 0));
+    const target = Math.max(MIN_NEED, Math.min(MAX_NEED + 60, n.minutes + repay + training));
+    const wake = usualWake(history, opts.wakeTime);
+    const bed = wake === null ? null : (((wake - target - LATENCY) % 1440) + 1440) % 1440;
+    return {
+      needMinutes: n.minutes, needSource: n.source, needAtScore: n.atScore || null,
+      debtMinutes: d.minutes, debtNights: d.nights,
+      repayMinutes: repay, trainingMinutes: training,
+      targetMinutes: target, targetLabel: fmt(target),
+      wakeMinutes: wake, wakeLabel: wake === null ? null : clock(wake),
+      bedMinutes: bed,   bedLabel:  bed  === null ? null : clock(bed)
+    };
+  }
+
+  return { need: need, debt: debt, tonight: tonight, usualWake: usualWake,
+           fmt: fmt, clock: clock,
+           DEFAULT_NEED: DEFAULT_NEED, MIN_NEED: MIN_NEED, MAX_NEED: MAX_NEED,
+           DEBT_CAP: DEBT_CAP, MIN_ROWS: MIN_ROWS };
+})();
+
 /* ── Exports. USER and helpers stay private to this closure. ── */
 window.RecoveryEngineConfig = RecoveryEngineConfig;
 window.RecoveryScoring      = RecoveryScoring;
@@ -1438,6 +1567,7 @@ window.RecoveryCharts       = RecoveryCharts;
 window.RecoveryReports      = RecoveryReports;
 window.RecoveryInsights     = RecoveryInsights;
 window.RecoveryBaseline     = RecoveryBaseline;
+window.RecoverySleep        = RecoverySleep;
 window.RecoveryEngineUser   = function(){ return USER; };
 
 })(window);
