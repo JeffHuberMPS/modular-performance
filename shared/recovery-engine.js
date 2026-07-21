@@ -1326,6 +1326,109 @@ const RecoveryInsights = (function(){
 
 
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   MPS RECOVERY — PERSONAL BASELINES
+   Judges every metric against YOUR OWN normal instead of a fixed table. Six hours
+   may be genuinely fine for one person and terrible for another; a fixed "7 to 8
+   is optimal" rule cannot tell the difference.
+
+   ADDITIVE BY DESIGN: this does NOT change recoveryScore. The v3.0 scoring spec is
+   locked, and rewriting it would silently restate every historical score. Baselines
+   provide CONTEXT ("40m below your normal") that the UI and coaching read.
+
+   Robust statistics on purpose:
+     centre = MEDIAN, not mean. One catastrophic night should not move your normal.
+     spread = MAD x 1.4826 (a median-based stand-in for standard deviation), which
+              is likewise unmoved by outliers.
+   Two guards matter, and they are where naive versions break:
+     1. MIN_N   - under ~2 weeks there is no meaningful personal normal, so callers
+                  keep using the fixed spec. Between MIN_N and FULL_N `weight` ramps
+                  0->1 so numbers ease in instead of lurching overnight.
+     2. FLOOR   - a very consistent person has a spread near zero, which divides by
+                  zero and turns a 5-minute difference into a screaming signal.
+   Deterministic: no Date.now, no Math.random. Same history in, same answer out.
+   ══════════════════════════════════════════════════════════════════════════════ */
+const RecoveryBaseline = (function(){
+  const WINDOW = 30;    // how many recent entries define "normal"
+  const MIN_N  = 14;    // below this: no personalisation at all
+  const FULL_N = 30;    // at/above this: fully personal
+  const METRICS = ['sleepDuration','recoveryScore','sleepQuality','energy','mentalClarity','physicalRecovery','calmness'];
+  // Smallest believable spread per metric (minutes for duration, points elsewhere).
+  const FLOOR = { sleepDuration:20, recoveryScore:4, sleepQuality:0.6, energy:0.6,
+                  mentalClarity:0.6, physicalRecovery:0.6, calmness:0.6 };
+
+  function median(a){
+    if(!a || !a.length) return null;
+    const s = a.slice().sort(function(x,y){ return x-y; }), m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
+  }
+  function mad(a, med){ if(!a || !a.length) return 0; return median(a.map(function(v){ return Math.abs(v-med); })) || 0; }
+  function nums(rows, key){
+    const o = [];
+    for (let i=0;i<rows.length;i++){
+      const raw = (rows[i] || {})[key];
+      // Coercion traps: `+null` is 0 and `+true` is 1, so a MISSING metric would sneak in as a
+      // real zero-minute night and drag the median down. Only genuine numbers count.
+      if (typeof raw !== 'number' && typeof raw !== 'string') continue;
+      if (typeof raw === 'string' && raw.trim() === '') continue;
+      const v = +raw;
+      if (isFinite(v)) o.push(v);
+    }
+    return o;
+  }
+
+  /* Build the baseline. `excludeDate` keeps the day being judged out of its own
+     normal, otherwise every entry drags the baseline toward itself. */
+  function compute(history, excludeDate){
+    const rows = (history||[]).filter(function(r){ return r && r.date && r.date !== excludeDate; }).slice(-WINDOW);
+    const out = { n: rows.length, ready: rows.length >= MIN_N, weight: 0, metrics: {} };
+    out.weight = out.ready ? Math.max(0, Math.min(1, (rows.length - MIN_N) / Math.max(1, FULL_N - MIN_N))) : 0;
+    METRICS.forEach(function(k){
+      const vals = nums(rows, k);
+      if (vals.length < MIN_N) { out.metrics[k] = null; return; }
+      const med = median(vals);
+      out.metrics[k] = { median: med, spread: Math.max(mad(vals, med) * 1.4826, FLOOR[k] || 0.5), n: vals.length };
+    });
+    return out;
+  }
+
+  /* Distance from your normal in spreads. Clamped so one freak night cannot
+     produce an absurd multiplier downstream. */
+  function z(value, base){
+    if (!base || !isFinite(value) || !isFinite(base.spread) || base.spread <= 0) return null;
+    return Math.max(-3, Math.min(3, (value - base.median) / base.spread));
+  }
+
+  /* 0-100 where 50 is exactly your normal. Useful when a caller wants a
+     personalised figure alongside the locked absolute score. */
+  function relScore(value, base){
+    const zz = z(value, base);
+    return zz === null ? null : Math.max(0, Math.min(100, Math.round(50 + zz * 16.6)));
+  }
+
+  function fmtDur(mins){
+    const m = Math.round(Math.abs(mins)), h = Math.floor(m/60), r = m % 60;
+    return h ? (h + 'h ' + (r < 10 ? '0' : '') + r + 'm') : (r + 'm');
+  }
+
+  /* Plain-English context line, e.g. "38m below your normal". */
+  function describe(key, value, base){
+    if (!base || !isFinite(value)) return null;
+    const diff = value - base.median, zz = z(value, base), isDur = key === 'sleepDuration';
+    const near = zz !== null && Math.abs(zz) < 0.5;
+    const amount = isDur ? fmtDur(diff) : String(Math.round(Math.abs(diff) * 10) / 10);
+    return {
+      diff: diff, z: zz, near: near,
+      normal: isDur ? fmtDur(base.median) : Math.round(base.median * 10) / 10,
+      text: near ? 'right at your normal'
+                 : (amount + ' ' + (diff >= 0 ? 'above' : 'below') + ' your normal')
+    };
+  }
+
+  return { compute: compute, z: z, relScore: relScore, describe: describe,
+           fmtDur: fmtDur, WINDOW: WINDOW, MIN_N: MIN_N, FULL_N: FULL_N, METRICS: METRICS };
+})();
+
 /* ── Exports. USER and helpers stay private to this closure. ── */
 window.RecoveryEngineConfig = RecoveryEngineConfig;
 window.RecoveryScoring      = RecoveryScoring;
@@ -1334,6 +1437,7 @@ window.RecoveryCoaching     = RecoveryCoaching;
 window.RecoveryCharts       = RecoveryCharts;
 window.RecoveryReports      = RecoveryReports;
 window.RecoveryInsights     = RecoveryInsights;
+window.RecoveryBaseline     = RecoveryBaseline;
 window.RecoveryEngineUser   = function(){ return USER; };
 
 })(window);

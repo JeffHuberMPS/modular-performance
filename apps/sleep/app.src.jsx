@@ -1442,9 +1442,23 @@ const InsightsCard = ({ rows }) => {
   let coach = null;
   try { if (window.RecoveryCoaching) coach = RecoveryCoaching.select(last, rows, { commit: false }); }
   catch (e) { coach = null; }
+  // PERSONAL BASELINE context. Fixed thresholds cannot tell whether 6h is fine for YOU. This reads
+  // today against your own rolling normal. Silent until there is enough history to mean anything —
+  // the engine returns ready:false below ~2 weeks, and we show nothing rather than guess.
+  let base = null;
+  try {
+    if (window.RecoveryBaseline) {
+      const b = RecoveryBaseline.compute(rows, last.date);
+      if (b.ready) {
+        const dur = b.metrics.sleepDuration && RecoveryBaseline.describe("sleepDuration", last.sleepDuration, b.metrics.sleepDuration);
+        const rec = b.metrics.recoveryScore && RecoveryBaseline.describe("recoveryScore", last.recoveryScore, b.metrics.recoveryScore);
+        if (dur || rec) base = { dur, rec, n: b.n };
+      }
+    }
+  } catch (e) { base = null; }
   const hasItems = !!(items && items.length);
   const hasCoach = !!(coach && coach.primary);
-  if (!hasItems && !hasCoach) return null;
+  if (!hasItems && !hasCoach && !base) return null;
   const hex = last.dotHex || PURPLE;
   return (
     <SectionShell title="Insights" hint={hasItems ? `${items.length} today` : "why this score"}>
@@ -1463,6 +1477,21 @@ const InsightsCard = ({ rows }) => {
               {s.text}
             </div>
           ))}
+        </div>
+      )}
+      {base && (
+        <div style={{ marginBottom: hasItems ? 16 : 0, marginTop: hasCoach ? 0 : 4 }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                        color: LBL, marginBottom: 8 }}>Vs your normal</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+            {base.dur && <EngineTile label="Sleep" value={base.dur.text} />}
+            {base.rec && <EngineTile label="Recovery" value={base.rec.near
+              ? "right at your normal"
+              : (Math.abs(Math.round(base.rec.diff)) + " points " + (base.rec.diff >= 0 ? "above" : "below") + " your normal")} />}
+          </div>
+          <div style={{ fontSize: 11, color: "#8a8a8a", marginTop: 8, lineHeight: 1.5 }}>
+            Your normal is {base.dur ? base.dur.normal : "—"} of sleep, measured from your last {base.n} entries.
+          </div>
         </div>
       )}
       {hasItems && (
