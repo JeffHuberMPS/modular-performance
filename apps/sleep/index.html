@@ -2789,6 +2789,7 @@ const SectionShell = ({
     marginBottom: 14
   }
 }, /*#__PURE__*/React.createElement("details", {
+  className: "mps-drill",
   open: !!open
 }, /*#__PURE__*/React.createElement("summary", {
   style: {
@@ -2808,12 +2809,30 @@ const SectionShell = ({
   }
 }, title), /*#__PURE__*/React.createElement("span", {
   style: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    flexShrink: 0
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
     fontSize: 9,
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: LBL
   }
-}, hint)), children));
+}, hint), /*#__PURE__*/React.createElement("span", {
+  className: "mps-chev",
+  style: {
+    display: "inline-flex",
+    alignItems: "center",
+    color: LBL,
+    fontSize: 15,
+    lineHeight: 1
+  }
+}, /*#__PURE__*/React.createElement(ChevronDown, {
+  size: 16
+})))), children));
 
 /* minWidth:0 is the fix for stats spilling outside the chart card. As a grid item this defaults to
    min-width:auto, meaning it refuses to shrink below its content, so in a narrow card the row of

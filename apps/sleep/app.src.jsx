@@ -1399,12 +1399,16 @@ const PlanCard = ({ e, onSave }) => {
 const SectionShell = ({ title, hint, children, open }) => (
   <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
                     borderRadius: 10, padding: "6px 16px 14px", marginBottom: 14 }}>
-    <details open={!!open}>
+    <details className="mps-drill" open={!!open}>
       <summary style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
                         gap: 12, cursor: "pointer", padding: "12px 0", listStyle: "none" }}>
         <span style={{ fontSize: 15, fontWeight: 800, color: "#f5f5f5" }}>{title}</span>
-        <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL }}>
-          {hint}
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: LBL }}>
+            {hint}
+          </span>
+          <span className="mps-chev" style={{ display: "inline-flex", alignItems: "center",
+                        color: LBL, fontSize: 15, lineHeight: 1 }}><ChevronDown size={16} /></span>
         </span>
       </summary>
       {children}
