@@ -1,5 +1,5 @@
 // MPS Service Worker — offline support + update notification
-const CACHE_VERSION = 'mps-v453';
+const CACHE_VERSION = 'mps-v454';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const FONT_CACHE    = CACHE_VERSION + '-fonts';
 
