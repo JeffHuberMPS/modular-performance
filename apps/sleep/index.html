@@ -148,22 +148,45 @@
     // saved entry silently vanished on refresh. Now every write goes to localStorage rr_sleep:* and
     // triggers the sleep_backup cloud mirror (the same durable system every other pillar uses).
     var _slpK = function(key){ return 'rr_sleep:' + key; };
+    // ===== DELETION TOMBSTONES =====
+    // The cloud mirror is an ADDITIVE UNION, so a plain removeItem could never stick: the backup
+    // re-merged the still-present cloud copy and the live watcher wrote it straight back, so a
+    // deleted entry reappeared within a second on the SAME device. A tombstone records what was
+    // deliberately deleted and when. It travels with the backup like any other key and is honoured
+    // by both the merge and the watcher.
+    //   value > 0  -> deleted at that moment
+    //   value < 0  -> re-saved (revived) at that moment
+    // The union keeps whichever action happened LAST, so "delete, then log that date again" resolves
+    // correctly even across devices. Pruned after 90 days so the map cannot grow without bound.
+    var _TOMB_KEY = 'rr_sleep:__tombstones';
+    var _TOMB_TTL = 90*24*60*60*1000;
+    function _tParse(raw){ try{ var o=JSON.parse(raw||'{}'); return (o&&typeof o==='object'&&!Array.isArray(o))?o:{}; }catch(e){ return {}; } }
+    function _tLocal(){ try{ return _tParse(localStorage.getItem(_TOMB_KEY)); }catch(e){ return {}; } }
+    function _tFrom(map){ return _tParse(map && map[_TOMB_KEY]); }
+    function _tPrune(t,nowTs){ var cut=(nowTs||Date.now())-_TOMB_TTL,o={},k,v; for(k in t){ v=+t[k]; if(v && Math.abs(v)>cut) o[k]=v; } return o; }
+    function _tUnion(a,b){ var o={},k; for(k in a) o[k]=a[k]; for(k in b){ if(o[k]===undefined || Math.abs(b[k])>Math.abs(o[k])) o[k]=b[k]; } return o; }
+    function _tDead(t,k){ return (+t[k]||0) > 0; }
+    function _tSave(t){ try{ localStorage.setItem(_TOMB_KEY, JSON.stringify(t)); }catch(e){} }
     window.storage = {
       get: function(key) {
         try { return Promise.resolve(localStorage.getItem(_slpK(key))); }
         catch(e){ return Promise.resolve(null); }
       },
       set: function(key, value) {
-        var wrote = false;
-        try { localStorage.setItem(_slpK(key), value); wrote = true; } catch(e){}
+        var wrote = false, fk = _slpK(key);
+        // Record a revival so this save outranks any older delete still sitting in the cloud.
+        try { var t=_tLocal(); t[fk]=-Date.now(); _tSave(_tPrune(t)); } catch(e){}
+        try { localStorage.setItem(fk, value); wrote = true; } catch(e){}
         try {
           if (wrote) { window.sleepScheduleBackup && window.sleepScheduleBackup(); window.sleepBackupNow && window.sleepBackupNow(); }
-          else { window.sleepCloudSet && window.sleepCloudSet(_slpK(key), value); }   // local blocked/full -> save straight to the cloud
+          else { window.sleepCloudSet && window.sleepCloudSet(fk, value); }   // local blocked/full -> save straight to the cloud
         } catch(e){}
         return Promise.resolve(true);
       },
       delete: function(key) {
-        try { localStorage.removeItem(_slpK(key)); } catch(e){}
+        var fk = _slpK(key);
+        try { localStorage.removeItem(fk); } catch(e){}
+        try { var t=_tLocal(); t[fk]=Date.now(); _tSave(_tPrune(t)); } catch(e){}
         try { window.sleepScheduleBackup && window.sleepScheduleBackup(); window.sleepBackupNow && window.sleepBackupNow(); } catch(e){}
         return Promise.resolve();
       },
@@ -172,7 +195,7 @@
         try {
           for (var i=0;i<localStorage.length;i++){
             var k = localStorage.key(i);
-            if (k && k.indexOf('rr_sleep:')===0 && k !== 'rr_sleep:wearable_interest') keys.push(k.slice('rr_sleep:'.length));
+            if (k && k.indexOf('rr_sleep:')===0 && k !== 'rr_sleep:wearable_interest' && k !== _TOMB_KEY) keys.push(k.slice('rr_sleep:'.length));
           }
         } catch(e){}
         return Promise.resolve(keys);
@@ -201,6 +224,13 @@
         var cloud=(s.exists&&s.data()&&s.data().data)?s.data().data:{}, merged={}, k;
         for(k in cloud) merged[k]=cloud[k];      // keep every device's existing entries
         for(k in _data) merged[k]=_data[k];      // this device's values win for the keys it holds
+        // HONOUR DELETIONS: union both tombstone maps, drop everything still marked deleted, and
+        // carry the map forward so other devices delete it too. Without this the union silently
+        // resurrected whatever this device had just deleted.
+        var _tomb=_tPrune(_tUnion(_tFrom(cloud), _tFrom(_data)), _ts);
+        for(k in _tomb){ if(k!==_TOMB_KEY && _tDead(_tomb,k)) delete merged[k]; }
+        merged[_TOMB_KEY]=JSON.stringify(_tomb);
+        _tSave(_tomb);
         _bDoc.set({data:merged,ts:_ts,v:1}).then(function(){ _bBusy=false; }).catch(function(){_bBusy=false;});
       }).catch(function(){ // read failed → plain write (still never empty, never loses this device's data)
         _bDoc.set({data:_data,ts:_ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(_ts));}catch(e){} _bBusy=false; }).catch(function(){_bBusy=false;});
@@ -214,7 +244,7 @@
     // entry STRAIGHT to the cloud so nothing is ever lost. Merges a single key into the backup doc.
     window.sleepCloudSet = function(fullKey, value){ try{ _bDoc.get().then(function(s){ var d=(s.exists&&s.data()&&s.data().data)?s.data().data:{}; d[fullKey]=value; var ts=Date.now(); _bDoc.set({data:d,ts:ts,v:1}).then(function(){ try{localStorage.setItem(_TS_KEY,String(ts));}catch(e){} }); }); }catch(e){} };
     try{ document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") _bFlush(); }); window.addEventListener("pagehide", _bFlush); }catch(e){}
-    function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
+    function _bRestoreIfEmpty(){ if(_bHasLocal()) return Promise.resolve(false); return _bDoc.get().then(function(s){ if(s.exists&&s.data()&&s.data().data){ var d=s.data().data,ks=Object.keys(d); if(!ks.length) return false; var _tomb=_tPrune(_tFrom(d)); ks.forEach(function(k){ if(k===_TOMB_KEY||!_tDead(_tomb,k)){ try{localStorage.setItem(k,d[k]);}catch(e){} } }); return _bHasLocal(); } return false; }).catch(function(){return false;}); }
     // ===== LIVE TWO-WAY ADDITIVE SYNC (sleep) =====
     // ts-gated: a NEWER cloud state applies adds/edits ONLY (never deletions). Every device converges
     // to the UNION of all entries, so a cross-device mismatch can never delete your data.
@@ -224,22 +254,29 @@
       var cloudTs=s.data().ts||0;
       var localTs=0; try{ localTs=parseInt(localStorage.getItem(_TS_KEY)||'0',10)||0; }catch(e){}
       if(cloudTs<=localTs) return;           // our own write or older → ignore
+      // HONOUR DELETIONS FIRST: union the tombstone maps, persist them, and drop anything still
+      // marked deleted from this device. A tombstoned key must never be re-applied from the cloud.
+      var _tomb=_tPrune(_tUnion(_tLocal(), _tFrom(d)));
+      _tSave(_tomb);
+      Object.keys(_tomb).forEach(function(k){ if(k!==_TOMB_KEY && _tDead(_tomb,k)){ try{ localStorage.removeItem(k); }catch(e){} } });
       var localKeys=[]; try{ for(var i=0;i<localStorage.length;i++){ var lk=localStorage.key(i); if(_bMatch(lk)) localKeys.push(lk); } }catch(e){}
-      var deletions=localKeys.filter(function(k){ return !(k in d); });
+      // A key missing from the cloud WITHOUT a tombstone is suspicious (a corrupt or empty cloud) and
+      // the safety net below still protects it. A tombstoned one is a real delete, so it is not counted.
+      var deletions=localKeys.filter(function(k){ return !(k in d) && !_tDead(_tomb,k); });
       var cloudCount=Object.keys(d).filter(_bMatch).length;
       // SAFETY: an empty (or delete-everything) cloud is a BAD state, never a real user action. Never
       // let it delete your local data. Keep local, re-upload it to heal the cloud, and still apply any
       // genuine adds the cloud may also have.
       var unsafe = deletions.length && (cloudCount===0 || deletions.length===localKeys.length);
       try{ localStorage.setItem(_TS_KEY, String(cloudTs)); }catch(e){}
-      if(unsafe){ Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} }); try{ window.sleepScheduleBackup && window.sleepScheduleBackup(); }catch(e){} return; }
+      if(unsafe){ Object.keys(d).forEach(function(k){ if(k===_TOMB_KEY||!_tDead(_tomb,k)){ try{ localStorage.setItem(k,d[k]); }catch(e){} } }); try{ window.sleepScheduleBackup && window.sleepScheduleBackup(); }catch(e){} return; }
       // ADDITIVE: apply only adds/edits from the cloud; NEVER remove a local entry just because a
       // newer cloud snapshot is missing it — that cross-device delete-propagation is what lost data.
       // Both devices converge to the UNION of all entries; explicit deletes are handled on-device.
       var changed = false;
-      for(var ck in d){ if(_bMatch(ck) && localStorage.getItem(ck)!==d[ck]) changed=true; }   // an add/edit?
+      for(var ck in d){ if(_bMatch(ck) && ck!==_TOMB_KEY && !_tDead(_tomb,ck) && localStorage.getItem(ck)!==d[ck]) changed=true; }   // an add/edit?
       if(!changed) return;
-      Object.keys(d).forEach(function(k){ try{ localStorage.setItem(k,d[k]); }catch(e){} });   // apply adds/edits only
+      Object.keys(d).forEach(function(k){ if(k!==_TOMB_KEY && !_tDead(_tomb,k)){ try{ localStorage.setItem(k,d[k]); }catch(e){} } });   // apply adds/edits only
       // The data is already applied above. The reload only exists to re-render from localStorage,
       // so it must never yank you out of the pillar mid-use. Recovery was the ONLY pillar without a
       // guard here (Expenses has had one), and because the additive backup deliberately does not
