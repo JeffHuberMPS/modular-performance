@@ -1966,7 +1966,10 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Recovery" value={__CORE ? <IconLock size={14} /> : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       {!__CORE && e.v4 && <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />}
       {!__CORE && e.v4 && <LogBlock label="Readiness"  value={e.recoveryStatus || "—"} />}
-      {!__CORE && e.v4 && <LogBlock label="Directive" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />}
+      {/* Show the COMMAND word, not a bare number. "6/10" means nothing without the scale in front of
+          you; "LIGHTEN" is instantly readable and matches READINESS beside it. Number kept only as a
+          fallback for any row without a command word. */}
+      {!__CORE && e.v4 && <LogBlock label="Directive" value={e.pushCommand || (e.pushMeter != null ? `${e.pushMeter}/10` : "—")} accent={PURPLE} />}
     </LogGroup>
   </div>
 );
