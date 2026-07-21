@@ -1552,54 +1552,8 @@ const RecoverySleep = (function(){
     };
   }
 
-  /* A nightly bedtime reminder as an iCalendar file.
-
-     WHY A CALENDAR FILE AND NOT A PUSH NOTIFICATION: a closed web app cannot wake itself at a
-     specific time. Notification Triggers never shipped, Periodic Background Sync cannot promise a
-     time, and iOS gives a PWA no background scheduling at all. Real push needs a server sending at
-     10:20pm, and scheduling that (Cloud Scheduler / scheduled Functions) needs a billing account.
-     Handing the time to the phone's own calendar is free, needs no server, survives the app being
-     closed, and works on both platforms. The OS alarm is more reliable than anything we could build.
-
-     Deterministic: `now` is passed in, never read from the clock, so this stays testable and
-     matches the rest of the engine. Times are FLOATING (no timezone) on purpose: a bedtime means
-     10:20pm wherever the user happens to be. */
-  function icsReminder(bedMinutes, targetLabel, now){
-    if (bedMinutes === null || bedMinutes === undefined || !isFinite(+bedMinutes)) return null;
-    const bm = ((Math.round(+bedMinutes) % 1440) + 1440) % 1440;
-    const d = (now instanceof Date) ? now : new Date(now || 0);
-    if (isNaN(d.getTime())) return null;
-    const p = function(n){ return n < 10 ? '0' + n : '' + n; };
-    // Start tonight if that time is still ahead, otherwise begin tomorrow.
-    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(bm/60), bm%60, 0, 0);
-    if (start.getTime() <= d.getTime()) start.setDate(start.getDate() + 1);
-    const floating = function(x){
-      return '' + x.getFullYear() + p(x.getMonth()+1) + p(x.getDate()) + 'T' + p(x.getHours()) + p(x.getMinutes()) + '00';
-    };
-    const stampUTC = function(x){
-      return '' + x.getUTCFullYear() + p(x.getUTCMonth()+1) + p(x.getUTCDate()) + 'T' +
-             p(x.getUTCHours()) + p(x.getUTCMinutes()) + p(x.getUTCSeconds()) + 'Z';
-    };
-    const desc = 'Target ' + (targetLabel || fmt(DEFAULT_NEED)) + ' of sleep tonight.';
-    return [
-      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//MPS//Recovery//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',
-      'BEGIN:VEVENT',
-      // Stable UID + rising SEQUENCE so re-adding UPDATES the reminder instead of duplicating it.
-      'UID:mps-recovery-bedtime@modular-performance.com',
-      'SEQUENCE:' + Math.floor(d.getTime()/1000),
-      'DTSTAMP:' + stampUTC(d),
-      'DTSTART:' + floating(start),
-      'DURATION:PT15M',
-      'RRULE:FREQ=DAILY',
-      'SUMMARY:Lights out',
-      'DESCRIPTION:' + desc,
-      'BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Lights out','END:VALARM',
-      'END:VEVENT','END:VCALENDAR'
-    ].join('\r\n');
-  }
 
   return { need: need, debt: debt, tonight: tonight, usualWake: usualWake,
-           icsReminder: icsReminder,
            fmt: fmt, clock: clock,
            DEFAULT_NEED: DEFAULT_NEED, MIN_NEED: MIN_NEED, MAX_NEED: MAX_NEED,
            DEBT_CAP: DEBT_CAP, MIN_ROWS: MIN_ROWS };
