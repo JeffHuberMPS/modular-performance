@@ -1846,14 +1846,13 @@ const InsightRow = ({ label, value, accent }) => (
      surface + border are stronger, and a dark rim shadow cuts each tile away from its neighbour
      the left accent bar is now the tile's actual colour rather than flat grey
      label and value are pushed further apart in size and weight, so the eye lands on the value */
-const LogBlock = ({ label, value, accent, col }) => (
+const LogBlock = ({ label, value, accent }) => (
   <div style={{
     background: "rgba(255,255,255,0.045)",
     border: `1px solid rgba(${BRDR},0.22)`,
     borderLeft: `3px solid ${accent || PURPLE}`,
     borderRadius: 9, padding: "11px 12px",
     boxShadow: "0 1px 2px rgba(0,0,0,0.45)",
-    ...(col ? { gridColumn: col } : null),   // pin to a column so it stacks under the block above it
   }}>
     <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 6, opacity: 0.85 }}>
       {label}
@@ -1968,11 +1967,6 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       {!__CORE && e.v4 && <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />}
       {!__CORE && e.v4 && <LogBlock label="Readiness"  value={e.recoveryStatus || "—"} />}
       {!__CORE && e.v4 && <LogBlock label="Directive" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />}
-      {!__CORE && e.v4 && e.selectedAction && (
-        <LogBlock label={e.actionCompleted ? "Action · done" : "Action"}
-                  value={e.selectedAction}
-                  accent={e.actionCompleted ? GOLD : undefined} col="1 / -1" />
-      )}
     </LogGroup>
   </div>
 );

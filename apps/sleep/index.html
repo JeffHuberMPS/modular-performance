@@ -3642,8 +3642,7 @@ const InsightRow = ({
 const LogBlock = ({
   label,
   value,
-  accent,
-  col
+  accent
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
     background: "rgba(255,255,255,0.045)",
@@ -3651,10 +3650,7 @@ const LogBlock = ({
     borderLeft: `3px solid ${accent || PURPLE}`,
     borderRadius: 9,
     padding: "11px 12px",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.45)",
-    ...(col ? {
-      gridColumn: col
-    } : null) // pin to a column so it stacks under the block above it
+    boxShadow: "0 1px 2px rgba(0,0,0,0.45)"
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
@@ -3884,11 +3880,6 @@ const LogCard = ({
   label: "Directive",
   value: e.pushMeter != null ? `${e.pushMeter}/10` : "—",
   accent: PURPLE
-}), !__CORE && e.v4 && e.selectedAction && /*#__PURE__*/React.createElement(LogBlock, {
-  label: e.actionCompleted ? "Action · done" : "Action",
-  value: e.selectedAction,
-  accent: e.actionCompleted ? GOLD : undefined,
-  col: "1 / -1"
 })));
 
 /* ── Pure SVG chart components — no external library, always renders ── */
