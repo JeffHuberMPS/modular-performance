@@ -456,6 +456,7 @@ function SleepTracker() {
     .map(e => ({
       ...e.v4,
       date: e.date,
+      wakeTime:         e.wakeTime || "",   // anchors the bedtime recommendation to a real habit
       sleepQuality:     _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
       energy:           _c10(e.energy ?? 5),
       mentalClarity:    _c10(e.clarity ?? 5),
@@ -782,6 +783,8 @@ function SleepTracker() {
             {/* Why this score — coaching from the user's own numbers */}
             {/* Today's Plan — the weakest metric and one action for it */}
             <PlanCard e={latestScored} onSave={saveAction} />
+            {/* Tonight's sleep target and bedtime, derived from this user's own history */}
+            <SleepTargetCard rows={engineRows} />
             {/* Insights now includes the "Why this score" coaching inside the same dropdown (was a separate card) */}
             <InsightsCard rows={engineRows} />
             {/* 7-day stats */}
@@ -1428,6 +1431,38 @@ const EngineTile = ({ label, value, wide }) => (
                   overflowWrap: "anywhere", lineHeight: 1.25 }}>{value}</div>
   </div>
 );
+
+/* SleepTargetCard — tonight's sleep target and bedtime. The Sleep Coach idea without a wrist
+   strap: need is the duration where THIS person's recovery actually peaks, plus a portion of
+   recency-weighted sleep debt. Renders nothing at all if the engine cannot produce a target,
+   and says so plainly while it is still using the 8h default. */
+const SleepTargetCard = ({ rows }) => {
+  if (!rows || !rows.length || !window.RecoverySleep) return null;
+  let t = null;
+  try { t = RecoverySleep.tonight(rows); } catch (e) { return null; }
+  if (!t || !t.targetMinutes) return null;
+  const accent = __GRAY ? "#C9A020" : "#9b6bc9";
+  const rgba   = __GRAY ? "201,160,32" : "155,107,201";
+  const detail = t.needSource === "personal"
+    ? `Your recovery peaks around ${RecoverySleep.fmt(t.needMinutes)} of sleep.`
+    : "Using 8h as a starting point until you have about two weeks logged.";
+  return (
+    <section style={{ background: `rgba(${rgba},0.07)`, border: `1px solid rgba(${rgba},0.30)`,
+                      borderLeft: `4px solid ${accent}`, borderRadius: 12,
+                      padding: "14px 16px", marginBottom: 14 }}>
+      <div style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
+                    color: accent, fontWeight: 800, marginBottom: 7 }}>Tonight</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5", lineHeight: 1.4 }}>
+        {"Aim for " + t.targetLabel + "."}
+        {t.bedLabel && <span>{" Lights out by "}<span style={{ color: accent, fontWeight: 800 }}>{t.bedLabel}</span>{"."}</span>}
+      </div>
+      <div style={{ fontSize: 11.5, color: "#8a8a8a", marginTop: 6, lineHeight: 1.5 }}>
+        {detail}
+        {t.debtMinutes > 0 && ` Carrying ${RecoverySleep.fmt(t.debtMinutes)} of sleep debt, so tonight adds ${RecoverySleep.fmt(t.repayMinutes)}.`}
+      </div>
+    </section>
+  );
+};
 
 /* InsightsCard — spec Part 10, section 7.
    Strongest and weakest metric today, what moved most since yesterday,
