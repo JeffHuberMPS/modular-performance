@@ -3878,7 +3878,7 @@ const LogCard = ({
   value: e.recoveryStatus || "—"
 }), !__CORE && e.v4 && /*#__PURE__*/React.createElement(LogBlock, {
   label: "Directive",
-  value: e.pushMeter != null ? `${e.pushMeter}/10` : "—",
+  value: e.pushCommand || (e.pushMeter != null ? `${e.pushMeter}/10` : "—"),
   accent: PURPLE
 })));
 
