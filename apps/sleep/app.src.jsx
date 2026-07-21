@@ -20,26 +20,36 @@ const UP_CLR  = __GRAY ? '#C9A020' : '#6ac96b';   // trend good: gold in gray, g
 const DOWN_CLR = __GRAY ? '#999999' : '#c96b6b';   // trend bad: grey in gray, red in colorful
 /* Recharts removed — using pure SVG charts below */
 
-/* Lucide React icons — with emoji fallbacks if CDN fails */
+/* Lucide React icons — with WIREFRAME fallbacks if the CDN fails. Never emoji: if the icon bundle
+   does not load the app still has to look like itself, so each fallback is a line icon drawn on
+   the same 24x24 grid as the inline set below. */
 const _lc = window.LucideReact || window.lucide || {};
-const Moon        = _lc.Moon        || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>🌙</span>);
-const Sun         = _lc.Sun         || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>☀️</span>);
-const Activity    = _lc.Activity    || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>📈</span>);
-const Battery     = _lc.Battery     || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>🔋</span>);
-const Flame       = _lc.Flame       || (({size=16}) => <span style={{fontSize:(size*0.85)+'px'}}>🔥</span>);
-const Plus        = _lc.Plus        || (({size=16}) => <span>＋</span>);
+const _wire = (children, sw) => (({size=16, style:s}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth={sw||2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+       style={{ display:'inline-block', verticalAlign:'-0.125em', ...(s||{}) }}>{children}</svg>
+));
+const Moon        = _lc.Moon        || _wire(<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>);
+const Sun         = _lc.Sun         || _wire(<g><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></g>);
+const Activity    = _lc.Activity    || _wire(<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>);
+const Battery     = _lc.Battery     || _wire(<g><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/></g>);
+const Flame       = _lc.Flame       || _wire(<path d="M12 2c1 4 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3.2 2-4.2 0 2 1 3.2 2 3.2 0-3-1-5 1-8z"/>);
+const Plus        = _lc.Plus        || _wire(<path d="M12 5v14M5 12h14"/>);
 const Trash2      = _lc.Trash2      || (({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>);
-const TrendingUp  = _lc.TrendingUp  || (({size=12}) => <span>↑</span>);
-const TrendingDown= _lc.TrendingDown|| (({size=12}) => <span>↓</span>);
-const Minus       = _lc.Minus       || (({size=12}) => <span>−</span>);
-const Zap         = _lc.Zap         || (({size=16}) => <span>⚡</span>);
-const HeartPulse  = _lc.HeartPulse  || (({size=16}) => <span>💓</span>);
-const Pencil      = _lc.Pencil      || (({size=16}) => <span>✏</span>);
-const ChevronDown = _lc.ChevronDown || (({size=18,style:s}) => <span style={{...s,display:'inline-block'}}>▾</span>);
+const TrendingUp  = _lc.TrendingUp  || _wire(<path d="M3 17l6-6 4 4 7-7M17 7h4v4"/>);
+const TrendingDown= _lc.TrendingDown|| _wire(<path d="M3 7l6 6 4-4 7 7M17 17h4v-4"/>);
+const Minus       = _lc.Minus       || _wire(<path d="M5 12h14"/>);
+const Zap         = _lc.Zap         || _wire(<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>);
+const HeartPulse  = _lc.HeartPulse  || _wire(<g><path d="M20.8 5.6a5 5 0 0 0-8.8-1.7A5 5 0 0 0 3.2 5.6c-1.7 2.8-.4 6.4 5.6 11.2L12 20l3.2-3.2c6-4.8 7.3-8.4 5.6-11.2z"/><path d="M3.5 12.5h4l1.5-3 2 6 1.5-3h4"/></g>);
+const Pencil      = _lc.Pencil      || _wire(<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>);
+const ChevronDown = _lc.ChevronDown || _wire(<path d="M6 9l6 6 6-6"/>);
 
 /* ── Inline SVG icons — guaranteed render, no CDN dependency ── */
 const IconSun      = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>;
-const IconMoon     = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+const IconMoon     = ({size=13}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+/* Locked-feature marker for Core. Replaces the old padlock emoji so the tier locks match the
+   wireframe icon language used everywhere else. */
+const IconLock     = ({size=13}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{display:'inline-block',verticalAlign:'-0.125em'}}><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>;
 const IconZap      = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
 const IconHeart    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l1.5-3 2 4.5 1.5-3h6.78"/></svg>;
 const IconActivity = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
@@ -710,7 +720,7 @@ function SleepTracker() {
                     Duration: <strong style={{ color: PURPLE }}>{calcHours(form.sleepTime, form.wakeTime)}h</strong>
                     {" · "}
                     Recovery: <strong style={{ color: GOLD }}>
-                      {__CORE ? "🔒 Premium" : calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness) + "%"}
+                      {__CORE ? <span style={{ display:"inline-flex", alignItems:"center", gap:5 }}><IconLock size={12} />Premium</span> : calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness) + "%"}
                     </strong>
                   </>
                 ) : (
@@ -747,7 +757,7 @@ function SleepTracker() {
                 <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent={PURPLE} />
                 <TodayStat icon={<IconHeart />}     label="Physical Recovery" value={today ? `${today.physicalRecovery}/10` : "—"} accent={PURPLE} />
                 <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent={PURPLE} />
-                <TodayStat icon={<IconBattery />}   label="Recovery" value={__CORE ? "🔒" : (today?.recovery != null ? `${today.recovery}%` : "—")} accent={PURPLE} />
+                <TodayStat icon={<IconBattery />}   label="Recovery" value={__CORE ? <IconLock size={16} /> : (today?.recovery != null ? `${today.recovery}%` : "—")} accent={PURPLE} />
               </div>
               {!today && <div style={{...styles.empty, marginTop: 8}}>No entry yet — tap + LOG ENTRY to start.</div>}
             </section>
@@ -875,7 +885,7 @@ function SleepTracker() {
               /* 60-day history cap for Core/Elite (Premium sees everything). */
               const capEntries = __PREMIUM ? enriched : enriched.filter(e => e.date >= HISTORY_CAP_CUTOFF);
               const capHidden = enriched.length - capEntries.length;
-              if (capEntries.length === 0) return (<div style={{textAlign:'center',padding:'34px 18px'}}><div style={{fontSize:30,marginBottom:8}}>🌙</div><div style={{fontSize:15,fontWeight:700,color:'#e8e4f0',marginBottom:4}}>{__PREMIUM ? "No sleep logged yet" : "No entries in the last 60 days"}</div><div style={{fontSize:13,color:'#8a7fa5',marginBottom:16}}>Track a night and your recovery shows up here.</div><button onClick={() => { const b=[...document.querySelectorAll('button')].find(x=>/log entry/i.test(x.textContent||'')); if(b)b.click(); }} style={{padding:'11px 20px',borderRadius:10,border:'1px solid #8b5cf6',background:'rgba(139,92,246,0.14)',color:'#a78bfa',fontWeight:700,fontSize:13,cursor:'pointer'}}>Log your first night →</button></div>);
+              if (capEntries.length === 0) return (<div style={{textAlign:'center',padding:'34px 18px'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:'#6b5f85'}}><IconMoon size={30} /></div><div style={{fontSize:15,fontWeight:700,color:'#e8e4f0',marginBottom:4}}>{__PREMIUM ? "No sleep logged yet" : "No entries in the last 60 days"}</div><div style={{fontSize:13,color:'#8a7fa5',marginBottom:16}}>Track a night and your recovery shows up here.</div><button onClick={() => { const b=[...document.querySelectorAll('button')].find(x=>/log entry/i.test(x.textContent||'')); if(b)b.click(); }} style={{padding:'11px 20px',borderRadius:10,border:'1px solid #8b5cf6',background:'rgba(139,92,246,0.14)',color:'#a78bfa',fontWeight:700,fontSize:13,cursor:'pointer'}}>Log your first night →</button></div>);
               /* Group capped entries by month, newest first */
               const byMonth = {};
               [...capEntries].reverse().forEach(e => {
@@ -1033,7 +1043,7 @@ const DevicesCard = () => {
             <div style={{ fontSize: 14, fontFamily: FONT, color: "#f5f5f5", fontWeight: 600 }}>{wv.name}</div>
             <div style={{ fontSize: 11, fontFamily: FONT, color: "#6b7280", marginTop: 2 }}>{wv.note}</div>
           </div>
-          <button onClick={() => toggle(wv.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 8, fontFamily: FONT, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer", whiteSpace: "nowrap", border: `1px solid ${interest[wv.id] ? GOLD : (__GRAY ? "rgba(255,255,255,0.22)" : "rgba(155,107,201,0.55)")}`, background: interest[wv.id] ? GOLD : "transparent", color: interest[wv.id] ? "#0a0a0a" : LBL }}>{interest[wv.id] ? "✓ Notify on" : "Notify me"}</button>
+          <button onClick={() => toggle(wv.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 8, fontFamily: FONT, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer", whiteSpace: "nowrap", border: `1px solid ${interest[wv.id] ? GOLD : (__GRAY ? "rgba(255,255,255,0.22)" : "rgba(155,107,201,0.55)")}`, background: interest[wv.id] ? GOLD : "transparent", color: interest[wv.id] ? "#0a0a0a" : LBL }}>{interest[wv.id] ? <span style={{ display:"inline-flex", alignItems:"center", gap:5 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>Notify on</span> : "Notify me"}</button>
         </div>
       ))}
     </section>
@@ -1744,7 +1754,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     </LogGroup>
 
     <LogGroup title="Your Score" last>
-      <LogBlock label="Recovery" value={__CORE ? "🔒" : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
+      <LogBlock label="Recovery" value={__CORE ? <IconLock size={14} /> : (e.recovery != null ? `${e.recovery}%` : "—")} accent={GOLD} />
       {!__CORE && e.v4 && <LogBlock label="Grade"      value={e.recoveryGrade  || "—"} accent={GOLD} />}
       {!__CORE && e.v4 && <LogBlock label="Readiness"  value={e.recoveryStatus || "—"} />}
       {!__CORE && e.v4 && <LogBlock label="Directive" value={e.pushMeter != null ? `${e.pushMeter}/10` : "—"} accent={PURPLE} />}

@@ -412,46 +412,57 @@ const UP_CLR = __GRAY ? '#C9A020' : '#6ac96b'; // trend good: gold in gray, gree
 const DOWN_CLR = __GRAY ? '#999999' : '#c96b6b'; // trend bad: grey in gray, red in colorful
 /* Recharts removed — using pure SVG charts below */
 
-/* Lucide React icons — with emoji fallbacks if CDN fails */
+/* Lucide React icons — with WIREFRAME fallbacks if the CDN fails. Never emoji: if the icon bundle
+   does not load the app still has to look like itself, so each fallback is a line icon drawn on
+   the same 24x24 grid as the inline set below. */
 const _lc = window.LucideReact || window.lucide || {};
-const Moon = _lc.Moon || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", {
+const _wire = (children, sw) => ({
+  size = 16,
+  style: s
+}) => /*#__PURE__*/React.createElement("svg", {
+  width: size,
+  height: size,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: sw || 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": "true",
   style: {
-    fontSize: size * 0.85 + 'px'
+    display: 'inline-block',
+    verticalAlign: '-0.125em',
+    ...(s || {})
   }
-}, "\uD83C\uDF19"));
-const Sun = _lc.Sun || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", {
-  style: {
-    fontSize: size * 0.85 + 'px'
-  }
-}, "\u2600\uFE0F"));
-const Activity = _lc.Activity || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", {
-  style: {
-    fontSize: size * 0.85 + 'px'
-  }
-}, "\uD83D\uDCC8"));
-const Battery = _lc.Battery || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", {
-  style: {
-    fontSize: size * 0.85 + 'px'
-  }
-}, "\uD83D\uDD0B"));
-const Flame = _lc.Flame || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", {
-  style: {
-    fontSize: size * 0.85 + 'px'
-  }
-}, "\uD83D\uDD25"));
-const Plus = _lc.Plus || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", null, "\uFF0B"));
+}, children);
+const Moon = _lc.Moon || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+}));
+const Sun = _lc.Sun || _wire( /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "12",
+  r: "5"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"
+})));
+const Activity = _lc.Activity || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M22 12h-4l-3 9L9 3l-3 9H2"
+}));
+const Battery = _lc.Battery || _wire( /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+  x: "2",
+  y: "7",
+  width: "16",
+  height: "10",
+  rx: "2"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M22 11v2"
+})));
+const Flame = _lc.Flame || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M12 2c1 4 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3.2 2-4.2 0 2 1 3.2 2 3.2 0-3-1-5 1-8z"
+}));
+const Plus = _lc.Plus || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M12 5v14M5 12h14"
+}));
 const Trash2 = _lc.Trash2 || (({
   size = 16
 }) => /*#__PURE__*/React.createElement("svg", {
@@ -469,33 +480,29 @@ const Trash2 = _lc.Trash2 || (({
 }), /*#__PURE__*/React.createElement("path", {
   d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
 })));
-const TrendingUp = _lc.TrendingUp || (({
-  size = 12
-}) => /*#__PURE__*/React.createElement("span", null, "\u2191"));
-const TrendingDown = _lc.TrendingDown || (({
-  size = 12
-}) => /*#__PURE__*/React.createElement("span", null, "\u2193"));
-const Minus = _lc.Minus || (({
-  size = 12
-}) => /*#__PURE__*/React.createElement("span", null, "\u2212"));
-const Zap = _lc.Zap || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", null, "\u26A1"));
-const HeartPulse = _lc.HeartPulse || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC93"));
-const Pencil = _lc.Pencil || (({
-  size = 16
-}) => /*#__PURE__*/React.createElement("span", null, "\u270F"));
-const ChevronDown = _lc.ChevronDown || (({
-  size = 18,
-  style: s
-}) => /*#__PURE__*/React.createElement("span", {
-  style: {
-    ...s,
-    display: 'inline-block'
-  }
-}, "\u25BE"));
+const TrendingUp = _lc.TrendingUp || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M3 17l6-6 4 4 7-7M17 7h4v4"
+}));
+const TrendingDown = _lc.TrendingDown || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M3 7l6 6 4-4 7 7M17 17h4v-4"
+}));
+const Minus = _lc.Minus || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M5 12h14"
+}));
+const Zap = _lc.Zap || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M13 2 3 14h9l-1 8 10-12h-9z"
+}));
+const HeartPulse = _lc.HeartPulse || _wire( /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("path", {
+  d: "M20.8 5.6a5 5 0 0 0-8.8-1.7A5 5 0 0 0 3.2 5.6c-1.7 2.8-.4 6.4 5.6 11.2L12 20l3.2-3.2c6-4.8 7.3-8.4 5.6-11.2z"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M3.5 12.5h4l1.5-3 2 6 1.5-3h4"
+})));
+const Pencil = _lc.Pencil || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"
+}));
+const ChevronDown = _lc.ChevronDown || _wire( /*#__PURE__*/React.createElement("path", {
+  d: "M6 9l6 6 6-6"
+}));
 
 /* ── Inline SVG icons — guaranteed render, no CDN dependency ── */
 const IconSun = () => /*#__PURE__*/React.createElement("svg", {
@@ -514,9 +521,11 @@ const IconSun = () => /*#__PURE__*/React.createElement("svg", {
 }), /*#__PURE__*/React.createElement("path", {
   d: "M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"
 }));
-const IconMoon = () => /*#__PURE__*/React.createElement("svg", {
-  width: "13",
-  height: "13",
+const IconMoon = ({
+  size = 13
+}) => /*#__PURE__*/React.createElement("svg", {
+  width: size,
+  height: size,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -525,6 +534,33 @@ const IconMoon = () => /*#__PURE__*/React.createElement("svg", {
   strokeLinejoin: "round"
 }, /*#__PURE__*/React.createElement("path", {
   d: "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+}));
+/* Locked-feature marker for Core. Replaces the old padlock emoji so the tier locks match the
+   wireframe icon language used everywhere else. */
+const IconLock = ({
+  size = 13
+}) => /*#__PURE__*/React.createElement("svg", {
+  width: size,
+  height: size,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: "2",
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": "true",
+  style: {
+    display: 'inline-block',
+    verticalAlign: '-0.125em'
+  }
+}, /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "10.5",
+  width: "16",
+  height: "10",
+  rx: "2"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M8 10.5V7a4 4 0 0 1 8 0v3.5"
 }));
 const IconZap = () => /*#__PURE__*/React.createElement("svg", {
   width: "13",
@@ -1375,7 +1411,15 @@ function SleepTracker() {
     style: {
       color: GOLD
     }
-  }, __CORE ? "🔒 Premium" : calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness) + "%")) : /*#__PURE__*/React.createElement("span", {
+  }, __CORE ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement(IconLock, {
+    size: 12
+  }), "Premium") : calcRecovery(calcHours(form.sleepTime, form.wakeTime), form.energy, form.soreness, form.clarity, form.restlessness) + "%")) : /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#8a7d6b",
       fontStyle: "italic"
@@ -1430,7 +1474,9 @@ function SleepTracker() {
   }), /*#__PURE__*/React.createElement(TodayStat, {
     icon: /*#__PURE__*/React.createElement(IconBattery, null),
     label: "Recovery",
-    value: __CORE ? "🔒" : today?.recovery != null ? `${today.recovery}%` : "—",
+    value: __CORE ? /*#__PURE__*/React.createElement(IconLock, {
+      size: 16
+    }) : today?.recovery != null ? `${today.recovery}%` : "—",
     accent: PURPLE
   })), !today && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1745,10 +1791,14 @@ function SleepTracker() {
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 30,
-        marginBottom: 8
+        marginBottom: 10,
+        display: 'flex',
+        justifyContent: 'center',
+        color: '#6b5f85'
       }
-    }, "\uD83C\uDF19"), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(IconMoon, {
+      size: 30
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         fontWeight: 700,
@@ -2120,7 +2170,25 @@ const DevicesCard = () => {
       background: interest[wv.id] ? GOLD : "transparent",
       color: interest[wv.id] ? "#0a0a0a" : LBL
     }
-  }, interest[wv.id] ? "✓ Notify on" : "Notify me"))));
+  }, interest[wv.id] ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "11",
+    height: "11",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "3.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M4 12l5 5L20 6"
+  })), "Notify on") : "Notify me"))));
 };
 
 /* TodayStat — stat card in the Today snapshot grid */
@@ -3482,7 +3550,9 @@ const LogCard = ({
   last: true
 }, /*#__PURE__*/React.createElement(LogBlock, {
   label: "Recovery",
-  value: __CORE ? "🔒" : e.recovery != null ? `${e.recovery}%` : "—",
+  value: __CORE ? /*#__PURE__*/React.createElement(IconLock, {
+    size: 14
+  }) : e.recovery != null ? `${e.recovery}%` : "—",
   accent: GOLD
 }), !__CORE && e.v4 && /*#__PURE__*/React.createElement(LogBlock, {
   label: "Grade",
