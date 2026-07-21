@@ -2585,21 +2585,29 @@ const PlanCard = ({
       return "";
     }
   }, [e.date, chosen]);
+
+  // Follow the page theme like every other element (via __GRAY): gold on the mono tiers (Core, Elite),
+  // purple on the colorful Premium theme. Hardcoding one colour is what broke this.
+  const pRGBA = __GRAY ? '201,160,32' : '155,107,201'; // rgba() fills / borders / glow
+  const pAccent = __GRAY ? '#C9A020' : '#9b6bc9'; // solid left bar + filled pill
+  const pAccentHdr = __GRAY ? '#C9A020' : '#b48fd6'; // header icon + label
+  const pOnFill = __GRAY ? '#1a1305' : '#ffffff'; // text / check on a filled pill
+  const pOutline = __GRAY ? '#E8C55A' : '#c9aee6'; // outline pill text
+  const pTagBg = __GRAY ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.24)'; // SUGGESTED tag bg
   return (
     /*#__PURE__*/
-    // This is the ONLY action on the whole dashboard, so it must NOT blend into the background.
-    // It was rgba(255,255,255,0.02) on black with a 0.13 border — invisible, and it got overlooked.
-    // Now it wears the Recovery pillar's purple: a purple-tinted fill, a purple left bar, a purple
-    // border and a soft purple glow, so it reads as "do this" the moment the card loads.
+    // This is the ONLY action on the whole dashboard, so it must NOT blend into the background — it
+    // wears the page's accent (gold in mono, purple in colorful) as a tinted fill, left bar, border
+    // and soft glow, so it reads as "do this" the moment the card loads.
     React.createElement("section", {
       style: {
-        background: "linear-gradient(180deg, rgba(155,107,201,0.14), rgba(155,107,201,0.05))",
-        border: "1px solid rgba(155,107,201,0.5)",
-        borderLeft: "4px solid #9b6bc9",
+        background: `linear-gradient(180deg, rgba(${pRGBA},0.14), rgba(${pRGBA},0.05))`,
+        border: `1px solid rgba(${pRGBA},0.5)`,
+        borderLeft: `4px solid ${pAccent}`,
         borderRadius: 12,
         padding: "16px 18px",
         marginBottom: 14,
-        boxShadow: "0 0 0 1px rgba(155,107,201,0.10), 0 6px 18px rgba(0,0,0,0.45)"
+        boxShadow: `0 0 0 1px rgba(${pRGBA},0.10), 0 6px 18px rgba(0,0,0,0.45)`
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2611,7 +2619,7 @@ const PlanCard = ({
     }, /*#__PURE__*/React.createElement("span", {
       "aria-hidden": "true",
       style: {
-        color: "#b48fd6",
+        color: pAccentHdr,
         display: "inline-flex"
       }
     }, /*#__PURE__*/React.createElement("svg", {
@@ -2641,7 +2649,7 @@ const PlanCard = ({
         fontSize: 11,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
-        color: "#b48fd6",
+        color: pAccentHdr,
         fontWeight: 800
       }
     }, "Today\u2019s Plan")), /*#__PURE__*/React.createElement("div", {
@@ -2675,9 +2683,9 @@ const PlanCard = ({
           alignItems: "center",
           gap: 7,
           cursor: "pointer",
-          background: filled ? "#9b6bc9" : "transparent",
-          border: filled ? "1px solid #9b6bc9" : "1px solid rgba(155,107,201,0.55)",
-          color: filled ? "#ffffff" : "#c9aee6",
+          background: filled ? pAccent : "transparent",
+          border: filled ? `1px solid ${pAccent}` : `1px solid rgba(${pRGBA},0.55)`,
+          color: filled ? pOnFill : pOutline,
           fontWeight: filled ? 800 : 600,
           fontSize: 14,
           lineHeight: 1.2,
@@ -2691,7 +2699,7 @@ const PlanCard = ({
           width: 13,
           height: 13,
           fill: "none",
-          stroke: "#ffffff",
+          stroke: pOnFill,
           strokeWidth: 3.2,
           strokeLinecap: "round",
           strokeLinejoin: "round"
@@ -2702,8 +2710,8 @@ const PlanCard = ({
         style: {
           fontSize: 9,
           letterSpacing: "0.1em",
-          background: "rgba(255,255,255,0.24)",
-          color: "#ffffff",
+          background: pTagBg,
+          color: pOnFill,
           padding: "2px 6px",
           borderRadius: 999,
           fontWeight: 800
@@ -2738,7 +2746,7 @@ const PlanCard = ({
         height: 22,
         borderRadius: 6,
         flexShrink: 0,
-        border: `2px solid ${done ? hex : "#9b6bc9"}`,
+        border: `2px solid ${done ? hex : pAccent}`,
         background: done ? hex : "transparent",
         display: "grid",
         placeItems: "center"

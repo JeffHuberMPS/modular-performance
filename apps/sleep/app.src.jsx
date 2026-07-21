@@ -1315,21 +1315,28 @@ const PlanCard = ({ e, onSave }) => {
     try { return RecoveryActions.recommend(e.v4, RecoveryEngineUser()) || ""; } catch (err) { return ""; }
   }, [e.date, chosen]);
 
+  // Follow the page theme like every other element (via __GRAY): gold on the mono tiers (Core, Elite),
+  // purple on the colorful Premium theme. Hardcoding one colour is what broke this.
+  const pRGBA      = __GRAY ? '201,160,32' : '155,107,201';   // rgba() fills / borders / glow
+  const pAccent    = __GRAY ? '#C9A020'    : '#9b6bc9';       // solid left bar + filled pill
+  const pAccentHdr = __GRAY ? '#C9A020'    : '#b48fd6';       // header icon + label
+  const pOnFill    = __GRAY ? '#1a1305'    : '#ffffff';       // text / check on a filled pill
+  const pOutline   = __GRAY ? '#E8C55A'    : '#c9aee6';       // outline pill text
+  const pTagBg     = __GRAY ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.24)';   // SUGGESTED tag bg
   return (
-    // This is the ONLY action on the whole dashboard, so it must NOT blend into the background.
-    // It was rgba(255,255,255,0.02) on black with a 0.13 border — invisible, and it got overlooked.
-    // Now it wears the Recovery pillar's purple: a purple-tinted fill, a purple left bar, a purple
-    // border and a soft purple glow, so it reads as "do this" the moment the card loads.
-    <section style={{ background: "linear-gradient(180deg, rgba(155,107,201,0.14), rgba(155,107,201,0.05))",
-                      border: "1px solid rgba(155,107,201,0.5)", borderLeft: "4px solid #9b6bc9",
+    // This is the ONLY action on the whole dashboard, so it must NOT blend into the background — it
+    // wears the page's accent (gold in mono, purple in colorful) as a tinted fill, left bar, border
+    // and soft glow, so it reads as "do this" the moment the card loads.
+    <section style={{ background: `linear-gradient(180deg, rgba(${pRGBA},0.14), rgba(${pRGBA},0.05))`,
+                      border: `1px solid rgba(${pRGBA},0.5)`, borderLeft: `4px solid ${pAccent}`,
                       borderRadius: 12, padding: "16px 18px", marginBottom: 14,
-                      boxShadow: "0 0 0 1px rgba(155,107,201,0.10), 0 6px 18px rgba(0,0,0,0.45)" }}>
+                      boxShadow: `0 0 0 1px rgba(${pRGBA},0.10), 0 6px 18px rgba(0,0,0,0.45)` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <span aria-hidden="true" style={{ color: "#b48fd6", display: "inline-flex" }}>
+        <span aria-hidden="true" style={{ color: pAccentHdr, display: "inline-flex" }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/></svg>
         </span>
         <span style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase",
-                       color: "#b48fd6", fontWeight: 800 }}>Today&rsquo;s Plan</span>
+                       color: pAccentHdr, fontWeight: 800 }}>Today&rsquo;s Plan</span>
       </div>
       <div style={{ fontSize: 14, lineHeight: 1.45, marginBottom: 12, color: "#f5f5f5", fontWeight: 600 }}>
         {RecoveryActions.planMessage(metric)}
@@ -1348,18 +1355,18 @@ const PlanCard = ({ e, onSave }) => {
             <button key={a} type="button"
               onClick={() => onSave(e.date, { selectedAction: isSel ? null : a, actionCompleted: false })}
               style={{ display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
-                       background: filled ? "#9b6bc9" : "transparent",
-                       border: filled ? "1px solid #9b6bc9" : "1px solid rgba(155,107,201,0.55)",
-                       color: filled ? "#ffffff" : "#c9aee6",
+                       background: filled ? pAccent : "transparent",
+                       border: filled ? `1px solid ${pAccent}` : `1px solid rgba(${pRGBA},0.55)`,
+                       color: filled ? pOnFill : pOutline,
                        fontWeight: filled ? 800 : 600, fontSize: 14, lineHeight: 1.2,
                        padding: "9px 15px", borderRadius: 999,
                        fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
               {isSel && <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: "none",
-                stroke: "#ffffff", strokeWidth: 3.2, strokeLinecap: "round", strokeLinejoin: "round" }}>
+                stroke: pOnFill, strokeWidth: 3.2, strokeLinecap: "round", strokeLinejoin: "round" }}>
                 <path d="M4 12l5 5L20 6" /></svg>}
               {a}
-              {isSug && <span style={{ fontSize: 9, letterSpacing: "0.1em", background: "rgba(255,255,255,0.24)",
-                color: "#ffffff", padding: "2px 6px", borderRadius: 999, fontWeight: 800 }}>SUGGESTED</span>}
+              {isSug && <span style={{ fontSize: 9, letterSpacing: "0.1em", background: pTagBg,
+                color: pOnFill, padding: "2px 6px", borderRadius: 999, fontWeight: 800 }}>SUGGESTED</span>}
             </button>
           );
         })}
@@ -1371,7 +1378,7 @@ const PlanCard = ({ e, onSave }) => {
           onChange={(ev) => onSave(e.date, { actionCompleted: ev.target.checked })}
           style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
         <span style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                       border: `2px solid ${done ? hex : "#9b6bc9"}`,
+                       border: `2px solid ${done ? hex : pAccent}`,
                        background: done ? hex : "transparent",
                        display: "grid", placeItems: "center" }}>
           {done && <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: "none",
