@@ -1304,8 +1304,6 @@ const PlanCard = ({ e, onSave }) => {
   const actions = RecoveryActions.forMetric(metric);
   if (!actions || !actions.length) return null;
   const chosen = e.selectedAction || "";
-  const done = !!e.actionCompleted;
-  const hex = e.dotHex || PURPLE;
   // Suggested action, from the engine's rotation. Without this every option looked equally likely
   // and you could be handed "Meditate" five days running. recommend() rests a repeat for 3 days
   // (1 when the score is under 60, where repeating is the point). Computed once per entry so a
@@ -1488,46 +1486,8 @@ const ProgressCard = ({ rows }) => {
   );
 };
 
-/* CoachCard — Recovery Engine v4.0 coaching (spec Parts 11, 12).
-   Explains WHY today's score is what it is, using the user's own numbers.
-   62 templates with conditions and cooldowns live in the engine; this
-   only renders the winner.
-   commit:false — merely viewing the page must not burn a template's
-   cooldown, or a refresh would churn through the library. */
-const CoachCard = ({ rows }) => {
-  if (!rows || !rows.length || !window.RecoveryCoaching) return null;
-  let c = null;
-  try { c = RecoveryCoaching.select(rows[rows.length - 1], rows, { commit: false }); }
-  catch (e) { return null; }
-  if (!c || !c.primary) return null;
-  const hex = (rows[rows.length - 1].dotHex) || PURPLE;
-  return (
-    <section style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(${BRDR},0.13)`,
-                      borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
-      <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-                    color: LBL, marginBottom: 10 }}>Why this score</div>
-      <div style={{ fontSize: 14, lineHeight: 1.55, color: "#f5f5f5",
-                    paddingLeft: 12, borderLeft: `3px solid ${hex}` }}>
-        {c.primary.text}
-      </div>
-      {c.secondary && c.secondary.length > 0 && (
-        <details style={{ marginTop: 12 }}>
-          <summary style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
-                            color: LBL, cursor: "pointer", padding: "8px 0" }}>
-            More detail
-          </summary>
-          {c.secondary.map((s, i) => (
-            <div key={i} style={{ fontSize: 13, lineHeight: 1.55, color: "#9a9a9a",
-                                  padding: "10px 0 0 12px",
-                                  borderLeft: "1px solid rgba(150,150,150,0.2)", marginTop: 8 }}>
-              {s.text}
-            </div>
-          ))}
-        </details>
-      )}
-    </section>
-  );
-};
+/* CoachCard was removed: its "Why this score" coaching now renders inside InsightsCard
+   (see the merge above). The engine's RecoveryCoaching.select is still called there. */
 
 /* ReportsCard — Recovery Engine v4.0 progressive unlocks (spec Part 14).
    Seven levels from 7 days to multi-year. Shows what is unlocked, opens
