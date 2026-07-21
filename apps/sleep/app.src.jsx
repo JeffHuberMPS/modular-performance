@@ -800,7 +800,7 @@ function SleepTracker() {
               <div style={styles.eyebrow}>TODAY · {fmtDate(todayStr())}</div>
               <div style={styles.todayGrid}>
                 <TodayStat icon={<IconSun />}       label="Woke"     value={today?.wakeTime ? fmt12(today.wakeTime) : "—"} accent={PURPLE} />
-                <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? `${today.hours}h` : "—"} accent={PURPLE} />
+                <TodayStat icon={<IconMoon />}      label="Slept"    value={today?.hours != null ? _fmtDur(today.hours) : "—"} accent={PURPLE} />
                 <TodayStat icon={<IconZap />}       label="Energy"   value={today ? `${today.energy}/10` : "—"}  accent={PURPLE} />
                 <TodayStat icon={<IconHeart />}     label="Physical Recovery" value={today ? `${today.physicalRecovery}/10` : "—"} accent={PURPLE} />
                 <TodayStat icon={<IconActivity />}  label="Clarity"  value={today ? `${today.clarity}/10` : "—"}  accent={PURPLE} />
@@ -1131,6 +1131,16 @@ const TodayStat = ({ icon, label, value, accent }) => (
 );
 
 /* Module-level time formatter — mirrors fmt12 inside App */
+/* Decimal hours are mental arithmetic: "5.83h" makes you stop and convert. A SPECIFIC night should
+   read the way a person says it out loud. Averages and chart axes stay decimal on purpose, where a
+   single comparable number is the point. */
+function _fmtDur(dec) {
+  const n = Number(dec);
+  if (!isFinite(n) || n <= 0) return "—";
+  const total = Math.round(n * 60), h = Math.floor(total / 60), m = total % 60;
+  return m ? (h ? h + "h " + m + "m" : m + "m") : h + "h";
+}
+
 function _fmt12(t) {
   if (!t) return "—";
   const [h, m] = t.split(":").map(Number);
@@ -1190,7 +1200,7 @@ const TodayCard = ({ e }) => {
 
       <div style={{ textAlign: "center", fontSize: 10, letterSpacing: "0.1em",
                     textTransform: "uppercase", color: LBL, marginTop: 5 }}>
-        Grade {e.recoveryGrade} · slept {e.hours}h
+        Grade {e.recoveryGrade} · slept {_fmtDur(e.hours)}
       </div>
 
       {/* Push Meter — how hard to go today (spec Part 7). The COMMAND word is the headline now:
@@ -1258,7 +1268,7 @@ const TodayCard = ({ e }) => {
             </div>
             {/* the two halves */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-              <EngineTile label={`Sleep Duration · ${e.hours}h`} value={`${e.v4.sleepDurationScore} / 100`} />
+              <EngineTile label={`Sleep Duration · ${_fmtDur(e.hours)}`} value={`${e.v4.sleepDurationScore} / 100`} />
               <EngineTile label="How You Felt · 5 ratings" value={`${e.v4.sliderAverage} / 100`} />
             </div>
             {/* the five ratings that made the second half */}
@@ -1951,7 +1961,7 @@ const LogCard = ({ e, onEdit, onDelete }) => (
     <LogGroup title="Sleep Window">
       <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
       <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
-      <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? `${e.hours}h` : "—"} accent={PURPLE} />
+      <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? _fmtDur(e.hours) : "—"} accent={PURPLE} />
     </LogGroup>
 
     <LogGroup title="How You Felt">

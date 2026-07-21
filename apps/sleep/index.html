@@ -1512,7 +1512,7 @@ function SleepTracker() {
   }), /*#__PURE__*/React.createElement(TodayStat, {
     icon: /*#__PURE__*/React.createElement(IconMoon, null),
     label: "Slept",
-    value: today?.hours != null ? `${today.hours}h` : "—",
+    value: today?.hours != null ? _fmtDur(today.hours) : "—",
     accent: PURPLE
   }), /*#__PURE__*/React.createElement(TodayStat, {
     icon: /*#__PURE__*/React.createElement(IconZap, null),
@@ -2296,6 +2296,17 @@ const TodayStat = ({
 }, value));
 
 /* Module-level time formatter — mirrors fmt12 inside App */
+/* Decimal hours are mental arithmetic: "5.83h" makes you stop and convert. A SPECIFIC night should
+   read the way a person says it out loud. Averages and chart axes stay decimal on purpose, where a
+   single comparable number is the point. */
+function _fmtDur(dec) {
+  const n = Number(dec);
+  if (!isFinite(n) || n <= 0) return "—";
+  const total = Math.round(n * 60),
+    h = Math.floor(total / 60),
+    m = total % 60;
+  return m ? h ? h + "h " + m + "m" : m + "m" : h + "h";
+}
 function _fmt12(t) {
   if (!t) return "—";
   const [h, m] = t.split(":").map(Number);
@@ -2392,7 +2403,7 @@ const TodayCard = ({
       color: LBL,
       marginTop: 5
     }
-  }, "Grade ", e.recoveryGrade, " \xB7 slept ", e.hours, "h"), /*#__PURE__*/React.createElement("div", {
+  }, "Grade ", e.recoveryGrade, " \xB7 slept ", _fmtDur(e.hours)), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 20,
       paddingTop: 16,
@@ -2535,7 +2546,7 @@ const TodayCard = ({
       marginBottom: 12
     }
   }, /*#__PURE__*/React.createElement(EngineTile, {
-    label: `Sleep Duration · ${e.hours}h`,
+    label: `Sleep Duration · ${_fmtDur(e.hours)}`,
     value: `${e.v4.sleepDurationScore} / 100`
   }), /*#__PURE__*/React.createElement(EngineTile, {
     label: "How You Felt \xB7 5 ratings",
@@ -3839,7 +3850,7 @@ const LogCard = ({
   value: _fmt12(e.sleepTime)
 }), /*#__PURE__*/React.createElement(LogBlock, {
   label: "Sleep Duration",
-  value: e.hours != null && e.hours > 0 ? `${e.hours}h` : "—",
+  value: e.hours != null && e.hours > 0 ? _fmtDur(e.hours) : "—",
   accent: PURPLE
 })), /*#__PURE__*/React.createElement(LogGroup, {
   title: "How You Felt"
