@@ -142,6 +142,7 @@ function SleepTracker() {
       restingHR: "",
       hrv: "",
       weight: "",
+      tags: {},
     };
   });
 
@@ -275,6 +276,7 @@ function SleepTracker() {
       restingHR: entry.restingHR ?? "",
       hrv: entry.hrv ?? "",
       weight: entry.weight ?? "",
+      tags: (entry.tags && typeof entry.tags === "object") ? entry.tags : {},
     });
     setShowForm(true);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -457,6 +459,7 @@ function SleepTracker() {
       ...e.v4,
       date: e.date,
       wakeTime:         e.wakeTime || "",   // anchors the bedtime recommendation to a real habit
+      tags:             (e.tags && typeof e.tags === "object") ? e.tags : null,
       sleepQuality:     _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
       energy:           _c10(e.energy ?? 5),
       mentalClarity:    _c10(e.clarity ?? 5),
@@ -710,6 +713,7 @@ function SleepTracker() {
                   style={{ ...styles.range, accentColor: PURPLE }} />
               </Field>
             </div>
+            <TagChips tags={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
             {/* BIOMETRICS (Resting HR + HRV) INTENTIONALLY REMOVED — they are not in the locked v3.0
                 spec and hand-typing them every morning is friction with no payoff. Bring them back when
                 real wearable sync lands. Existing restingHR/hrv values stay in storage untouched (the
@@ -1432,6 +1436,58 @@ const EngineTile = ({ label, value, wide }) => (
   </div>
 );
 
+/* TagChips — the "anything notable?" row in the log form. Alcohol and Cannabis CYCLE through their
+   levels on repeated taps (off -> 1 -> 2 -> 3 -> off) rather than opening a dropdown: one control,
+   dose captured, and still a single tap on an ordinary night. Sick and Travel are plain on/off.
+   Alcohol levels are drink counts because a drink is a standard unit. Cannabis levels are intensity
+   because a bowl, a blunt and an edible are not comparable, so counting them would be false
+   precision that only adds noise to the correlation. */
+const TagChips = ({ tags, onChange }) => {
+  const defs = (window.RecoveryFactors && RecoveryFactors.TAGS) || [];
+  if (!defs.length) return null;
+  const t = (tags && typeof tags === "object") ? tags : {};
+  const accent  = __GRAY ? "#C9A020" : "#9b6bc9";
+  const rgba    = __GRAY ? "201,160,32" : "155,107,201";
+  const onFill  = __GRAY ? "#1a1305" : "#ffffff";
+  const outline = __GRAY ? "#E8C55A" : "#c9aee6";
+  const bump = (d) => {
+    const cur = +t[d.key] || 0;
+    const next = d.graded ? (cur >= 3 ? 0 : cur + 1) : (cur ? 0 : 1);
+    onChange(Object.assign({}, t, { [d.key]: next }));
+  };
+  return (
+    <div style={{ marginTop: 2, marginBottom: 14 }}>
+      <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: LBL, marginBottom: 8 }}>Anything notable?</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
+        {defs.map((d) => {
+          const lv = +t[d.key] || 0, on = lv > 0;
+          return (
+            <button key={d.key} type="button" onClick={() => bump(d)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
+                       background: on ? accent : "transparent",
+                       border: `1px solid ${on ? accent : `rgba(${rgba},0.5)`}`,
+                       color: on ? onFill : outline,
+                       fontWeight: on ? 800 : 600, fontSize: 13.5, lineHeight: 1.2,
+                       padding: "8px 14px", borderRadius: 999,
+                       fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+              {d.label}
+              {on && d.graded && (
+                <span style={{ fontSize: 10, letterSpacing: "0.03em", fontWeight: 800,
+                               background: __GRAY ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.26)",
+                               padding: "2px 7px", borderRadius: 999 }}>{d.levels[lv-1]}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 11, color: "#8a8a8a", marginTop: 8, lineHeight: 1.5 }}>
+        Optional. Tap Alcohol or Cannabis again to change how much.
+      </div>
+    </div>
+  );
+};
+
 /* SleepTargetCard — tonight's sleep target and bedtime. The Sleep Coach idea without a wrist
    strap: need is the duration where THIS person's recovery actually peaks, plus a portion of
    recency-weighted sleep debt. Renders nothing at all if the engine cannot produce a target,
@@ -1491,9 +1547,19 @@ const InsightsCard = ({ rows }) => {
       }
     }
   } catch (e) { base = null; }
+  // CAUSE AND EFFECT. Only findings the engine will stand behind: a real sample on both sides and
+  // a gap bigger than ordinary night-to-night noise. Everything else stays silent rather than
+  // asserting something from six nights.
+  let factors = null;
+  try {
+    if (window.RecoveryFactors) {
+      const f = RecoveryFactors.confident(rows);
+      if (f && f.length) factors = f;
+    }
+  } catch (e) { factors = null; }
   const hasItems = !!(items && items.length);
   const hasCoach = !!(coach && coach.primary);
-  if (!hasItems && !hasCoach && !base) return null;
+  if (!hasItems && !hasCoach && !base && !factors) return null;
   const hex = last.dotHex || PURPLE;
   return (
     <SectionShell title="Insights" hint={hasItems ? `${items.length} today` : "why this score"}>
@@ -1514,8 +1580,27 @@ const InsightsCard = ({ rows }) => {
           ))}
         </div>
       )}
+      {factors && (
+        <div style={{ marginBottom: (hasItems || base) ? 16 : 0, marginTop: hasCoach ? 0 : 4 }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                        color: LBL, marginBottom: 8 }}>What affects you</div>
+          {factors.map((f) => (
+            <div key={f.key} style={{ paddingLeft: 12, borderLeft: `3px solid ${hex}`, marginBottom: 10 }}>
+              <div style={{ fontSize: 14, lineHeight: 1.45, color: "#f5f5f5", fontWeight: 600 }}>
+                {f.label + ": recovery " + Math.abs(Math.round(f.delta)) + " points " + (f.delta < 0 ? "lower" : "higher") + "."}
+              </div>
+              <div style={{ fontSize: 11, color: "#8a8a8a", marginTop: 3, lineHeight: 1.5 }}>
+                {"Based on " + f.nWith + " " + (f.nWith === 1 ? "night" : "nights") + " with, " + f.nWithout + " without."}
+                {f.levels && (" " + f.levels.map(function(l){
+                  return l.label + " " + (l.delta >= 0 ? "+" : "") + Math.round(l.delta);
+                }).join(", ") + ".")}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {base && (
-        <div style={{ marginBottom: hasItems ? 16 : 0, marginTop: hasCoach ? 0 : 4 }}>
+        <div style={{ marginBottom: hasItems ? 16 : 0, marginTop: (hasCoach || factors) ? 0 : 4 }}>
           <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
                         color: LBL, marginBottom: 8 }}>Vs your normal</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>

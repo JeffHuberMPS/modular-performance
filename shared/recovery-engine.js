@@ -1558,6 +1558,98 @@ const RecoverySleep = (function(){
            DEBT_CAP: DEBT_CAP, MIN_ROWS: MIN_ROWS };
 })();
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   MPS RECOVERY — CAUSE AND EFFECT
+   "Your recovery is 12 points lower after alcohol." Whoop's Journal idea.
+
+   THE HARD PART IS HONESTY, NOT MATH. With four nights you can "prove" anything,
+   and a confident-sounding wrong answer is worse than no answer. So:
+     - a finding needs a real sample on BOTH sides (MIN_WITH / MIN_WITHOUT)
+     - the gap must clear the noise: |delta| >= 1.5 x the standard error of the
+       difference, otherwise it is ordinary night-to-night variation
+     - `confident` is reported per finding and the UI must show n both ways
+     - dose levels are only broken out when EACH level earns its own sample,
+       because splitting 12 nights three ways proves nothing
+
+   Alcohol has a standard unit so its levels are drink counts. Cannabis does not
+   (a bowl can be 5x another, and edibles are not comparable at all), so its
+   levels are intensity. Counting units there would be false precision.
+   Deterministic: no Date.now, no Math.random.
+   ══════════════════════════════════════════════════════════════════════════════ */
+const RecoveryFactors = (function(){
+  const MIN_WITH = 5, MIN_WITHOUT = 5, MIN_LEVEL = 4, NOISE = 1.5;
+  const TAGS = [
+    { key:'alcohol',  label:'Alcohol',  graded:true,  levels:['1-2 drinks','3-4 drinks','5+ drinks'] },
+    { key:'cannabis', label:'Cannabis', graded:true,  levels:['Light','Moderate','Heavy'] },
+    { key:'sick',     label:'Sick',     graded:false, levels:null },
+    { key:'travel',   label:'Travel',   graded:false, levels:null }
+  ];
+
+  /* Tag level for a row. Entries logged before tags existed simply have none, and
+     legacy booleans still read as "present". Anything unparseable counts as off. */
+  function lvl(row, key){
+    const t = row && row.tags;
+    if (!t || typeof t !== 'object') return 0;
+    const v = t[key];
+    if (v === true) return 1;
+    if (v === false || v === null || v === undefined || v === '') return 0;
+    const n = +v;
+    return isFinite(n) && n > 0 ? Math.max(1, Math.min(3, Math.round(n))) : 0;
+  }
+  function scored(rows){ return (rows||[]).filter(function(r){ return r && isFinite(+r.recoveryScore); }); }
+  function mean(a){ return a.length ? a.reduce(function(x,y){ return x+y; },0)/a.length : null; }
+  function varr(a,m){ return a.length < 2 ? 0 : a.reduce(function(s,v){ return s+(v-m)*(v-m); },0)/(a.length-1); }
+
+  function compare(withA, withoutA){
+    const mw = mean(withA), mo = mean(withoutA);
+    if (mw === null || mo === null) return null;
+    const se = Math.sqrt(varr(withA,mw)/Math.max(1,withA.length) + varr(withoutA,mo)/Math.max(1,withoutA.length));
+    const delta = mw - mo;
+    return {
+      delta: delta, withMean: mw, withoutMean: mo,
+      nWith: withA.length, nWithout: withoutA.length, se: se,
+      // Enough data on both sides AND the gap is bigger than the noise.
+      confident: withA.length >= MIN_WITH && withoutA.length >= MIN_WITHOUT &&
+                 se > 0 && Math.abs(delta) >= NOISE * se
+    };
+  }
+
+  function analyze(rows){
+    const data = scored(rows), out = [];
+    TAGS.forEach(function(t){
+      const withA = [], withoutA = [], byLevel = {1:[],2:[],3:[]};
+      data.forEach(function(r){
+        const L = lvl(r, t.key), s = +r.recoveryScore;
+        if (L > 0) { withA.push(s); byLevel[L].push(s); } else { withoutA.push(s); }
+      });
+      const overall = compare(withA, withoutA);
+      if (!overall) return;
+      const finding = Object.assign({ key:t.key, label:t.label, levels:null }, overall);
+      if (t.graded && overall.nWithout >= MIN_WITHOUT){
+        const ls = [];
+        [1,2,3].forEach(function(L){
+          const arr = byLevel[L];
+          if (arr.length >= MIN_LEVEL){
+            ls.push({ level:L, label:t.levels[L-1], n:arr.length, delta: mean(arr) - overall.withoutMean });
+          }
+        });
+        if (ls.length >= 2) finding.levels = ls;   // a gradient needs at least two points
+      }
+      out.push(finding);
+    });
+    // Trustworthy findings first, then biggest effect.
+    return out.sort(function(a,b){
+      return (b.confident?1:0)-(a.confident?1:0) || Math.abs(b.delta)-Math.abs(a.delta);
+    });
+  }
+
+  /* Only the findings worth showing a human. */
+  function confident(rows){ return analyze(rows).filter(function(f){ return f.confident; }); }
+
+  return { analyze: analyze, confident: confident, lvl: lvl, TAGS: TAGS,
+           MIN_WITH: MIN_WITH, MIN_WITHOUT: MIN_WITHOUT, MIN_LEVEL: MIN_LEVEL };
+})();
+
 /* ── Exports. USER and helpers stay private to this closure. ── */
 window.RecoveryEngineConfig = RecoveryEngineConfig;
 window.RecoveryScoring      = RecoveryScoring;
@@ -1568,6 +1660,7 @@ window.RecoveryReports      = RecoveryReports;
 window.RecoveryInsights     = RecoveryInsights;
 window.RecoveryBaseline     = RecoveryBaseline;
 window.RecoverySleep        = RecoverySleep;
+window.RecoveryFactors      = RecoveryFactors;
 window.RecoveryEngineUser   = function(){ return USER; };
 
 })(window);
