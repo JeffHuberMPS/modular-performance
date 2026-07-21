@@ -453,6 +453,43 @@ function SleepTracker() {
   // schema (sleepQuality/mentalClarity/physicalRecovery/calmness plus the
   // derived score fields); the app stores the older field names. One
   // adapter here means neither module has to know about the old shape.
+  /* CROSS-PILLAR FACTORS. Every pillar shares one localStorage origin, so Recovery can read what the
+     user ALREADY logged in Workout (training volume) and Nutrition (protein, calories) without
+     asking them to tap anything extra. This is the comparison a wrist strap cannot make.
+
+     Read DEFENSIVELY on purpose: those files belong to other pillars and their shapes can change
+     underneath us. Every step is wrapped, anything unreadable is simply skipped, and a missing value
+     is left as null rather than 0 (a null training day must never look like a real rest day). */
+  const crossFactors = useMemo(() => {
+    const byDate = {};
+    const put = (d, k, v) => {
+      if (!d || typeof v !== "number" || !isFinite(v)) return;
+      (byDate[d] = byDate[d] || {})[k] = v;
+    };
+    try {                                   // Workout: one record per date, `volume` is the load
+      const hist = JSON.parse(localStorage.getItem("mps_v3_history") || "null");
+      if (Array.isArray(hist)) hist.forEach(h => { if (h && h.date) put(h.date, "trainLoad", +h.volume); });
+    } catch (err) {}
+    try {                                   // Nutrition: log[date] is an array of food entries
+      const S = JSON.parse(localStorage.getItem("mps_nutrition") || "null");
+      const log = S && S.log;
+      if (log && typeof log === "object") {
+        Object.keys(log).forEach(d => {
+          const arr = log[d];
+          if (!Array.isArray(arr) || !arr.length) return;
+          let p = 0, cal = 0;
+          arr.forEach(en => {
+            const m = en && en.m; if (!m) return;
+            p   += +(m.protein  !== undefined ? m.protein  : m.p)   || 0;
+            cal += +(m.calories !== undefined ? m.calories : m.cal) || 0;
+          });
+          put(d, "nutProtein", p); put(d, "nutCalories", cal);
+        });
+      }
+    } catch (err) {}
+    return byDate;
+  }, [entries]);
+
   const engineRows = useMemo(() => enriched
     .filter(e => e.v4)
     .map(e => ({
@@ -460,6 +497,11 @@ function SleepTracker() {
       date: e.date,
       wakeTime:         e.wakeTime || "",   // anchors the bedtime recommendation to a real habit
       tags:             (e.tags && typeof e.tags === "object") ? e.tags : null,
+      // Aligned to the PREVIOUS day: what you trained and ate on Monday shows up in Tuesday
+      // morning's recovery, not Monday's. Absent stays null so it is skipped, never read as zero.
+      trainLoad:        _prevFactor(crossFactors, e.date, "trainLoad"),
+      nutProtein:       _prevFactor(crossFactors, e.date, "nutProtein"),
+      nutCalories:      _prevFactor(crossFactors, e.date, "nutCalories"),
       sleepQuality:     _c10(e.sleepQuality ?? (10 - (e.restlessness ?? 3))),
       energy:           _c10(e.energy ?? 5),
       mentalClarity:    _c10(e.clarity ?? 5),
@@ -1436,6 +1478,22 @@ const EngineTile = ({ label, value, wide }) => (
   </div>
 );
 
+/* Previous calendar day for an ISO date, used to align training and food to the night they
+   affect. Midday avoids daylight-saving edges. Returns null on anything malformed. */
+const _prevISO = (iso) => {
+  if (typeof iso !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const d = new Date(iso + "T12:00:00");
+  if (isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() - 1);
+  const p = (n) => (n < 10 ? "0" + n : "" + n);
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+};
+const _prevFactor = (map, iso, key) => {
+  const prev = _prevISO(iso);
+  const v = prev && map && map[prev] ? map[prev][key] : undefined;
+  return (typeof v === "number" && isFinite(v)) ? v : null;
+};
+
 /* TagChips — the "anything notable?" row in the log form. Alcohol and Cannabis CYCLE through their
    levels on repeated taps (off -> 1 -> 2 -> 3 -> off) rather than opening a dropdown: one control,
    dose captured, and still a single tap on an ordinary night. Sick and Travel are plain on/off.
@@ -1587,10 +1645,13 @@ const InsightsCard = ({ rows }) => {
           {factors.map((f) => (
             <div key={f.key} style={{ paddingLeft: 12, borderLeft: `3px solid ${hex}`, marginBottom: 10 }}>
               <div style={{ fontSize: 14, lineHeight: 1.45, color: "#f5f5f5", fontWeight: 600 }}>
-                {f.label + ": recovery " + Math.abs(Math.round(f.delta)) + " points " + (f.delta < 0 ? "lower" : "higher") + "."}
+                {f.label + ": recovery " + Math.abs(Math.round(f.delta)) + " points " + (f.delta < 0 ? "lower" : "higher")
+                  + (f.kind === "numeric" ? " after " + f.highLabel : "") + "."}
               </div>
               <div style={{ fontSize: 11, color: "#8a8a8a", marginTop: 3, lineHeight: 1.5 }}>
-                {"Based on " + f.nWith + " " + (f.nWith === 1 ? "night" : "nights") + " with, " + f.nWithout + " without."}
+                {f.kind === "numeric"
+                  ? "Comparing " + f.nHigh + " of " + f.highLabel + " against " + f.nLow + " of " + f.lowLabel + "."
+                  : "Based on " + f.nWith + " " + (f.nWith === 1 ? "night" : "nights") + " with, " + f.nWithout + " without."}
                 {f.levels && (" " + f.levels.map(function(l){
                   return l.label + " " + (l.delta >= 0 ? "+" : "") + Math.round(l.delta);
                 }).join(", ") + ".")}

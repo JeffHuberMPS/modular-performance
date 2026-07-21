@@ -1597,7 +1597,16 @@ const RecoveryFactors = (function(){
     const n = +v;
     return isFinite(n) && n > 0 ? Math.max(1, Math.min(3, Math.round(n))) : 0;
   }
-  function scored(rows){ return (rows||[]).filter(function(r){ return r && isFinite(+r.recoveryScore); }); }
+  /* Strict numeric read. `+null` is 0 and `+true` is 1, so a MISSING value would otherwise be
+     counted as a real zero: a null training load becomes a "rest day" and pollutes the easiest-days
+     group, a null score becomes a 0% night. Only genuine numbers pass. */
+  function num(v){
+    if (typeof v !== 'number' && typeof v !== 'string') return null;
+    if (typeof v === 'string' && v.trim() === '') return null;
+    const n = +v;
+    return isFinite(n) ? n : null;
+  }
+  function scored(rows){ return (rows||[]).filter(function(r){ return r && num(r.recoveryScore) !== null; }); }
   function mean(a){ return a.length ? a.reduce(function(x,y){ return x+y; },0)/a.length : null; }
   function varr(a,m){ return a.length < 2 ? 0 : a.reduce(function(s,v){ return s+(v-m)*(v-m); },0)/(a.length-1); }
 
@@ -1625,7 +1634,7 @@ const RecoveryFactors = (function(){
       });
       const overall = compare(withA, withoutA);
       if (!overall) return;
-      const finding = Object.assign({ key:t.key, label:t.label, levels:null }, overall);
+      const finding = Object.assign({ key:t.key, label:t.label, kind:'tag', levels:null }, overall);
       if (t.graded && overall.nWithout >= MIN_WITHOUT){
         const ls = [];
         [1,2,3].forEach(function(L){
@@ -1644,11 +1653,66 @@ const RecoveryFactors = (function(){
     });
   }
 
-  /* Only the findings worth showing a human. */
-  function confident(rows){ return analyze(rows).filter(function(f){ return f.confident; }); }
+  /* ── CROSS-PILLAR NUMERIC FACTORS ───────────────────────────────────────────
+     Training load and food are already logged in the Workout and Nutrition pillars, so these cost
+     the user no extra tapping. This is the comparison a wrist strap cannot make: Whoop has no idea
+     what you lifted or ate.
 
-  return { analyze: analyze, confident: confident, lvl: lvl, TAGS: TAGS,
-           MIN_WITH: MIN_WITH, MIN_WITHOUT: MIN_WITHOUT, MIN_LEVEL: MIN_LEVEL };
+     Compared as TERCILES (top third vs bottom third) rather than a correlation coefficient, because
+     "9 points lower after your hardest days" is something a person can act on and "r = -0.34" is not.
+     The caller is responsible for aligning the value to the night it should affect (training on
+     Monday shows up in Tuesday morning's recovery). */
+  const MIN_NUMERIC = 15, MIN_GROUP = 5;
+  const NUMERIC = [
+    { key:'trainLoad',   label:'Training load', high:'your hardest training days', low:'your easiest' },
+    { key:'nutProtein',  label:'Protein',       high:'your highest-protein days',  low:'your lowest' },
+    { key:'nutCalories', label:'Calories',      label2:true, high:'your highest-calorie days', low:'your lowest' }
+  ];
+
+  function quantile(sorted, q){
+    if (!sorted.length) return null;
+    const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  }
+
+  function numericFinding(rows, def){
+    const vals = (rows||[]).filter(function(r){
+      return r && num(r[def.key]) !== null && num(r.recoveryScore) !== null;
+    });
+    if (vals.length < MIN_NUMERIC) return null;                  // too little to split three ways
+    const sorted = vals.map(function(r){ return num(r[def.key]); }).sort(function(a,b){ return a-b; });
+    const loCut = quantile(sorted, 1/3), hiCut = quantile(sorted, 2/3);
+    if (!(hiCut > loCut)) return null;                           // no spread, nothing to compare
+    const low  = vals.filter(function(r){ return num(r[def.key]) <= loCut; }).map(function(r){ return num(r.recoveryScore); });
+    const high = vals.filter(function(r){ return num(r[def.key]) >= hiCut; }).map(function(r){ return num(r.recoveryScore); });
+    if (low.length < MIN_GROUP || high.length < MIN_GROUP) return null;
+    const c = compare(high, low);
+    if (!c) return null;
+    return Object.assign({ key:def.key, label:def.label, kind:'numeric',
+                           highLabel:def.high, lowLabel:def.low,
+                           nHigh:high.length, nLow:low.length, levels:null }, c);
+  }
+
+  function analyzeNumeric(rows){
+    const out = [];
+    NUMERIC.forEach(function(def){ const f = numericFinding(rows, def); if (f) out.push(f); });
+    return out;
+  }
+
+  /* Tag findings and cross-pillar findings together, most trustworthy first. */
+  function all(rows){
+    return analyze(rows).concat(analyzeNumeric(rows)).sort(function(a,b){
+      return (b.confident?1:0)-(a.confident?1:0) || Math.abs(b.delta)-Math.abs(a.delta);
+    });
+  }
+
+  /* Only the findings worth showing a human. */
+  function confident(rows){ return all(rows).filter(function(f){ return f.confident; }); }
+
+  return { analyze: analyze, analyzeNumeric: analyzeNumeric, all: all, confident: confident,
+           lvl: lvl, TAGS: TAGS, NUMERIC: NUMERIC,
+           MIN_WITH: MIN_WITH, MIN_WITHOUT: MIN_WITHOUT, MIN_LEVEL: MIN_LEVEL,
+           MIN_NUMERIC: MIN_NUMERIC, MIN_GROUP: MIN_GROUP };
 })();
 
 /* ── Exports. USER and helpers stay private to this closure. ── */
