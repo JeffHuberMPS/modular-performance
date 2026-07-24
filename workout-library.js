@@ -45,13 +45,14 @@ window.MPSLibrary = (function () {
     + '.mpslib-sub{color:var(--dim);font-size:13px;margin:0 0 14px;}.mpslib-sub b{color:var(--a);}'
     + '.mpslib-search-wrap{position:relative;}.mpslib-search{width:100%;background:var(--c1);border:1px solid var(--ln);color:var(--tx);border-radius:12px;padding:13px 14px 13px 42px;font-size:15px;font-family:inherit;}.mpslib-search:focus{outline:none;border-color:var(--a);}.mpslib-search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--faint);}'
     + '.mpslib-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}.mpslib-chip{font-size:12px;padding:8px 14px;border-radius:16px;background:linear-gradient(180deg,#161a20,#0b0d11);border:1px solid var(--ln);color:var(--dim);cursor:pointer;text-transform:capitalize;transition:.12s;box-shadow:0 3px 7px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-chip:active{transform:translateY(1px);}.mpslib-chip.on{background:rgba(var(--argb),.18);border-color:var(--a);color:#fff;}'
-    + '.mpslib-region{margin-top:16px;border:1px solid var(--ln);border-radius:16px;overflow:hidden;background:var(--c1);}'
+    + '.mpslib-region{margin-top:18px;}'
+    + '.mpslib-group{background:linear-gradient(180deg,#0c0e12 0%,#08090d 100%);border:1px solid var(--ln);border-radius:16px;padding:6px 18px 22px;margin-bottom:20px;box-shadow:0 10px 24px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);}'
     + '.mpslib-rhead{display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;user-select:none;}.mpslib-rhead:hover{background:var(--c2);}'
     + '.mpslib-ric{color:var(--a);flex-shrink:0;}.mpslib-rtitle{font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:18px;letter-spacing:.5px;flex:1;}.mpslib-rcount{font-size:12px;color:var(--faint);letter-spacing:1px;}'
     + '.mpslib-chev{color:var(--faint);transition:transform .18s;}.mpslib-region.open .mpslib-chev{transform:rotate(90deg);}'
-    + '.mpslib-rbody{display:none;padding:0 14px 14px;}.mpslib-region.open .mpslib-rbody{display:block;}'
-    + '.mpslib-glabel{display:flex;align-items:center;gap:13px;font-family:var(--disp,Oswald,sans-serif);font-size:30px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--tx);margin:52px 2px 8px;line-height:1;}.mpslib-glabel:first-child{margin-top:8px;}.mpslib-glabel::before{content:"";width:6px;height:30px;border-radius:3px;background:var(--a);box-shadow:0 0 16px rgba(var(--argb),.6);}.mpslib-glabel .cnt{font-family:var(--body,Inter,sans-serif);font-size:14px;font-weight:500;letter-spacing:.5px;color:var(--faint);text-transform:none;}'
-    + '.mpslib-slabel{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);margin:34px 2px 10px;padding-bottom:8px;border-bottom:1px solid var(--ln);}.mpslib-slabel span{color:var(--faint);font-weight:600;}'
+    + '.mpslib-rbody{display:none;padding:6px 0 4px;}.mpslib-region.open .mpslib-rbody{display:block;}'
+    + '.mpslib-glabel{display:flex;align-items:center;gap:13px;font-family:var(--disp,Oswald,sans-serif);font-size:30px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--tx);margin:16px 2px 12px;line-height:1;}.mpslib-glabel::before{content:"";width:6px;height:30px;border-radius:3px;background:var(--a);box-shadow:0 0 16px rgba(var(--argb),.6);}.mpslib-glabel .cnt{font-family:var(--body,Inter,sans-serif);font-size:14px;font-weight:500;letter-spacing:.5px;color:var(--faint);text-transform:none;}'
+    + '.mpslib-slabel{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);margin:26px 2px 10px;padding-bottom:8px;border-bottom:1px solid var(--ln);}.mpslib-slabel span{color:var(--faint);font-weight:600;}.mpslib-glabel + .mpslib-slabel{margin-top:2px;}'
     + '.mpslib-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px;}@media(min-width:760px){.mpslib-cards{grid-template-columns:repeat(5,minmax(0,1fr));}}'
     + '.mpslib-ex{display:flex;flex-direction:column;min-height:96px;background:linear-gradient(180deg,#0e1015 0%,#0a0c12 100%);border:1px solid var(--ln);border-radius:12px;padding:15px 15px 13px 19px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;position:relative;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.85),0 4px 6px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-ex:hover{border-color:var(--a);transform:translateY(-3px);box-shadow:0 16px 32px rgba(0,0,0,.9),0 0 0 1px rgba(var(--argb),.3),inset 0 1px 0 rgba(255,255,255,.09);}'
     + '.mpslib-ex::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--a);box-shadow:0 0 10px rgba(var(--argb),.5);}'
@@ -127,17 +128,25 @@ window.MPSLibrary = (function () {
     REGIONS.forEach(function(reg,ri){
       var inner='',count=0;
       reg.groups.forEach(function(g){
-        var gHtml='';
-        g.subs.forEach(function(pair){
-          var sid=pair[0], slabel=pair[1];
-          var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
-          if(!list.length)return; count+=list.length;
-          var head = g.label
-            ? '<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div>'
-            : '<div class="mpslib-glabel">'+slabel+' <span class="cnt">'+list.length+'</span></div>';
-          gHtml+= head + '<div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div>';
-        });
-        if(gHtml){ if(g.label) inner+='<div class="mpslib-glabel">'+g.label+'</div>'; inner+=gHtml; }
+        if(g.label){
+          // real group (Biceps, Triceps, Quads...) -> ONE container box
+          var body='';
+          g.subs.forEach(function(pair){
+            var sid=pair[0], slabel=pair[1];
+            var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
+            if(!list.length)return; count+=list.length;
+            body+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div>';
+          });
+          if(body) inner+='<div class="mpslib-group"><div class="mpslib-glabel">'+g.label+'</div>'+body+'</div>';
+        } else {
+          // group-less region (Chest, Lats, Forearms...) -> each subsection is its own container box
+          g.subs.forEach(function(pair){
+            var sid=pair[0], slabel=pair[1];
+            var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
+            if(!list.length)return; count+=list.length;
+            inner+='<div class="mpslib-group"><div class="mpslib-glabel">'+slabel+' <span class="cnt">'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div></div>';
+          });
+        }
       });
       if(!inner)return;
       html+='<div class="mpslib-region'+(ri===0?' open':'')+'"><div class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</div><div class="mpslib-rbody">'+inner+'</div></div>';
