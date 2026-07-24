@@ -51,10 +51,11 @@ window.MPSLibrary = (function () {
     + '.mpslib-chev{color:var(--faint);transition:transform .18s;}.mpslib-region.open .mpslib-chev{transform:rotate(90deg);}'
     + '.mpslib-rbody{display:none;padding:0 14px 14px;}.mpslib-region.open .mpslib-rbody{display:block;}'
     + '.mpslib-glabel{font-family:var(--disp,Oswald,sans-serif);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:14px 4px 6px;}'
-    + '.mpslib-slabel{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin:12px 4px 8px;}.mpslib-slabel span{color:var(--faint);}'
-    + '.mpslib-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:9px;}'
-    + '.mpslib-ex{background:var(--c2);border:1px solid var(--ln);border-radius:12px;padding:12px 13px;cursor:pointer;transition:.12s;position:relative;}.mpslib-ex:hover{border-color:var(--a);transform:translateY(-1px);}'
-    + '.mpslib-exn{font-weight:600;font-size:14px;margin-bottom:7px;line-height:1.25;padding-right:34px;color:var(--tx);}'
+    + '.mpslib-slabel{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);margin:18px 2px 11px;padding-bottom:8px;border-bottom:1px solid var(--ln);}.mpslib-slabel span{color:var(--faint);font-weight:600;}'
+    + '.mpslib-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(244px,1fr));gap:10px;}'
+    + '.mpslib-ex{display:flex;flex-direction:column;min-height:96px;background:var(--c2);border:1px solid var(--ln);border-radius:12px;padding:15px 15px 13px;cursor:pointer;transition:border-color .14s,background .14s,transform .14s;position:relative;}.mpslib-ex:hover{border-color:var(--a);background:var(--c1);transform:translateY(-1px);}'
+    + '.mpslib-exn{font-weight:600;font-size:15px;line-height:1.3;color:var(--tx);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:26px;}'
+    + '.mpslib-exm{margin-top:auto;padding-top:12px;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--faint);}.mpslib-exm .eq{color:var(--dim);}'
     + '.mpslib-meta{display:flex;gap:6px;flex-wrap:wrap;}.mpslib-tag{font-size:10px;letter-spacing:.4px;padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--ln);text-transform:capitalize;}.mpslib-tag.acc{color:var(--a);border-color:rgba(var(--argb),.4);background:rgba(var(--argb),.08);}.mpslib-tag.dim{background:transparent;border-color:transparent;color:var(--faint);padding-left:0;padding-right:8px;letter-spacing:1px;text-transform:uppercase;font-size:9px;}'
     + '.mpslib-ref{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;color:var(--dim);border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);padding:2px 5px;border-radius:5px;}'
     + '.mpslib-empty{color:var(--faint);text-align:center;padding:36px;font-size:14px;}'
@@ -97,12 +98,12 @@ window.MPSLibrary = (function () {
   function epley(w,r){ return r>1? Math.round(w*(1+r/30)) : w; }
 
   /* ---- browse render ---- */
-  function card(x,ref){
+  function card(x,ref,showMuscle){
+    var meta = (showMuscle ? '<span class="eq">'+esc(pretty(x.primaryMuscles[0]||''))+'</span> &middot; ' : '')
+      + '<span class="eq">'+esc(pretty(x.equipment[0]||''))+'</span> &middot; ' + esc(pretty(x.difficulty));
     return '<div class="mpslib-ex" data-id="'+x.id+'">'+(ref?'<span class="mpslib-ref">REF</span>':'')
-      +'<div class="mpslib-exn">'+esc(x.name)+'</div><div class="mpslib-meta">'
-      +'<span class="mpslib-tag acc">'+esc(pretty(x.primaryMuscles[0]||''))+'</span>'
-      +'<span class="mpslib-tag">'+esc(pretty(x.equipment[0]||''))+'</span>'
-      +'<span class="mpslib-tag dim">'+esc(pretty(x.difficulty))+'</span></div></div>';
+      +'<div class="mpslib-exn">'+esc(x.name)+'</div>'
+      +'<div class="mpslib-exm">'+meta+'</div></div>';
   }
   var state={ q:'', eq:{}, df:{} };
   function passFilter(x){
@@ -118,7 +119,7 @@ window.MPSLibrary = (function () {
     var R=root.querySelector('.mpslib-results');
     if(state.q){
       var hits=EX.filter(function(x){return matchQ(x)&&passFilter(x);}).sort(function(a,b){return a.name.localeCompare(b.name);});
-      R.innerHTML = hits.length ? '<div class="mpslib-region open"><div class="mpslib-rbody" style="display:block;padding-top:14px"><div class="mpslib-slabel">Search results <span>'+hits.length+'</span></div><div class="mpslib-cards">'+hits.map(function(x){return card(x,false);}).join('')+'</div></div></div>' : '<div class="mpslib-empty">No exercises match "'+esc(state.q)+'".</div>';
+      R.innerHTML = hits.length ? '<div class="mpslib-region open"><div class="mpslib-rbody" style="display:block;padding-top:14px"><div class="mpslib-slabel">Search results <span>'+hits.length+'</span></div><div class="mpslib-cards">'+hits.map(function(x){return card(x,false,true);}).join('')+'</div></div></div>' : '<div class="mpslib-empty">No exercises match "'+esc(state.q)+'".</div>';
       wireCards(root); return;
     }
     var html='';
