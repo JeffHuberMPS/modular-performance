@@ -21,7 +21,7 @@ window.MPSLibrary = (function () {
     { id:'shoulders', label:'Shoulders', groups:[{ label:null, single:true, subs:[['front_delts','Front Delts'],['side_delts','Side Delts'],['rear_delts','Rear Delts']] }] },
     { id:'traps', label:'Traps', groups:[{ label:null, single:true, subs:[['upper_traps','Upper Traps'],['middle_traps','Middle Traps'],['lower_traps','Lower Traps']] }] },
     { id:'back', label:'Back', groups:[{ label:null, single:true, subs:[['upper_back','Upper Back'],['middle_back','Middle Back']] }] },
-    { id:'lower_back', label:'Lower Back', groups:[{ label:null, single:true, subs:[['lower_back','Lower Back'],['spinal_stability','Spinal Stability']] }] },
+    { id:'lower_back', label:'Lower Back', bare:true, groups:[{ label:null, single:true, subs:[['lower_back','Lower Back'],['spinal_stability','Spinal Stability']] }] },
     { id:'lats', label:'Lats', groups:[{ label:null, single:true, subs:[['upper_lats','Upper Lats'],['lower_lats','Lower Lats']] }] },
     { id:'core', label:'Core', groups:[{ label:null, single:true, subs:[['upper_abs','Upper Abs'],['lower_abs','Lower Abs'],['obliques','Obliques'],['serratus','Serratus']] }] },
     { id:'legs', label:'Legs', groups:[
@@ -159,7 +159,12 @@ window.MPSLibrary = (function () {
         }
       });
       if(!inner)return;
-      html+='<div class="mpslib-region'+(ri===0?' open':'')+'"><div class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</div><div class="mpslib-rbody">'+inner+'</div></div>';
+      if(reg.bare){
+        // no region title bar (e.g. Lower Back, whose title duplicates its subsection) — always shown
+        html+='<div class="mpslib-region open"><div class="mpslib-rbody" style="display:block">'+inner+'</div></div>';
+      } else {
+        html+='<div class="mpslib-region'+(ri===0?' open':'')+'"><div class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</div><div class="mpslib-rbody">'+inner+'</div></div>';
+      }
     });
     var cInner='';
     COMPOUND.forEach(function(pair){
@@ -245,8 +250,15 @@ window.MPSLibrary = (function () {
       + sec('about', SEC_IC.stats, 'Details', '<div class="mpslib-krow"><div class="k">Appears in</div><div class="v mpslib-appears">'+appears+'</div></div><div class="mpslib-krow"><div class="k">How-to</div><div class="v">'+((x.instructions&&x.instructions.execution)?esc(x.instructions.execution):'<span class="mpslib-lock">Instructions + demo added in the content pass.</span>')+'</div></div>', false);
   }
 
+  var _profScroller=null, _profTop=0, _profWin=0;
+  function _findScroller(){
+    var best=document.scrollingElement||document.documentElement, max=(best.scrollHeight-best.clientHeight)||0;
+    ['#tab-library','.tab-content'].forEach(function(sel){ document.querySelectorAll(sel).forEach(function(el){ var m=el.scrollHeight-el.clientHeight, oy=getComputedStyle(el).overflowY; if(m>max&&(oy==='auto'||oy==='scroll')){best=el;max=m;} }); });
+    return best;
+  }
   function openProfile(id){
     var x=byId[id]; if(!x)return;
+    _profScroller=_findScroller(); _profTop=_profScroller.scrollTop; _profWin=window.scrollY||0;  // remember position
     var bg=document.getElementById('mpslib-bg');
     var draw=bg.querySelector('.mpslib-draw');
     draw.innerHTML=buildProfile(x);
@@ -254,7 +266,10 @@ window.MPSLibrary = (function () {
     draw.querySelectorAll('.mpslib-sec-h').forEach(function(h){ h.onclick=function(){ h.parentElement.classList.toggle('open'); }; });
     bg.classList.add('on');
   }
-  function closeProfile(){ document.getElementById('mpslib-bg').classList.remove('on'); }
+  function closeProfile(){
+    document.getElementById('mpslib-bg').classList.remove('on');
+    try{ if(_profScroller) _profScroller.scrollTop=_profTop; if(_profWin) window.scrollTo(0,_profWin); }catch(e){}  // stay in place
+  }
 
   function ensureDrawer(){
     if(document.getElementById('mpslib-bg'))return;
