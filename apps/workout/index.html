@@ -902,8 +902,10 @@ function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');f.classL
   <button class="tab" data-tab="today">Today</button>
   <button class="tab" data-tab="history">History</button>
   <button class="tab" data-tab="prs">PRs</button>
+  <button class="tab" data-tab="library">Exercise Library</button>
   <button class="tab" data-tab="plan">Plan</button>
 </div>
+<div id="tab-library" class="tab-content" style="display: none;"><div id="mps-library-root"></div></div>
 <div id="tab-dashboard" class="tab-content">
   <div id="dashboard-container"></div>
 </div>
@@ -1678,6 +1680,7 @@ function reconstructDayFromHistory(histEntry) {
 function buildFreshExercise(name, targetSets, targetReps) {
   return {
     id: Date.now() + Math.random(),
+    exerciseId: (typeof window !== 'undefined' && window.MPS_LIB_ID) ? window.MPS_LIB_ID(name) : null,  // canonical Exercise Library id (Weapon 7)
     name,
     targetSets: targetSets || 3,
     targetReps: targetReps || '',
@@ -2311,7 +2314,7 @@ async function endWorkout() {
   const allEx = [];
   // Iterate exercises to collect detail, volume, and PRs
   all.forEach(b => b.exercises.forEach(e => {
-    allEx.push({ blockName: b.name, name: e.name, isSkill: skillBlockNames.has(b.name), targetSets: e.targetSets, targetReps: e.targetReps, sets: e.sets });
+    allEx.push({ blockName: b.name, name: e.name, exerciseId: e.exerciseId || (window.MPS_LIB_ID ? window.MPS_LIB_ID(e.name) : null), isSkill: skillBlockNames.has(b.name), targetSets: e.targetSets, targetReps: e.targetReps, sets: e.sets });
     e.sets.forEach(s => {
       if (s.done) {
         const w = parseFloat(s.weight) || 0; const r = parseInt(s.reps) || 0;
@@ -6872,5 +6875,39 @@ wireConditioningCats();
 </script>
 <!-- MPS interactive first-open tour (hub calls window.startMpsTour() after the intro popup) -->
 <script src="/shared/tour.js" defer></script>
+
+<!-- Exercise Library (Weapon 5/6) + canonical-id hookup (Weapon 7) -->
+<script src="/workout-library-data.js" defer></script>
+<script src="/workout-library.js" defer></script>
+<script>
+(function () {
+  // Canonical-id resolver: map an exercise name/alias -> Exercise Library id, so logged
+  // history carries a stable id (analytics never split one lift into two identities).
+  var idMap = null;
+  function buildMap() {
+    idMap = {};
+    (window.MPS_EXERCISES || []).forEach(function (x) {
+      idMap[x.name.toLowerCase()] = x.id;
+      (x.aliases || []).forEach(function (a) { if (!idMap[a.toLowerCase()]) idMap[a.toLowerCase()] = x.id; });
+    });
+  }
+  window.MPS_LIB_ID = function (name) { if (!idMap) buildMap(); return name ? (idMap[String(name).toLowerCase()] || null) : null; };
+
+  // Lazy-mount the Exercise Library tab the first time it's opened. The Profile reads real
+  // PRs/history straight from localStorage, so it works standalone or embedded.
+  var mounted = false;
+  function tryMount() {
+    if (mounted || !window.MPSLibrary) return;
+    var root = document.getElementById('mps-library-root'); if (!root) return;
+    window.MPSLibrary.mount(root, {
+      getHistory: function () { try { return JSON.parse(localStorage.getItem('mps_v3_history') || '[]'); } catch (e) { return []; } },
+      getPRs:     function () { try { return JSON.parse(localStorage.getItem('mps_v3_prs') || '{}'); } catch (e) { return {}; } }
+    });
+    mounted = true;
+  }
+  var libTab = document.querySelector('.tab[data-tab="library"]');
+  if (libTab) libTab.addEventListener('click', function () { setTimeout(tryMount, 0); });
+})();
+</script>
 </body>
 </html>

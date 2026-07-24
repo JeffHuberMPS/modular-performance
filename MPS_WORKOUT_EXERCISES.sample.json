@@ -1,0 +1,88 @@
+[
+  {
+    "id": "barbell-curl",
+    "name": "Barbell Curl",
+    "aliases": ["Standing Barbell Curl"],
+    "primaryMuscles": ["biceps_long"],
+    "secondaryMuscles": ["brachialis", "forearms"],
+    "placements": [
+      { "bodyRegion": "arms", "subsection": "biceps_long_head", "role": "primary", "emphasis": null }
+    ],
+    "collections": [],
+    "movementPattern": "isolation",
+    "type": "isolation",
+    "equipment": ["barbell"],
+    "difficulty": "beginner",
+    "isUnilateral": false,
+    "tracking": {
+      "primary": "weight_reps",
+      "supportsWeight": true, "supportsReps": true,
+      "supportsTime": false, "supportsDistance": false, "supportsRounds": false
+    },
+    "instructions": {
+      "setup": "Stand tall, shoulder-width grip, bar at thighs, elbows pinned to your sides.",
+      "execution": "Curl the bar up by flexing the elbows, keep the upper arms still, lower under control.",
+      "commonMistakes": "Swinging the torso, letting the elbows drift forward, using momentum.",
+      "safetyNotes": "Keep a neutral wrist; drop the weight if the lower back starts to arch."
+    },
+    "media": { "thumb": null, "video": null }
+  },
+  {
+    "id": "farmers-carry",
+    "name": "Farmer's Carry",
+    "aliases": ["Farmer Carry", "Farmers Walk", "Loaded Carry"],
+    "primaryMuscles": ["grip", "forearms"],
+    "secondaryMuscles": ["traps_upper", "delts_side", "core", "legs"],
+    "placements": [
+      { "bodyRegion": "forearms", "subsection": "grip_strength", "role": "primary", "emphasis": null },
+      { "bodyRegion": "traps", "subsection": "upper_traps", "role": "reference" }
+    ],
+    "collections": ["compound:carry"],
+    "movementPattern": "carry",
+    "type": "compound",
+    "equipment": ["dumbbell", "kettlebell"],
+    "difficulty": "beginner",
+    "isUnilateral": false,
+    "tracking": {
+      "primary": "distance",
+      "supportsWeight": true, "supportsReps": false,
+      "supportsTime": true, "supportsDistance": true, "supportsRounds": false
+    },
+    "instructions": {
+      "setup": "Grab a heavy load in each hand, stand tall, brace the core, pull the shoulders back.",
+      "execution": "Walk with short controlled steps for the set distance or time, keep the load from swinging.",
+      "commonMistakes": "Shrugging into the ears, leaning to one side, rushing the steps.",
+      "safetyNotes": "Set the weights down under control; do not drop from a rounded back."
+    },
+    "media": { "thumb": null, "video": null }
+  },
+  {
+    "id": "bulgarian-split-squat",
+    "name": "Bulgarian Split Squat",
+    "aliases": ["Rear-Foot-Elevated Split Squat", "RFE Split Squat"],
+    "primaryMuscles": ["rectus_femoris", "vastus_lateralis"],
+    "secondaryMuscles": ["gluteus_maximus", "hamstrings"],
+    "placements": [
+      { "bodyRegion": "legs", "subsection": "center_quad", "role": "primary", "emphasis": null },
+      { "bodyRegion": "legs", "subsection": "glute_max", "role": "reference" }
+    ],
+    "collections": ["compound:lunge"],
+    "movementPattern": "lunge",
+    "type": "compound",
+    "equipment": ["dumbbell", "barbell", "bodyweight"],
+    "difficulty": "intermediate",
+    "isUnilateral": true,
+    "tracking": {
+      "primary": "weight_reps",
+      "supportsWeight": true, "supportsReps": true,
+      "supportsTime": false, "supportsDistance": false, "supportsRounds": false
+    },
+    "instructions": {
+      "setup": "Place the rear foot on a bench, front foot forward, torso tall, weight in the front heel.",
+      "execution": "Lower straight down until the front thigh is near parallel, drive through the front heel to stand.",
+      "commonMistakes": "Front knee caving in, pushing off the back foot, torso collapsing forward.",
+      "safetyNotes": "Start bodyweight to find balance before loading; keep the front knee tracking over the toes."
+    },
+    "media": { "thumb": null, "video": null }
+  }
+]
