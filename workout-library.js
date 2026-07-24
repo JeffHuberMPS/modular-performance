@@ -16,7 +16,7 @@ window.MPSLibrary = (function () {
     { id:'arms', label:'Arms', groups:[
       { label:'Biceps', subs:[['biceps_long_head','Long Head'],['biceps_short_head','Short Head'],['brachialis','Brachialis']] },
       { label:'Triceps', subs:[['triceps_long_head','Long Head'],['triceps_lateral_head','Lateral Head'],['triceps_medial_head','Medial Head']] } ] },
-    { id:'forearms', label:'Forearms', groups:[{ label:null, subs:[['wrist_flexors','Wrist Flexors'],['wrist_extensors','Wrist Extensors'],['brachioradialis','Brachioradialis'],['grip_strength','Grip Strength']] }] },
+    { id:'forearms', label:'Forearms', groups:[{ label:null, single:true, subs:[['wrist_flexors','Wrist Flexors'],['wrist_extensors','Wrist Extensors'],['brachioradialis','Brachioradialis'],['grip_strength','Grip Strength']] }] },
     { id:'chest', label:'Chest', groups:[{ label:null, subs:[['upper_chest','Upper Chest'],['middle_chest','Middle Chest'],['lower_chest','Lower Chest'],['inner_chest','Inner Chest'],['outer_chest','Outer Chest']] }] },
     { id:'shoulders', label:'Shoulders', groups:[{ label:null, subs:[['front_delts','Front Delts'],['side_delts','Side Delts'],['rear_delts','Rear Delts']] }] },
     { id:'traps', label:'Traps', groups:[{ label:null, subs:[['upper_traps','Upper Traps'],['middle_traps','Middle Traps'],['lower_traps','Lower Traps']] }] },
@@ -52,7 +52,7 @@ window.MPSLibrary = (function () {
     + '.mpslib-chev{color:var(--faint);transition:transform .18s;}.mpslib-region.open .mpslib-chev{transform:rotate(90deg);}'
     + '.mpslib-rbody{display:none;padding:6px 0 4px;}.mpslib-region.open .mpslib-rbody{display:block;}'
     + '.mpslib-glabel{display:flex;align-items:center;gap:13px;font-family:var(--disp,Oswald,sans-serif);font-size:24px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--tx);margin:16px 2px 12px;line-height:1;}.mpslib-glabel::before{content:"";width:6px;height:24px;border-radius:3px;background:var(--a);box-shadow:0 0 16px rgba(var(--argb),.6);}.mpslib-glabel .cnt{font-family:var(--body,Inter,sans-serif);font-size:14px;font-weight:500;letter-spacing:.5px;color:var(--faint);text-transform:none;}'
-    + '.mpslib-slabel{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);margin:26px 2px 10px;padding-bottom:8px;border-bottom:1px solid var(--ln);}.mpslib-slabel span{color:var(--faint);font-weight:600;}.mpslib-glabel + .mpslib-slabel{margin-top:2px;}'
+    + '.mpslib-slabel{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);margin:26px 2px 10px;padding-bottom:8px;border-bottom:1px solid var(--ln);}.mpslib-slabel span{color:var(--faint);font-weight:600;}.mpslib-glabel + .mpslib-slabel{margin-top:2px;}.mpslib-group > .mpslib-slabel:first-child{margin-top:6px;}'
     + '.mpslib-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px;}@media(min-width:760px){.mpslib-cards{grid-template-columns:repeat(5,minmax(0,1fr));}}'
     + '.mpslib-ex{display:flex;flex-direction:column;min-height:96px;background:linear-gradient(180deg,#0e1015 0%,#0a0c12 100%);border:1px solid var(--ln);border-radius:12px;padding:15px 15px 13px 19px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;position:relative;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.85),0 4px 6px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-ex:hover{border-color:var(--a);transform:translateY(-3px);box-shadow:0 16px 32px rgba(0,0,0,.9),0 0 0 1px rgba(var(--argb),.3),inset 0 1px 0 rgba(255,255,255,.09);}'
     + '.mpslib-ex::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--a);box-shadow:0 0 10px rgba(var(--argb),.5);}'
@@ -138,8 +138,18 @@ window.MPSLibrary = (function () {
             body+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div>';
           });
           if(body) inner+='<div class="mpslib-group"><div class="mpslib-glabel">'+g.label+'</div>'+body+'</div>';
+        } else if(g.single){
+          // group-less region shown as ONE container (e.g. Forearms) with its subsections inside
+          var sbody='';
+          g.subs.forEach(function(pair){
+            var sid=pair[0], slabel=pair[1];
+            var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
+            if(!list.length)return; count+=list.length;
+            sbody+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div>';
+          });
+          if(sbody) inner+='<div class="mpslib-group">'+sbody+'</div>';
         } else {
-          // group-less region (Chest, Lats, Forearms...) -> each subsection is its own container box
+          // group-less region (Chest, Lats...) -> each subsection is its own container box
           g.subs.forEach(function(pair){
             var sid=pair[0], slabel=pair[1];
             var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
