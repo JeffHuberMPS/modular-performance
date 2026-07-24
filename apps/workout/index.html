@@ -904,8 +904,10 @@ function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');f.classL
   <button class="tab" data-tab="prs">PRs</button>
   <button class="tab" data-tab="library">Exercise Library</button>
   <button class="tab" data-tab="plan">Plan</button>
+  <button class="tab" data-tab="analytics">Analytics</button>
 </div>
 <div id="tab-library" class="tab-content" style="display: none;"><div id="mps-library-root"></div></div>
+<div id="tab-analytics" class="tab-content" style="display: none;"><div id="mps-analytics-root"></div></div>
 <div id="tab-dashboard" class="tab-content">
   <div id="dashboard-container"></div>
 </div>
@@ -6760,6 +6762,7 @@ wireConditioningCats();
 <!-- Exercise Library (Weapon 5/6) + canonical-id hookup (Weapon 7) -->
 <script src="/workout-library-data.js" defer></script>
 <script src="/workout-library.js" defer></script>
+<script src="/workout-analytics.js" defer></script>
 <script>
 (function () {
   // Canonical-id resolver: map an exercise name/alias -> Exercise Library id, so logged
@@ -6788,6 +6791,17 @@ wireConditioningCats();
   }
   var libTab = document.querySelector('.tab[data-tab="library"]');
   if (libTab) libTab.addEventListener('click', function () { setTimeout(tryMount, 0); });
+
+  // Analytics (Weapon 8): re-mount on every open so trends reflect the latest logged data.
+  var anTab = document.querySelector('.tab[data-tab="analytics"]');
+  if (anTab) anTab.addEventListener('click', function () { setTimeout(function () {
+    if (!window.MPSAnalytics) return;
+    var r = document.getElementById('mps-analytics-root'); if (!r) return;
+    window.MPSAnalytics.mount(r, {
+      getHistory: function () { try { return JSON.parse(localStorage.getItem('mps_v3_history') || '[]'); } catch (e) { return []; } },
+      getPRs:     function () { try { return JSON.parse(localStorage.getItem('mps_v3_prs') || '{}'); } catch (e) { return {}; } }
+    });
+  }, 0); });
 })();
 </script>
 </body>
