@@ -1,0 +1,262 @@
+/* ============================================================================
+   MPS Exercise Library + Exercise Profile  (reusable component)
+   Weapon 5 (browse/search/filter) + Weapon 6 (collapsible Exercise Profile).
+   Self-contained: injects its own scoped styles, reads window.MPS_EXERCISES.
+   Use: MPSLibrary.mount(elementOrId, { getHistory, getPRs })
+     - getHistory(): optional () => [ {date, detail:[{name, isSkill, sets:[{weight,reps,done}]}]} ]
+     - getPRs():     optional () => { exerciseName: {weight, date} }
+   Standalone (no data fns) shows the structure with "log to unlock" states.
+   Styles use the workout app's CSS vars with safe fallbacks so it fits in-app.
+============================================================================ */
+window.MPSLibrary = (function () {
+  'use strict';
+  var EX = [], byId = {}, mounted = null, opts = {};
+
+  var REGIONS = [
+    { id:'arms', label:'Arms', groups:[
+      { label:'Biceps', subs:[['biceps_long_head','Long Head'],['biceps_short_head','Short Head'],['brachialis','Brachialis']] },
+      { label:'Triceps', subs:[['triceps_long_head','Long Head'],['triceps_lateral_head','Lateral Head'],['triceps_medial_head','Medial Head']] } ] },
+    { id:'forearms', label:'Forearms', groups:[{ label:null, subs:[['wrist_flexors','Wrist Flexors'],['wrist_extensors','Wrist Extensors'],['brachioradialis','Brachioradialis'],['grip_strength','Grip Strength']] }] },
+    { id:'chest', label:'Chest', groups:[{ label:null, subs:[['upper_chest','Upper Chest'],['middle_chest','Middle Chest'],['lower_chest','Lower Chest'],['inner_chest','Inner Chest'],['outer_chest','Outer Chest']] }] },
+    { id:'shoulders', label:'Shoulders', groups:[{ label:null, subs:[['front_delts','Front Delts'],['side_delts','Side Delts'],['rear_delts','Rear Delts']] }] },
+    { id:'traps', label:'Traps', groups:[{ label:null, subs:[['upper_traps','Upper Traps'],['middle_traps','Middle Traps'],['lower_traps','Lower Traps']] }] },
+    { id:'back', label:'Back', groups:[{ label:null, subs:[['upper_back','Upper Back'],['middle_back','Middle Back']] }] },
+    { id:'lower_back', label:'Lower Back', groups:[{ label:null, subs:[['lower_back','Lower Back'],['spinal_stability','Spinal Stability']] }] },
+    { id:'lats', label:'Lats', groups:[{ label:null, subs:[['upper_lats','Upper Lats'],['lower_lats','Lower Lats']] }] },
+    { id:'core', label:'Core', groups:[{ label:null, subs:[['upper_abs','Upper Abs'],['lower_abs','Lower Abs'],['obliques','Obliques'],['serratus','Serratus']] }] },
+    { id:'legs', label:'Legs', groups:[
+      { label:'Quads', subs:[['inner_quad','Inner Quad / Teardrop'],['outer_quad','Outer Quad'],['center_quad','Center Quad'],['overall_quads','Overall Quads']] },
+      { label:'Hamstrings', subs:[['outer_hamstring','Outer Hamstring'],['inner_hamstring','Inner Hamstring']] },
+      { label:'Glutes / Hip', subs:[['upper_glutes','Upper Glutes'],['glute_max','Glute Max'],['side_glutes','Side Glutes'],['adductors','Inner Thigh / Adductors']] },
+      { label:'Calves', subs:[['upper_calves','Upper Calves'],['lower_calves','Lower Calves']] } ] }
+  ];
+  var COMPOUND = [['horizontal_push','Horizontal Push'],['vertical_push','Vertical Push'],['horizontal_pull','Horizontal Pull'],['vertical_pull','Vertical Pull'],['squat','Squat'],['hinge','Hinge'],['lunge','Lunge'],['hip_extension','Hip Extension'],['dip','Dip'],['carry','Carry']];
+
+  function pretty(s){ return String(s||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function inSub(x,r,s){ return x.placements.some(function(p){return !p.hidden&&p.bodyRegion===r&&p.subsection===s;}); }
+  function roleIn(x,r,s){ var p=x.placements.find(function(p){return p.bodyRegion===r&&p.subsection===s;}); return p?p.role:null; }
+
+  function ic(){ return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M4 8.5v7M17.5 6.5v11M20 8.5v7M6.5 12h11"/></svg>'; }
+  function chev(){ return '<svg class="mpslib-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>'; }
+
+  var CSS = ''
+    + '.mpslib{--a:var(--mps-accent,#4ab3f4);--argb:var(--mps-accent-rgb,74,179,244);--tx:var(--text,#eef2f6);--dim:var(--text-dim,#9aa6b2);--faint:var(--text-faint,#5f6a76);--ln:var(--border,#232a33);--c1:#12161b;--c2:#161b22;--gold:#d8b25f;font-family:var(--body,Inter,system-ui,sans-serif);}'
+    + '.mpslib-sub{color:var(--dim);font-size:13px;margin:0 0 14px;}.mpslib-sub b{color:var(--a);}'
+    + '.mpslib-search-wrap{position:relative;}.mpslib-search{width:100%;background:var(--c1);border:1px solid var(--ln);color:var(--tx);border-radius:12px;padding:13px 14px 13px 42px;font-size:15px;font-family:inherit;}.mpslib-search:focus{outline:none;border-color:var(--a);}.mpslib-search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--faint);}'
+    + '.mpslib-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}.mpslib-chip{font-size:12px;padding:7px 12px;border-radius:16px;background:var(--c1);border:1px solid var(--ln);color:var(--dim);cursor:pointer;text-transform:capitalize;transition:.12s;}.mpslib-chip.on{background:rgba(var(--argb),.14);border-color:var(--a);color:var(--a);}'
+    + '.mpslib-region{margin-top:16px;border:1px solid var(--ln);border-radius:16px;overflow:hidden;background:var(--c1);}'
+    + '.mpslib-rhead{display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;user-select:none;}.mpslib-rhead:hover{background:var(--c2);}'
+    + '.mpslib-ric{color:var(--a);flex-shrink:0;}.mpslib-rtitle{font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:18px;letter-spacing:.5px;flex:1;}.mpslib-rcount{font-size:12px;color:var(--faint);letter-spacing:1px;}'
+    + '.mpslib-chev{color:var(--faint);transition:transform .18s;}.mpslib-region.open .mpslib-chev{transform:rotate(90deg);}'
+    + '.mpslib-rbody{display:none;padding:0 14px 14px;}.mpslib-region.open .mpslib-rbody{display:block;}'
+    + '.mpslib-glabel{font-family:var(--disp,Oswald,sans-serif);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:14px 4px 6px;}'
+    + '.mpslib-slabel{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin:12px 4px 8px;}.mpslib-slabel span{color:var(--faint);}'
+    + '.mpslib-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:9px;}'
+    + '.mpslib-ex{background:var(--c2);border:1px solid var(--ln);border-radius:12px;padding:12px 13px;cursor:pointer;transition:.12s;position:relative;}.mpslib-ex:hover{border-color:var(--a);transform:translateY(-1px);}'
+    + '.mpslib-exn{font-weight:600;font-size:14px;margin-bottom:7px;line-height:1.25;padding-right:34px;color:var(--tx);}'
+    + '.mpslib-meta{display:flex;gap:6px;flex-wrap:wrap;}.mpslib-tag{font-size:10px;letter-spacing:.4px;padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--ln);text-transform:capitalize;}.mpslib-tag.acc{color:var(--a);border-color:rgba(var(--argb),.4);background:rgba(var(--argb),.08);}'
+    + '.mpslib-ref{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;color:var(--gold);border:1px solid rgba(216,178,95,.4);background:rgba(216,178,95,.1);padding:2px 5px;border-radius:5px;}'
+    + '.mpslib-empty{color:var(--faint);text-align:center;padding:36px;font-size:14px;}'
+    /* profile drawer */
+    + '.mpslib-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.74);z-index:2147483000;padding:16px;overflow-y:auto;}.mpslib-bg.on{display:block;}'
+    + '.mpslib-draw{max-width:540px;margin:20px auto;background:linear-gradient(160deg,#151a21,#0c0f13);border:1px solid rgba(var(--argb),.35);border-radius:16px;padding:20px 20px 8px;box-shadow:0 24px 60px rgba(0,0,0,.7);}'
+    + '.mpslib-dh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px;}.mpslib-dh h2{font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:23px;letter-spacing:.5px;color:var(--tx);}.mpslib-close{cursor:pointer;color:var(--dim);font-size:26px;line-height:1;flex-shrink:0;}'
+    + '.mpslib-aka{color:var(--dim);font-size:12px;margin-bottom:8px;}'
+    + '.mpslib-info{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}'
+    + '.mpslib-sec{border-top:1px solid var(--ln);}.mpslib-sec-h{display:flex;align-items:center;gap:9px;padding:13px 2px;cursor:pointer;user-select:none;}.mpslib-sec-h .mpslib-chev{margin-left:auto;}'
+    + '.mpslib-sec-ic{color:var(--a);display:flex;}.mpslib-sec-t{font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--tx);}'
+    + '.mpslib-sec.open .mpslib-chev{transform:rotate(90deg);}.mpslib-sec-b{display:none;padding:0 2px 14px;}.mpslib-sec.open .mpslib-sec-b{display:block;}'
+    + '.mpslib-lock{color:var(--faint);font-size:13px;line-height:1.5;}'
+    + '.mpslib-stat-row{display:flex;gap:10px;flex-wrap:wrap;}'
+    + '.mpslib-stat{flex:1;min-width:88px;background:var(--c2);border:1px solid var(--ln);border-radius:10px;padding:11px;text-align:center;}.mpslib-stat b{font-family:var(--disp,Oswald,sans-serif);font-size:22px;font-weight:600;color:var(--a);display:block;line-height:1;}.mpslib-stat span{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);}'
+    + '.mpslib-krow{display:flex;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.04);}.mpslib-krow .k{width:120px;color:var(--faint);flex-shrink:0;text-transform:uppercase;font-size:11px;letter-spacing:1px;padding-top:2px;}.mpslib-krow .v{flex:1;color:var(--tx);}'
+    + '.mpslib-appears{display:flex;gap:6px;flex-wrap:wrap;}';
+
+  function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
+
+  /* ---- history helpers (optional; graceful when absent) ---- */
+  function hist(){ try{ return (opts.getHistory&&opts.getHistory())||[]; }catch(e){ return []; } }
+  function prsMap(){ try{ return (opts.getPRs&&opts.getPRs())||{}; }catch(e){ return {}; } }
+  // pull all logged sets for an exercise (matched by canonical name or alias, against history detail names)
+  function loggedSets(x){
+    var names={}; names[x.name.toLowerCase()]=1; (x.aliases||[]).forEach(function(a){names[a.toLowerCase()]=1;});
+    var out=[];
+    hist().forEach(function(h){ (h.detail||[]).forEach(function(d){
+      if(!d||!d.name||!names[String(d.name).toLowerCase()])return;
+      (d.sets||[]).forEach(function(s){ if(s&&s.done){ out.push({date:h.date, weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0}); } });
+    });});
+    return out;
+  }
+  function epley(w,r){ return r>1? Math.round(w*(1+r/30)) : w; }
+
+  /* ---- browse render ---- */
+  function card(x,ref){
+    var tk=x.tracking.primary.replace(/_/g,'+');
+    return '<div class="mpslib-ex" data-id="'+x.id+'">'+(ref?'<span class="mpslib-ref">REF</span>':'')
+      +'<div class="mpslib-exn">'+esc(x.name)+'</div><div class="mpslib-meta">'
+      +'<span class="mpslib-tag acc">'+esc(pretty(x.primaryMuscles[0]||''))+'</span>'
+      +'<span class="mpslib-tag">'+esc(pretty(x.equipment[0]||''))+'</span>'
+      +'<span class="mpslib-tag">'+esc(x.difficulty)+'</span>'
+      +'<span class="mpslib-tag">'+esc(tk)+'</span></div></div>';
+  }
+  var state={ q:'', eq:{}, df:{} };
+  function passFilter(x){
+    var eq=Object.keys(state.eq).filter(function(k){return state.eq[k];});
+    var df=Object.keys(state.df).filter(function(k){return state.df[k];});
+    if(eq.length && !x.equipment.some(function(e){return state.eq[e];})) return false;
+    if(df.length && !state.df[x.difficulty]) return false;
+    return true;
+  }
+  function matchQ(x){ if(!state.q)return true; var s=state.q.toLowerCase(); return x.name.toLowerCase().indexOf(s)>=0 || (x.aliases||[]).some(function(a){return a.toLowerCase().indexOf(s)>=0;}); }
+
+  function renderResults(root){
+    var R=root.querySelector('.mpslib-results');
+    if(state.q){
+      var hits=EX.filter(function(x){return matchQ(x)&&passFilter(x);}).sort(function(a,b){return a.name.localeCompare(b.name);});
+      R.innerHTML = hits.length ? '<div class="mpslib-region open"><div class="mpslib-rbody" style="display:block;padding-top:14px"><div class="mpslib-slabel">Search results <span>'+hits.length+'</span></div><div class="mpslib-cards">'+hits.map(function(x){return card(x,false);}).join('')+'</div></div></div>' : '<div class="mpslib-empty">No exercises match "'+esc(state.q)+'".</div>';
+      wireCards(root); return;
+    }
+    var html='';
+    REGIONS.forEach(function(reg,ri){
+      var inner='',count=0;
+      reg.groups.forEach(function(g){
+        var gHtml='';
+        g.subs.forEach(function(pair){
+          var sid=pair[0], slabel=pair[1];
+          var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
+          if(!list.length)return; count+=list.length;
+          gHtml+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div>';
+        });
+        if(gHtml){ if(g.label) inner+='<div class="mpslib-glabel">'+g.label+'</div>'; inner+=gHtml; }
+      });
+      if(!inner)return;
+      html+='<div class="mpslib-region'+(ri===0?' open':'')+'"><div class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</div><div class="mpslib-rbody">'+inner+'</div></div>';
+    });
+    var cInner='';
+    COMPOUND.forEach(function(pair){
+      var list=EX.filter(function(x){return x.collections.indexOf('compound:'+pair[0])>=0&&passFilter(x);});
+      if(!list.length)return;
+      cInner+='<div class="mpslib-slabel">'+pair[1]+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x,false);}).join('')+'</div>';
+    });
+    if(cInner) html+='<div class="mpslib-region"><div class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">Compound Lifts</span><span class="mpslib-rcount">Big 10</span>'+chev()+'</div><div class="mpslib-rbody">'+cInner+'</div></div>';
+    R.innerHTML=html||'<div class="mpslib-empty">No exercises match these filters.</div>';
+    R.querySelectorAll('.mpslib-rhead').forEach(function(h){ h.onclick=function(){ h.parentElement.classList.toggle('open'); }; });
+    wireCards(root);
+  }
+  function wireCards(root){ root.querySelectorAll('.mpslib-ex').forEach(function(e){ e.onclick=function(){ openProfile(e.getAttribute('data-id')); }; }); }
+
+  /* ---- Weapon 6: Exercise Profile ---- */
+  var SEC_IC = {
+    pr:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0zM7 4H4v2a3 3 0 0 0 3 3M17 4h3v2a3 3 0 0 1-3 3"/></svg>',
+    prog:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+    stats:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="9"/></svg>',
+    est:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6"/></svg>',
+    target:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>'
+  };
+  function sec(id,icon,title,body,open){
+    return '<div class="mpslib-sec'+(open?' open':'')+'" data-sec="'+id+'"><div class="mpslib-sec-h"><span class="mpslib-sec-ic">'+icon+'</span><span class="mpslib-sec-t">'+title+'</span>'+chev()+'</div><div class="mpslib-sec-b">'+body+'</div></div>';
+  }
+  function lock(msg){ return '<div class="mpslib-lock">'+msg+'</div>'; }
+
+  function buildProfile(x){
+    var sets=loggedSets(x), pr=prsMap()[x.name];
+    var best=null; sets.forEach(function(s){ if(s.weight>0&&(!best||s.weight>best.weight||(s.weight===best.weight&&s.reps>best.reps))) best=s; });
+    if(!best && pr && pr.weight) best={weight:pr.weight, reps:(pr.reps||1), date:pr.date};
+    var canWeight = x.tracking.supportsWeight;
+
+    // PR section
+    var prBody;
+    if(best && best.weight){ prBody='<div class="mpslib-stat-row"><div class="mpslib-stat"><b>'+best.weight+'</b><span>Best Weight (lb)</span></div><div class="mpslib-stat"><b>'+(best.reps||1)+'</b><span>Reps</span></div>'+(canWeight?'<div class="mpslib-stat"><b>'+epley(best.weight,best.reps||1)+'</b><span>Est. 1RM</span></div>':'')+'</div>'+(best.date?'<div class="mpslib-krow"><div class="k">Set on</div><div class="v">'+esc(best.date)+'</div></div>':''); }
+    else { prBody=lock('No records yet. Log this '+(canWeight?'lift':'exercise')+' and your first PR lands here automatically.'); }
+
+    // Progression (last sessions)
+    var progBody;
+    if(sets.length){
+      var byDate={}; sets.forEach(function(s){ var top=byDate[s.date]; if(!top||s.weight>top) byDate[s.date]=s.weight; });
+      var rows=Object.keys(byDate).sort().slice(-6).map(function(d){ return '<div class="mpslib-krow"><div class="k">'+esc(d)+'</div><div class="v">'+byDate[d]+' lb top set</div></div>'; }).join('');
+      progBody=rows||lock('Not enough data yet.');
+    } else { progBody=lock('Your weight-over-time chart appears here once you log a few sessions.'); }
+
+    // Lifetime stats
+    var statsBody;
+    if(sets.length){
+      var totalSets=sets.length, totalReps=0, vol=0, days={};
+      sets.forEach(function(s){ totalReps+=s.reps; vol+=s.weight*s.reps; days[s.date]=1; });
+      statsBody='<div class="mpslib-stat-row"><div class="mpslib-stat"><b>'+Object.keys(days).length+'</b><span>Sessions</span></div><div class="mpslib-stat"><b>'+totalSets+'</b><span>Sets</span></div><div class="mpslib-stat"><b>'+totalReps+'</b><span>Reps</span></div><div class="mpslib-stat"><b>'+Math.round(vol).toLocaleString()+'</b><span>Volume (lb)</span></div></div>';
+    } else { statsBody=lock('Lifetime sets, reps, and volume total up here as you train.'); }
+
+    // Estimates (rep-max table from best set)
+    var estBody;
+    if(best && best.weight && canWeight){
+      var orm=epley(best.weight,best.reps||1);
+      var reps=[1,3,5,8,10,12];
+      estBody='<div class="mpslib-krow"><div class="k">Est. 1RM</div><div class="v">'+orm+' lb</div></div>'+reps.map(function(r){ var w=Math.round(orm/(1+r/30)/2.5)*2.5; return '<div class="mpslib-krow"><div class="k">'+r+'-rep max</div><div class="v">'+w+' lb</div></div>'; }).join('');
+    } else { estBody=lock('Estimated 1RM and a full rep-max table calculate from your best logged set.'); }
+
+    // Next target
+    var tgtBody;
+    if(best && best.weight && canWeight){
+      var next=Math.round((best.weight+ (best.weight<100?5:5))/2.5)*2.5;
+      tgtBody='<div class="mpslib-stat-row"><div class="mpslib-stat"><b>'+next+'</b><span>Target Weight</span></div><div class="mpslib-stat"><b>'+(best.reps||1)+'+</b><span>Target Reps</span></div></div><div class="mpslib-lock" style="margin-top:8px">Beat '+best.weight+'×'+(best.reps||1)+' next session. Small, steady jumps win.</div>';
+    } else { tgtBody=lock('Once you log a set, we suggest the next weight to chase.'); }
+
+    var info='<span class="mpslib-tag acc">'+esc(pretty(x.primaryMuscles[0]||''))+'</span>'
+      + x.secondaryMuscles.slice(0,3).map(function(m){return '<span class="mpslib-tag">'+esc(pretty(m))+'</span>';}).join('')
+      + '<span class="mpslib-tag">'+esc(pretty(x.equipment[0]||''))+'</span><span class="mpslib-tag">'+esc(x.difficulty)+'</span><span class="mpslib-tag">'+esc(pretty(x.movementPattern))+'</span>';
+    var appears=x.placements.map(function(p){ return '<span class="mpslib-tag">'+esc(pretty(p.bodyRegion))+' · '+esc(pretty(p.subsection))+(p.role==='reference'?' <b style="color:var(--gold)">ref</b>':'')+'</span>'; }).join('');
+
+    return '<div class="mpslib-dh"><h2>'+esc(x.name)+'</h2><span class="mpslib-close">&times;</span></div>'
+      + (x.aliases&&x.aliases.length?'<div class="mpslib-aka">a.k.a. '+esc(x.aliases.join(', '))+'</div>':'')
+      + '<div class="mpslib-info">'+info+'</div>'
+      + sec('pr', SEC_IC.pr, 'Personal Records', prBody, true)
+      + sec('prog', SEC_IC.prog, 'Progression', progBody, false)
+      + sec('stats', SEC_IC.stats, 'Lifetime Stats', statsBody, false)
+      + sec('est', SEC_IC.est, 'Estimates', estBody, false)
+      + sec('target', SEC_IC.target, 'Next Target', tgtBody, false)
+      + sec('about', SEC_IC.stats, 'Details', '<div class="mpslib-krow"><div class="k">Appears in</div><div class="v mpslib-appears">'+appears+'</div></div><div class="mpslib-krow"><div class="k">How-to</div><div class="v">'+((x.instructions&&x.instructions.execution)?esc(x.instructions.execution):'<span class="mpslib-lock">Instructions + demo added in the content pass.</span>')+'</div></div>', false);
+  }
+
+  function openProfile(id){
+    var x=byId[id]; if(!x)return;
+    var bg=document.getElementById('mpslib-bg');
+    var draw=bg.querySelector('.mpslib-draw');
+    draw.innerHTML=buildProfile(x);
+    draw.querySelector('.mpslib-close').onclick=closeProfile;
+    draw.querySelectorAll('.mpslib-sec-h').forEach(function(h){ h.onclick=function(){ h.parentElement.classList.toggle('open'); }; });
+    bg.classList.add('on');
+  }
+  function closeProfile(){ document.getElementById('mpslib-bg').classList.remove('on'); }
+
+  function ensureDrawer(){
+    if(document.getElementById('mpslib-bg'))return;
+    var bg=document.createElement('div'); bg.className='mpslib-bg'; bg.id='mpslib-bg';
+    bg.innerHTML='<div class="mpslib-draw"></div>';
+    bg.onclick=function(e){ if(e.target===bg) closeProfile(); };
+    document.body.appendChild(bg);
+  }
+
+  function mount(elOrId, o){
+    opts=o||{};
+    EX=(window.MPS_EXERCISES||[]).filter(function(x){return x&&x.id;});
+    byId={}; EX.forEach(function(x){ byId[x.id]=x; });
+    var root=(typeof elOrId==='string')?document.getElementById(elOrId):elOrId;
+    if(!root)return;
+    injectCSS(); ensureDrawer();
+    root.classList.add('mpslib');
+    var equip=[]; EX.forEach(function(x){ x.equipment.forEach(function(e){ if(equip.indexOf(e)<0)equip.push(e); }); }); equip.sort();
+    var diff=['beginner','intermediate','advanced'];
+    root.innerHTML='<div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
+      +'<div class="mpslib-search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="mpslib-search" placeholder="Search exercises (bench, curl, squat...)"></div>'
+      +'<div class="mpslib-chips mpslib-eq">'+equip.map(function(e){return '<span class="mpslib-chip" data-eq="'+e+'">'+e+'</span>';}).join('')+'</div>'
+      +'<div class="mpslib-chips mpslib-df">'+diff.map(function(d){return '<span class="mpslib-chip" data-df="'+d+'">'+d+'</span>';}).join('')+'</div>'
+      +'<div class="mpslib-results"></div>';
+    root.querySelector('.mpslib-search').addEventListener('input',function(e){ state.q=e.target.value.trim(); renderResults(root); });
+    root.querySelectorAll('[data-eq]').forEach(function(c){ c.onclick=function(){ state.eq[c.dataset.eq]=!state.eq[c.dataset.eq]; c.classList.toggle('on'); renderResults(root); }; });
+    root.querySelectorAll('[data-df]').forEach(function(c){ c.onclick=function(){ state.df[c.dataset.df]=!state.df[c.dataset.df]; c.classList.toggle('on'); renderResults(root); }; });
+    renderResults(root);
+    mounted=root;
+  }
+
+  return { mount:mount };
+})();
