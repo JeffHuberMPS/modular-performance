@@ -24,8 +24,8 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --mps-blue: #1b2740;        /* was #1a2f5c — softened to a calm mid-navy (not loud, not black) */
-    --mps-blue-light: #24314f;  /* was #2a4a8c */
+    --mps-blue: #10141a;        /* was #1a2f5c — softened to a calm mid-navy (not loud, not black) */
+    --mps-blue-light: #171c25;  /* was #2a4a8c */
     --mps-accent: #4ab3f4;      /* pillar accent — kept: numbers, active tab, highlights */
     --mps-accent-rgb: 74, 179, 244;
     --mps-accent-2: #7ac8ff;
@@ -33,9 +33,9 @@
     --feat-rgb: 122, 200, 255;   /* "featured" stat card (Strength Score) highlight */
     --bg: #000000;
     --bg-2: #050810;
-    --card: #0e1526;    /* mid dark-navy card (keeps blue depth, calmer than before) */
-    --card-2: #141d33;
-    --border: #223052;  /* softened blue-slate border */
+    --card: #0d1013;    /* mid dark-navy card (keeps blue depth, calmer than before) */
+    --card-2: #12161c;
+    --border: #22262e;  /* softened blue-slate border */
     --text: #f5f5f5;
     --text-dim: #8d8d8d;
     --text-faint: #5a5a5a;
@@ -246,7 +246,7 @@
   }
   .tab.active { color: #fff; border-bottom-color: var(--mps-accent); }
   .card {
-    background: linear-gradient(180deg, #101933 0%, #0a1024 100%);
+    background: linear-gradient(180deg, #0e1015 0%, #0a1024 100%);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 14px;
@@ -313,8 +313,8 @@
   }
   .split-name:focus { outline: none; border-bottom: 1px solid var(--mps-blue-light); }
   .exercise {
-    background: linear-gradient(180deg, #131e3d 0%, #0d1428 60%, #070c1c 100%);
-    border: 1px solid #243160;
+    background: linear-gradient(180deg, #11141a 0%, #0c0e12 60%, #070c1c 100%);
+    border: 1px solid #22262e;
     border-radius: 12px;
     padding: 14px;
     margin-bottom: 12px;
@@ -416,8 +416,8 @@
   .history-card {
     display: flex; justify-content: space-between; align-items: center;
     padding: 14px 16px; margin-bottom: 8px;
-    background: linear-gradient(180deg, #0f1730 0%, #0a1124 100%);
-    border: 1px solid #1a2548;
+    background: linear-gradient(180deg, #0d0f14 0%, #0a0c10 100%);
+    border: 1px solid #14161d;
     border-radius: 8px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
     gap: 12px;
@@ -448,8 +448,8 @@
   .plan-day-card {
     display: flex; justify-content: space-between; align-items: center;
     padding: 14px 16px; margin-bottom: 8px;
-    background: linear-gradient(180deg, #0f1730 0%, #0a1124 100%);
-    border: 1px solid #1a2548;
+    background: linear-gradient(180deg, #0d0f14 0%, #0a0c10 100%);
+    border: 1px solid #14161d;
     border-radius: 8px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
     gap: 12px;
@@ -492,7 +492,7 @@
     letter-spacing: 1.5px; margin-top: 4px;
   }
   .pr-group-card {
-    background: linear-gradient(180deg, #101933 0%, #0a1024 100%);
+    background: linear-gradient(180deg, #0e1015 0%, #0a1024 100%);
     border: 1px solid var(--border);
     border-radius: 12px;
     margin-bottom: 14px;
@@ -516,8 +516,8 @@
   .pr-item {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px 14px; margin-bottom: 6px;
-    background: linear-gradient(180deg, #0f1730 0%, #0a1124 100%);
-    border: 1px solid #1a2548;
+    background: linear-gradient(180deg, #0d0f14 0%, #0a0c10 100%);
+    border: 1px solid #14161d;
     border-radius: 8px;
     font-size: 13px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
@@ -538,7 +538,7 @@
     margin-bottom: 16px;
   }
   .strength-pill {
-    background: linear-gradient(180deg, #131e3d 0%, #0a1124 100%);
+    background: linear-gradient(180deg, #11141a 0%, #0a0c10 100%);
     border: 1px solid rgba(var(--mps-accent-rgb), 0.25);
     border-radius: 10px;
     padding: 10px 4px;
@@ -633,7 +633,7 @@
   }
   .pill.active {
     background: var(--mps-accent);
-    color: #0a1124;
+    color: #0a0c10;
     border-color: var(--mps-accent);
     box-shadow: 0 0 12px rgba(var(--mps-accent-rgb), 0.4);
   }
@@ -671,7 +671,7 @@
   .cond-time-inputs .cond-input { text-align: center; }
   .cond-log-btn {
     background: var(--mps-accent);
-    color: #0a1124;
+    color: #0a0c10;
     border: none;
     padding: 10px 16px;
     border-radius: 8px;
@@ -721,8 +721,8 @@
   @keyframes fadeIn { from {opacity:0} to {opacity:1} }
   .hist-detail-panel {
     width: 100%; max-width: 540px;
-    background: linear-gradient(180deg, #131e3d 0%, #0d1428 60%, #070c1c 100%);
-    border: 1px solid #243160;
+    background: linear-gradient(180deg, #11141a 0%, #0c0e12 60%, #070c1c 100%);
+    border: 1px solid #22262e;
     border-radius: 14px;
     padding: 18px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06);
@@ -2994,7 +2994,7 @@ function showConditioningDeleteOverlay(c) {
   overlay.id = 'cond-delete-overlay';
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
   overlay.innerHTML = `
-    <div style="background:linear-gradient(180deg, #131e3d 0%, #0a1124 100%); border:1px solid rgba(var(--mps-accent-rgb),0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+    <div style="background:linear-gradient(180deg, #11141a 0%, #0a0c10 100%); border:1px solid rgba(var(--mps-accent-rgb),0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
       <div style="font-size:18px; font-weight:800; color:var(--mps-accent-2); margin-bottom:10px;">Delete this entry?</div>
       <div style="font-size:13px; color:#9aa; margin-bottom:4px;">${dateLabel}</div>
       <div style="font-size:15px; color:#fff; margin-bottom:20px;">${summary}</div>
@@ -3173,7 +3173,7 @@ function showWorkoutDeleteConfirm(h, onDeleted) {
   overlay.id = 'workout-delete-overlay';
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;';
   overlay.innerHTML = `
-    <div style="background:linear-gradient(180deg, #131e3d 0%, #0a1124 100%); border:1px solid rgba(220,72,86,0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+    <div style="background:linear-gradient(180deg, #11141a 0%, #0a0c10 100%); border:1px solid rgba(220,72,86,0.4); border-radius:14px; padding:24px; max-width:360px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
       <div style="font-size:18px; font-weight:800; color:#dc4856; margin-bottom:10px;">Delete this workout?</div>
       <div style="font-size:13px; color:#9aa; margin-bottom:4px;">${dateLabel}</div>
       <div style="font-size:14px; color:#fff; margin-bottom:8px;">${escapeHtml(summary)}</div>
@@ -4534,7 +4534,7 @@ const CHART_BASE_OPTS = {
     iso3d: { enabled: true },
     legend: { labels: { color: '#ccc', font: { size: 10 } } },
     tooltip: {
-      backgroundColor: '#0a1124',
+      backgroundColor: '#0a0c10',
       titleColor: AC,
       bodyColor: '#fff',
       borderColor: `rgba(${ACR}, 0.3)`,
