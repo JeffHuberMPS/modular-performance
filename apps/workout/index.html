@@ -3142,9 +3142,21 @@ function showHistoryDetail(h) {
       </div>
     </div>
   `;
+  // Keep the page exactly where it was: capture scroll before opening, restore on close.
+  const _histScroller = (function () {
+    let best = document.scrollingElement || document.documentElement, max = (best.scrollHeight - best.clientHeight) || 0;
+    ['#tab-history', '.tab-content'].forEach(function (sel) {
+      document.querySelectorAll(sel).forEach(function (el) {
+        const m = el.scrollHeight - el.clientHeight, oy = getComputedStyle(el).overflowY;
+        if (m > max && (oy === 'auto' || oy === 'scroll')) { best = el; max = m; }
+      });
+    });
+    return best;
+  })();
+  const _histScrollTop = _histScroller.scrollTop, _histWinY = window.scrollY || 0;
   document.body.appendChild(overlay);
-  // Close handlers
-  const close = () => overlay.remove();
+  // Close handlers - restore scroll so closing keeps you in place.
+  const close = () => { overlay.remove(); try { _histScroller.scrollTop = _histScrollTop; if (_histWinY) window.scrollTo(0, _histWinY); } catch (e) {} };
   overlay.querySelector('#hist-detail-close-btn').addEventListener('click', close);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
