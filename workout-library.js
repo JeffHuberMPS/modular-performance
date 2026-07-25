@@ -20,8 +20,7 @@ window.MPSLibrary = (function () {
     { id:'chest', label:'Chest', groups:[{ label:null, single:true, subs:[['upper_chest','Upper Chest'],['middle_chest','Middle Chest'],['lower_chest','Lower Chest'],['inner_chest','Inner Chest'],['outer_chest','Outer Chest']] }] },
     { id:'shoulders', label:'Shoulders', groups:[{ label:null, single:true, subs:[['front_delts','Front Delts'],['side_delts','Side Delts'],['rear_delts','Rear Delts']] }] },
     { id:'traps', label:'Traps', groups:[{ label:null, single:true, subs:[['upper_traps','Upper Traps'],['middle_traps','Middle Traps'],['lower_traps','Lower Traps']] }] },
-    { id:'back', label:'Back', groups:[{ label:null, single:true, subs:[['upper_back','Upper Back'],['middle_back','Middle Back']] }] },
-    { id:'lower_back', label:'Lower Back', bare:true, groups:[{ label:null, single:true, subs:[['lower_back','Lower Back'],['spinal_stability','Spinal Stability']] }] },
+    { id:'back', label:'Back', groups:[{ label:null, single:true, subs:[['upper_back','Upper Back'],['middle_back','Middle Back'],['lower_back','Lower Back','lower_back'],['spinal_stability','Spinal Stability','lower_back']] }] },
     { id:'lats', label:'Lats', groups:[{ label:null, single:true, subs:[['upper_lats','Upper Lats'],['lower_lats','Lower Lats']] }] },
     { id:'core', label:'Core', groups:[{ label:null, single:true, subs:[['upper_abs','Upper Abs'],['lower_abs','Lower Abs'],['obliques','Obliques'],['serratus','Serratus']] }] },
     { id:'legs', label:'Legs', groups:[
@@ -133,29 +132,29 @@ window.MPSLibrary = (function () {
           // real group (Biceps, Triceps, Quads...) -> ONE container box
           var body='';
           g.subs.forEach(function(pair){
-            var sid=pair[0], slabel=pair[1];
-            var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
+            var sid=pair[0], slabel=pair[1], sreg=pair[2]||reg.id;
+            var list=EX.filter(function(x){return inSub(x,sreg,sid)&&passFilter(x);});
             if(!list.length)return; count+=list.length;
-            body+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div>';
+            body+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,sreg,sid)==='reference');}).join('')+'</div>';
           });
           if(body) inner+='<div class="mpslib-group"><div class="mpslib-glabel">'+g.label+'</div>'+body+'</div>';
         } else if(g.single){
           // group-less region shown as ONE container (e.g. Forearms) with its subsections inside
           var sbody='';
           g.subs.forEach(function(pair){
-            var sid=pair[0], slabel=pair[1];
-            var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
+            var sid=pair[0], slabel=pair[1], sreg=pair[2]||reg.id;
+            var list=EX.filter(function(x){return inSub(x,sreg,sid)&&passFilter(x);});
             if(!list.length)return; count+=list.length;
-            sbody+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div>';
+            sbody+='<div class="mpslib-slabel">'+slabel+' <span>'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,sreg,sid)==='reference');}).join('')+'</div>';
           });
           if(sbody) inner+='<div class="mpslib-group">'+sbody+'</div>';
         } else {
           // group-less region (Chest, Lats...) -> each subsection is its own container box
           g.subs.forEach(function(pair){
-            var sid=pair[0], slabel=pair[1];
-            var list=EX.filter(function(x){return inSub(x,reg.id,sid)&&passFilter(x);});
+            var sid=pair[0], slabel=pair[1], sreg=pair[2]||reg.id;
+            var list=EX.filter(function(x){return inSub(x,sreg,sid)&&passFilter(x);});
             if(!list.length)return; count+=list.length;
-            inner+='<div class="mpslib-group"><div class="mpslib-glabel">'+slabel+' <span class="cnt">'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,reg.id,sid)==='reference');}).join('')+'</div></div>';
+            inner+='<div class="mpslib-group"><div class="mpslib-glabel">'+slabel+' <span class="cnt">'+list.length+'</span></div><div class="mpslib-cards">'+list.map(function(x){return card(x, roleIn(x,sreg,sid)==='reference');}).join('')+'</div></div>';
           });
         }
       });
