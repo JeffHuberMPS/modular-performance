@@ -26,8 +26,8 @@ window.MPSLibrary = (function () {
     { id:'legs', label:'Legs', groups:[
       { label:'Quads', subs:[['inner_quad','Inner Quad / Teardrop'],['outer_quad','Outer Quad'],['center_quad','Center Quad'],['overall_quads','Overall Quads']] },
       { label:'Hamstrings', subs:[['outer_hamstring','Outer Hamstring'],['inner_hamstring','Inner Hamstring']] },
-      { label:'Glutes / Hip', subs:[['upper_glutes','Upper Glutes'],['glute_max','Glute Max'],['side_glutes','Side Glutes'],['adductors','Inner Thigh / Adductors']] },
-      { label:'Calves', subs:[['upper_calves','Upper Calves'],['lower_calves','Lower Calves']] } ] }
+      { label:'Calves', subs:[['upper_calves','Upper Calves'],['lower_calves','Lower Calves']] } ] },
+    { id:'glutes', label:'Glutes / Hip', groups:[{ label:null, single:true, subs:[['upper_glutes','Upper Glutes','legs'],['glute_max','Glute Max','legs'],['side_glutes','Side Glutes','legs'],['adductors','Inner Thigh / Adductors','legs']] }] }
   ];
   var COMPOUND = [['horizontal_push','Horizontal Push'],['vertical_push','Vertical Push'],['horizontal_pull','Horizontal Pull'],['vertical_pull','Vertical Pull'],['squat','Squat'],['hinge','Hinge'],['lunge','Lunge'],['hip_extension','Hip Extension'],['dip','Dip'],['carry','Carry']];
 
