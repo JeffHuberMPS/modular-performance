@@ -30,6 +30,10 @@ window.MPSLibrary = (function () {
     { id:'glutes', label:'Glutes / Hip', groups:[{ label:null, single:true, subs:[['upper_glutes','Upper Glutes','legs'],['glute_max','Glute Max','legs'],['side_glutes','Side Glutes','legs'],['adductors','Inner Thigh / Adductors','legs']] }] }
   ];
   var COMPOUND = [['horizontal_push','Horizontal Push'],['vertical_push','Vertical Push'],['horizontal_pull','Horizontal Pull'],['vertical_pull','Vertical Pull'],['squat','Squat'],['hinge','Hinge'],['lunge','Lunge'],['hip_extension','Hip Extension'],['dip','Dip'],['carry','Carry']];
+  // Map a placement's raw (bodyRegion:subsection) to the DISPLAY region label the browse view uses,
+  // honouring the source-region override (e.g. legs/upper_glutes shows under "Glutes / Hip").
+  var SUBREG = {};
+  REGIONS.forEach(function(reg){ (reg.groups||[]).forEach(function(g){ (g.subs||[]).forEach(function(s){ SUBREG[(s[2]||reg.id)+':'+s[0]] = reg.label; }); }); });
 
   function pretty(s){ return String(s||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
@@ -235,7 +239,7 @@ window.MPSLibrary = (function () {
     var info='<span class="mpslib-tag acc">'+esc(pretty(x.primaryMuscles[0]||''))+'</span>'
       + x.secondaryMuscles.slice(0,3).map(function(m){return '<span class="mpslib-tag">'+esc(pretty(m))+'</span>';}).join('')
       + '<span class="mpslib-tag">'+esc(pretty(x.equipment[0]||''))+'</span><span class="mpslib-tag">'+esc(x.difficulty)+'</span><span class="mpslib-tag">'+esc(pretty(x.movementPattern))+'</span>';
-    var appears=x.placements.map(function(p){ return '<span class="mpslib-tag">'+esc(pretty(p.bodyRegion))+' · '+esc(pretty(p.subsection))+(p.role==='reference'?' <b style="color:var(--gold)">ref</b>':'')+'</span>'; }).join('');
+    var appears=x.placements.filter(function(p){return !p.hidden;}).map(function(p){ var dr=SUBREG[p.bodyRegion+':'+p.subsection]||pretty(p.bodyRegion); return '<span class="mpslib-tag">'+esc(dr)+' · '+esc(pretty(p.subsection))+(p.role==='reference'?' <b style="color:var(--gold)">ref</b>':'')+'</span>'; }).join('');
 
     return '<div class="mpslib-dh"><h2>'+esc(x.name)+'</h2><span class="mpslib-close">&times;</span></div>'
       + (x.aliases&&x.aliases.length?'<div class="mpslib-aka">a.k.a. '+esc(x.aliases.join(', '))+'</div>':'')
@@ -308,7 +312,7 @@ window.MPSLibrary = (function () {
 
   function mount(elOrId, o){
     opts=o||{};
-    EX=(window.MPS_EXERCISES||[]).filter(function(x){return x&&x.id;});
+    EX=(window.MPS_EXERCISES||[]).filter(function(x){return x&&x.id&&Array.isArray(x.placements)&&Array.isArray(x.equipment)&&Array.isArray(x.primaryMuscles)&&Array.isArray(x.secondaryMuscles)&&Array.isArray(x.collections)&&x.tracking;});
     byId={}; EX.forEach(function(x){ byId[x.id]=x; });
     var root=(typeof elOrId==='string')?document.getElementById(elOrId):elOrId;
     if(!root)return;
