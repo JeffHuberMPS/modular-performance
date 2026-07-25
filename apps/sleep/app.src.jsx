@@ -1560,7 +1560,7 @@ const TagChips = ({ tags, onChange }) => {
    strap: need is the duration where THIS person's recovery actually peaks, plus a portion of
    recency-weighted sleep debt. Renders nothing at all if the engine cannot produce a target,
    and says so plainly while it is still using the 8h default. */
-const SleepTargetCard = ({ rows }) => {
+const SleepTargetCard = React.memo(({ rows }) => {
   if (!rows || !rows.length || !window.RecoverySleep) return null;
   let t = null;
   try { t = RecoverySleep.tonight(rows); } catch (e) { return null; }
@@ -1586,12 +1586,12 @@ const SleepTargetCard = ({ rows }) => {
       </div>
     </section>
   );
-};
+});
 
 /* InsightsCard — spec Part 10, section 7.
    Strongest and weakest metric today, what moved most since yesterday,
    the current pattern, and the trend. Derived, never recalculated. */
-const InsightsCard = ({ rows }) => {
+const InsightsCard = React.memo(({ rows }) => {
   if (!rows || !rows.length || !window.RecoveryInsights) return null;
   const last = rows[rows.length - 1];
   let items = null;
@@ -1692,12 +1692,12 @@ const InsightsCard = ({ rows }) => {
       )}
     </SectionShell>
   );
-};
+});
 
 /* ProgressCard — spec Part 10, section 9.
    Long-run tracking. Current streak is deliberately separate from longest
    streak: they answer different questions. */
-const ProgressCard = ({ rows }) => {
+const ProgressCard = React.memo(({ rows }) => {
   if (!rows || !rows.length || !window.RecoveryInsights) return null;
   let p = null;
   try { p = RecoveryInsights.progress(rows); } catch (e) { return null; }
@@ -1721,7 +1721,7 @@ const ProgressCard = ({ rows }) => {
       </div>
     </SectionShell>
   );
-};
+});
 
 /* CoachCard was removed: its "Why this score" coaching now renders inside InsightsCard
    (see the merge above). The engine's RecoveryCoaching.select is still called there. */
@@ -1729,7 +1729,7 @@ const ProgressCard = ({ rows }) => {
 /* ReportsCard — Recovery Engine v4.0 progressive unlocks (spec Part 14).
    Seven levels from 7 days to multi-year. Shows what is unlocked, opens
    the chosen report inline, and tracks progress toward the next one. */
-const ReportsCard = ({ rows }) => {
+const ReportsCard = React.memo(({ rows }) => {
   const [open, setOpen] = useState(null);
   if (!rows || !window.RecoveryReports) return null;
   const n = rows.length;
@@ -1804,7 +1804,7 @@ const ReportsCard = ({ rows }) => {
       )}
     </section>
   );
-};
+});
 
 /* StatBlock — 7-day summary stat */
 const StatBlock = ({ label, value, sub, trend, good }) => {
