@@ -1275,6 +1275,7 @@ function _collectLocal() {
   try { data[K_HISTORY] = JSON.stringify(history); } catch (e) {}
   try { data[K_PRS] = JSON.stringify(prs); } catch (e) {}
   try { if (typeof K_CONDITIONING !== 'undefined' && typeof conditioningLogs !== 'undefined') data[K_CONDITIONING] = JSON.stringify(conditioningLogs); } catch (e) {}
+  try { data[K_TOMB] = JSON.stringify(tombstones); } catch (e) {}   // delete tombstones ride along so deletes propagate
   return data;
 }
 // A snapshot is "logically empty" when it carries no real workout data (no history,
@@ -1363,11 +1364,47 @@ function _mergeWkKey(key, baseStr, overStr){
     return JSON.stringify(m);
   }catch(e){ return (overStr||'').length>=(baseStr||'').length?(overStr||baseStr):(baseStr||overStr); }
 }
-// base/overlay = { key: jsonString }. overlay wins. Never drops a key or shrinks a value.
+// ===== DELETE TOMBSTONES (workout) =====
+// The additive union never shrinks, so a deleted workout would resurrect on the next backup/watch
+// cycle. A tombstone records the action: tomb['h:'+date] = +ts (deleted) or -ts (re-saved/alive).
+// Merges keep the NEWEST action per key (larger |ts|); dead keys are dropped from history/state/
+// conditioning and never re-applied from the cloud. This restores delete-that-sticks WITHOUT
+// reintroducing cross-device data loss (a key alive on either side, or missing a tombstone, survives).
+const K_TOMB = `mps_${STORAGE_VERSION}_tomb`;
+const _TOMB_TTL = 120*24*60*60*1000;                 // prune actions older than 120 days
+const _DEL_WINDOW = 10*60*1000;                       // "recent delete" = last 10 min (for the empty-guard exceptions)
+let tombstones = (function(){ try { return JSON.parse(localStorage.getItem(K_TOMB) || '{}') || {}; } catch(e){ return {}; } })();
+function _tombDead(t, key){ var v=t&&t[key]; return typeof v==='number' && v>0; }   // positive ts = deleted (newest action)
+function _tombPrune(t){ var cut=Date.now()-_TOMB_TTL, o={}, k, v; for(k in t){ v=+t[k]; if(v && Math.abs(v)>cut) o[k]=v; } return o; }
+function _mergeTombObj(a, b){ a=_isObj(a)?a:{}; b=_isObj(b)?b:{}; var out={}, k; for(k in a) out[k]=a[k]; for(k in b){ if(!(k in out) || Math.abs(+b[k])>Math.abs(+out[k])) out[k]=b[k]; } return out; }
+function _mergeTombStr(as, bs){ var a={},b={}; try{a=as?JSON.parse(as):{};}catch(e){} try{b=bs?JSON.parse(bs):{};}catch(e){} return _mergeTombObj(a,b); }
+function _tombHasRecentDelete(t){ var now=Date.now(), k, v; for(k in t){ v=+t[k]; if(v>0 && (now-v)<_DEL_WINDOW) return true; } return false; }
+function _condKey(c){ try{ return 'c:'+((c&&c.conditioning_date)||'')+':'+((c&&c.conditioning_type)||'')+':'+((c&&c.conditioning_subtype)||'')+':'+((c&&c.conditioning_value)||''); }catch(e){ return null; } }
+// Record a delete (deleted=true) or a re-save/alive (deleted=false). Persists + schedules a backup.
+function tombMark(key, deleted){
+  if(!key) return;
+  try {
+    tombstones[key] = (deleted ? 1 : -1) * Date.now();
+    tombstones = _tombPrune(tombstones);
+    localStorage.setItem(K_TOMB, JSON.stringify(tombstones));
+  } catch(e){}
+  try { scheduleCloudBackup(); } catch(e){}
+}
+// Strip entities the merged tombstones still mark as deleted (history dates, state days, conditioning).
+function _applyTomb(o, tomb){
+  try { if(o[K_HISTORY]!=null){ var h=JSON.parse(o[K_HISTORY]); if(Array.isArray(h)){ o[K_HISTORY]=JSON.stringify(h.filter(function(r){ return !(r&&r.date!=null&&_tombDead(tomb,'h:'+r.date)); })); } } } catch(e){}
+  try { if(typeof K_CONDITIONING!=='undefined' && o[K_CONDITIONING]!=null){ var c=JSON.parse(o[K_CONDITIONING]); if(Array.isArray(c)){ o[K_CONDITIONING]=JSON.stringify(c.filter(function(x){ var kk=_condKey(x); return !(kk&&_tombDead(tomb,kk)); })); } } } catch(e){}
+  try { if(o[K_STATE]!=null){ var st=JSON.parse(o[K_STATE]); if(st&&st.days){ Object.keys(st.days).forEach(function(d){ if(_tombDead(tomb,'h:'+d)) delete st.days[d]; }); o[K_STATE]=JSON.stringify(st); } } } catch(e){}
+  return o;
+}
+// base/overlay = { key: jsonString }. overlay wins. Unions everything, then honours tombstones.
 function _mergeWorkoutData(base, overlay){
   base=_isObj(base)?base:{}; overlay=_isObj(overlay)?overlay:{}; var out={}, k;
-  for(k in base) out[k]=base[k];
-  for(k in overlay){ out[k]=(k in base)?_mergeWkKey(k, base[k], overlay[k]):overlay[k]; }
+  var tomb=_tombPrune(_mergeTombStr(base[K_TOMB], overlay[K_TOMB]));
+  for(k in base){ if(k!==K_TOMB) out[k]=base[k]; }
+  for(k in overlay){ if(k===K_TOMB) continue; out[k]=(k in base)?_mergeWkKey(k, base[k], overlay[k]):overlay[k]; }
+  out=_applyTomb(out, tomb);
+  out[K_TOMB]=JSON.stringify(tomb);
   return out;
 }
 let _cloudTimer = null, _cloudBusy = false;
@@ -1384,8 +1421,9 @@ async function cloudBackupNow() {
   if (!doc || _cloudBusy) return false;
   const _data = _collectLocal();
   // NEVER back up a logically-empty snapshot — an early/partial-load write would stomp real
-  // cloud data (and wipe every device via the live sync). A device with nothing just skips.
-  if (_wkEmpty(_data)) return false;
+  // cloud data (and wipe every device via the live sync). EXCEPTION: a recent delete (dead
+  // tombstone in the last 10 min) is a real user action that emptied the data, so let it propagate.
+  if (_wkEmpty(_data) && !_tombHasRecentDelete(tombstones)) return false;
   _cloudBusy = true;
   try {
     // The whole payload must live in the PARENT realm or Firestore rejects it as a
@@ -1425,7 +1463,9 @@ function watchCloudLive() {
       let mine = {}; try { mine = _collectLocal(); } catch (e) {}
       // SAFETY: a logically-empty (or corrupt) cloud is never a real user action. If we still hold
       // real data, keep it and re-upload to heal the cloud — never let an empty cloud wipe us.
-      if (_wkEmpty(d) && !_wkEmpty(mine)) {
+      var _cloudTomb = {}; try { _cloudTomb = d[K_TOMB] ? JSON.parse(d[K_TOMB]) : {}; } catch (e) {}
+      if (_wkEmpty(d) && !_wkEmpty(mine) && !_tombHasRecentDelete(_cloudTomb)) {
+        // empty cloud with NO recent delete = corrupt/partial, not a real action → keep local, re-heal cloud
         try { localStorage.setItem('workout_synced_ts', String(cloudTs)); } catch (e) {}
         try { scheduleCloudBackup(); } catch (e) {}
         return;
@@ -2380,6 +2420,7 @@ async function endWorkout() {
   } else {
     history.push(newRecord);
   }
+  try { tombMark('h:' + newRecord.date, false); } catch (e) {}   // re-saving a day clears any delete tombstone (mark alive)
   await saveHistory(); await savePRs();
   buildLastSessionCache();
   toast(`Saved! ${totalRounds} rounds, ${totalCircuits} full circuits.`);
@@ -3204,6 +3245,7 @@ function showWorkoutDeleteConfirm(h, onDeleted) {
     const idx = history.findIndex(rec => rec.date === h.date);
     if (idx >= 0) {
       history.splice(idx, 1);
+      try { tombMark('h:' + h.date, true); } catch (e) {}   // record the delete so the additive union can't resurrect it
       await saveHistory();
     }
     overlay.remove();
