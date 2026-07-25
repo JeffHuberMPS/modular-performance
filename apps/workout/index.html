@@ -1418,7 +1418,8 @@ function _cloudFlush() { if (_cloudTimer) { clearTimeout(_cloudTimer); _cloudTim
 try { document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') _cloudFlush(); }); window.addEventListener('pagehide', _cloudFlush); } catch (e) {}
 async function cloudBackupNow() {
   const doc = _cloudDoc();
-  if (!doc || _cloudBusy) return false;
+  if (!doc) return false;
+  if (_cloudBusy) { scheduleCloudBackup(); return false; }   // a save landed mid-backup — re-arm so it isn't dropped from this cycle
   const _data = _collectLocal();
   // NEVER back up a logically-empty snapshot — an early/partial-load write would stomp real
   // cloud data (and wipe every device via the live sync). EXCEPTION: a recent delete (dead
@@ -3052,6 +3053,7 @@ function showConditioningDeleteOverlay(c) {
   document.getElementById('cond-del-confirm').addEventListener('click', async () => {
     const idx = conditioningLogs.indexOf(c);
     if (idx !== -1) conditioningLogs.splice(idx, 1);
+    try { tombMark(_condKey(c), true); } catch (e) {}   // record delete so the additive union can't resurrect it
     await saveConditioning();
     overlay.remove();
     toast('Entry deleted');
@@ -3197,7 +3199,7 @@ function showHistoryDetail(h) {
   const _histScrollTop = _histScroller.scrollTop, _histWinY = window.scrollY || 0;
   document.body.appendChild(overlay);
   // Close handlers - restore scroll so closing keeps you in place.
-  const close = () => { overlay.remove(); try { _histScroller.scrollTop = _histScrollTop; if (_histWinY) window.scrollTo(0, _histWinY); } catch (e) {} };
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', escHandler); try { _histScroller.scrollTop = _histScrollTop; if (_histWinY) window.scrollTo(0, _histWinY); } catch (e) {} };
   overlay.querySelector('#hist-detail-close-btn').addEventListener('click', close);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
@@ -4424,6 +4426,7 @@ function renderConditioningRecent() {
       mpsConfirm('Delete this conditioning entry? This can’t be undone.', async () => {
         const gi = conditioningLogs.indexOf(entry);
         if (gi !== -1) conditioningLogs.splice(gi, 1);
+        try { tombMark(_condKey(entry), true); } catch (e) {}   // record delete so the additive union can't resurrect it
         await saveConditioning();
         renderConditioningRecent();
       });
@@ -4479,6 +4482,7 @@ async function logConditioning() {
     });
     setsEl.value = '';
   }
+  try { tombMark(_condKey(conditioningLogs[conditioningLogs.length - 1]), false); } catch (e) {}   // re-logging clears any delete tombstone (mark alive)
   await saveConditioning();
   toast('Conditioning logged');
   renderConditioningRecent();
