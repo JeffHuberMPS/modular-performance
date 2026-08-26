@@ -1036,7 +1036,7 @@ const SPLIT_MENU = [
   "Chest + Triceps",
   "Biceps + Shoulders",
   "Glutes + Quads",
-  "Lats + Traps (Back)",
+  "Back + Lats",
   "Calisthenics",
   "Cindy (bodyweight circuit)",
   "Custom"
@@ -1196,7 +1196,7 @@ const SPLIT_EXERCISE_LIBRARY = {
     "Cable Kickbacks",
     "Cable Side Raises"
   ],
-  "Lats + Traps (Back)": [
+  "Back + Lats": [
     "Seated Cable Rows",
     "Low Cable Row (45°)",
     "Horizontal Cable Row (180°)",
@@ -3598,7 +3598,7 @@ const DAY_TO_LIFT_SPLIT = {
   3: "Glutes + Quads",    // Wed
   4: "Chest + Triceps",             // Thu
   5: "Biceps + Shoulders",          // Fri
-  6: "Lats + Traps (Back)"          // Sat
+  6: "Back + Lats"          // Sat
 };
 // 6-week skill schedule [Sun..Sat] per week
 // Format: { skill, series, workout } or { rest: true } for Church, or { sprint: workoutName } for sprint days
@@ -5574,7 +5574,7 @@ function _renderAvgWeightChart() {
           .replace('Chest + Triceps', 'Chest+Tri')
           .replace('Biceps + Shoulders', 'Bi+Shldr')
           .replace('Glutes + Quads', 'Legs')
-          .replace('Lats + Traps (Back)', 'Lats+Back').replace('Calisthenics', 'Cali');
+          .replace('Back + Lats', 'Back+Lats').replace('Calisthenics', 'Cali');
       }
     }
     // Rotate Sun-first → Mon-first: display[i] = raw[(i+1) % 7]
@@ -5817,7 +5817,7 @@ function _renderAvgRepsChart() {
           .replace('Chest + Triceps', 'Chest+Tri')
           .replace('Biceps + Shoulders', 'Bi+Shldr')
           .replace('Glutes + Quads', 'Legs')
-          .replace('Lats + Traps (Back)', 'Lats+Back').replace('Calisthenics', 'Cali');
+          .replace('Back + Lats', 'Back+Lats').replace('Calisthenics', 'Cali');
       }
     }
     // Rotate Sun-first → Mon-first
