@@ -94,7 +94,7 @@ window.MPSLibrary = (function () {
     + '.mpslib-progpanel{background:rgba(var(--argb),0.05);border:1px solid rgba(var(--argb),0.22);border-radius:16px;padding:14px 14px 6px;margin-bottom:30px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
     + '.mpslib-progpanel .mpslib-plans-head{color:var(--a);border-bottom-color:rgba(var(--argb),0.28);margin-top:4px;}'
     + '.mpslib-progpanel .mpslib-region:first-of-type{margin-top:16px;}'
-    + '.mpslib-expanel{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:14px 16px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
+    + '.mpslib-expanel{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:14px 16px 10px;margin-bottom:30px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
     + '.mpslib-expanel .mpslib-region:first-of-type{margin-top:16px;}'
     + '.mpslib-expanel .mpslib-plans-head{margin-top:4px;}'
     + '.mpslib-loadprog{display:block;width:100%;margin:18px 0 6px;padding:14px;border-radius:12px;border:1px solid var(--a);background:rgba(var(--argb),.16);color:#fff;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 16px rgba(var(--argb),.2);transition:transform .12s,background .12s;}'
