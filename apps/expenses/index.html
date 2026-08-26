@@ -909,7 +909,8 @@ function save(key, val) {
   // ===== LIVE TWO-WAY ADDITIVE SYNC (expenses) =====
   // ts-gated: a NEWER cloud state applies adds/edits ONLY (never deletions). Every device converges to
   // the UNION of all entries, so a cross-device mismatch can never delete your data.
-  function _watchLive(){ var doc=_doc(); if(!doc) return; try{ doc.onSnapshot(function(s){
+  var _watching=false;
+  function _watchLive(){ if(_watching) return; var doc=_doc(); if(!doc) return; _watching=true; try{ doc.onSnapshot(function(s){
     if(!s.exists||!s.data()) return;
     var d=(s.data().data)||{};
     var cloudTs=s.data().ts||0;
@@ -937,6 +938,9 @@ function save(key, val) {
       if(Date.now()-_last < 15000) return;
       sessionStorage.setItem('expenses_last_reload', String(Date.now()));
     }catch(e){}
+    // Never yank the user out mid-edit: if a modal is open or a field is focused, skip the visual
+    // reload. Data is already applied to localStorage above; the next natural render will show it.
+    try{ var _ae=document.activeElement; if(document.querySelector('.modal-backdrop.show') || (_ae && /^(INPUT|TEXTAREA|SELECT)$/.test(_ae.tagName))) return; }catch(e){}
     location.reload();
   }); }catch(e){} }
   try {
@@ -1373,6 +1377,9 @@ async function fetchSyncData(src){
   if(!res.ok)throw new Error(`HTTP ${res.status}`);return await res.json();
 }
 async function syncFromSheet(){
+  if(window.__expSyncing) return false;   // in-flight guard: rapid clicks / auto-sync must not overlap and clobber each other
+  window.__expSyncing=true;
+  try{
   const webhook=state.sync.webhook;if(!webhook){syncLog('No source set',true);updateSyncStatus('error','Not configured');return false;}
   document.getElementById('sync-log').innerHTML='';syncLog('Syncing...');updateSyncStatus('syncing','Syncing...');
   let logCount=0,ruleCount=0,budgetCount=0;
@@ -1383,7 +1390,7 @@ async function syncFromSheet(){
       const idx={date:headers.findIndex(h=>h.includes('date')),item:headers.findIndex(h=>h.includes('item')),merchant:headers.findIndex(h=>h.includes('merchant')),amount:headers.findIndex(h=>h.includes('amount')),category:headers.findIndex(h=>h.includes('category')),source:headers.findIndex(h=>h.includes('source')),uniqueId:headers.findIndex(h=>h.includes('unique')||h.includes('id'))};
       const entries=[];
       for(let i=1;i<data.log.length;i++){const r=data.log[i];if(!r||r.length===0)continue;const date=parseSheetDate(r[idx.date]);const merchant=String(r[idx.merchant]||'').trim();const amount=parseSheetAmount(r[idx.amount]);if(!date||!merchant)continue;entries.push({id:String(r[idx.uniqueId]||`sync_${i}_${date}`),date,item:String(r[idx.item]||'Purchase').trim(),merchant,amount,category:String(r[idx.category]||'Other').trim(),source:String(r[idx.source]||'').trim()});}
-      const _manual=state.entries.filter(e=>e.manual);state.entries=entries.concat(_manual);save(STORE.entries,state.entries);logCount=entries.length;syncLog(`Log: ${logCount} entries`+(_manual.length?` (+${_manual.length} manual kept)`:''));
+      const _manual=state.entries.filter(e=>e.manual);if(!entries.length){syncLog('No valid rows parsed — keeping your existing entries',true);}else{state.entries=entries.concat(_manual);save(STORE.entries,state.entries);logCount=entries.length;syncLog(`Log: ${logCount} entries`+(_manual.length?` (+${_manual.length} manual kept)`:''));}
     }else{syncLog('No log data in response',true);}
     if(data.rules&&Array.isArray(data.rules)&&data.rules.length>=2){
       const headers=data.rules[0].map(h=>String(h).trim().toLowerCase());const pairs=[];
@@ -1397,6 +1404,7 @@ async function syncFromSheet(){
     }
     state.syncMeta={lastSync:Date.now(),status:'ok'};save(STORE.syncMeta,state.syncMeta);updateSyncStatus('ok',`Synced: ${logCount} entries, ${ruleCount} rules, ${budgetCount} bills`);syncLog('Done.');renderAll();return true;
   }catch(e){syncLog(`Error: ${e.message}`,true);state.syncMeta={lastSync:Date.now(),status:'error'};save(STORE.syncMeta,state.syncMeta);updateSyncStatus('error',`Failed: ${e.message}`);return false;}
+  } finally { window.__expSyncing=false; }
 }
 function updateSyncStatus(status,msg){const statusEl=document.getElementById('sync-status-text');const lastEl=document.getElementById('sync-last');if(!statusEl)return;statusEl.textContent=msg;if(status==='ok')statusEl.style.color='var(--mps-mint)';else if(status==='error')statusEl.style.color='var(--mps-danger)';else if(status==='syncing')statusEl.style.color='var(--mps-warning)';else statusEl.style.color='var(--mps-text)';if(state.syncMeta.lastSync){const d=new Date(state.syncMeta.lastSync);lastEl.textContent=`Last synced: ${d.toLocaleString()}`;}}
 function loadSyncSettings(){const el=document.getElementById('set-webhook');if(el)el.value=state.sync.webhook||'';updateSyncStatus(state.syncMeta.status,state.syncMeta.status==='ok'?'Connected':'Not connected');
@@ -1469,7 +1477,9 @@ function importCSVText(text){
   const find=(...keys)=>headers.findIndex(h=>keys.some(k=>h.includes(k)));
   const idx={date:find('date'),merchant:find('merchant','description','name','payee'),amount:find('amount','total','price'),category:find('category','cat'),source:find('source','account')};
   if(idx.date<0||idx.amount<0){flash('CSV needs at least Date and Amount columns');return;}
-  let added=0;
+  let added=0, _dupes=0;
+  // Dedup so re-importing the same bank CSV can't double every transaction. Key = date|merchant|amount.
+  const _seen=new Set(state.entries.map(e=>`${e.date}|${String(e.merchant||'').toLowerCase()}|${Math.abs(Number(e.amount))||0}`));
   for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||r.length===0||(r.length===1&&!String(r[0]).trim()))continue;
     const date=parseSheetDate(r[idx.date])||String(r[idx.date]||'').trim();const amount=parseSheetAmount(r[idx.amount]);
     const merchant=idx.merchant>=0?String(r[idx.merchant]||'').trim():'Imported';
@@ -1477,10 +1487,13 @@ function importCSVText(text){
     let category=idx.category>=0?String(r[idx.category]||'').trim():'';if(!category)category=categorizeByRules(merchant)||'Other';
     const source=idx.source>=0?String(r[idx.source]||'').trim():'Imported';
     const item=(category==='Income')?'Income':'Purchase';
+    const _key=`${date}|${String(merchant||'Imported').toLowerCase()}|${Math.abs(Number(amount))||0}`;
+    if(_seen.has(_key)){_dupes++;continue;}
+    _seen.add(_key);
     state.entries.push({id:uid(),date,item,merchant:merchant||'Imported',amount,category,source,manual:true});added++;
   }
-  if(added){save(STORE.entries,state.entries);renderAll();flash(`Imported ${added} expense${added===1?'':'s'}`);}
-  else flash('Nothing to import — check the Date/Amount columns');
+  if(added){save(STORE.entries,state.entries);renderAll();flash(`Imported ${added} expense${added===1?'':'s'}`+(_dupes?`, skipped ${_dupes} duplicate${_dupes===1?'':'s'}`:''));}
+  else flash(_dupes?`All ${_dupes} row${_dupes===1?'':'s'} already imported`:'Nothing to import — check the Date/Amount columns');
 }
 function clearAllExpenses(){showOverlay({title:'Clear All Expenses',body:'Delete <b>every</b> expense and start fresh? Your budget, bills and rules stay. This can’t be undone.',confirmText:'Clear All',confirmClass:'danger',onConfirm:()=>{state.entries=[];save(STORE.entries,state.entries);renderAll();flash('All expenses cleared');const d=document.querySelector('.tab[data-tab="dashboard"]');if(d)d.click();}});}
 document.getElementById('btn-add-expense')?.addEventListener('click',()=>openExpenseModal(null));
