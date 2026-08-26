@@ -1311,6 +1311,7 @@ function _collectLocal() {
   try { data[K_PRS] = JSON.stringify(prs); } catch (e) {}
   try { if (typeof K_CONDITIONING !== 'undefined' && typeof conditioningLogs !== 'undefined') data[K_CONDITIONING] = JSON.stringify(conditioningLogs); } catch (e) {}
   try { data[K_TOMB] = JSON.stringify(tombstones); } catch (e) {}   // delete tombstones ride along so deletes propagate
+  try { var _pg = localStorage.getItem('mps_v3_programs'); if (_pg != null) data['mps_v3_programs'] = _pg; } catch (e) {}   // loaded programs sync cross-device
   return data;
 }
 // A snapshot is "logically empty" when it carries no real workout data (no history,
@@ -1322,6 +1323,7 @@ function _wkEmpty(data) {
   try { const st = data[K_STATE] ? JSON.parse(data[K_STATE]) : {}; if (st && st.days && Object.keys(st.days).length) return false; } catch (e) { return false; }
   try { const p = data[K_PRS] ? JSON.parse(data[K_PRS]) : {}; if (p && Object.keys(p).length) return false; } catch (e) { return false; }
   try { if (typeof K_CONDITIONING !== 'undefined' && data[K_CONDITIONING]) { const c = JSON.parse(data[K_CONDITIONING]); if (c && ((c.length) || (typeof c === 'object' && Object.keys(c).length))) return false; } } catch (e) { return false; }
+  try { if (data['mps_v3_programs']) { var _pr = JSON.parse(data['mps_v3_programs']); if (Array.isArray(_pr) && _pr.some(function(x){ return x && !x.removed; })) return false; } } catch (e) { return false; }
   return true;
 }
 // ===== ADDITIVE MERGE (workout) =====
@@ -1386,6 +1388,17 @@ function _mergeState(base, overlay){
   out.days = days;
   return out;
 }
+function _mergePrograms(a, b){
+  a=Array.isArray(a)?a:[]; b=Array.isArray(b)?b:[];
+  var byId={}, order=[], cut=Date.now()-_TOMB_TTL;
+  function add(pp){
+    if(!pp || pp.id==null) return;
+    if(!(pp.id in byId)){ byId[pp.id]=pp; order.push(pp.id); return; }
+    if(+(pp.updated||0) >= +(byId[pp.id].updated||0)) byId[pp.id]=pp;   // newest write per id wins (removed:true is a tombstone)
+  }
+  a.forEach(add); b.forEach(add);
+  return order.map(function(id){ return byId[id]; }).filter(function(pp){ return !(pp && pp.removed && +(pp.updated||0) < cut); });
+}
 function _mergeWkKey(key, baseStr, overStr){
   try{
     var b=(baseStr==null||baseStr==='')?null:JSON.parse(baseStr);
@@ -1395,6 +1408,7 @@ function _mergeWkKey(key, baseStr, overStr){
     if(/_history$/.test(key)) m=_mergeHistory(b,o);
     else if(/_prs$/.test(key)) m=_mergePRs(b,o);
     else if(/_state$/.test(key)) m=_mergeState(b,o);
+    else if(/_programs$/.test(key)) m=_mergePrograms(b,o);
     else m=_deepUnion(b,o);
     return JSON.stringify(m);
   }catch(e){ return (overStr||'').length>=(baseStr||'').length?(overStr||baseStr):(baseStr||overStr); }
@@ -1524,6 +1538,7 @@ function watchCloudLive() {
         if (merged[K_CONDITIONING]) conditioningLogs = JSON.parse(merged[K_CONDITIONING]);
         if (merged[K_STATE]) { var _ps = JSON.parse(merged[K_STATE]); state = Object.assign({}, _ps, { selectedDate: state.selectedDate, days: _ps.days || {}, targetRounds: _ps.targetRounds || 3 }); }
         try { buildLastSessionCache(); } catch (e) {}
+        try { reapplyLoadedProgram(); } catch (e) {}
         try { render(); } catch (e) {}
         try { if (typeof renderDashboard === 'function') renderDashboard(); } catch (e) {}
       } catch (e) { location.reload(); }
@@ -1540,7 +1555,8 @@ async function cloudRestoreIfEmpty() {
   try { const hv = localStorage.getItem(K_HISTORY); if (!!hv && JSON.parse(hv || '[]').length > 0) hasLocal = true; } catch (e) {}
   // A loaded plan (or any saved days) counts as local data too — otherwise cloud-restore wipes a
   // just-loaded program before it has been backed up to the cloud (root cause of "plan won't persist").
-  try { const sv = localStorage.getItem(K_STATE); if (sv) { const st = JSON.parse(sv); if (st && ((st.days && Object.keys(st.days).length) || st.loadedProgram)) hasLocal = true; } } catch (e) {}
+  try { const sv = localStorage.getItem(K_STATE); if (sv) { const st = JSON.parse(sv); if (st && ((st.days && Object.keys(st.days).length) || (st.loadedPrograms && st.loadedPrograms.length))) hasLocal = true; } } catch (e) {}
+  try { const pv = localStorage.getItem('mps_v3_programs'); if (pv) { const pa = JSON.parse(pv); if (Array.isArray(pa) && pa.some(function(x){ return x && !x.removed; })) hasLocal = true; } } catch (e) {}
   if (hasLocal) return false;                 // device already has data — never overwrite
   try {
     const snap = await doc.get();
@@ -1549,7 +1565,9 @@ async function cloudRestoreIfEmpty() {
       if (!d || typeof d !== 'object') return false;
       let cloudHasHistory = false;
       try { cloudHasHistory = !!d[K_HISTORY] && JSON.parse(d[K_HISTORY] || '[]').length > 0; } catch (e) {}
-      if (!cloudHasHistory) return false;     // nothing real to restore (avoids reload loop)
+      let cloudHasPrograms = false;
+      try { if (d['mps_v3_programs']) { const pa2 = JSON.parse(d['mps_v3_programs']); cloudHasPrograms = Array.isArray(pa2) && pa2.some(function(x){ return x && !x.removed; }); } } catch (e) {}
+      if (!cloudHasHistory && !cloudHasPrograms) return false;     // nothing real to restore (avoids reload loop)
       Object.keys(d).forEach(k => { try { localStorage.setItem(k, d[k]); } catch (e) {} });
       return true;
     }
@@ -4070,25 +4088,34 @@ function renderPlan() {
   if (isCore()) { var pc = document.getElementById('plan-content'); if (pc) pc.innerHTML = coreLockHTML('PLAN', 'Follow the 6-week program day-by-day and auto-load workouts. Logging stays free — upgrade to Elite to unlock your Plan.'); return; }
   const view = document.getElementById('plan-view-select').value;
   const content = document.getElementById('plan-content');
-  var _lp = (state.loadedProgram && state.loadedProgram.name)
-    ? '<div class="card" style="border:1px solid rgba(var(--mps-accent-rgb),0.45);background:rgba(var(--mps-accent-rgb),0.08);margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><div><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:1px;">LOADED PROGRAM</div><div style="font-size:16px;font-weight:700;margin-top:4px;">' + escapeHtml(state.loadedProgram.name) + '</div></div><button id="plan-remove-prog" style="background:none;border:none;color:var(--text-faint,#6b7280);font-size:12px;cursor:pointer;padding:6px 2px;font-family:inherit;text-decoration:underline;white-space:nowrap;">Remove</button></div></div>'
-    : '';
+  var _lps = (state.loadedPrograms && state.loadedPrograms.length) ? state.loadedPrograms : [];
+  var _rmBtn = function(id){ return '<button data-remove-prog="' + escapeHtml(id) + '" style="background:none;border:none;color:var(--text-faint,#6b7280);font-size:12px;cursor:pointer;padding:6px 2px;font-family:inherit;text-decoration:underline;white-space:nowrap;">Remove</button>'; };
+  var _lp = '';
+  if (_lps.length === 1) {
+    _lp = '<div class="card" style="border:1px solid rgba(var(--mps-accent-rgb),0.45);background:rgba(var(--mps-accent-rgb),0.08);margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><div><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:1px;">LOADED PROGRAM</div><div style="font-size:16px;font-weight:700;margin-top:4px;">' + escapeHtml(_lps[0].name) + '</div></div>' + _rmBtn(_lps[0].id) + '</div></div>';
+  } else if (_lps.length > 1) {
+    _lp = '<div class="card" style="border:1px solid rgba(var(--mps-accent-rgb),0.45);background:rgba(var(--mps-accent-rgb),0.08);margin-bottom:14px;"><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:1px;margin-bottom:8px;">LOADED PROGRAMS</div>' + _lps.map(function(pp){ return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--border);"><span style="font-size:15px;font-weight:700;">' + escapeHtml(pp.name) + '</span>' + _rmBtn(pp.id) + '</div>'; }).join('') + '</div>';
+  }
   var _body = (view === 'day') ? renderPlanDayView() : (view === 'week') ? renderPlanWeekView() : renderPlanProgramView();
   content.innerHTML = _lp + _body;
-  var _rm = document.getElementById('plan-remove-prog');
-  if (_rm) { _rm.addEventListener('click', function(){
-    var nm = state.loadedProgram ? state.loadedProgram.name : 'this program';
-    mpsConfirm('Remove ' + nm + ' from your plan? Days you already logged stay; only the empty planned days are cleared.', function(){
-      if (window.MPS_UNLOAD_PROGRAM) window.MPS_UNLOAD_PROGRAM();
-      renderPlan();
-    }, { okLabel: 'Remove', okColor: '#ef4444' });
-  }); }
+  content.querySelectorAll('[data-remove-prog]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var pid = btn.getAttribute('data-remove-prog');
+      var prog = (state.loadedPrograms||[]).filter(function(pp){ return pp.id === pid; })[0];
+      var nm = prog ? prog.name : 'this program';
+      mpsConfirm('Remove ' + nm + ' from your plan? Days you already logged stay; only the empty planned days are cleared.', function(){
+        if (window.MPS_UNLOAD_PROGRAM) window.MPS_UNLOAD_PROGRAM(pid);
+        renderPlan();
+      }, { okLabel: 'Remove', okColor: '#ef4444' });
+    });
+  });
   wirePlanDayClicks();
 }
 function _ymdP(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function _progWindowStart(){
-  var lp = state.loadedProgram;
-  var base = (lp && lp.at) ? new Date(lp.at + 'T00:00:00') : new Date();
+  var lps = state.loadedPrograms || [];
+  var ats = lps.map(function(p){ return p.at; }).filter(Boolean).sort();
+  var base = ats.length ? new Date(ats[0] + 'T00:00:00') : new Date();
   if (isNaN(base.getTime())) base = new Date();
   base.setHours(0,0,0,0);
   var _wd = base.getDay();
@@ -4141,7 +4168,7 @@ function renderLoadedDayView(){
   return '<div class="card" style="border-left:3px solid var(--mps-accent);"><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">TODAY · WEEK '+(wk+1)+'</div><div style="font-size:18px;font-weight:700;margin-bottom:14px;">'+escapeHtml(dateLabel)+'</div>'+rows+'<button class="btn-accent" data-goday="'+today+'" style="width:100%;padding:12px;border:none;border-radius:8px;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Open in Today</button></div>';
 }
 function renderPlanDayView() {
-  if (state.loadedProgram && state.loadedProgram.name) return renderLoadedDayView();
+  if (state.loadedPrograms && state.loadedPrograms.length) return renderLoadedDayView();
   const today = getTodayStr();
   const slot = getProgramSlot(today);
   const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -4185,12 +4212,12 @@ function renderPlanDayView() {
   `;
 }
 function renderPlanWeekView() {
-  if (state.loadedProgram && state.loadedProgram.name) return renderLoadedWeekCard(_loadedCurrentWeekIdx(), true);
+  if (state.loadedPrograms && state.loadedPrograms.length) return renderLoadedWeekCard(_loadedCurrentWeekIdx(), true);
   const weekIdx = getCurrentWeekIdx();
   return renderWeekCard(weekIdx, true);
 }
 function renderPlanProgramView() {
-  if (state.loadedProgram && state.loadedProgram.name) {
+  if (state.loadedPrograms && state.loadedPrograms.length) {
     var _h=''; var _cw=_loadedCurrentWeekIdx();
     for (var _w=0; _w<6; _w++) _h += renderLoadedWeekCard(_w, _w===_cw);
     return _h;
@@ -4395,23 +4422,42 @@ function _dayHasLoggedData(d){
 }
 function reapplyLoadedProgram(){
   try {
-    var raw = localStorage.getItem('mps_v3_program'); if (!raw) return;
-    var prog = JSON.parse(raw); if (!prog || !Array.isArray(prog.days) || !prog.at) return;
-    state.loadedProgram = { id: prog.id, name: prog.name, at: prog.at };
-    var weekStart = new Date(prog.at + 'T00:00:00'); if (isNaN(weekStart.getTime())) return; weekStart.setHours(0,0,0,0);
-    var ymd = function(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); };
-    prog.days.forEach(function(d){
-      if (typeof d.dow !== 'number') return;
-      for (var w=0; w<6; w++){
-        var dt = new Date(weekStart); dt.setDate(weekStart.getDate() + w*7 + ((d.dow + 6) % 7));
-        var ds = ymd(dt);
-        if (_dayHasLoggedData(state.days[ds])) continue;
-        if (state.days[ds] && state.days[ds]._prog === prog.id) continue;
-        var exs = (d.ex||[]).filter(function(e){ return e && e[1]; }).map(function(e){ var ps = _parseScheme(e[1]); return buildFreshExercise(e[0], ps.sets, ps.reps); });
-        state.days[ds] = { splits: [{ id: Date.now()+Math.random(), name: d.day, type: 'split', exercises: exs }], skills: [], _prog: prog.id };
+    // migrate the legacy single-program key into the multi-program array
+    try {
+      var _old = localStorage.getItem('mps_v3_program');
+      if (_old) {
+        var _a0 = []; try { _a0 = JSON.parse(localStorage.getItem('mps_v3_programs') || '[]'); } catch (e) {} if (!Array.isArray(_a0)) _a0 = [];
+        var _op = JSON.parse(_old);
+        if (_op && _op.id && !_a0.some(function(x){ return x.id === _op.id; })) _a0.push(_op);
+        localStorage.setItem('mps_v3_programs', JSON.stringify(_a0));
+        localStorage.removeItem('mps_v3_program');
       }
+    } catch (e) {}
+    var raw = localStorage.getItem('mps_v3_programs');
+    var progs = []; try { progs = raw ? JSON.parse(raw) : []; } catch (e) { progs = []; } if (!Array.isArray(progs)) progs = [];
+    state.loadedPrograms = progs.filter(function(p){ return p && !p.removed; }).map(function(p){ return { id: p.id, name: p.name, at: p.at }; });
+    // a program removed on another device: strip its unlogged planned days here too
+    progs.forEach(function(prog){
+      if (!prog || !prog.removed || !prog.id) return;
+      Object.keys(state.days).forEach(function(ds){ var d = state.days[ds]; if (d && d._prog === prog.id && !_dayHasLoggedData(d)) delete state.days[ds]; });
     });
-  } catch (e) {}
+    var ymd = function(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); };
+    progs.forEach(function(prog){
+      if (!prog || prog.removed || !Array.isArray(prog.days) || !prog.at) return;
+      var weekStart = new Date(prog.at + 'T00:00:00'); if (isNaN(weekStart.getTime())) return; weekStart.setHours(0,0,0,0);
+      prog.days.forEach(function(d){
+        if (typeof d.dow !== 'number') return;
+        for (var w=0; w<6; w++){
+          var dt = new Date(weekStart); dt.setDate(weekStart.getDate() + w*7 + ((d.dow + 6) % 7));
+          var ds = ymd(dt);
+          if (_dayHasLoggedData(state.days[ds])) continue;
+          if (state.days[ds] && state.days[ds]._prog && state.days[ds]._prog !== prog.id) continue;
+          var exs = (d.ex||[]).filter(function(e){ return e && e[1]; }).map(function(e){ var ps = _parseScheme(e[1]); return buildFreshExercise(e[0], ps.sets, ps.reps); });
+          state.days[ds] = { splits: [{ id: Date.now()+Math.random(), name: d.day, type: 'split', exercises: exs }], skills: [], _prog: prog.id };
+        }
+      });
+    });
+  } catch (e) { if (!state.loadedPrograms) state.loadedPrograms = []; }
 }
 window.MPS_LOAD_PROGRAM = function(program){
   try {
@@ -4436,24 +4482,36 @@ window.MPS_LOAD_PROGRAM = function(program){
           count++;
         }
       });
-      state.loadedProgram = { id: program.id, name: label, at: ymd(weekStart) };
-      try { localStorage.setItem('mps_v3_program', JSON.stringify({ id: program.id, name: label, at: ymd(weekStart), days: days })); } catch (e) {}
+      state.loadedPrograms = (state.loadedPrograms || []).filter(function(x){ return x.id !== program.id; }).concat([{ id: program.id, name: label, at: ymd(weekStart) }]);
+      try {
+        var _arr = []; try { _arr = JSON.parse(localStorage.getItem('mps_v3_programs') || '[]'); } catch (e) {} if (!Array.isArray(_arr)) _arr = [];
+        _arr = _arr.filter(function(x){ return x.id !== program.id; });
+        _arr.push({ id: program.id, name: label, at: ymd(weekStart), days: days, updated: Date.now(), removed: false });
+        localStorage.setItem('mps_v3_programs', JSON.stringify(_arr));
+      } catch (e) {}
       await saveState();
+      try { scheduleCloudBackup(); } catch (e) {}
       try { toast(label + ' loaded — ' + count + ' days set'); } catch(e){}
       try { var t = document.querySelector('.tab[data-tab="today"]'); if (t) t.click(); } catch(e){}
     }, { okLabel: 'Load', okColor: '#4ab3f4' });
   } catch(e){ try{ toast('Could not load program'); }catch(_){ } }
 };
-window.MPS_UNLOAD_PROGRAM = function(){
+window.MPS_UNLOAD_PROGRAM = function(id){
   try {
+    var arr = []; try { arr = JSON.parse(localStorage.getItem('mps_v3_programs') || '[]'); } catch (e) {} if (!Array.isArray(arr)) arr = [];
+    var removeIds = id ? [id] : arr.map(function(p){ return p.id; });
     var removed = 0;
     Object.keys(state.days).forEach(function(ds){
       var d = state.days[ds];
-      if (d && d._prog && !_dayHasLoggedData(d)) { delete state.days[ds]; removed++; }
+      if (d && d._prog && removeIds.indexOf(d._prog) >= 0 && !_dayHasLoggedData(d)) { delete state.days[ds]; removed++; }
     });
-    state.loadedProgram = null;
-    try { localStorage.removeItem('mps_v3_program'); } catch (e) {}
+    var _now = Date.now();
+    arr = arr.map(function(p){ return (removeIds.indexOf(p.id) >= 0) ? { id: p.id, name: p.name, at: p.at, removed: true, updated: _now } : p; });
+    localStorage.setItem('mps_v3_programs', JSON.stringify(arr));
+    localStorage.removeItem('mps_v3_program');
+    state.loadedPrograms = arr.filter(function(p){ return p && !p.removed; }).map(function(p){ return { id: p.id, name: p.name, at: p.at }; });
     saveState();
+    try { scheduleCloudBackup(); } catch (e) {}
     try { toast('Program removed — ' + removed + ' planned days cleared'); } catch(e){}
     try { if (typeof render === 'function') render(); } catch(e){}
   } catch(e){ try{ toast('Could not remove program'); }catch(_){ } }
@@ -7127,6 +7185,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+    if (tab.dataset.tab === 'today') render();
     if (tab.dataset.tab === 'dashboard') renderDashboard();
     if (tab.dataset.tab === 'history') renderHistory();
     if (tab.dataset.tab === 'prs') renderPRs();
