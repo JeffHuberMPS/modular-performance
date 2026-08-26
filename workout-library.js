@@ -98,7 +98,8 @@ window.MPSLibrary = (function () {
     + '.mpslib-expanel .mpslib-region:first-of-type{margin-top:16px;}'
     + '.mpslib-expanel .mpslib-plans-head{margin-top:4px;}'
     + '.mpslib-loadprog{display:block;width:100%;margin:18px 0 6px;padding:14px;border-radius:12px;border:1px solid var(--a);background:rgba(var(--argb),.16);color:#fff;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 16px rgba(var(--argb),.2);transition:transform .12s,background .12s;}'
-    + '.mpslib-loadprog:hover{background:rgba(var(--argb),.24);}.mpslib-loadprog:active{transform:translateY(1px);}';
+    + '.mpslib-loadprog:hover{background:rgba(var(--argb),.24);}.mpslib-loadprog:active{transform:translateY(1px);}'
+    + '@media(max-width:600px){.mpslib-cat{flex-wrap:wrap;font-size:13px;letter-spacing:.8px;padding:14px 10px;}.mpslib-cat .badge{flex-basis:100%;margin-top:6px;}}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
 
