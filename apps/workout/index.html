@@ -1517,7 +1517,16 @@ function watchCloudLive() {
       try { localStorage.setItem('workout_synced_ts', String(cloudTs)); } catch (e) {}
       if (!changed) return;
       Object.keys(merged).forEach(function (k) { try { localStorage.setItem(k, merged[k]); } catch (e) {} });
-      location.reload();
+      // Re-render in place instead of a full page reload (no flash/glitch). Fall back to reload on any error.
+      try {
+        if (merged[K_HISTORY]) history = JSON.parse(merged[K_HISTORY]);
+        if (merged[K_PRS]) prs = JSON.parse(merged[K_PRS]);
+        if (merged[K_CONDITIONING]) conditioningLogs = JSON.parse(merged[K_CONDITIONING]);
+        if (merged[K_STATE]) { var _ps = JSON.parse(merged[K_STATE]); state = Object.assign({}, _ps, { selectedDate: state.selectedDate, days: _ps.days || {}, targetRounds: _ps.targetRounds || 3 }); }
+        try { buildLastSessionCache(); } catch (e) {}
+        try { render(); } catch (e) {}
+        try { if (typeof renderDashboard === 'function') renderDashboard(); } catch (e) {}
+      } catch (e) { location.reload(); }
     });
   } catch (e) {}
 }
