@@ -310,21 +310,21 @@ window.MPSLibrary = (function () {
   }
 
   var LIB_PROGRAMS = [
-    { id:'strength-hypertrophy', name:'Strength & Hypertrophy', tag:'5-DAY SPLIT',
-      subtitle:'Strength (Mon/Wed/Fri) + Hypertrophy (Tue/Thu). Strength + Size + V-Taper + X-Frame + Functional Strength + Power + Explosiveness + Muscular Endurance + Conditioning.',
-      blocks:[
-        { title:'Strength', meta:'Mon · Wed · Fri', days:[
-          { day:'Monday — Strength A', focus:'Hinge + Upper + Carry + Outer Glutes', ex:[['Trap-Bar Deadlift','4 × 5'],['Overhead Press','4 × 5'],['Pull-Ups / Heavy Lat Pulldown','3 × 5–6'],['Farmer Carry','3 × 30–45 sec'],['Hip Abduction','3 × 12–20']] },
-          { day:'Wednesday — Strength B', focus:'Squat + Push + Pull + Glutes + Carry', ex:[['Back Squat','3 × 5'],['Bench Press','4 × 5'],['Heavy Close-Grip Seated Cable Row — D/V Handle','3 × 5–6'],['Hip Thrust','2 × 8–12'],['Heavy Goblet Carry','2 × 30–45 sec']] },
-          { day:'Friday — Strength C', focus:'Leg Drive + Upper + Single-Leg + Work Capacity', ex:[['Leg Press','3 × 5–6'],['Overhead Press','3 × 5'],['Bulgarian Split Squat','2 × 5–6 each leg'],['Sled Push + Sled Pull','2–3 rounds']] }
-        ]},
-        { title:'Hypertrophy', meta:'Tue · Thu', days:[
-          { day:'Tuesday — Hypertrophy', focus:'Chest + Biceps + Triceps', ex:[['Your existing Chest exercises','2 × 9–12'],['Your existing Biceps exercises','2 × 9–12'],['Your existing Triceps exercises','2 × 9–12'],['Kickboxing afterward','']] },
-          { day:'Thursday — Hypertrophy', focus:'Back + Lats + Shoulders', ex:[['Your existing Back exercises','2 × 9–12'],['Your existing Lat exercises','2 × 9–12'],['Your existing Shoulder exercises','2 × 9–12'],['Seated Cable Row — Angled Multipurpose Bar','2 × 9–12'],['Kickboxing afterward','']] }
-        ]}
+    { id:'strength', name:'Strength', tag:'MON · WED · FRI',
+      subtitle:'Heavy compound strength — hinge, squat, press, pull, carry, single-leg power. Trained Monday, Wednesday, Friday.',
+      days:[
+        { day:'Monday — Strength A', focus:'Hinge + Upper + Carry + Outer Glutes', ex:[['Trap-Bar Deadlift','4 × 5'],['Overhead Press','4 × 5'],['Pull-Ups / Heavy Lat Pulldown','3 × 5–6'],['Farmer Carry','3 × 30–45 sec'],['Hip Abduction','3 × 12–20']] },
+        { day:'Wednesday — Strength B', focus:'Squat + Push + Pull + Glutes + Carry', ex:[['Back Squat','3 × 5'],['Bench Press','4 × 5'],['Heavy Close-Grip Seated Cable Row — D/V Handle','3 × 5–6'],['Hip Thrust','2 × 8–12'],['Heavy Goblet Carry','2 × 30–45 sec']] },
+        { day:'Friday — Strength C', focus:'Leg Drive + Upper + Single-Leg + Work Capacity', ex:[['Leg Press','3 × 5–6'],['Overhead Press','3 × 5'],['Bulgarian Split Squat','2 × 5–6 each leg'],['Sled Push + Sled Pull','2–3 rounds']] }
       ],
-      finisher:{ name:'Weekly Endurance Finisher — Cindy', note:'5 rounds', ex:[['Pull-Ups','5 reps'],['Push-Ups','10 reps'],['Bodyweight Squats','15 reps']] },
-      focus:['Monday: Pick + Pull + Carry + Outer Glutes','Tuesday: Chest + Arms + Size','Wednesday: Full-Body Strength + Glutes','Thursday: Back + Lats + Shoulders + Size','Friday: Leg Drive + Single-Leg Strength + Sled'] },
+      focus:['Monday: Pick + Pull + Carry + Outer Glutes','Wednesday: Full-Body Strength + Glutes','Friday: Leg Drive + Single-Leg Strength + Sled'] },
+    { id:'hypertrophy', name:'Hypertrophy', tag:'TUE · THU',
+      subtitle:'Muscle-building volume — chest/arms and back/lats/shoulders at 2 × 9–12. Trained Tuesday, Thursday.',
+      days:[
+        { day:'Tuesday — Hypertrophy', focus:'Chest + Biceps + Triceps', ex:[['Your existing Chest exercises','2 × 9–12'],['Your existing Biceps exercises','2 × 9–12'],['Your existing Triceps exercises','2 × 9–12'],['Kickboxing afterward','']] },
+        { day:'Thursday — Hypertrophy', focus:'Back + Lats + Shoulders', ex:[['Your existing Back exercises','2 × 9–12'],['Your existing Lat exercises','2 × 9–12'],['Your existing Shoulder exercises','2 × 9–12'],['Seated Cable Row — Angled Multipurpose Bar','2 × 9–12'],['Kickboxing afterward','']] }
+      ],
+      focus:['Tuesday: Chest + Arms + Size','Thursday: Back + Lats + Shoulders + Size'] },
     { id:'cindy', name:'Cindy', tag:'CALISTHENICS · AMRAP', cali:true,
       subtitle:'Weekly calisthenics finisher. One round = 5 Pull-Ups, 10 Push-Ups, 15 Bodyweight Squats. Starting target: 5 rounds.',
       simple:{ note:'1 round · starting target 5 rounds', ex:[['Pull-Ups','5 reps'],['Push-Ups','10 reps'],['Bodyweight Squats','15 reps']] } }
@@ -334,6 +334,7 @@ window.MPSLibrary = (function () {
     var h='<details class="mpslib-region"'+(open?' open':'')+'><summary class="mpslib-rhead"><span class="mpslib-ric">'+CAT_IC.plans+'</span><span class="mpslib-rtitle">'+esc(prog.name)+'</span><span class="mpslib-rcount">'+esc(prog.tag||'')+'</span>'+chev()+'</summary><div class="mpslib-rbody">';
     h+='<div class="mpslib-sub" style="margin-top:12px">'+esc(prog.subtitle)+'</div>';
     if(prog.simple){ var sg='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(prog.simple.note)+'</div>'; prog.simple.ex.forEach(function(e){ sg+=progRow(e[0],e[1]); }); h+=sg+'</div>'; }
+    if(prog.days){ prog.days.forEach(function(d){ var g='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(d.day)+'</div><div class="mpslib-pfocus">'+esc(d.focus)+'</div>'; d.ex.forEach(function(e){ g+=progRow(e[0],e[1]); }); h+=g+'</div>'; }); }
     if(prog.blocks){ prog.blocks.forEach(function(bl){ h+='<div class="mpslib-glabel" style="margin-top:22px">'+esc(bl.title)+' <span class="cnt">'+esc(bl.meta)+'</span></div>'; bl.days.forEach(function(d){ var g='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(d.day)+'</div><div class="mpslib-pfocus">'+esc(d.focus)+'</div>'; d.ex.forEach(function(e){ g+=progRow(e[0],e[1]); }); h+=g+'</div>'; }); }); }
     if(prog.finisher){ var f='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(prog.finisher.name)+'</div><div class="mpslib-pfocus">'+esc(prog.finisher.note)+'</div>'; prog.finisher.ex.forEach(function(e){ f+=progRow(e[0],e[1]); }); h+=f+'</div>'; }
     if(prog.focus){ var fo='<div class="mpslib-group"><div class="mpslib-slabel">Program Focus</div>'; prog.focus.forEach(function(x){ fo+='<div class="mpslib-prow"><span class="mpslib-pname" style="font-weight:500;color:var(--dim)">'+esc(x)+'</span></div>'; }); h+=fo+'</div>'; }
