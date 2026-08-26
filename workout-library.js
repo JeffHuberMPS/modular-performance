@@ -84,7 +84,11 @@ window.MPSLibrary = (function () {
     + '.mpslib-cat:hover{border-color:var(--a);color:var(--tx);}'
     + '.mpslib-cat.on{background:rgba(var(--argb),.16);border-color:var(--a);color:#fff;}'
     + '.mpslib-cat.soon{opacity:.6;}.mpslib-cat .badge{font-family:var(--body,Inter,sans-serif);font-size:9px;letter-spacing:.5px;text-transform:none;color:var(--faint);border:1px solid var(--ln);border-radius:8px;padding:1px 6px;}'
-    + '.mpslib-soon{color:var(--faint);text-align:center;padding:52px 20px;font-size:14px;line-height:1.7;}';
+    + '.mpslib-soon{color:var(--faint);text-align:center;padding:52px 20px;font-size:14px;line-height:1.7;}'
+    + '.mpslib-prow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px solid var(--ln);}'
+    + '.mpslib-pname{color:var(--tx);font-weight:600;font-size:14px;}'
+    + '.mpslib-pscheme{color:var(--a);font-weight:700;font-size:13px;letter-spacing:.5px;white-space:nowrap;}'
+    + '.mpslib-pfocus{color:var(--a);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:2px 2px 10px;}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
 
@@ -283,6 +287,8 @@ window.MPSLibrary = (function () {
 
   var CAT_IC = {
     weight: ic(),
+    cali: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2"/><path d="M5 9h14M12 7v5M12 12l-3 6M12 12l3 6"/></svg>',
+    plans: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M8.5 11h7M8.5 15h5"/></svg>',
     skill: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
     cond: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 20 9 4 6 12 2 12"/></svg>'
   };
@@ -303,9 +309,48 @@ window.MPSLibrary = (function () {
     renderResults(c);
   }
 
+  var LIB_PROGRAMS = [
+    { id:'strength-hypertrophy', name:'Strength & Hypertrophy', tag:'5-DAY SPLIT',
+      subtitle:'Strength (Mon/Wed/Fri) + Hypertrophy (Tue/Thu). Strength + Size + V-Taper + X-Frame + Functional Strength + Power + Explosiveness + Muscular Endurance + Conditioning.',
+      blocks:[
+        { title:'Strength', meta:'Mon · Wed · Fri', days:[
+          { day:'Monday — Strength A', focus:'Hinge + Upper + Carry + Outer Glutes', ex:[['Trap-Bar Deadlift','4 × 5'],['Overhead Press','4 × 5'],['Pull-Ups / Heavy Lat Pulldown','3 × 5–6'],['Farmer Carry','3 × 30–45 sec'],['Hip Abduction','3 × 12–20']] },
+          { day:'Wednesday — Strength B', focus:'Squat + Push + Pull + Glutes + Carry', ex:[['Back Squat','3 × 5'],['Bench Press','4 × 5'],['Heavy Close-Grip Seated Cable Row — D/V Handle','3 × 5–6'],['Hip Thrust','2 × 8–12'],['Heavy Goblet Carry','2 × 30–45 sec']] },
+          { day:'Friday — Strength C', focus:'Leg Drive + Upper + Single-Leg + Work Capacity', ex:[['Leg Press','3 × 5–6'],['Overhead Press','3 × 5'],['Bulgarian Split Squat','2 × 5–6 each leg'],['Sled Push + Sled Pull','2–3 rounds']] }
+        ]},
+        { title:'Hypertrophy', meta:'Tue · Thu', days:[
+          { day:'Tuesday — Hypertrophy', focus:'Chest + Biceps + Triceps', ex:[['Your existing Chest exercises','2 × 9–12'],['Your existing Biceps exercises','2 × 9–12'],['Your existing Triceps exercises','2 × 9–12'],['Kickboxing afterward','']] },
+          { day:'Thursday — Hypertrophy', focus:'Back + Lats + Shoulders', ex:[['Your existing Back exercises','2 × 9–12'],['Your existing Lat exercises','2 × 9–12'],['Your existing Shoulder exercises','2 × 9–12'],['Seated Cable Row — Angled Multipurpose Bar','2 × 9–12'],['Kickboxing afterward','']] }
+        ]}
+      ],
+      finisher:{ name:'Weekly Endurance Finisher — Cindy', note:'5 rounds', ex:[['Pull-Ups','5 reps'],['Push-Ups','10 reps'],['Bodyweight Squats','15 reps']] },
+      focus:['Monday: Pick + Pull + Carry + Outer Glutes','Tuesday: Chest + Arms + Size','Wednesday: Full-Body Strength + Glutes','Thursday: Back + Lats + Shoulders + Size','Friday: Leg Drive + Single-Leg Strength + Sled'] },
+    { id:'cindy', name:'Cindy', tag:'CALISTHENICS · AMRAP', cali:true,
+      subtitle:'Weekly calisthenics finisher. One round = 5 Pull-Ups, 10 Push-Ups, 15 Bodyweight Squats. Starting target: 5 rounds.',
+      simple:{ note:'1 round · starting target 5 rounds', ex:[['Pull-Ups','5 reps'],['Push-Ups','10 reps'],['Bodyweight Squats','15 reps']] } }
+  ];
+  function progRow(name,scheme){ return '<div class="mpslib-prow"><span class="mpslib-pname">'+esc(name)+'</span>'+(scheme?'<span class="mpslib-pscheme">'+esc(scheme)+'</span>':'')+'</div>'; }
+  function renderProgramCard(prog,open){
+    var h='<details class="mpslib-region"'+(open?' open':'')+'><summary class="mpslib-rhead"><span class="mpslib-ric">'+CAT_IC.plans+'</span><span class="mpslib-rtitle">'+esc(prog.name)+'</span><span class="mpslib-rcount">'+esc(prog.tag||'')+'</span>'+chev()+'</summary><div class="mpslib-rbody">';
+    h+='<div class="mpslib-sub" style="margin-top:12px">'+esc(prog.subtitle)+'</div>';
+    if(prog.simple){ var sg='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(prog.simple.note)+'</div>'; prog.simple.ex.forEach(function(e){ sg+=progRow(e[0],e[1]); }); h+=sg+'</div>'; }
+    if(prog.blocks){ prog.blocks.forEach(function(bl){ h+='<div class="mpslib-glabel" style="margin-top:22px">'+esc(bl.title)+' <span class="cnt">'+esc(bl.meta)+'</span></div>'; bl.days.forEach(function(d){ var g='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(d.day)+'</div><div class="mpslib-pfocus">'+esc(d.focus)+'</div>'; d.ex.forEach(function(e){ g+=progRow(e[0],e[1]); }); h+=g+'</div>'; }); }); }
+    if(prog.finisher){ var f='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(prog.finisher.name)+'</div><div class="mpslib-pfocus">'+esc(prog.finisher.note)+'</div>'; prog.finisher.ex.forEach(function(e){ f+=progRow(e[0],e[1]); }); h+=f+'</div>'; }
+    if(prog.focus){ var fo='<div class="mpslib-group"><div class="mpslib-slabel">Program Focus</div>'; prog.focus.forEach(function(x){ fo+='<div class="mpslib-prow"><span class="mpslib-pname" style="font-weight:500;color:var(--dim)">'+esc(x)+'</span></div>'; }); h+=fo+'</div>'; }
+    return h+'</div></details>';
+  }
+  function renderPlansUI(c){ c.innerHTML='<div class="mpslib-sub"><b>'+LIB_PROGRAMS.length+'</b> programs · tap a program, then a day, to expand</div>'+LIB_PROGRAMS.map(function(p,i){return renderProgramCard(p,i===0);}).join(''); }
+  function renderCalisthenicsUI(c){
+    var cali=LIB_PROGRAMS.filter(function(p){return p.cali;});
+    var bw=EX.filter(function(x){return x.equipment.indexOf('bodyweight')>=0;});
+    var cards = bw.length ? '<details class="mpslib-region"><summary class="mpslib-rhead"><span class="mpslib-ric">'+CAT_IC.cali+'</span><span class="mpslib-rtitle">Bodyweight</span><span class="mpslib-rcount">'+bw.length+'</span>'+chev()+'</summary><div class="mpslib-rbody"><div class="mpslib-group"><div class="mpslib-cards">'+bw.map(function(x){return card(x,false,true);}).join('')+'</div></div></div></details>' : '';
+    c.innerHTML='<div class="mpslib-sub"><b>'+cali.length+'</b> program · plus <b>'+bw.length+'</b> bodyweight exercises</div>'+cali.map(function(p){return renderProgramCard(p,true);}).join('')+cards;
+  }
   function renderCategory(root, cat){
     var c=root.querySelector('.mpslib-cat-content'); if(!c)return;
     if(cat==='weight'){ renderWeightUI(c); return; }
+    if(cat==='cali'){ renderCalisthenicsUI(c); return; }
+    if(cat==='plans'){ renderPlansUI(c); return; }
     var name = (cat==='skill') ? 'Skill Work' : 'Conditioning';
     c.innerHTML='<div class="mpslib-soon">The <b style="color:var(--text,#fff)">'+name+'</b> library is coming next.<br>For now, <b style="color:var(--mps-accent,#4ab3f4)">Weightlifting</b> holds all '+EX.length+' exercises.</div>';
   }
@@ -320,6 +365,8 @@ window.MPSLibrary = (function () {
     root.classList.add('mpslib');
     root.innerHTML='<div class="mpslib-cats">'
       +'<button class="mpslib-cat on" data-cat="weight">'+CAT_IC.weight+' Weightlifting</button>'
+      +'<button class="mpslib-cat" data-cat="cali">'+CAT_IC.cali+' Calisthenics</button>'
+      +'<button class="mpslib-cat" data-cat="plans">'+CAT_IC.plans+' Plans</button>'
       +'<button class="mpslib-cat soon" data-cat="skill">'+CAT_IC.skill+' Skill Work <span class="badge">soon</span></button>'
       +'<button class="mpslib-cat soon" data-cat="cond">'+CAT_IC.cond+' Conditioning <span class="badge">soon</span></button>'
       +'</div><div class="mpslib-cat-content"></div>';
