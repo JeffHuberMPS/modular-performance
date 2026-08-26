@@ -348,12 +348,12 @@ window.MPSLibrary = (function () {
   function renderProgramCard(prog,open){
     var h='<details class="mpslib-region"'+(open?' open':'')+'><summary class="mpslib-rhead"><span class="mpslib-ric">'+CAT_IC.plans+'</span><span class="mpslib-rtitle">'+esc(prog.name)+'</span><span class="mpslib-rcount">'+esc(prog.tag||'')+'</span>'+chev()+'</summary><div class="mpslib-rbody">';
     h+='<div class="mpslib-sub" style="margin-top:12px">'+esc(prog.subtitle)+'</div>';
+    h+='<button class="mpslib-loadprog" data-loadprog="'+esc(prog.id)+'">Load this program &middot; 6 weeks</button>';
     if(prog.simple){ var sg='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(prog.simple.note)+'</div>'; prog.simple.ex.forEach(function(e){ sg+=progRow(e[0],e[1]); }); h+=sg+'</div>'; }
     if(prog.days){ prog.days.forEach(function(d){ var g='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(d.day)+'</div><div class="mpslib-pfocus">'+esc(d.focus)+'</div>'; d.ex.forEach(function(e){ g+=progRow(e[0],e[1]); }); h+=g+'</div>'; }); }
     if(prog.blocks){ prog.blocks.forEach(function(bl){ h+='<div class="mpslib-glabel" style="margin-top:22px">'+esc(bl.title)+' <span class="cnt">'+esc(bl.meta)+'</span></div>'; bl.days.forEach(function(d){ var g='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(d.day)+'</div><div class="mpslib-pfocus">'+esc(d.focus)+'</div>'; d.ex.forEach(function(e){ g+=progRow(e[0],e[1]); }); h+=g+'</div>'; }); }); }
     if(prog.finisher){ var f='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(prog.finisher.name)+'</div><div class="mpslib-pfocus">'+esc(prog.finisher.note)+'</div>'; prog.finisher.ex.forEach(function(e){ f+=progRow(e[0],e[1]); }); h+=f+'</div>'; }
     if(prog.focus){ var fo='<div class="mpslib-group"><div class="mpslib-slabel">Program Focus</div>'; prog.focus.forEach(function(x){ fo+='<div class="mpslib-prow"><span class="mpslib-pname" style="font-weight:500;color:var(--dim)">'+esc(x)+'</span></div>'; }); h+=fo+'</div>'; }
-    h+='<button class="mpslib-loadprog" data-loadprog="'+esc(prog.id)+'">Load this program &middot; 6 weeks</button>';
     return h+'</div></details>';
   }
   function renderPlansUI(c){ c.innerHTML='<div class="mpslib-sub"><b>'+LIB_PROGRAMS.length+'</b> programs · tap a program, then a day, to expand</div>'+LIB_PROGRAMS.map(function(p){return renderProgramCard(p,false);}).join(''); }
