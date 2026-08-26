@@ -96,7 +96,9 @@ window.MPSLibrary = (function () {
     + '.mpslib-progpanel .mpslib-region:first-of-type{margin-top:16px;}'
     + '.mpslib-expanel{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:14px 16px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
     + '.mpslib-expanel .mpslib-region:first-of-type{margin-top:16px;}'
-    + '.mpslib-expanel .mpslib-plans-head{margin-top:4px;}';
+    + '.mpslib-expanel .mpslib-plans-head{margin-top:4px;}'
+    + '.mpslib-loadprog{display:block;width:100%;margin:18px 0 6px;padding:14px;border-radius:12px;border:1px solid var(--a);background:rgba(var(--argb),.16);color:#fff;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 16px rgba(var(--argb),.2);transition:transform .12s,background .12s;}'
+    + '.mpslib-loadprog:hover{background:rgba(var(--argb),.24);}.mpslib-loadprog:active{transform:translateY(1px);}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
 
@@ -323,21 +325,21 @@ window.MPSLibrary = (function () {
     { id:'strength', name:'Strength', tag:'MON · WED · FRI',
       subtitle:'Heavy compound strength — hinge, squat, press, pull, carry, single-leg power. Trained Monday, Wednesday, Friday.',
       days:[
-        { day:'STRA', focus:'Hinge + Upper + Carry + Outer Glutes', ex:[['Trap-Bar Deadlift','4 × 5'],['Overhead Press','4 × 5'],['Pull-Ups / Heavy Lat Pulldown','3 × 5–6'],['Farmer Carry','3 × 30–45 sec'],['Hip Abduction','3 × 12–20']] },
-        { day:'STRB', focus:'Squat + Push + Pull + Glutes + Carry', ex:[['Back Squat','3 × 5'],['Bench Press','4 × 5'],['Heavy Close-Grip Seated Cable Row — D/V Handle','3 × 5–6'],['Hip Thrust','2 × 8–12'],['Heavy Goblet Carry','2 × 30–45 sec']] },
-        { day:'STRC', focus:'Leg Drive + Upper + Single-Leg + Work Capacity', ex:[['Leg Press','3 × 5–6'],['Overhead Press','3 × 5'],['Bulgarian Split Squat','2 × 5–6 each leg'],['Sled Push + Sled Pull','2–3 rounds']] }
+        { day:'STRA', dow:1, focus:'Hinge + Upper + Carry + Outer Glutes', ex:[['Trap-Bar Deadlift','4 × 5'],['Overhead Press','4 × 5'],['Pull-Ups / Heavy Lat Pulldown','3 × 5–6'],['Farmer Carry','3 × 30–45 sec'],['Hip Abduction','3 × 12–20']] },
+        { day:'STRB', dow:3, focus:'Squat + Push + Pull + Glutes + Carry', ex:[['Back Squat','3 × 5'],['Bench Press','4 × 5'],['Heavy Close-Grip Seated Cable Row — D/V Handle','3 × 5–6'],['Hip Thrust','2 × 8–12'],['Heavy Goblet Carry','2 × 30–45 sec']] },
+        { day:'STRC', dow:5, focus:'Leg Drive + Upper + Single-Leg + Work Capacity', ex:[['Leg Press','3 × 5–6'],['Overhead Press','3 × 5'],['Bulgarian Split Squat','2 × 5–6 each leg'],['Sled Push + Sled Pull','2–3 rounds']] }
       ],
       focus:['Monday: Pick + Pull + Carry + Outer Glutes','Wednesday: Full-Body Strength + Glutes','Friday: Leg Drive + Single-Leg Strength + Sled'] },
     { id:'hypertrophy', name:'Hypertrophy', tag:'TUE · THU',
       subtitle:'Muscle-building volume — chest/arms and back/lats/shoulders at 2 × 9–12. Trained Tuesday, Thursday.',
       days:[
-        { day:'Tuesday — Hypertrophy', focus:'Chest + Biceps + Triceps', ex:[['Your existing Chest exercises','2 × 9–12'],['Your existing Biceps exercises','2 × 9–12'],['Your existing Triceps exercises','2 × 9–12'],['Kickboxing afterward','']] },
-        { day:'Thursday — Hypertrophy', focus:'Back + Lats + Shoulders', ex:[['Your existing Back exercises','2 × 9–12'],['Your existing Lat exercises','2 × 9–12'],['Your existing Shoulder exercises','2 × 9–12'],['Seated Cable Row — Angled Multipurpose Bar','2 × 9–12'],['Kickboxing afterward','']] }
+        { day:'Tuesday — Hypertrophy', dow:2, focus:'Chest + Biceps + Triceps', ex:[['Your existing Chest exercises','2 × 9–12'],['Your existing Biceps exercises','2 × 9–12'],['Your existing Triceps exercises','2 × 9–12'],['Kickboxing afterward','']] },
+        { day:'Thursday — Hypertrophy', dow:4, focus:'Back + Lats + Shoulders', ex:[['Your existing Back exercises','2 × 9–12'],['Your existing Lat exercises','2 × 9–12'],['Your existing Shoulder exercises','2 × 9–12'],['Seated Cable Row — Angled Multipurpose Bar','2 × 9–12'],['Kickboxing afterward','']] }
       ],
       focus:['Tuesday: Chest + Arms + Size','Thursday: Back + Lats + Shoulders + Size'] },
     { id:'cindy', name:'Cindy', tag:'CALISTHENICS · AMRAP', cali:true,
       subtitle:'Weekly calisthenics finisher. One round = 5 Pull-Ups, 10 Push-Ups, 15 Bodyweight Squats. Starting target: 5 rounds.',
-      simple:{ note:'1 round · starting target 5 rounds', ex:[['Pull-Ups','5 reps'],['Push-Ups','10 reps'],['Bodyweight Squats','15 reps']] } }
+      dow:6, simple:{ note:'1 round · starting target 5 rounds', ex:[['Pull-Ups','5 reps'],['Push-Ups','10 reps'],['Bodyweight Squats','15 reps']] } }
   ];
   function progRow(name,scheme){ return '<div class="mpslib-prow"><span class="mpslib-pname">'+esc(name)+'</span>'+(scheme?'<span class="mpslib-pscheme">'+esc(scheme)+'</span>':'')+'</div>'; }
   function renderProgramCard(prog,open){
@@ -348,6 +350,7 @@ window.MPSLibrary = (function () {
     if(prog.blocks){ prog.blocks.forEach(function(bl){ h+='<div class="mpslib-glabel" style="margin-top:22px">'+esc(bl.title)+' <span class="cnt">'+esc(bl.meta)+'</span></div>'; bl.days.forEach(function(d){ var g='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(d.day)+'</div><div class="mpslib-pfocus">'+esc(d.focus)+'</div>'; d.ex.forEach(function(e){ g+=progRow(e[0],e[1]); }); h+=g+'</div>'; }); }); }
     if(prog.finisher){ var f='<div class="mpslib-group"><div class="mpslib-slabel">'+esc(prog.finisher.name)+'</div><div class="mpslib-pfocus">'+esc(prog.finisher.note)+'</div>'; prog.finisher.ex.forEach(function(e){ f+=progRow(e[0],e[1]); }); h+=f+'</div>'; }
     if(prog.focus){ var fo='<div class="mpslib-group"><div class="mpslib-slabel">Program Focus</div>'; prog.focus.forEach(function(x){ fo+='<div class="mpslib-prow"><span class="mpslib-pname" style="font-weight:500;color:var(--dim)">'+esc(x)+'</span></div>'; }); h+=fo+'</div>'; }
+    h+='<button class="mpslib-loadprog" data-loadprog="'+esc(prog.id)+'">Load this program &middot; 6 weeks</button>';
     return h+'</div></details>';
   }
   function renderPlansUI(c){ c.innerHTML='<div class="mpslib-sub"><b>'+LIB_PROGRAMS.length+'</b> programs · tap a program, then a day, to expand</div>'+LIB_PROGRAMS.map(function(p){return renderProgramCard(p,false);}).join(''); }
@@ -384,6 +387,7 @@ window.MPSLibrary = (function () {
       root.querySelectorAll('[data-cat]').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
       renderCategory(root, b.dataset.cat);
     }; });
+    root.addEventListener('click', function(e){ var b=e.target && e.target.closest ? e.target.closest('[data-loadprog]') : null; if(!b) return; e.preventDefault(); e.stopPropagation(); var pr=null,i; for(i=0;i<LIB_PROGRAMS.length;i++){ if(LIB_PROGRAMS[i].id===b.getAttribute('data-loadprog')){ pr=LIB_PROGRAMS[i]; break; } } if(pr && typeof window!=='undefined' && window.MPS_LOAD_PROGRAM){ window.MPS_LOAD_PROGRAM(pr); } });
     renderCategory(root,'weight');
     mounted=root;
   }

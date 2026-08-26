@@ -4108,6 +4108,48 @@ async function loadPlanIntoDay(dateStr) {
   state.days[dateStr] = { splits, skills };
   await saveState();
 }
+// ===== LOAD A LIBRARY PROGRAM INTO THE NEXT 6 WEEKS =====
+function _parseScheme(sc){
+  var m = String(sc||'').match(/^(\d+)\s*[×x]\s*(.+)$/);
+  if (m) return { sets: parseInt(m[1],10)||1, reps: (m[2]||'').trim() };
+  return { sets: 1, reps: String(sc||'').trim() };
+}
+function _dayHasLoggedData(d){
+  if (!d) return false;
+  var blk = (d.splits||[]).concat(d.skills||[]);
+  return blk.some(function(b){ return (b.exercises||[]).some(function(e){ return (e.sets||[]).some(function(s){ return s && s.done; }); }); });
+}
+window.MPS_LOAD_PROGRAM = function(program){
+  try {
+    if (!program) return;
+    var days = program.days || (program.simple ? [{ day: program.name, dow: (typeof program.dow==='number'?program.dow:6), ex: program.simple.ex }] : []);
+    days = days.filter(function(d){ return typeof d.dow === 'number'; });
+    if (!days.length) { try{ toast('Nothing to load'); }catch(e){} return; }
+    var label = program.name || 'Program';
+    mpsConfirm('Load ' + label + ' into your next 6 weeks? It fills the matching days; any day you already logged is left alone.', async function(){
+      var start = new Date(); start.setHours(0,0,0,0);
+      var ymd = function(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); };
+      var count = 0;
+      days.forEach(function(d){
+        var base = new Date(start);
+        var add = (d.dow - base.getDay() + 7) % 7;
+        base.setDate(base.getDate() + add);
+        for (var w = 0; w < 6; w++) {
+          var dt = new Date(base); dt.setDate(base.getDate() + w*7);
+          var ds = ymd(dt);
+          if (_dayHasLoggedData(state.days[ds])) continue;
+          var exs = (d.ex||[]).filter(function(e){ return e && e[1]; }).map(function(e){ var ps = _parseScheme(e[1]); return buildFreshExercise(e[0], ps.sets, ps.reps); });
+          state.days[ds] = { splits: [{ id: Date.now()+Math.random(), name: d.day, type: 'split', exercises: exs }], skills: [] };
+          count++;
+        }
+      });
+      state.loadedProgram = { id: program.id, name: label, at: getTodayStr() };
+      await saveState();
+      try { toast(label + ' loaded — ' + count + ' days set'); } catch(e){}
+      try { var t = document.querySelector('.tab[data-tab="today"]'); if (t) t.click(); } catch(e){}
+    });
+  } catch(e){ try{ toast('Could not load program'); }catch(_){ } }
+};
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
