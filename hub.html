@@ -472,7 +472,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '478';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '483';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1611,6 +1611,37 @@
   <!-- Install-as-app prompt (Android/Chrome native + iOS instructions) -->
   <script src="/shared/install-prompt.js" defer></script>
   <script src="/shared/beta.js" defer></script>
+
+  <!-- OWNER-ONLY one-shot data reset: open modular-performance.com/hub.html?wipefake=1 on any device.
+       Clears fake tracker data (Workout/Habits/Recovery/Journal/Nutrition) from THIS device's local
+       storage AND the cloud backup, KEEPS Expenses. Runs the wipe from inside the app so it works even
+       where the OS "clear storage" does not actually clear the origin's localStorage. Gated to the owner
+       email so a normal user can never trigger it. -->
+  <script>
+  (function(){
+    try { if (!new URLSearchParams(location.search).has('wipefake')) return; } catch(e){ return; }
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      var u = null; try { u = firebase.auth().currentUser; } catch(e){}
+      if ((!u || !window.MPS_DEMO || !MPS_DEMO.wipeTrackers)) { if (tries > 60) clearInterval(iv); return; }
+      clearInterval(iv);
+      if ((u.email||'').toLowerCase() !== 'jeffreyhuber86@gmail.com') return;   // owner only
+      (async function(){
+        try { if (MPS_DEMO.isLoaded && MPS_DEMO.isLoaded()) { await MPS_DEMO.clear(); } } catch(e){}
+        try { await MPS_DEMO.wipeTrackers(); } catch(e){}
+        // hard-remove any tracker keys that survived on THIS device (never touch mps_expense:*)
+        try {
+          ['mps_v3_history','mps_v3_prs','mps_v3_state','mps_v3_conditioning','habits_v4','gym_v4','blocks_v4','journal_v1','mps_nutrition']
+            .forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+          for (var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(k && k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest'){ try{localStorage.removeItem(k);}catch(e){} } }
+          for (var j=localStorage.length-1;j>=0;j--){ var k2=localStorage.key(j); if(k2 && k2.indexOf('mps_jnl_')===0){ try{localStorage.removeItem(k2);}catch(e){} } }
+        } catch(e){}
+        try { document.body.innerHTML = '<div style="background:#0a0a0a;color:#f5f5f5;font-family:Inter,system-ui,sans-serif;position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:99999;"><div><div style="font-size:20px;font-weight:800;margin-bottom:10px;">Fake data cleared</div><div style="color:#9a9a9a;font-size:14px;line-height:1.55;max-width:340px;">Workout, Habits, Recovery, Journal and Nutrition were wiped on this device and in the cloud. Your real Expenses are kept.<br><br>Close this tab, then open the app normally.</div></div></div>'; } catch(e){}
+      })();
+    }, 500);
+  })();
+  </script>
 
 </body>
 </html>
