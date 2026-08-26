@@ -863,17 +863,18 @@
     .add-exercise-row .add-ex-name { grid-column: 1 / -1; }
     .add-exercise-row .add-ex-btn { grid-column: 1 / -1; }
   }
-  /* Dashboard accordions -- matched to the Library look (blue icon + Oswald title + chevron + section border) */
-  .dash-acc { border:1px solid var(--border); border-radius:16px; margin-bottom:14px; background:linear-gradient(180deg,#0c0e12 0%,#08090d 100%); box-shadow:0 12px 28px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05); overflow:hidden; }
-  .dash-acc > summary { list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; gap:12px; padding:16px 16px 14px; border-bottom:2px solid transparent; }
-  .dash-acc[open] > summary { border-bottom-color:var(--border); }
+  /* Dashboard accordions -- match the Library exactly: header rows inside one panel */
+  .dash-panel { background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%); border:1px solid var(--border); border-radius:16px; padding:4px 16px 12px; margin-bottom:14px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.05); }
+  .dash-acc { margin-top:8px; }
+  .dash-acc > summary { list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; gap:12px; padding:18px 4px; border-bottom:2px solid var(--border); }
   .dash-acc > summary::-webkit-details-marker { display:none; }
   .dash-acc > summary::marker { content:''; }
   .dash-acc-ic { color:var(--mps-accent); flex-shrink:0; display:flex; filter:drop-shadow(0 0 6px rgba(var(--mps-accent-rgb),0.5)); }
-  .dash-acc > summary .chart-title { margin-bottom:0; flex:1; font-family:'Oswald',system-ui,sans-serif; font-weight:600; font-style:normal; font-size:22px; line-height:1; letter-spacing:1.5px; text-transform:uppercase; color:var(--text); }
+  .dash-acc > summary .chart-title { margin-bottom:0; flex:1; font-family:'Oswald',system-ui,sans-serif; font-weight:700; font-style:normal; font-size:30px; line-height:1; letter-spacing:1px; text-transform:none; color:var(--text); }
+  .dash-acc-meta { font-size:12px; color:var(--text-dim); letter-spacing:1px; white-space:nowrap; flex-shrink:0; background:none !important; border:none !important; padding:0 !important; box-shadow:none !important; }
   .dash-acc .dash-chev { color:var(--text-dim); transition:transform .18s ease; flex-shrink:0; }
   .dash-acc[open] .dash-chev { transform:rotate(90deg); }
-  .dash-acc > .chart-card { background:none; border:none; box-shadow:none; margin:0; padding:14px 14px 16px; }
+  .dash-acc > .chart-card { background:none; border:none; box-shadow:none; margin:0; padding:14px 2px 8px; }
 </style>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
 <style>html.mps-embedded a[href="/hub.html"],html.mps-embedded #mps-hub-nav,html.mps-embedded #hub-nav,html.mps-embedded .nav-title,html.mps-embedded .brand-block,html.mps-embedded .mps-header{display:none!important}html.mps-embedded *:has(> .mps-logo-rsp){display:none!important}html.mps-embedded body{padding-top:0!important}</style>
@@ -3634,19 +3635,29 @@ function _renderDashboard() {
 function applyDashAccordions(){
   try {
     var cont=document.getElementById('dashboard-container'); if(!cont) return;
+    var cards=Array.prototype.slice.call(cont.querySelectorAll('.chart-card'));
+    if(!cards.length || cards[0].closest('.dash-panel')) return;
     var chev='<svg class="dash-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>';
-    cont.querySelectorAll('.chart-card').forEach(function(card,i){
-      if(card.closest('details.dash-acc')) return;
+    var ic='<span class="dash-acc-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"></polyline><polyline points="16 7 21 7 21 12"></polyline></svg></span>';
+    var panel=document.createElement('div'); panel.className='dash-panel';
+    cards[0].parentNode.insertBefore(panel, cards[0]);
+    var sp=cont.querySelector('.strength-pills');
+    cards.forEach(function(card,i){
       var titleEl=card.querySelector('.chart-title');
+      var wrap=titleEl?titleEl.parentElement:null;
       var det=document.createElement('details'); det.className='dash-acc'; if(i===0) det.open=true;
       var sum=document.createElement('summary');
-      sum.insertAdjacentHTML('beforeend', '<span class="dash-acc-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"></polyline><polyline points="16 7 21 7 21 12"></polyline></svg></span>');
+      sum.insertAdjacentHTML('beforeend', ic);
       if(titleEl){ sum.appendChild(titleEl); }
       else { var t=document.createElement('div'); t.className='chart-title'; t.textContent='Section'; sum.appendChild(t); }
+      var badge=card.querySelector('#strength-score-badge');
+      if(badge){ badge.className='dash-acc-meta'; badge.removeAttribute('style'); sum.appendChild(badge); }
       sum.insertAdjacentHTML('beforeend', chev);
-      card.parentNode.insertBefore(det,card);
+      if(wrap && wrap!==card && !wrap.children.length){ wrap.remove(); }
       det.appendChild(sum);
       det.appendChild(card);
+      if(i===0 && sp){ card.appendChild(sp); }
+      panel.appendChild(det);
       det.addEventListener('toggle',function(){
         if(det.open){ setTimeout(function(){ try{ Object.keys(chartInstances).forEach(function(k){ var ch=chartInstances[k]; if(ch&&ch.canvas&&det.contains(ch.canvas)&&typeof ch.resize==='function') ch.resize(); }); }catch(e){} },20); }
       });
