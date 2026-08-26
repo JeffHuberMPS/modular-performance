@@ -83,12 +83,13 @@ window.MPSLibrary = (function () {
     + '.mpslib-cat{flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:10px;padding:17px;border-radius:14px;background:linear-gradient(180deg,#13161c,#0a0c11);border:1px solid var(--ln);color:var(--dim);cursor:pointer;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;transition:transform .14s,box-shadow .14s,border-color .14s;box-shadow:0 8px 18px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-cat:active{transform:translateY(1px);}'
     + '.mpslib-cat:hover{border-color:var(--a);color:var(--tx);}'
     + '.mpslib-cat.on{background:rgba(var(--argb),.16);border-color:var(--a);color:#fff;}'
-    + '.mpslib-cat.soon{opacity:.6;}.mpslib-cat .badge{font-family:var(--body,Inter,sans-serif);font-size:9px;letter-spacing:.5px;text-transform:none;color:var(--faint);border:1px solid var(--ln);border-radius:8px;padding:1px 6px;}'
+    + '.mpslib-cat.soon{}.mpslib-cat .badge{font-family:var(--body,Inter,sans-serif);font-size:9px;letter-spacing:.5px;text-transform:none;color:var(--faint);border:1px solid var(--ln);border-radius:8px;padding:1px 6px;}'
     + '.mpslib-soon{color:var(--faint);text-align:center;padding:52px 20px;font-size:14px;line-height:1.7;}'
     + '.mpslib-prow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px solid var(--ln);}'
     + '.mpslib-pname{color:var(--tx);font-weight:600;font-size:14px;}'
     + '.mpslib-pscheme{color:var(--a);font-weight:700;font-size:13px;letter-spacing:.5px;white-space:nowrap;}'
-    + '.mpslib-pfocus{color:var(--a);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:2px 2px 10px;}';
+    + '.mpslib-pfocus{color:var(--a);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:2px 2px 10px;}'
+    + '.mpslib-plans-head{font-family:var(--disp,Oswald,sans-serif);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:2px 2px 12px;padding-bottom:8px;border-bottom:1px solid var(--ln);}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
 
@@ -297,7 +298,9 @@ window.MPSLibrary = (function () {
   function renderWeightUI(c){
     var equip=[]; EX.forEach(function(x){ x.equipment.forEach(function(e){ if(equip.indexOf(e)<0)equip.push(e); }); }); equip.sort();
     var diff=['beginner','intermediate','advanced'];
-    c.innerHTML='<div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
+    var _wprogs=LIB_PROGRAMS.filter(function(pp){return !pp.cali;});
+    var _wprogHTML=_wprogs.length?('<div class="mpslib-plans-head">Programs</div>'+_wprogs.map(function(pp){return renderProgramCard(pp,false);}).join('')+'<div class="mpslib-plans-head" style="margin-top:24px">Exercises</div>'):'';
+    c.innerHTML=_wprogHTML+'<div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
       +'<div class="mpslib-search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="mpslib-search" placeholder="Search exercises (bench, curl, squat...)"></div>'
       +'<div class="mpslib-chips mpslib-eq">'+equip.map(function(e){return '<span class="mpslib-chip'+(state.eq[e]?' on':'')+'" data-eq="'+e+'">'+e+'</span>';}).join('')+'</div>'
       +'<div class="mpslib-chips mpslib-df">'+diff.map(function(d){return '<span class="mpslib-chip'+(state.df[d]?' on':'')+'" data-df="'+d+'">'+d+'</span>';}).join('')+'</div>'
@@ -365,8 +368,7 @@ window.MPSLibrary = (function () {
     injectCSS(); ensureDrawer();
     root.classList.add('mpslib');
     root.innerHTML='<div class="mpslib-cats">'
-      +'<button class="mpslib-cat on" data-cat="plans">'+CAT_IC.plans+' Plans</button>'
-      +'<button class="mpslib-cat" data-cat="weight">'+CAT_IC.weight+' Weightlifting</button>'
+      +'<button class="mpslib-cat on" data-cat="weight">'+CAT_IC.weight+' Weightlifting</button>'
       +'<button class="mpslib-cat" data-cat="cali">'+CAT_IC.cali+' Calisthenics</button>'
       +'<button class="mpslib-cat soon" data-cat="skill">'+CAT_IC.skill+' Skill Work <span class="badge">soon</span></button>'
       +'<button class="mpslib-cat soon" data-cat="cond">'+CAT_IC.cond+' Conditioning <span class="badge">soon</span></button>'
@@ -375,7 +377,7 @@ window.MPSLibrary = (function () {
       root.querySelectorAll('[data-cat]').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
       renderCategory(root, b.dataset.cat);
     }; });
-    renderCategory(root,'plans');
+    renderCategory(root,'weight');
     mounted=root;
   }
 
