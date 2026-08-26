@@ -604,12 +604,14 @@
   }
   .pill-row-tight {
     flex-wrap: nowrap;
-    gap: 5px;
+    gap: 8px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    padding-bottom: 2px;
   }
   .pill-row-tight::-webkit-scrollbar { display: none; }
+  .pill-row-tight .pill { flex: 0 0 auto; white-space: nowrap; }
   .pill-row-tight .pill {
     padding: 6px 10px;
     font-size: 10px;
@@ -862,6 +864,15 @@
     .add-exercise-row .add-ex-name { grid-column: 1 / -1; }
     .add-exercise-row .add-ex-btn { grid-column: 1 / -1; }
   }
+  /* Dashboard accordions: each section keeps its header + a small corner toggle */
+  .dash-acc { border:1px solid var(--border); border-radius:12px; margin-bottom:10px; background:linear-gradient(180deg,#0e1015 0%,#0a0c12 100%); box-shadow:0 10px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05); overflow:hidden; }
+  .dash-acc > summary { list-style:none; cursor:pointer; user-select:none; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:14px 14px 8px; }
+  .dash-acc > summary::-webkit-details-marker { display:none; }
+  .dash-acc > summary::marker { content:''; }
+  .dash-acc > summary .chart-title { margin-bottom:0; }
+  .dash-acc .dash-chev { transition:transform .2s ease; color:var(--text-dim); flex-shrink:0; margin-top:3px; }
+  .dash-acc[open] .dash-chev { transform:rotate(180deg); }
+  .dash-acc > .chart-card { background:none; border:none; box-shadow:none; margin:0; padding:4px 14px 14px; }
 </style>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
 <style>html.mps-embedded a[href="/hub.html"],html.mps-embedded #mps-hub-nav,html.mps-embedded #hub-nav,html.mps-embedded .nav-title,html.mps-embedded .brand-block,html.mps-embedded .mps-header{display:none!important}html.mps-embedded *:has(> .mps-logo-rsp){display:none!important}html.mps-embedded body{padding-top:0!important}</style>
@@ -3616,6 +3627,29 @@ function _renderDashboard() {
   setTimeout(renderAllDashboardCharts, 0);
   // Wire backup buttons
   setTimeout(wireBackupButtons, 0);
+  // Collapse each chart section behind a small corner toggle (first stays open)
+  setTimeout(applyDashAccordions, 60);
+}
+function applyDashAccordions(){
+  try {
+    var cont=document.getElementById('dashboard-container'); if(!cont) return;
+    var chev='<svg class="dash-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    cont.querySelectorAll('.chart-card').forEach(function(card,i){
+      if(card.closest('details.dash-acc')) return;
+      var titleEl=card.querySelector('.chart-title');
+      var det=document.createElement('details'); det.className='dash-acc'; if(i===0) det.open=true;
+      var sum=document.createElement('summary');
+      if(titleEl){ sum.appendChild(titleEl); }
+      else { var t=document.createElement('div'); t.className='chart-title'; t.textContent='Section'; sum.appendChild(t); }
+      sum.insertAdjacentHTML('beforeend', chev);
+      card.parentNode.insertBefore(det,card);
+      det.appendChild(sum);
+      det.appendChild(card);
+      det.addEventListener('toggle',function(){
+        if(det.open){ setTimeout(function(){ try{ Object.keys(chartInstances).forEach(function(k){ var ch=chartInstances[k]; if(ch&&ch.canvas&&det.contains(ch.canvas)&&typeof ch.resize==='function') ch.resize(); }); }catch(e){} },20); }
+      });
+    });
+  } catch(e){}
 }
 // ============ AUTO-BACKUP SYSTEM ============
 // Triggers: (1) After every workout save, (2) On app open if >24h since last backup
