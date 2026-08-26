@@ -310,7 +310,7 @@ window.MPSLibrary = (function () {
     var diff=['beginner','intermediate','advanced'];
     var _wprogs=LIB_PROGRAMS.filter(function(pp){return !pp.cali;});
     var _wprogHTML=_wprogs.length?('<div class="mpslib-progpanel"><div class="mpslib-plans-head">Programs</div>'+_wprogs.map(function(pp){return renderProgramCard(pp,false);}).join('')+'</div>'):'';
-    c.innerHTML=_wprogHTML+'<div class="mpslib-expanel"><div class="mpslib-plans-head">Body Parts</div><div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
+    c.innerHTML=_wprogHTML+'<div class="mpslib-expanel"><div class="mpslib-plans-head">Muscle Groups</div><div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
       +'<div class="mpslib-search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="mpslib-search" placeholder="Search exercises (bench, curl, squat...)"></div>'
       +'<div class="mpslib-chips mpslib-eq">'+equip.map(function(e){return '<span class="mpslib-chip'+(state.eq[e]?' on':'')+'" data-eq="'+e+'">'+e+'</span>';}).join('')+'</div>'
       +'<div class="mpslib-chips mpslib-df">'+diff.map(function(d){return '<span class="mpslib-chip'+(state.df[d]?' on':'')+'" data-df="'+d+'">'+d+'</span>';}).join('')+'</div>'
@@ -359,7 +359,7 @@ window.MPSLibrary = (function () {
     var cali=LIB_PROGRAMS.filter(function(p){return p.cali;});
     var bw=EX.filter(function(x){return x.equipment.indexOf('bodyweight')>=0;});
     var cards = bw.length ? '<details class="mpslib-region"><summary class="mpslib-rhead"><span class="mpslib-ric">'+CAT_IC.cali+'</span><span class="mpslib-rtitle">Bodyweight</span><span class="mpslib-rcount">'+bw.length+'</span>'+chev()+'</summary><div class="mpslib-rbody"><div class="mpslib-group"><div class="mpslib-cards">'+bw.map(function(x){return card(x,false,true);}).join('')+'</div></div></div></details>' : '';
-    c.innerHTML='<div class="mpslib-sub"><b>'+cali.length+'</b> program · plus <b>'+bw.length+'</b> bodyweight exercises</div>'+'<div class="mpslib-progpanel"><div class="mpslib-plans-head">Program</div>'+cali.map(function(p){return renderProgramCard(p,false);}).join('')+'</div>'+(bw.length?('<div class="mpslib-expanel"><div class="mpslib-plans-head">Body Parts</div>'+cards+'</div>'):'');
+    c.innerHTML='<div class="mpslib-sub"><b>'+cali.length+'</b> program · plus <b>'+bw.length+'</b> bodyweight exercises</div>'+'<div class="mpslib-progpanel"><div class="mpslib-plans-head">Program</div>'+cali.map(function(p){return renderProgramCard(p,false);}).join('')+'</div>'+(bw.length?('<div class="mpslib-expanel"><div class="mpslib-plans-head">Muscle Groups</div>'+cards+'</div>'):'');
   }
   function renderCategory(root, cat){
     var c=root.querySelector('.mpslib-cat-content'); if(!c)return;
