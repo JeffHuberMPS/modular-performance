@@ -4022,7 +4022,7 @@ function wireBackupButtons() {
       overlay.querySelector('#imp-confirm').addEventListener('click', async () => {
         try {
           if (data.state && typeof data.state === 'object') {
-            state = { selectedDate: getTodayStr(), days: data.state.days || {}, targetRounds: data.state.targetRounds || 3 };
+            state = Object.assign({}, data.state, { selectedDate: getTodayStr(), days: data.state.days || {}, targetRounds: data.state.targetRounds || 3 });
           }
           if (Array.isArray(data.history)) history = data.history;
           if (data.prs && typeof data.prs === 'object') prs = data.prs;
@@ -4076,7 +4076,8 @@ function _progWindowStart(){
   var base = (lp && lp.at) ? new Date(lp.at + 'T00:00:00') : new Date();
   if (isNaN(base.getTime())) base = new Date();
   base.setHours(0,0,0,0);
-  base.setDate(base.getDate() - base.getDay());
+  var _wd = base.getDay();
+  base.setDate(base.getDate() + (_wd === 0 ? -6 : 1 - _wd));
   return base;
 }
 function _loadedCurrentWeekIdx(){
@@ -4097,7 +4098,7 @@ function renderLoadedWeekCard(weekIdx, highlight){
   for (var d=0; d<7; d++){
     var dt = new Date(wkStart); dt.setDate(wkStart.getDate()+d); var ds = _ymdP(dt);
     var isToday = ds === today;
-    var dateLine = DAY_LABELS_FULL[d].toUpperCase()+', '+dt.toLocaleDateString('en-US',{month:'short'}).toUpperCase()+' '+dt.getDate();
+    var dateLine = DAY_LABELS_FULL[dt.getDay()].toUpperCase()+', '+dt.toLocaleDateString('en-US',{month:'short'}).toUpperCase()+' '+dt.getDate();
     var _day = state.days[ds]; var rows = '';
     if (_day){
       (_day.splits||[]).forEach(function(b){ rows += '<div class="history-card-row"><span class="badge badge-split">LIFT</span><span class="history-card-text">'+escapeHtml(b.name)+'</span></div>'; });
@@ -4386,12 +4387,13 @@ window.MPS_LOAD_PROGRAM = function(program){
     var label = program.name || 'Program';
     mpsConfirm('Load ' + label + ' into your next 6 weeks? It fills the matching days; any day you already logged is left alone.', async function(){
       var weekStart = new Date(); weekStart.setHours(0,0,0,0);
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      var _swd = weekStart.getDay();
+      weekStart.setDate(weekStart.getDate() + (_swd === 0 ? -6 : 1 - _swd));
       var ymd = function(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); };
       var count = 0;
       days.forEach(function(d){
         for (var w = 0; w < 6; w++) {
-          var dt = new Date(weekStart); dt.setDate(weekStart.getDate() + w*7 + d.dow);
+          var dt = new Date(weekStart); dt.setDate(weekStart.getDate() + w*7 + ((d.dow + 6) % 7));
           var ds = ymd(dt);
           if (_dayHasLoggedData(state.days[ds])) continue;
           var exs = (d.ex||[]).filter(function(e){ return e && e[1]; }).map(function(e){ var ps = _parseScheme(e[1]); return buildFreshExercise(e[0], ps.sets, ps.reps); });
