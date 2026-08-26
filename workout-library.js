@@ -343,12 +343,12 @@ window.MPSLibrary = (function () {
     if(prog.focus){ var fo='<div class="mpslib-group"><div class="mpslib-slabel">Program Focus</div>'; prog.focus.forEach(function(x){ fo+='<div class="mpslib-prow"><span class="mpslib-pname" style="font-weight:500;color:var(--dim)">'+esc(x)+'</span></div>'; }); h+=fo+'</div>'; }
     return h+'</div></details>';
   }
-  function renderPlansUI(c){ c.innerHTML='<div class="mpslib-sub"><b>'+LIB_PROGRAMS.length+'</b> programs · tap a program, then a day, to expand</div>'+LIB_PROGRAMS.map(function(p,i){return renderProgramCard(p,i===0);}).join(''); }
+  function renderPlansUI(c){ c.innerHTML='<div class="mpslib-sub"><b>'+LIB_PROGRAMS.length+'</b> programs · tap a program, then a day, to expand</div>'+LIB_PROGRAMS.map(function(p){return renderProgramCard(p,false);}).join(''); }
   function renderCalisthenicsUI(c){
     var cali=LIB_PROGRAMS.filter(function(p){return p.cali;});
     var bw=EX.filter(function(x){return x.equipment.indexOf('bodyweight')>=0;});
     var cards = bw.length ? '<details class="mpslib-region"><summary class="mpslib-rhead"><span class="mpslib-ric">'+CAT_IC.cali+'</span><span class="mpslib-rtitle">Bodyweight</span><span class="mpslib-rcount">'+bw.length+'</span>'+chev()+'</summary><div class="mpslib-rbody"><div class="mpslib-group"><div class="mpslib-cards">'+bw.map(function(x){return card(x,false,true);}).join('')+'</div></div></div></details>' : '';
-    c.innerHTML='<div class="mpslib-sub"><b>'+cali.length+'</b> program · plus <b>'+bw.length+'</b> bodyweight exercises</div>'+cali.map(function(p){return renderProgramCard(p,true);}).join('')+cards;
+    c.innerHTML='<div class="mpslib-sub"><b>'+cali.length+'</b> program · plus <b>'+bw.length+'</b> bodyweight exercises</div>'+cali.map(function(p){return renderProgramCard(p,false);}).join('')+cards;
   }
   function renderCategory(root, cat){
     var c=root.querySelector('.mpslib-cat-content'); if(!c)return;
