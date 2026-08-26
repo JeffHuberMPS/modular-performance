@@ -1038,6 +1038,7 @@ const SPLIT_MENU = [
   "Glutes + Quads (Leg Day)",
   "Lats + Traps (Back)",
   "Calisthenics",
+  "Cindy (log rounds)",
   "Custom"
 ];
 // Program-day splits (from the Library programs) — picking one pre-fills its exercises + target sets/reps
@@ -1046,7 +1047,8 @@ const PROGRAM_DAY_SPLITS = {
   "Strength B": [["Back Squat","3 × 5"],["Bench Press","4 × 5"],["Heavy Close-Grip Seated Cable Row — D/V Handle","3 × 5–6"],["Hip Thrust","2 × 8–12"],["Heavy Goblet Carry","2 × 30–45 sec"]],
   "Strength C": [["Leg Press","3 × 5–6"],["Overhead Press","3 × 5"],["Bulgarian Split Squat","2 × 5–6 each leg"],["Sled Push + Sled Pull","2–3 rounds"]],
   "Hypertrophy A": [["Your existing Chest exercises","2 × 9–12"],["Your existing Biceps exercises","2 × 9–12"],["Your existing Triceps exercises","2 × 9–12"]],
-  "Hypertrophy B": [["Your existing Back exercises","2 × 9–12"],["Your existing Lat exercises","2 × 9–12"],["Your existing Shoulder exercises","2 × 9–12"],["Seated Cable Row — Angled Multipurpose Bar","2 × 9–12"]]
+  "Hypertrophy B": [["Your existing Back exercises","2 × 9–12"],["Your existing Lat exercises","2 × 9–12"],["Your existing Shoulder exercises","2 × 9–12"],["Seated Cable Row — Angled Multipurpose Bar","2 × 9–12"]],
+  "Cindy (log rounds)": [["Cindy Rounds — 5 Pull-Ups · 10 Push-Ups · 15 Air Squats (20-min AMRAP)","1 × 20"]]
 };
 // Skill catalog: Kickboxing has full MPS series; others are simple
 const SKILL_CATALOG = {
@@ -2155,6 +2157,9 @@ function confirmAddSplit(name) {
   doAddSplit(name);
 }
 function doAddSplit(finalName) {
+  // Keep the viewport exactly where it is — render() rebuilds the day's blocks and would otherwise
+  // snap the window back to the top, forcing a scroll-down every time you add a split.
+  var _sy = window.scrollY || window.pageYOffset || (document.documentElement && document.documentElement.scrollTop) || 0;
   var _preset = (typeof PROGRAM_DAY_SPLITS !== 'undefined') ? PROGRAM_DAY_SPLITS[finalName] : null;
   var _exs = _preset ? _preset.filter(function(e){ return e && e[1]; }).map(function(e){ var ps = (typeof _parseScheme==='function') ? _parseScheme(e[1]) : {sets:3,reps:e[1]}; return buildFreshExercise(e[0], ps.sets, ps.reps); }) : [];
   getCurrentDay().splits.push({
@@ -2163,6 +2168,9 @@ function doAddSplit(finalName) {
   saveState();
   document.getElementById('split-picker-container').innerHTML = '';
   render();
+  var _restore = function(){ try { window.scrollTo(0, _sy); } catch(e){} };
+  _restore();
+  try { requestAnimationFrame(_restore); } catch(e){ setTimeout(_restore, 0); }
   toast(`Added ${finalName}`);
 }
 function showSkillPicker() {
