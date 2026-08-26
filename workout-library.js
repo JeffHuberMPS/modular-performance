@@ -101,7 +101,7 @@ window.MPSLibrary = (function () {
     + '.mpslib-loadprog:hover{background:rgba(var(--argb),.24);}.mpslib-loadprog:active{transform:translateY(1px);}'
     + '.mpslib-filterbox{background:rgba(255,255,255,0.02);border:1px solid var(--ln);border-radius:12px;padding:12px 14px 8px;margin-top:14px;}'
     + '.mpslib-filterbox-label{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:9px;}.mpslib-filterbox .mpslib-chips{margin-top:0;}'
-    + '@media(max-width:600px){.mpslib-cat{flex-wrap:wrap;font-size:13px;letter-spacing:.8px;padding:14px 10px;}.mpslib-cat .badge{flex-basis:100%;margin-top:6px;}.mpslib-rtitle{font-size:22px;}.mpslib-glabel{font-size:20px;}.mpslib-glabel::before{height:20px;}}';
+    + '@media(max-width:600px){.mpslib-cat{flex-direction:column;gap:7px;font-size:13px;letter-spacing:.8px;padding:16px 10px;}.mpslib-cat .badge{margin-top:2px;}.mpslib-rtitle{font-size:22px;}.mpslib-glabel{font-size:20px;}.mpslib-glabel::before{height:20px;}}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
 
