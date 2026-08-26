@@ -1477,6 +1477,8 @@ async function cloudBackupNow() {
     } catch (e) { _merged = _data; }   // read failed -> write this device's data (never empty, never loses local)
     const payload = PJSON.parse(JSON.stringify({ data: _merged, ts: _ts, v: 1 }));
     await doc.set(payload);
+    // Mark our own write as already-synced so the live watcher ignores it (prevents a reload loop).
+    try { localStorage.setItem('workout_synced_ts', String(_ts)); } catch (e) {}
     try { localStorage.setItem(K_LAST_BACKUP, new Date().toISOString()); } catch (e) {}
     try { updateBackupStatus(); } catch (e) {}
     _cloudBusy = false;
