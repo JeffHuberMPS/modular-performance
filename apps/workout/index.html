@@ -3893,7 +3893,7 @@ function renderPlan() {
   const view = document.getElementById('plan-view-select').value;
   const content = document.getElementById('plan-content');
   var _lp = (state.loadedProgram && state.loadedProgram.name)
-    ? '<div class="card" style="border:1px solid rgba(var(--mps-accent-rgb),0.45);background:rgba(var(--mps-accent-rgb),0.08);margin-bottom:14px;"><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:1px;">LOADED PROGRAM</div><div style="font-size:16px;font-weight:700;margin:5px 0 12px;">' + escapeHtml(state.loadedProgram.name) + '</div><button id="plan-remove-prog" style="width:100%;padding:11px;border-radius:9px;border:1px solid #ef4444;background:rgba(239,68,68,0.12);color:#ff6b6b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Remove this program from my plan</button></div>'
+    ? '<div class="card" style="border:1px solid rgba(var(--mps-accent-rgb),0.45);background:rgba(var(--mps-accent-rgb),0.08);margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><div><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:1px;">LOADED PROGRAM</div><div style="font-size:16px;font-weight:700;margin-top:4px;">' + escapeHtml(state.loadedProgram.name) + '</div></div><button id="plan-remove-prog" style="background:none;border:none;color:var(--text-faint,#6b7280);font-size:12px;cursor:pointer;padding:6px 2px;font-family:inherit;text-decoration:underline;white-space:nowrap;">Remove</button></div></div>'
     : '';
   var _body = (view === 'day') ? renderPlanDayView() : (view === 'week') ? renderPlanWeekView() : renderPlanProgramView();
   content.innerHTML = _lp + _body;
