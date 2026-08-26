@@ -2654,7 +2654,7 @@ function renderHistory() {
     __capHidden = __before - allItems.length;
   }
   if (allItems.length === 0) {
-    c.innerHTML = (__capHidden > 0 ? historyCapNoteHTML() : '') + emptyStateHTML('🏋️', (isPremium() ? 'No workouts logged yet' : 'No workouts in the last 60 days'), 'Your finished workouts show up here.', 'today', 'Log your first workout');
+    c.innerHTML = (__capHidden > 0 ? historyCapNoteHTML() : '') + emptyStateHTML('<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--mps-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M4 8.5v7M17.5 6.5v11M20 8.5v7M6.5 12h11"/></svg>', (isPremium() ? 'No workouts logged yet' : 'No workouts in the last 60 days'), 'Your finished workouts show up here.', 'today', 'Log your first workout');
     return;
   }
   // Sort newest first
@@ -3273,7 +3273,7 @@ function renderPRs() {
   const c = document.getElementById('pr-list');
   if (isCore()) { if(c) c.innerHTML = coreLockHTML('PRs &amp; STATS', 'Unlock your personal records and strength stats. Logging workouts stays free; upgrade to track your PRs over time.'); return; }
   const entries = Object.entries(prs);
-  if (entries.length === 0) { c.innerHTML = emptyStateHTML('🏆', 'No PRs yet', 'Personal records appear as you log heavier lifts.', 'today', 'Start logging'); return; }
+  if (entries.length === 0) { c.innerHTML = emptyStateHTML('<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--mps-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></svg>', 'No PRs yet', 'Personal records appear as you log heavier lifts.', 'today', 'Start logging'); return; }
   // Group by muscle
   const grouped = {};
   entries.forEach(([name, val]) => {

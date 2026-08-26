@@ -171,7 +171,7 @@ window.MPSLibrary = (function () {
         // no region title bar (e.g. Lower Back, whose title duplicates its subsection) — always shown
         html+='<div class="mpslib-region open"><div class="mpslib-rbody" style="display:block">'+inner+'</div></div>';
       } else {
-        html+='<details class="mpslib-region"'+(ri===0?' open':'')+'><summary class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</summary><div class="mpslib-rbody">'+inner+'</div></details>';
+        html+='<details class="mpslib-region"><summary class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</summary><div class="mpslib-rbody">'+inner+'</div></details>';
       }
     });
     var cCards=[];
@@ -364,9 +364,9 @@ window.MPSLibrary = (function () {
     injectCSS(); ensureDrawer();
     root.classList.add('mpslib');
     root.innerHTML='<div class="mpslib-cats">'
-      +'<button class="mpslib-cat on" data-cat="weight">'+CAT_IC.weight+' Weightlifting</button>'
+      +'<button class="mpslib-cat on" data-cat="plans">'+CAT_IC.plans+' Plans</button>'
+      +'<button class="mpslib-cat" data-cat="weight">'+CAT_IC.weight+' Weightlifting</button>'
       +'<button class="mpslib-cat" data-cat="cali">'+CAT_IC.cali+' Calisthenics</button>'
-      +'<button class="mpslib-cat" data-cat="plans">'+CAT_IC.plans+' Plans</button>'
       +'<button class="mpslib-cat soon" data-cat="skill">'+CAT_IC.skill+' Skill Work <span class="badge">soon</span></button>'
       +'<button class="mpslib-cat soon" data-cat="cond">'+CAT_IC.cond+' Conditioning <span class="badge">soon</span></button>'
       +'</div><div class="mpslib-cat-content"></div>';
@@ -374,7 +374,7 @@ window.MPSLibrary = (function () {
       root.querySelectorAll('[data-cat]').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
       renderCategory(root, b.dataset.cat);
     }; });
-    renderCategory(root,'weight');
+    renderCategory(root,'plans');
     mounted=root;
   }
 
