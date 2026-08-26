@@ -1547,7 +1547,7 @@ async function loadAll() {
   if (s) {
     try {
       const p = JSON.parse(s.value);
-      state = { selectedDate: getTodayStr(), days: p.days || {}, targetRounds: p.targetRounds || 3 };
+      state = Object.assign({}, p, { selectedDate: getTodayStr(), days: p.days || {}, targetRounds: p.targetRounds || 3 });
     } catch (e) {}
   }
   const h = await safeGet(K_HISTORY);
@@ -4070,7 +4070,62 @@ function renderPlan() {
   }); }
   wirePlanDayClicks();
 }
+function _ymdP(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _progWindowStart(){
+  var lp = state.loadedProgram;
+  var base = (lp && lp.at) ? new Date(lp.at + 'T00:00:00') : new Date();
+  if (isNaN(base.getTime())) base = new Date();
+  base.setHours(0,0,0,0);
+  base.setDate(base.getDate() - base.getDay());
+  return base;
+}
+function _loadedCurrentWeekIdx(){
+  var start = _progWindowStart(); var t = new Date(); t.setHours(0,0,0,0);
+  var wk = Math.floor((t - start) / 604800000); return (wk >= 0 && wk < 6) ? wk : 0;
+}
+function _dayBlockNames(day){
+  if (!day) return [];
+  return (day.splits||[]).map(function(b){return b.name;}).concat((day.skills||[]).map(function(b){return b.name;}));
+}
+function renderLoadedWeekCard(weekIdx, highlight){
+  var start = _progWindowStart();
+  var wkStart = new Date(start); wkStart.setDate(start.getDate() + weekIdx*7);
+  var wkEnd = new Date(wkStart); wkEnd.setDate(wkStart.getDate()+6);
+  var sL = wkStart.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  var eL = wkEnd.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  var today = getTodayStr(); var cards = '';
+  for (var d=0; d<7; d++){
+    var dt = new Date(wkStart); dt.setDate(wkStart.getDate()+d); var ds = _ymdP(dt);
+    var isToday = ds === today;
+    var dateLine = DAY_LABELS_FULL[d].toUpperCase()+', '+dt.toLocaleDateString('en-US',{month:'short'}).toUpperCase()+' '+dt.getDate();
+    var _day = state.days[ds]; var rows = '';
+    if (_day){
+      (_day.splits||[]).forEach(function(b){ rows += '<div class="history-card-row"><span class="badge badge-split">LIFT</span><span class="history-card-text">'+escapeHtml(b.name)+'</span></div>'; });
+      (_day.skills||[]).forEach(function(b){ rows += '<div class="history-card-row"><span class="badge badge-skill">SKILL</span><span class="history-card-text">'+escapeHtml(b.name)+'</span></div>'; });
+    }
+    if (!rows){
+      cards += '<div class="plan-day-card rest" style="opacity:0.5;"><div class="history-card-left"><div class="history-card-date">'+escapeHtml(dateLine)+'</div><div class="history-card-row"><span class="history-card-text" style="color:var(--text-dim);">Rest</span></div></div></div>';
+    } else {
+      cards += '<div class="plan-day-card '+(isToday?'today':'')+'" data-goday="'+ds+'"><div class="history-card-left"><div class="history-card-date">'+escapeHtml(dateLine)+(isToday?' · TODAY':'')+'</div>'+rows+'</div><div class="plan-day-arrow">›</div></div>';
+    }
+  }
+  return '<div class="pr-group-card" style="'+(highlight?'border-color: rgba(var(--mps-accent-rgb), 0.5);':'')+'"><div class="pr-group-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;"><span>WEEK '+(weekIdx+1)+(highlight?' · CURRENT':'')+'</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; color:var(--text-dim); text-shadow:none;">'+escapeHtml(sL)+' – '+escapeHtml(eL)+'</span></div><div class="pr-group-body">'+cards+'</div></div>';
+}
+function renderLoadedDayView(){
+  var today = getTodayStr();
+  var dateLabel = new Date(today+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  var _day = state.days[today]; var wk = _loadedCurrentWeekIdx(); var rows = '';
+  if (_day){
+    (_day.splits||[]).forEach(function(b){ rows += '<div style="margin-bottom:10px;"><span class="badge badge-split">LIFT</span><span style="margin-left:8px;font-weight:600;">'+escapeHtml(b.name)+'</span></div>'; });
+    (_day.skills||[]).forEach(function(b){ rows += '<div style="margin-bottom:10px;"><span class="badge badge-skill">SKILL</span><span style="margin-left:8px;font-weight:600;">'+escapeHtml(b.name)+'</span></div>'; });
+  }
+  if (!rows){
+    return '<div class="card"><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">TODAY · WEEK '+(wk+1)+'</div><div style="font-size:18px;font-weight:700;margin-bottom:10px;">'+escapeHtml(dateLabel)+'</div><div class="empty">Rest day — nothing scheduled.</div></div>';
+  }
+  return '<div class="card" style="border-left:3px solid var(--mps-accent);"><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">TODAY · WEEK '+(wk+1)+'</div><div style="font-size:18px;font-weight:700;margin-bottom:14px;">'+escapeHtml(dateLabel)+'</div>'+rows+'<button class="btn-accent" data-goday="'+today+'" style="width:100%;padding:12px;border:none;border-radius:8px;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Open in Today</button></div>';
+}
 function renderPlanDayView() {
+  if (state.loadedProgram && state.loadedProgram.name) return renderLoadedDayView();
   const today = getTodayStr();
   const slot = getProgramSlot(today);
   const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -4114,10 +4169,16 @@ function renderPlanDayView() {
   `;
 }
 function renderPlanWeekView() {
+  if (state.loadedProgram && state.loadedProgram.name) return renderLoadedWeekCard(_loadedCurrentWeekIdx(), true);
   const weekIdx = getCurrentWeekIdx();
   return renderWeekCard(weekIdx, true);
 }
 function renderPlanProgramView() {
+  if (state.loadedProgram && state.loadedProgram.name) {
+    var _h=''; var _cw=_loadedCurrentWeekIdx();
+    for (var _w=0; _w<6; _w++) _h += renderLoadedWeekCard(_w, _w===_cw);
+    return _h;
+  }
   let html = '';
   const currentWeek = getCurrentWeekIdx();
   for (let w = 0; w < PROGRAM_WEEKS; w++) {
@@ -4193,6 +4254,12 @@ function renderWeekCard(weekIdx, highlight) {
   `;
 }
 function wirePlanDayClicks() {
+  document.querySelectorAll('[data-goday]').forEach(function(row){
+    row.addEventListener('click', function(){
+      try { state.selectedDate = row.getAttribute('data-goday'); saveState(); } catch(e){}
+      try { var t = document.querySelector('.tab[data-tab="today"]'); if (t) t.click(); } catch(e){}
+    });
+  });
   document.querySelectorAll('.plan-day-card[data-clickable]').forEach(row => {
     row.addEventListener('click', () => {
       const dateStr = row.dataset.date;
