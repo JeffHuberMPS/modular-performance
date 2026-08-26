@@ -472,7 +472,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '485';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '486';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1640,6 +1640,15 @@
         var had = trackerCount();
         // Trackers ONLY — wipeTrackers keeps Expenses; we never call MPS_DEMO.clear() (touches demo expenses).
         try { await MPS_DEMO.wipeTrackers(); } catch(e){}
+        // wipeTrackers only covers workout/habits/sleep/journal — it MISSES the nutrition backup, which
+        // left the Overall Discipline Score reading ghost nutrition days (~25). Delete every tracker
+        // backup doc explicitly (never the expense backup).
+        try {
+          var _db = firebase.firestore(), _uid = u.uid;
+          ['workout_backup','habits_backup','sleep_backup','journal_backup','nutrition_backup'].forEach(function(n){
+            try { _db.doc('users/'+_uid+'/settings/'+n).delete().catch(function(){}); } catch(e){}
+          });
+        } catch(e){}
         try {
           ['mps_v3_history','mps_v3_prs','mps_v3_state','mps_v3_conditioning','habits_v4','gym_v4','blocks_v4','journal_v1','mps_nutrition']
             .forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
