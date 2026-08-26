@@ -1028,6 +1028,11 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 // ============ CONSTANTS ============
 const SPLIT_MENU = [
+  "Strength A",
+  "Strength B",
+  "Strength C",
+  "Hypertrophy A",
+  "Hypertrophy B",
   "Chest + Triceps",
   "Biceps + Shoulders",
   "Glutes + Quads (Leg Day)",
@@ -1035,6 +1040,14 @@ const SPLIT_MENU = [
   "Calisthenics",
   "Custom"
 ];
+// Program-day splits (from the Library programs) — picking one pre-fills its exercises + target sets/reps
+const PROGRAM_DAY_SPLITS = {
+  "Strength A": [["Trap-Bar Deadlift","4 × 5"],["Overhead Press","4 × 5"],["Pull-Ups / Heavy Lat Pulldown","3 × 5–6"],["Farmer Carry","3 × 30–45 sec"],["Hip Abduction","3 × 12–20"]],
+  "Strength B": [["Back Squat","3 × 5"],["Bench Press","4 × 5"],["Heavy Close-Grip Seated Cable Row — D/V Handle","3 × 5–6"],["Hip Thrust","2 × 8–12"],["Heavy Goblet Carry","2 × 30–45 sec"]],
+  "Strength C": [["Leg Press","3 × 5–6"],["Overhead Press","3 × 5"],["Bulgarian Split Squat","2 × 5–6 each leg"],["Sled Push + Sled Pull","2–3 rounds"]],
+  "Hypertrophy A": [["Your existing Chest exercises","2 × 9–12"],["Your existing Biceps exercises","2 × 9–12"],["Your existing Triceps exercises","2 × 9–12"]],
+  "Hypertrophy B": [["Your existing Back exercises","2 × 9–12"],["Your existing Lat exercises","2 × 9–12"],["Your existing Shoulder exercises","2 × 9–12"],["Seated Cable Row — Angled Multipurpose Bar","2 × 9–12"]]
+};
 // Skill catalog: Kickboxing has full MPS series; others are simple
 const SKILL_CATALOG = {
   "Kickboxing": {
@@ -1123,6 +1136,11 @@ const SKILL_CATALOG = {
 const SKILL_MENU = Object.keys(SKILL_CATALOG);
 // Exercise library per split — just NAMES, no presets. User fills sets/reps as they go.
 const SPLIT_EXERCISE_LIBRARY = {
+  "Strength A": ["Trap-Bar Deadlift","Overhead Press","Pull-Ups / Heavy Lat Pulldown","Farmer Carry","Hip Abduction"],
+  "Strength B": ["Back Squat","Bench Press","Heavy Close-Grip Seated Cable Row — D/V Handle","Hip Thrust","Heavy Goblet Carry"],
+  "Strength C": ["Leg Press","Overhead Press","Bulgarian Split Squat","Sled Push","Sled Pull"],
+  "Hypertrophy A": ["Your existing Chest exercises","Your existing Biceps exercises","Your existing Triceps exercises"],
+  "Hypertrophy B": ["Your existing Back exercises","Your existing Lat exercises","Your existing Shoulder exercises","Seated Cable Row — Angled Multipurpose Bar"],
   "Chest + Triceps": [
     "Wide-Grip Tricep Pushdowns",
     "Cable Tricep Pushdowns",
@@ -1942,8 +1960,10 @@ function confirmAddSplit(name) {
   doAddSplit(name);
 }
 function doAddSplit(finalName) {
+  var _preset = (typeof PROGRAM_DAY_SPLITS !== 'undefined') ? PROGRAM_DAY_SPLITS[finalName] : null;
+  var _exs = _preset ? _preset.filter(function(e){ return e && e[1]; }).map(function(e){ var ps = (typeof _parseScheme==='function') ? _parseScheme(e[1]) : {sets:3,reps:e[1]}; return buildFreshExercise(e[0], ps.sets, ps.reps); }) : [];
   getCurrentDay().splits.push({
-    id: Date.now() + Math.random(), name: finalName, type: 'split', exercises: []
+    id: Date.now() + Math.random(), name: finalName, type: 'split', exercises: _exs
   });
   saveState();
   document.getElementById('split-picker-container').innerHTML = '';
