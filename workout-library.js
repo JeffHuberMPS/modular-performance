@@ -8,6 +8,14 @@
    Standalone (no data fns) shows the structure with "log to unlock" states.
    Styles use the workout app's CSS vars with safe fallbacks so it fits in-app.
 ============================================================================ */
+/* LOOP-BREAKER: some cached builds had a sync bug that reloaded the app in a fast loop, making it
+   unclickable. This file is fetched fresh (no-cache) by every build, so it runs inside the stuck app
+   too. Pushing the sync cursor ahead makes the old live-sync watcher treat cloud writes as already-seen
+   and stop reloading. New builds reset this on their next backup (~700ms), so it is harmless for them. */
+(function(){ try {
+  var k='workout_synced_ts', cur=parseInt(localStorage.getItem(k)||'0',10)||0;
+  if (cur < Date.now()) localStorage.setItem(k, String(Date.now() + 2*24*60*60*1000));
+} catch(e){} })();
 window.MPSLibrary = (function () {
   'use strict';
   var EX = [], byId = {}, mounted = null, opts = {};
