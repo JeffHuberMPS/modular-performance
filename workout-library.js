@@ -80,7 +80,7 @@ window.MPSLibrary = (function () {
     + '.mpslib-krow{display:flex;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.04);}.mpslib-krow .k{width:120px;color:var(--faint);flex-shrink:0;text-transform:uppercase;font-size:11px;letter-spacing:1px;padding-top:2px;}.mpslib-krow .v{flex:1;color:var(--tx);}'
     + '.mpslib-appears{display:flex;gap:6px;flex-wrap:wrap;}'
     + '.mpslib-cats{display:flex;gap:10px;flex-wrap:wrap;margin:0;}'
-    + '.mpslib-catwrap{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:12px;margin:4px 0 28px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
+    + '.mpslib-catwrap{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:24px 14px;margin:20px 0 30px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
     + '.mpslib-cat{flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:10px;padding:17px;border-radius:14px;background:linear-gradient(180deg,#13161c,#0a0c11);border:1px solid var(--ln);color:var(--dim);cursor:pointer;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;transition:transform .14s,box-shadow .14s,border-color .14s;box-shadow:0 8px 18px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-cat:active{transform:translateY(1px);}'
     + '.mpslib-cat:hover{border-color:var(--a);color:var(--tx);}'
     + '.mpslib-cat.on{background:rgba(var(--argb),.16);border-color:var(--a);color:#fff;}'
@@ -323,9 +323,9 @@ window.MPSLibrary = (function () {
     { id:'strength', name:'Strength', tag:'MON · WED · FRI',
       subtitle:'Heavy compound strength — hinge, squat, press, pull, carry, single-leg power. Trained Monday, Wednesday, Friday.',
       days:[
-        { day:'Monday — Strength A', focus:'Hinge + Upper + Carry + Outer Glutes', ex:[['Trap-Bar Deadlift','4 × 5'],['Overhead Press','4 × 5'],['Pull-Ups / Heavy Lat Pulldown','3 × 5–6'],['Farmer Carry','3 × 30–45 sec'],['Hip Abduction','3 × 12–20']] },
-        { day:'Wednesday — Strength B', focus:'Squat + Push + Pull + Glutes + Carry', ex:[['Back Squat','3 × 5'],['Bench Press','4 × 5'],['Heavy Close-Grip Seated Cable Row — D/V Handle','3 × 5–6'],['Hip Thrust','2 × 8–12'],['Heavy Goblet Carry','2 × 30–45 sec']] },
-        { day:'Friday — Strength C', focus:'Leg Drive + Upper + Single-Leg + Work Capacity', ex:[['Leg Press','3 × 5–6'],['Overhead Press','3 × 5'],['Bulgarian Split Squat','2 × 5–6 each leg'],['Sled Push + Sled Pull','2–3 rounds']] }
+        { day:'STRA', focus:'Hinge + Upper + Carry + Outer Glutes', ex:[['Trap-Bar Deadlift','4 × 5'],['Overhead Press','4 × 5'],['Pull-Ups / Heavy Lat Pulldown','3 × 5–6'],['Farmer Carry','3 × 30–45 sec'],['Hip Abduction','3 × 12–20']] },
+        { day:'STRB', focus:'Squat + Push + Pull + Glutes + Carry', ex:[['Back Squat','3 × 5'],['Bench Press','4 × 5'],['Heavy Close-Grip Seated Cable Row — D/V Handle','3 × 5–6'],['Hip Thrust','2 × 8–12'],['Heavy Goblet Carry','2 × 30–45 sec']] },
+        { day:'STRC', focus:'Leg Drive + Upper + Single-Leg + Work Capacity', ex:[['Leg Press','3 × 5–6'],['Overhead Press','3 × 5'],['Bulgarian Split Squat','2 × 5–6 each leg'],['Sled Push + Sled Pull','2–3 rounds']] }
       ],
       focus:['Monday: Pick + Pull + Carry + Outer Glutes','Wednesday: Full-Body Strength + Glutes','Friday: Leg Drive + Single-Leg Strength + Sled'] },
     { id:'hypertrophy', name:'Hypertrophy', tag:'TUE · THU',
