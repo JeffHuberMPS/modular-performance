@@ -1366,7 +1366,10 @@ async function cloudRestoreIfEmpty() {
   const doc = _cloudDoc();
   if (!doc) return false;
   let hasLocal = false;
-  try { const hv = localStorage.getItem(K_HISTORY); hasLocal = !!hv && JSON.parse(hv || '[]').length > 0; } catch (e) {}
+  try { const hv = localStorage.getItem(K_HISTORY); if (!!hv && JSON.parse(hv || '[]').length > 0) hasLocal = true; } catch (e) {}
+  // A loaded plan (or any saved days) counts as local data too — otherwise cloud-restore wipes a
+  // just-loaded program before it has been backed up to the cloud (root cause of "plan won't persist").
+  try { const sv = localStorage.getItem(K_STATE); if (sv) { const st = JSON.parse(sv); if (st && ((st.days && Object.keys(st.days).length) || st.loadedProgram)) hasLocal = true; } } catch (e) {}
   if (hasLocal) return false;                 // device already has data — never overwrite
   try {
     const snap = await doc.get();
