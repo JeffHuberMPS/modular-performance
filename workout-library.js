@@ -79,7 +79,7 @@ window.MPSLibrary = (function () {
     + '.mpslib-stat{flex:1;min-width:88px;background:var(--c2);border:1px solid var(--ln);border-radius:10px;padding:11px;text-align:center;}.mpslib-stat b{font-family:var(--disp,Oswald,sans-serif);font-size:22px;font-weight:600;color:var(--tx);display:block;line-height:1;}.mpslib-stat span{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);}'
     + '.mpslib-krow{display:flex;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.04);}.mpslib-krow .k{width:120px;color:var(--faint);flex-shrink:0;text-transform:uppercase;font-size:11px;letter-spacing:1px;padding-top:2px;}.mpslib-krow .v{flex:1;color:var(--tx);}'
     + '.mpslib-appears{display:flex;gap:6px;flex-wrap:wrap;}'
-    + '.mpslib-cats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}'
+    + '.mpslib-cats{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 26px;}'
     + '.mpslib-cat{flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:10px;padding:17px;border-radius:14px;background:linear-gradient(180deg,#13161c,#0a0c11);border:1px solid var(--ln);color:var(--dim);cursor:pointer;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;transition:transform .14s,box-shadow .14s,border-color .14s;box-shadow:0 8px 18px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-cat:active{transform:translateY(1px);}'
     + '.mpslib-cat:hover{border-color:var(--a);color:var(--tx);}'
     + '.mpslib-cat.on{background:rgba(var(--argb),.16);border-color:var(--a);color:#fff;}'
@@ -89,7 +89,12 @@ window.MPSLibrary = (function () {
     + '.mpslib-pname{color:var(--tx);font-weight:600;font-size:14px;}'
     + '.mpslib-pscheme{color:var(--a);font-weight:700;font-size:13px;letter-spacing:.5px;white-space:nowrap;}'
     + '.mpslib-pfocus{color:var(--a);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:2px 2px 10px;}'
-    + '.mpslib-plans-head{font-family:var(--disp,Oswald,sans-serif);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:2px 2px 12px;padding-bottom:8px;border-bottom:1px solid var(--ln);}';
+    + '.mpslib-plans-head{font-family:var(--disp,Oswald,sans-serif);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:2px 2px 12px;padding-bottom:8px;border-bottom:1px solid var(--ln);}'
+    + '.mpslib-progpanel{background:rgba(var(--argb),0.05);border:1px solid rgba(var(--argb),0.22);border-radius:16px;padding:14px 14px 6px;margin-bottom:30px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
+    + '.mpslib-progpanel .mpslib-plans-head{color:var(--a);border-bottom-color:rgba(var(--argb),0.28);margin-top:4px;}'
+    + '.mpslib-progpanel .mpslib-region:first-of-type{margin-top:6px;}'
+    + '.mpslib-expanel{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:14px 16px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
+    + '.mpslib-expanel .mpslib-region:first-of-type{margin-top:8px;}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
 
@@ -299,12 +304,12 @@ window.MPSLibrary = (function () {
     var equip=[]; EX.forEach(function(x){ x.equipment.forEach(function(e){ if(equip.indexOf(e)<0)equip.push(e); }); }); equip.sort();
     var diff=['beginner','intermediate','advanced'];
     var _wprogs=LIB_PROGRAMS.filter(function(pp){return !pp.cali;});
-    var _wprogHTML=_wprogs.length?('<div class="mpslib-plans-head">Programs</div>'+_wprogs.map(function(pp){return renderProgramCard(pp,false);}).join('')+'<div class="mpslib-plans-head" style="margin-top:24px">Exercises</div>'):'';
-    c.innerHTML=_wprogHTML+'<div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
+    var _wprogHTML=_wprogs.length?('<div class="mpslib-progpanel"><div class="mpslib-plans-head">Programs</div>'+_wprogs.map(function(pp){return renderProgramCard(pp,false);}).join('')+'</div>'):'';
+    c.innerHTML=_wprogHTML+'<div class="mpslib-expanel"><div class="mpslib-plans-head">Body Parts</div><div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
       +'<div class="mpslib-search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="mpslib-search" placeholder="Search exercises (bench, curl, squat...)"></div>'
       +'<div class="mpslib-chips mpslib-eq">'+equip.map(function(e){return '<span class="mpslib-chip'+(state.eq[e]?' on':'')+'" data-eq="'+e+'">'+e+'</span>';}).join('')+'</div>'
       +'<div class="mpslib-chips mpslib-df">'+diff.map(function(d){return '<span class="mpslib-chip'+(state.df[d]?' on':'')+'" data-df="'+d+'">'+d+'</span>';}).join('')+'</div>'
-      +'<div class="mpslib-results"></div>';
+      +'<div class="mpslib-results"></div></div>';
     var inp=c.querySelector('.mpslib-search'); inp.value=state.q||'';
     inp.addEventListener('input',function(e){ state.q=e.target.value.trim(); renderResults(c); });
     c.querySelectorAll('[data-eq]').forEach(function(b){ b.onclick=function(){ state.eq[b.dataset.eq]=!state.eq[b.dataset.eq]; b.classList.toggle('on'); renderResults(c); }; });
@@ -348,7 +353,7 @@ window.MPSLibrary = (function () {
     var cali=LIB_PROGRAMS.filter(function(p){return p.cali;});
     var bw=EX.filter(function(x){return x.equipment.indexOf('bodyweight')>=0;});
     var cards = bw.length ? '<details class="mpslib-region"><summary class="mpslib-rhead"><span class="mpslib-ric">'+CAT_IC.cali+'</span><span class="mpslib-rtitle">Bodyweight</span><span class="mpslib-rcount">'+bw.length+'</span>'+chev()+'</summary><div class="mpslib-rbody"><div class="mpslib-group"><div class="mpslib-cards">'+bw.map(function(x){return card(x,false,true);}).join('')+'</div></div></div></details>' : '';
-    c.innerHTML='<div class="mpslib-sub"><b>'+cali.length+'</b> program · plus <b>'+bw.length+'</b> bodyweight exercises</div>'+cali.map(function(p){return renderProgramCard(p,false);}).join('')+cards;
+    c.innerHTML='<div class="mpslib-sub"><b>'+cali.length+'</b> program · plus <b>'+bw.length+'</b> bodyweight exercises</div>'+'<div class="mpslib-progpanel"><div class="mpslib-plans-head">Program</div>'+cali.map(function(p){return renderProgramCard(p,false);}).join('')+'</div>'+(bw.length?('<div class="mpslib-expanel"><div class="mpslib-plans-head">Body Parts</div>'+cards+'</div>'):'');
   }
   function renderCategory(root, cat){
     var c=root.querySelector('.mpslib-cat-content'); if(!c)return;
