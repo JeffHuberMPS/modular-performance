@@ -472,7 +472,7 @@
     const IS_BETA = (()=>{ try { return localStorage.getItem('mps_beta') === BETA_CODE; } catch(e){ return false; } })();
 
     let unlockedApps = APPS.map(a => a.id);
-    const APP_VERSION = '484';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
+    const APP_VERSION = '485';   // bump each deploy — forces fresh tracker iframes (defeats stale browser cache)
     let currentTier = 'all';
     // All-Access ALWAYS starts in full COLOR; the toggle switches to Dark/Gray for the session only.
     let themePref = 'color';
@@ -1612,33 +1612,47 @@
   <script src="/shared/install-prompt.js" defer></script>
   <script src="/shared/beta.js" defer></script>
 
-  <!-- OWNER-ONLY one-shot data reset: open modular-performance.com/hub.html?wipefake=1 on any device.
-       Clears fake tracker data (Workout/Habits/Recovery/Journal/Nutrition) from THIS device's local
-       storage AND the cloud backup, KEEPS Expenses. Runs the wipe from inside the app so it works even
-       where the OS "clear storage" does not actually clear the origin's localStorage. Gated to the owner
-       email so a normal user can never trigger it. -->
+  <!-- OWNER FORCE-CLEAN (TEMPORARY): while deployed, every load wipes fake tracker data
+       (Workout/Habits/Recovery/Journal/Nutrition) from THIS device's localStorage AND the cloud,
+       KEEPING Expenses, then reloads to reconverge past the additive-union re-seed race. Owner-gated.
+       *** REMOVE THIS BLOCK once the account is confirmed clean, before real tracker logging. ***
+       ?wipefake=1 forces a single wipe with a confirmation screen (no reload loop). -->
   <script>
   (function(){
-    try { if (!new URLSearchParams(location.search).has('wipefake')) return; } catch(e){ return; }
+    var manual = false; try { manual = new URLSearchParams(location.search).has('wipefake'); } catch(e){}
     var tries = 0;
     var iv = setInterval(function(){
       tries++;
       var u = null; try { u = firebase.auth().currentUser; } catch(e){}
-      if ((!u || !window.MPS_DEMO || !MPS_DEMO.wipeTrackers)) { if (tries > 60) clearInterval(iv); return; }
+      if (!u || !window.MPS_DEMO || !MPS_DEMO.wipeTrackers) { if (tries > 60) clearInterval(iv); return; }
       clearInterval(iv);
       if ((u.email||'').toLowerCase() !== 'jeffreyhuber86@gmail.com') return;   // owner only
       (async function(){
-        // Trackers ONLY. wipeTrackers keeps Expenses; we deliberately do NOT call MPS_DEMO.clear()
-        // (which can touch demo expense docs) so real expense data is guaranteed untouched.
+        function trackerCount(){
+          var n = 0;
+          try { var h = JSON.parse(localStorage.getItem('mps_v3_history')||'null'); if (Array.isArray(h)) n += h.length; } catch(e){}
+          try { var hb = JSON.parse(localStorage.getItem('habits_v4')||'null'); if (hb) n += Object.keys(hb).length; } catch(e){}
+          try { var jn = JSON.parse(localStorage.getItem('journal_v1')||'null'); if (jn) n += Object.keys(jn).length; } catch(e){}
+          try { var nu = JSON.parse(localStorage.getItem('mps_nutrition')||'null'); if (nu && nu.log) n += Object.keys(nu.log).length; } catch(e){}
+          try { for (var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if (k && k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest' && k!=='rr_sleep:__tombstones') n++; } } catch(e){}
+          return n;
+        }
+        var had = trackerCount();
+        // Trackers ONLY — wipeTrackers keeps Expenses; we never call MPS_DEMO.clear() (touches demo expenses).
         try { await MPS_DEMO.wipeTrackers(); } catch(e){}
-        // hard-remove any tracker keys that survived on THIS device (never touch mps_expense:*)
         try {
           ['mps_v3_history','mps_v3_prs','mps_v3_state','mps_v3_conditioning','habits_v4','gym_v4','blocks_v4','journal_v1','mps_nutrition']
             .forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
-          for (var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(k && k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest'){ try{localStorage.removeItem(k);}catch(e){} } }
-          for (var j=localStorage.length-1;j>=0;j--){ var k2=localStorage.key(j); if(k2 && k2.indexOf('mps_jnl_')===0){ try{localStorage.removeItem(k2);}catch(e){} } }
+          for (var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if (k && k.indexOf('rr_sleep:')===0 && k!=='rr_sleep:wearable_interest'){ try{localStorage.removeItem(k);}catch(e){} } }
+          for (var j=localStorage.length-1;j>=0;j--){ var k2=localStorage.key(j); if (k2 && k2.indexOf('mps_jnl_')===0){ try{localStorage.removeItem(k2);}catch(e){} } }
         } catch(e){}
-        try { document.body.innerHTML = '<div style="background:#0a0a0a;color:#f5f5f5;font-family:Inter,system-ui,sans-serif;position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:99999;"><div><div style="font-size:20px;font-weight:800;margin-bottom:10px;">Fake data cleared</div><div style="color:#9a9a9a;font-size:14px;line-height:1.55;max-width:340px;">Workout, Habits, Recovery, Journal and Nutrition were wiped on this device and in the cloud. Your real Expenses are kept.<br><br>Close this tab, then open the app normally.</div></div></div>'; } catch(e){}
+        if (manual) {
+          try { document.body.innerHTML = '<div style="background:#0a0a0a;color:#f5f5f5;font-family:Inter,system-ui,sans-serif;position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:99999;"><div><div style="font-size:20px;font-weight:800;margin-bottom:10px;">Fake data cleared</div><div style="color:#9a9a9a;font-size:14px;line-height:1.55;max-width:340px;">Trackers wiped here and in the cloud. Expenses kept.</div></div></div>'; } catch(e){}
+          return;
+        }
+        // If fake data was present, reload to reconverge — capped per session so a re-seed race can't loop forever.
+        var c = 0; try { c = parseInt(sessionStorage.getItem('mps_fakewipe_reloads')||'0',10)||0; } catch(e){}
+        if (had > 0 && c < 5) { try { sessionStorage.setItem('mps_fakewipe_reloads', String(c+1)); } catch(e){} setTimeout(function(){ try{ location.reload(); }catch(e){} }, 1500); }
       })();
     }, 500);
   })();
