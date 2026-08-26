@@ -48,9 +48,9 @@ window.MPSLibrary = (function () {
     + '.mpslib-sub{color:var(--dim);font-size:13px;margin:0 0 14px;}.mpslib-sub b{color:var(--a);}'
     + '.mpslib-search-wrap{position:relative;}.mpslib-search{width:100%;background:var(--c1);border:1px solid var(--ln);color:var(--tx);border-radius:12px;padding:13px 14px 13px 42px;font-size:15px;font-family:inherit;}.mpslib-search:focus{outline:none;border-color:var(--a);}.mpslib-search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--faint);}'
     + '.mpslib-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}.mpslib-chip{font-size:12px;padding:8px 14px;border-radius:16px;background:linear-gradient(180deg,#161a20,#0b0d11);border:1px solid var(--ln);color:var(--dim);cursor:pointer;text-transform:capitalize;transition:.12s;box-shadow:0 3px 7px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-chip:active{transform:translateY(1px);}.mpslib-chip.on{background:rgba(var(--argb),.18);border-color:var(--a);color:#fff;}'
-    + '.mpslib-region{margin-top:18px;}'
+    + '.mpslib-region{margin-top:28px;}'
     + '.mpslib-group{background:linear-gradient(180deg,#0c0e12 0%,#08090d 100%);border:1px solid var(--ln);border-radius:16px;padding:10px 20px 24px;margin-bottom:36px;box-shadow:0 12px 28px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);}'
-    + '.mpslib-rhead{display:flex;align-items:center;gap:12px;padding:16px 6px 14px;cursor:pointer;user-select:none;border-bottom:2px solid var(--ln);}.mpslib-rhead:hover{background:transparent;}'
+    + '.mpslib-rhead{display:flex;align-items:center;gap:12px;padding:18px 6px 18px;cursor:pointer;user-select:none;border-bottom:2px solid var(--ln);}.mpslib-rhead:hover{background:transparent;}'
     + '.mpslib-ric{color:var(--a);flex-shrink:0;}.mpslib-rtitle{font-family:var(--disp,Oswald,sans-serif);font-weight:700;font-size:38px;letter-spacing:1.5px;flex:1;}.mpslib-rcount{font-size:12px;color:var(--faint);letter-spacing:1px;}'
     + '.mpslib-chev{color:var(--faint);transition:transform .18s;}.mpslib-region.open .mpslib-chev,.mpslib-region[open] .mpslib-chev{transform:rotate(90deg);}'
     + '.mpslib-rbody{display:none;padding:8px 0 4px;}.mpslib-region.open .mpslib-rbody,.mpslib-region[open] .mpslib-rbody{display:block;}'
@@ -79,7 +79,8 @@ window.MPSLibrary = (function () {
     + '.mpslib-stat{flex:1;min-width:88px;background:var(--c2);border:1px solid var(--ln);border-radius:10px;padding:11px;text-align:center;}.mpslib-stat b{font-family:var(--disp,Oswald,sans-serif);font-size:22px;font-weight:600;color:var(--tx);display:block;line-height:1;}.mpslib-stat span{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);}'
     + '.mpslib-krow{display:flex;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.04);}.mpslib-krow .k{width:120px;color:var(--faint);flex-shrink:0;text-transform:uppercase;font-size:11px;letter-spacing:1px;padding-top:2px;}.mpslib-krow .v{flex:1;color:var(--tx);}'
     + '.mpslib-appears{display:flex;gap:6px;flex-wrap:wrap;}'
-    + '.mpslib-cats{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 26px;}'
+    + '.mpslib-cats{display:flex;gap:10px;flex-wrap:wrap;margin:0;}'
+    + '.mpslib-catwrap{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:12px;margin:4px 0 28px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
     + '.mpslib-cat{flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:10px;padding:17px;border-radius:14px;background:linear-gradient(180deg,#13161c,#0a0c11);border:1px solid var(--ln);color:var(--dim);cursor:pointer;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;transition:transform .14s,box-shadow .14s,border-color .14s;box-shadow:0 8px 18px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);}.mpslib-cat:active{transform:translateY(1px);}'
     + '.mpslib-cat:hover{border-color:var(--a);color:var(--tx);}'
     + '.mpslib-cat.on{background:rgba(var(--argb),.16);border-color:var(--a);color:#fff;}'
@@ -89,12 +90,13 @@ window.MPSLibrary = (function () {
     + '.mpslib-pname{color:var(--tx);font-weight:600;font-size:14px;}'
     + '.mpslib-pscheme{color:var(--a);font-weight:700;font-size:13px;letter-spacing:.5px;white-space:nowrap;}'
     + '.mpslib-pfocus{color:var(--a);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:2px 2px 10px;}'
-    + '.mpslib-plans-head{font-family:var(--disp,Oswald,sans-serif);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:2px 2px 12px;padding-bottom:8px;border-bottom:1px solid var(--ln);}'
+    + '.mpslib-plans-head{font-family:var(--disp,Oswald,sans-serif);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:24px 2px 20px;padding-bottom:10px;border-bottom:1px solid var(--ln);}'
     + '.mpslib-progpanel{background:rgba(var(--argb),0.05);border:1px solid rgba(var(--argb),0.22);border-radius:16px;padding:14px 14px 6px;margin-bottom:30px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
     + '.mpslib-progpanel .mpslib-plans-head{color:var(--a);border-bottom-color:rgba(var(--argb),0.28);margin-top:4px;}'
-    + '.mpslib-progpanel .mpslib-region:first-of-type{margin-top:6px;}'
+    + '.mpslib-progpanel .mpslib-region:first-of-type{margin-top:16px;}'
     + '.mpslib-expanel{background:linear-gradient(180deg,#0c0e12 0%,#0a0b0f 100%);border:1px solid var(--ln);border-radius:16px;padding:14px 16px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}'
-    + '.mpslib-expanel .mpslib-region:first-of-type{margin-top:8px;}';
+    + '.mpslib-expanel .mpslib-region:first-of-type{margin-top:16px;}'
+    + '.mpslib-expanel .mpslib-plans-head{margin-top:4px;}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
 
@@ -372,12 +374,12 @@ window.MPSLibrary = (function () {
     if(!root)return;
     injectCSS(); ensureDrawer();
     root.classList.add('mpslib');
-    root.innerHTML='<div class="mpslib-cats">'
+    root.innerHTML='<div class="mpslib-catwrap"><div class="mpslib-cats">'
       +'<button class="mpslib-cat on" data-cat="weight">'+CAT_IC.weight+' Weightlifting</button>'
       +'<button class="mpslib-cat" data-cat="cali">'+CAT_IC.cali+' Calisthenics</button>'
       +'<button class="mpslib-cat soon" data-cat="skill">'+CAT_IC.skill+' Skill Work <span class="badge">soon</span></button>'
       +'<button class="mpslib-cat soon" data-cat="cond">'+CAT_IC.cond+' Conditioning <span class="badge">soon</span></button>'
-      +'</div><div class="mpslib-cat-content"></div>';
+      +'</div></div><div class="mpslib-cat-content"></div>';
     root.querySelectorAll('[data-cat]').forEach(function(b){ b.onclick=function(){
       root.querySelectorAll('[data-cat]').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
       renderCategory(root, b.dataset.cat);
