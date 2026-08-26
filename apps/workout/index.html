@@ -23,7 +23,6 @@
 <!-- v2.5 - MPS Light Blue palette -->
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { overflow-x: hidden; }
   :root {
     --mps-blue: #10141a;        /* near-black header fill — black theme, blue is accent only */
     --mps-blue-light: #171c25;
@@ -139,7 +138,7 @@
       radial-gradient(ellipse at bottom, rgba(26, 47, 92, 0.2) 0%, transparent 50%),
       var(--bg);
     color: var(--text);
-    padding: 14px; padding-top: 60px; width: 100%; max-width: 100%; min-height: 100vh; overflow-x: hidden;
+    padding: 14px; padding-top: 60px; width: 100%; max-width: 100%; min-height: 100vh; overflow-x: clip;
     /* Clear the phone's bottom nav/gesture bar so the last card (e.g. Advanced Stats) isn't cut off */
     padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
