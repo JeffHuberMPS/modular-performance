@@ -1035,10 +1035,10 @@ const SPLIT_MENU = [
   "Hypertrophy B",
   "Chest + Triceps",
   "Biceps + Shoulders",
-  "Glutes + Quads (Leg Day)",
+  "Glutes + Quads",
   "Lats + Traps (Back)",
   "Calisthenics",
-  "Cindy (log rounds)",
+  "Cindy (bodyweight circuit)",
   "Custom"
 ];
 // Program-day splits (from the Library programs) — picking one pre-fills its exercises + target sets/reps
@@ -1048,7 +1048,7 @@ const PROGRAM_DAY_SPLITS = {
   "Strength C": [["Leg Press","3 × 5–6"],["Overhead Press","3 × 5"],["Bulgarian Split Squat","2 × 5–6 each leg"],["Sled Push + Sled Pull","2–3 rounds"]],
   "Hypertrophy A": [["Your existing Chest exercises","2 × 9–12"],["Your existing Biceps exercises","2 × 9–12"],["Your existing Triceps exercises","2 × 9–12"]],
   "Hypertrophy B": [["Your existing Back exercises","2 × 9–12"],["Your existing Lat exercises","2 × 9–12"],["Your existing Shoulder exercises","2 × 9–12"],["Seated Cable Row — Angled Multipurpose Bar","2 × 9–12"]],
-  "Cindy (log rounds)": [["Cindy Rounds — 5 Pull-Ups · 10 Push-Ups · 15 Air Squats (20-min AMRAP)","1 × 20"]]
+  "Cindy (bodyweight circuit)": [["Cindy Rounds — 5 Pull-Ups · 10 Push-Ups · 15 Air Squats (20-min AMRAP)","1 × 20"]]
 };
 // Skill catalog: Kickboxing has full MPS series; others are simple
 const SKILL_CATALOG = {
@@ -1182,7 +1182,7 @@ const SPLIT_EXERCISE_LIBRARY = {
     "Wide-Grip Pull-Ups (2s top hold)",
     "Leaning Lateral Raise"
   ],
-  "Glutes + Quads (Leg Day)": [
+  "Glutes + Quads": [
     "Hip Thrust (Bench)",
     "Bulgarian Split Squats",
     "Split Squats",
@@ -1991,14 +1991,20 @@ function renderExercises(type, blockIdx, exercises, container, blockName) {
   const unitPlural = isKickboxing ? 'rounds' : 'sets';
   const boxLetter = isKickboxing ? 'R' : 'S';
   exercises.forEach((ex, exIdx) => {
+    // Bodyweight AMRAP (Cindy): no weight, no per-set reps — you just log how many ROUNDS you did.
+    const isRoundsCount = ex.roundsCount === true || /^Cindy Rounds/i.test(ex.name || '');
     const isRounds = ex.isRounds === true;
     const last = lastSessionCache[ex.name];
-    const lastTxt = last
-      ? (isRounds ? `Last: <b>${escapeHtml(last.reps)} ${unitPlural}</b>` : `Last: <b>${escapeHtml(last.weight)}×${escapeHtml(last.reps)}</b>`)
-      : `<span style="opacity:0.5;">No prior data</span>`;
+    const lastTxt = isRoundsCount
+      ? (last ? `Last: <b>${escapeHtml(last.reps)} rounds</b>` : `<span style="opacity:0.5;">No prior data</span>`)
+      : (last
+        ? (isRounds ? `Last: <b>${escapeHtml(last.reps)} ${unitPlural}</b>` : `Last: <b>${escapeHtml(last.weight)}×${escapeHtml(last.reps)}</b>`)
+        : `<span style="opacity:0.5;">No prior data</span>`);
     const doneCount = ex.sets.filter(s => s.done).length;
     const totalCount = ex.sets.length;
-    const targetTxt = isRounds
+    const targetTxt = isRoundsCount
+      ? `AMRAP · log rounds`
+      : isRounds
       ? `${doneCount}/${totalCount} ${totalCount === 1 ? unit : unitPlural}`
       : `${doneCount}/${totalCount} ${totalCount === 1 ? 'set' : 'sets'}`;
     const div = document.createElement('div');
@@ -2019,7 +2025,28 @@ function renderExercises(type, blockIdx, exercises, container, blockName) {
     meta.innerHTML = `<span class="target-tag">${targetTxt}</span><span class="last-tag">${lastTxt}</span>`;
     div.appendChild(meta);
     const grid = document.createElement('div');
-    if (isRounds) {
+    if (isRoundsCount) {
+      // One field only: how many ROUNDS you completed. No weight, no per-set reps.
+      grid.style.display = 'flex';
+      grid.style.alignItems = 'center';
+      grid.style.gap = '12px';
+      const lbl = document.createElement('div');
+      lbl.className = 'sets-grid-header';
+      lbl.textContent = 'ROUNDS COMPLETED';
+      lbl.style.flex = '1';
+      lbl.style.textAlign = 'left';
+      const s0 = ex.sets[0] || (ex.sets[0] = { weight: '', reps: '', done: false });
+      const rInp = document.createElement('input');
+      rInp.type = 'number';
+      rInp.inputMode = 'numeric';
+      rInp.placeholder = ex.targetReps || 'rounds';
+      rInp.value = s0.reps || '';
+      rInp.style.maxWidth = '130px';
+      rInp.style.textAlign = 'center';
+      rInp.addEventListener('input', (e) => updateSet(type, blockIdx, exIdx, 0, 'reps', e.target.value));
+      grid.appendChild(lbl);
+      grid.appendChild(rInp);
+    } else if (isRounds) {
       // Sets-only view: numbered checkbox per set (S1, S2, S3...) — used for skill drills like sprints, kickboxing rounds
       grid.style.display = 'flex';
       grid.style.flexWrap = 'wrap';
@@ -2078,12 +2105,14 @@ function renderExercises(type, blockIdx, exercises, container, blockName) {
       });
     }
     div.appendChild(grid);
-    const addSetBtn = document.createElement('button');
-    addSetBtn.className = 'btn-ghost btn-small';
-    addSetBtn.style.marginTop = '6px';
-    addSetBtn.textContent = isRounds && isKickboxing ? '+ Round' : '+ Set';
-    addSetBtn.addEventListener('click', () => addSet(type, blockIdx, exIdx));
-    div.appendChild(addSetBtn);
+    if (!isRoundsCount) {
+      const addSetBtn = document.createElement('button');
+      addSetBtn.className = 'btn-ghost btn-small';
+      addSetBtn.style.marginTop = '6px';
+      addSetBtn.textContent = isRounds && isKickboxing ? '+ Round' : '+ Set';
+      addSetBtn.addEventListener('click', () => addSet(type, blockIdx, exIdx));
+      div.appendChild(addSetBtn);
+    }
     container.appendChild(div);
   });
 }
@@ -2162,6 +2191,7 @@ function doAddSplit(finalName) {
   var _sy = window.scrollY || window.pageYOffset || (document.documentElement && document.documentElement.scrollTop) || 0;
   var _preset = (typeof PROGRAM_DAY_SPLITS !== 'undefined') ? PROGRAM_DAY_SPLITS[finalName] : null;
   var _exs = _preset ? _preset.filter(function(e){ return e && e[1]; }).map(function(e){ var ps = (typeof _parseScheme==='function') ? _parseScheme(e[1]) : {sets:3,reps:e[1]}; return buildFreshExercise(e[0], ps.sets, ps.reps); }) : [];
+  if (/^Cindy\b/.test(finalName)) { _exs.forEach(function(e){ e.roundsCount = true; }); }
   getCurrentDay().splits.push({
     id: Date.now() + Math.random(), name: finalName, type: 'split', exercises: _exs
   });
@@ -3565,7 +3595,7 @@ const DAY_TO_LIFT_SPLIT = {
   0: null,                          // Sun = Church / rest
   1: "Chest + Triceps",             // Mon
   2: "Biceps + Shoulders",          // Tue
-  3: "Glutes + Quads (Leg Day)",    // Wed
+  3: "Glutes + Quads",    // Wed
   4: "Chest + Triceps",             // Thu
   5: "Biceps + Shoulders",          // Fri
   6: "Lats + Traps (Back)"          // Sat
@@ -5543,7 +5573,7 @@ function _renderAvgWeightChart() {
         rawSplits[i] = histRec.splits.join(' + ')
           .replace('Chest + Triceps', 'Chest+Tri')
           .replace('Biceps + Shoulders', 'Bi+Shldr')
-          .replace('Glutes + Quads (Leg Day)', 'Legs')
+          .replace('Glutes + Quads', 'Legs')
           .replace('Lats + Traps (Back)', 'Lats+Back').replace('Calisthenics', 'Cali');
       }
     }
@@ -5786,7 +5816,7 @@ function _renderAvgRepsChart() {
         rawSplits[i] = histRec.splits.join(' + ')
           .replace('Chest + Triceps', 'Chest+Tri')
           .replace('Biceps + Shoulders', 'Bi+Shldr')
-          .replace('Glutes + Quads (Leg Day)', 'Legs')
+          .replace('Glutes + Quads', 'Legs')
           .replace('Lats + Traps (Back)', 'Lats+Back').replace('Calisthenics', 'Cali');
       }
     }
