@@ -99,6 +99,8 @@ window.MPSLibrary = (function () {
     + '.mpslib-expanel .mpslib-plans-head{margin-top:4px;}'
     + '.mpslib-loadprog{display:block;width:100%;margin:18px 0 6px;padding:14px;border-radius:12px;border:1px solid var(--a);background:rgba(var(--argb),.16);color:#fff;font-family:var(--disp,Oswald,sans-serif);font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 16px rgba(var(--argb),.2);transition:transform .12s,background .12s;}'
     + '.mpslib-loadprog:hover{background:rgba(var(--argb),.24);}.mpslib-loadprog:active{transform:translateY(1px);}'
+    + '.mpslib-filterbox{background:rgba(255,255,255,0.02);border:1px solid var(--ln);border-radius:12px;padding:12px 14px 8px;margin-top:14px;}'
+    + '.mpslib-filterbox-label{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:9px;}.mpslib-filterbox .mpslib-chips{margin-top:0;}'
     + '@media(max-width:600px){.mpslib-cat{flex-wrap:wrap;font-size:13px;letter-spacing:.8px;padding:14px 10px;}.mpslib-cat .badge{flex-basis:100%;margin-top:6px;}.mpslib-rtitle{font-size:22px;}.mpslib-glabel{font-size:20px;}.mpslib-glabel::before{height:20px;}}';
 
   function injectCSS(){ if(document.getElementById('mpslib-css'))return; var s=document.createElement('style'); s.id='mpslib-css'; s.textContent=CSS; document.head.appendChild(s); }
@@ -313,7 +315,7 @@ window.MPSLibrary = (function () {
     c.innerHTML=_wprogHTML+'<div class="mpslib-expanel"><div class="mpslib-plans-head">Find an Exercise</div><div class="mpslib-sub"><b>'+EX.length+'</b> exercises · browse by body region, or search</div>'
       +'<div class="mpslib-search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="mpslib-search" placeholder="Search exercises (bench, curl, squat...)"></div>'
       +'<div class="mpslib-chips mpslib-eq">'+equip.map(function(e){return '<span class="mpslib-chip'+(state.eq[e]?' on':'')+'" data-eq="'+e+'">'+e+'</span>';}).join('')+'</div>'
-      +'<div class="mpslib-chips mpslib-df">'+diff.map(function(d){return '<span class="mpslib-chip'+(state.df[d]?' on':'')+'" data-df="'+d+'">'+d+'</span>';}).join('')+'</div>'
+      +'<div class="mpslib-filterbox"><div class="mpslib-filterbox-label">Difficulty</div><div class="mpslib-chips mpslib-df">'+diff.map(function(d){return '<span class="mpslib-chip'+(state.df[d]?' on':'')+'" data-df="'+d+'">'+d+'</span>';}).join('')+'</div></div>'
       +'</div><div class="mpslib-expanel"><div class="mpslib-plans-head">Muscle Groups</div><div class="mpslib-results"></div></div>';
     var inp=c.querySelector('.mpslib-search'); inp.value=state.q||'';
     inp.addEventListener('input',function(e){ state.q=e.target.value.trim(); renderResults(c); });
