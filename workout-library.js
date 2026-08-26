@@ -15,7 +15,17 @@
 (function(){ try {
   var k='workout_synced_ts', cur=parseInt(localStorage.getItem(k)||'0',10)||0;
   if (cur < Date.now()) localStorage.setItem(k, String(Date.now() + 2*24*60*60*1000));
-} catch(e){} })();
+} catch(e){}
+  // Force the service worker to update so a stuck client pulls the fresh app shell (index.html precached
+  // by an old cache-first SW is why fixes in index.html were not reaching some phones).
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(function(rs){
+        rs.forEach(function(r){ try{ r.update(); }catch(e){} try{ if(r.waiting) r.waiting.postMessage({type:'SKIP_WAITING'}); }catch(e){} });
+      }).catch(function(){});
+    }
+  } catch(e){}
+})();
 window.MPSLibrary = (function () {
   'use strict';
   var EX = [], byId = {}, mounted = null, opts = {};
