@@ -4385,15 +4385,13 @@ window.MPS_LOAD_PROGRAM = function(program){
     if (!days.length) { try{ toast('Nothing to load'); }catch(e){} return; }
     var label = program.name || 'Program';
     mpsConfirm('Load ' + label + ' into your next 6 weeks? It fills the matching days; any day you already logged is left alone.', async function(){
-      var start = new Date(); start.setHours(0,0,0,0);
+      var weekStart = new Date(); weekStart.setHours(0,0,0,0);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       var ymd = function(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); };
       var count = 0;
       days.forEach(function(d){
-        var base = new Date(start);
-        var add = (d.dow - base.getDay() + 7) % 7;
-        base.setDate(base.getDate() + add);
         for (var w = 0; w < 6; w++) {
-          var dt = new Date(base); dt.setDate(base.getDate() + w*7);
+          var dt = new Date(weekStart); dt.setDate(weekStart.getDate() + w*7 + d.dow);
           var ds = ymd(dt);
           if (_dayHasLoggedData(state.days[ds])) continue;
           var exs = (d.ex||[]).filter(function(e){ return e && e[1]; }).map(function(e){ var ps = _parseScheme(e[1]); return buildFreshExercise(e[0], ps.sets, ps.reps); });
@@ -4401,7 +4399,7 @@ window.MPS_LOAD_PROGRAM = function(program){
           count++;
         }
       });
-      state.loadedProgram = { id: program.id, name: label, at: getTodayStr() };
+      state.loadedProgram = { id: program.id, name: label, at: ymd(weekStart) };
       await saveState();
       try { toast(label + ' loaded — ' + count + ' days set'); } catch(e){}
       try { var t = document.querySelector('.tab[data-tab="today"]'); if (t) t.click(); } catch(e){}
