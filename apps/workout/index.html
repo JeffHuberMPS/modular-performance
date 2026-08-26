@@ -23,6 +23,7 @@
 <!-- v2.5 - MPS Light Blue palette -->
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: hidden; }
   :root {
     --mps-blue: #10141a;        /* was #1a2f5c — softened to a calm mid-navy (not loud, not black) */
     --mps-blue-light: #171c25;  /* was #2a4a8c */
@@ -138,7 +139,7 @@
       radial-gradient(ellipse at bottom, rgba(26, 47, 92, 0.2) 0%, transparent 50%),
       var(--bg);
     color: var(--text);
-    padding: 14px; padding-top: 60px; width: 100%; min-height: 100vh;
+    padding: 14px; padding-top: 60px; width: 100%; max-width: 100%; min-height: 100vh; overflow-x: hidden;
     /* Clear the phone's bottom nav/gesture bar so the last card (e.g. Advanced Stats) isn't cut off */
     padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
@@ -354,7 +355,7 @@
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 8px; font-size: 11px; color: var(--text-dim); gap: 8px;
   }
-  .target-tag { color: var(--mps-accent); font-weight: 700; letter-spacing: 0.3px; }
+  .target-tag { color: var(--text); font-weight: 700; letter-spacing: 0.3px; }
   .last-tag { color: var(--text-dim); }
   .last-tag b { color: #ccc; }
   .sets-grid { display: grid; grid-template-columns: 38px 1fr 1fr 30px; gap: 5px; align-items: center; }
@@ -398,7 +399,7 @@
     background: var(--mps-blue); border: 2px solid var(--mps-accent); border-radius: 10px;
     padding: 12px; margin-bottom: 10px;
   }
-  .split-picker-title { font-size: 12px; color: var(--mps-accent); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .split-picker-title { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
   .split-picker-row { display: flex; gap: 6px; flex-wrap: wrap; }
   .split-picker-row select { flex: 1; min-width: 0; }
   .split-picker-cancel { color: #fff; font-size: 12px; padding: 8px 12px; background: transparent; }
@@ -411,7 +412,7 @@
     text-align: center;
     box-shadow: 0 10px 24px rgba(0,0,0,0.85), 0 4px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
   }
-  .stat-value { font-size: 20px; font-weight: 800; color: var(--mps-accent); }
+  .stat-value { font-size: 20px; font-weight: 800; color: var(--text); }
   .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
   .history-card {
     display: flex; justify-content: space-between; align-items: center;
@@ -425,7 +426,7 @@
   .history-card:last-child { margin-bottom: 0; }
   .history-card-left { flex: 1; min-width: 0; }
   .history-card-date {
-    font-size: 11px; font-weight: 700; color: var(--mps-accent);
+    font-size: 11px; font-weight: 700; color: var(--text-dim);
     letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;
     text-shadow: 0 0 6px rgba(var(--mps-accent-rgb), 0.3);
   }
@@ -465,7 +466,7 @@
   }
   .plan-day-card[data-clickable]:active { transform: translateY(1px); }
   .plan-day-arrow {
-    color: var(--mps-accent); font-size: 20px; font-weight: 700;
+    color: var(--text-dim); font-size: 20px; font-weight: 700;
     flex-shrink: 0; text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.5);
   }
   .history-card-meta {
@@ -484,7 +485,7 @@
     min-width: 60px;
   }
   .history-card-circuits {
-    font-size: 24px; font-weight: 800; color: var(--mps-accent); line-height: 1;
+    font-size: 24px; font-weight: 800; color: var(--text); line-height: 1;
     text-shadow: 0 0 10px rgba(var(--mps-accent-rgb), 0.5);
   }
   .history-card-circuits-label {
@@ -525,7 +526,7 @@
   .pr-item:last-child { margin-bottom: 0; }
   .pr-name { color: #e8e8e8; font-weight: 600; }
   .pr-weight {
-    color: var(--mps-accent); font-weight: 800; font-size: 14px;
+    color: var(--text); font-weight: 800; font-size: 14px;
     text-shadow: 0 0 8px rgba(var(--mps-accent-rgb), 0.4);
   }
   .empty { text-align: center; color: var(--text-faint); padding: 28px; font-size: 13px; }
@@ -696,7 +697,7 @@
     font-size: 12px;
   }
   .cond-recent-label { color: #ccc; }
-  .cond-recent-value { color: var(--mps-accent); font-weight: 700; }
+  .cond-recent-value { color: var(--text); font-weight: 700; }
   .cond-recent-x {
     background: transparent; border: none; color: var(--text-faint);
     cursor: pointer; padding: 0 4px; font-size: 14px;
@@ -732,7 +733,7 @@
   .hist-detail-close {
     position: absolute; top: 12px; right: 12px;
     background: rgba(var(--mps-accent-rgb),0.1); border: 1px solid rgba(var(--mps-accent-rgb),0.3);
-    color: var(--mps-accent); font-size: 18px; font-weight: 700;
+    color: var(--text); font-size: 18px; font-weight: 700;
     width: 32px; height: 32px; border-radius: 8px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     line-height: 1;
@@ -741,7 +742,7 @@
     margin-bottom: 14px; padding-right: 44px;
   }
   .hist-detail-date {
-    color: var(--mps-accent); font-size: 11px; font-weight: 700;
+    color: var(--text-dim); font-size: 11px; font-weight: 700;
     letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;
   }
   .hist-detail-summary {
@@ -768,7 +769,7 @@
   }
   .hist-detail-ex:last-child { margin-bottom: 0; }
   .hist-detail-ex-name { font-size: 13px; color: #e8e8e8; font-weight: 600; margin-bottom: 6px; }
-  .hist-detail-ex-name.done-mark { color: var(--mps-accent); }
+  .hist-detail-ex-name.done-mark { color: var(--text); }
   .hist-detail-sets {
     display: grid; gap: 4px;
     grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
@@ -787,7 +788,7 @@
     border-color: rgba(255,255,255,0.55);
     color: #fff;
   }
-  .hist-detail-set b { color: var(--mps-accent); font-weight: 700; }
+  .hist-detail-set b { color: var(--text); font-weight: 700; }
   .hist-detail-set.done b { color: #fff; }
   .hist-detail-empty {
     padding: 20px; text-align: center; font-size: 12px;
@@ -853,6 +854,9 @@
   }
   @media (max-width: 640px) {
     .brand-mps-display { font-size: 78px; }
+    .tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { flex: 0 0 auto; white-space: nowrap; }
   }
   @media (max-width: 500px) {
     .add-exercise-row { grid-template-columns: 1fr 1fr; }
@@ -917,8 +921,8 @@ function mpsNavigate(url){var f=document.getElementById('mps-nav-fade');f.classL
     <div class="stat"><div class="stat-value" id="stat-exercises">0/0</div><div class="stat-label">Exercises</div></div>
     <div class="stat" style="padding: 6px 4px;">
       <div style="display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center;">
-        <div style="font-size:13px; font-weight:700; color:var(--mps-accent); line-height:1.1;"><span id="stat-rounds-lift">0</span> <span style="font-size:9px; color:var(--text-dim); font-weight:600;">LIFT</span></div>
-        <div style="font-size:13px; font-weight:700; color:var(--mps-accent); line-height:1.1;"><span id="stat-rounds-skill">0</span> <span style="font-size:9px; color:var(--text-dim); font-weight:600;">SKILL</span></div>
+        <div style="font-size:13px; font-weight:700; color:var(--text); line-height:1.1;"><span id="stat-rounds-lift">0</span> <span style="font-size:9px; color:var(--text-dim); font-weight:600;">LIFT</span></div>
+        <div style="font-size:13px; font-weight:700; color:var(--text); line-height:1.1;"><span id="stat-rounds-skill">0</span> <span style="font-size:9px; color:var(--text-dim); font-weight:600;">SKILL</span></div>
       </div>
       <div class="stat-label">Rounds</div>
     </div>
