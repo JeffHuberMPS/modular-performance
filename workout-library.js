@@ -171,7 +171,7 @@ window.MPSLibrary = (function () {
         // no region title bar (e.g. Lower Back, whose title duplicates its subsection) — always shown
         html+='<div class="mpslib-region open"><div class="mpslib-rbody" style="display:block">'+inner+'</div></div>';
       } else {
-        html+='<details class="mpslib-region"'+(ri===0?' open':'')+'><summary class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</summary><div class="mpslib-rbody">'+inner+'</div></details>';
+        html+='<details class="mpslib-region"><summary class="mpslib-rhead"><span class="mpslib-ric">'+ic()+'</span><span class="mpslib-rtitle">'+reg.label+'</span><span class="mpslib-rcount">'+count+'</span>'+chev()+'</summary><div class="mpslib-rbody">'+inner+'</div></details>';
       }
     });
     var cCards=[];
