@@ -4055,13 +4055,19 @@ function renderPlan() {
   if (isCore()) { var pc = document.getElementById('plan-content'); if (pc) pc.innerHTML = coreLockHTML('PLAN', 'Follow the 6-week program day-by-day and auto-load workouts. Logging stays free — upgrade to Elite to unlock your Plan.'); return; }
   const view = document.getElementById('plan-view-select').value;
   const content = document.getElementById('plan-content');
-  if (view === 'day') {
-    content.innerHTML = renderPlanDayView();
-  } else if (view === 'week') {
-    content.innerHTML = renderPlanWeekView();
-  } else {
-    content.innerHTML = renderPlanProgramView();
-  }
+  var _lp = (state.loadedProgram && state.loadedProgram.name)
+    ? '<div class="card" style="border:1px solid rgba(var(--mps-accent-rgb),0.45);background:rgba(var(--mps-accent-rgb),0.08);margin-bottom:14px;"><div style="font-size:11px;color:var(--mps-accent);font-weight:700;letter-spacing:1px;">LOADED PROGRAM</div><div style="font-size:16px;font-weight:700;margin:5px 0 12px;">' + escapeHtml(state.loadedProgram.name) + '</div><button id="plan-remove-prog" style="width:100%;padding:11px;border-radius:9px;border:1px solid #ef4444;background:rgba(239,68,68,0.12);color:#ff6b6b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Remove this program from my plan</button></div>'
+    : '';
+  var _body = (view === 'day') ? renderPlanDayView() : (view === 'week') ? renderPlanWeekView() : renderPlanProgramView();
+  content.innerHTML = _lp + _body;
+  var _rm = document.getElementById('plan-remove-prog');
+  if (_rm) { _rm.addEventListener('click', function(){
+    var nm = state.loadedProgram ? state.loadedProgram.name : 'this program';
+    mpsConfirm('Remove ' + nm + ' from your plan? Days you already logged stay; only the empty planned days are cleared.', function(){
+      if (window.MPS_UNLOAD_PROGRAM) window.MPS_UNLOAD_PROGRAM();
+      renderPlan();
+    }, { okLabel: 'Remove', okColor: '#ef4444' });
+  }); }
   wirePlanDayClicks();
 }
 function renderPlanDayView() {
@@ -4324,7 +4330,7 @@ window.MPS_LOAD_PROGRAM = function(program){
           var ds = ymd(dt);
           if (_dayHasLoggedData(state.days[ds])) continue;
           var exs = (d.ex||[]).filter(function(e){ return e && e[1]; }).map(function(e){ var ps = _parseScheme(e[1]); return buildFreshExercise(e[0], ps.sets, ps.reps); });
-          state.days[ds] = { splits: [{ id: Date.now()+Math.random(), name: d.day, type: 'split', exercises: exs }], skills: [] };
+          state.days[ds] = { splits: [{ id: Date.now()+Math.random(), name: d.day, type: 'split', exercises: exs }], skills: [], _prog: program.id };
           count++;
         }
       });
@@ -4334,6 +4340,19 @@ window.MPS_LOAD_PROGRAM = function(program){
       try { var t = document.querySelector('.tab[data-tab="today"]'); if (t) t.click(); } catch(e){}
     }, { okLabel: 'Load', okColor: '#4ab3f4' });
   } catch(e){ try{ toast('Could not load program'); }catch(_){ } }
+};
+window.MPS_UNLOAD_PROGRAM = function(){
+  try {
+    var removed = 0;
+    Object.keys(state.days).forEach(function(ds){
+      var d = state.days[ds];
+      if (d && d._prog && !_dayHasLoggedData(d)) { delete state.days[ds]; removed++; }
+    });
+    state.loadedProgram = null;
+    saveState();
+    try { toast('Program removed — ' + removed + ' planned days cleared'); } catch(e){}
+    try { if (typeof render === 'function') render(); } catch(e){}
+  } catch(e){ try{ toast('Could not remove program'); }catch(_){ } }
 };
 function toast(msg) {
   const t = document.getElementById('toast');
