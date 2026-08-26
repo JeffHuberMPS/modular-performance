@@ -34,7 +34,7 @@
     --bg: #000000;
     --bg-2: #050810;
     --card: #0d1013;    /* mid dark-navy card (keeps blue depth, calmer than before) */
-    --card-2: #12161c;
+    --card-2: #0f1218;
     --border: #22262e;  /* softened blue-slate border */
     --text: #f5f5f5;
     --text-dim: #8d8d8d;
@@ -134,8 +134,7 @@
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background:
-      radial-gradient(ellipse at top, rgba(26, 47, 92, 0.35) 0%, transparent 60%),
-      radial-gradient(ellipse at bottom, rgba(26, 47, 92, 0.2) 0%, transparent 50%),
+      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(var(--mps-accent-rgb),0.05) 0%, transparent 62%),
       var(--bg);
     color: var(--text);
     padding: 14px; padding-top: 60px; width: 100%; max-width: 100%; min-height: 100vh; overflow-x: clip;
@@ -864,15 +863,17 @@
     .add-exercise-row .add-ex-name { grid-column: 1 / -1; }
     .add-exercise-row .add-ex-btn { grid-column: 1 / -1; }
   }
-  /* Dashboard accordions: each section keeps its header + a small corner toggle */
-  .dash-acc { border:1px solid var(--border); border-radius:12px; margin-bottom:10px; background:linear-gradient(180deg,#0e1015 0%,#0a0c12 100%); box-shadow:0 10px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05); overflow:hidden; }
-  .dash-acc > summary { list-style:none; cursor:pointer; user-select:none; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:14px 14px 8px; }
+  /* Dashboard accordions -- matched to the Library look (blue icon + Oswald title + chevron + section border) */
+  .dash-acc { border:1px solid var(--border); border-radius:16px; margin-bottom:14px; background:linear-gradient(180deg,#0c0e12 0%,#08090d 100%); box-shadow:0 12px 28px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05); overflow:hidden; }
+  .dash-acc > summary { list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; gap:12px; padding:16px 16px 14px; border-bottom:2px solid transparent; }
+  .dash-acc[open] > summary { border-bottom-color:var(--border); }
   .dash-acc > summary::-webkit-details-marker { display:none; }
   .dash-acc > summary::marker { content:''; }
-  .dash-acc > summary .chart-title { margin-bottom:0; position:relative; padding-left:13px; }.dash-acc > summary .chart-title::before { content:''; position:absolute; left:0; top:3px; bottom:3px; width:3px; border-radius:2px; background:var(--mps-accent); box-shadow:0 0 8px rgba(var(--mps-accent-rgb),0.6); }.dash-acc[open] { border-color:rgba(var(--mps-accent-rgb),0.38); box-shadow:0 10px 24px rgba(0,0,0,0.7), 0 0 0 1px rgba(var(--mps-accent-rgb),0.14), inset 0 1px 0 rgba(255,255,255,0.05); }.dash-acc[open] > summary { background:linear-gradient(180deg, rgba(var(--mps-accent-rgb),0.06), transparent); }
-  .dash-acc .dash-chev { transition:transform .2s ease; color:var(--mps-accent); flex-shrink:0; margin-top:3px; }
-  .dash-acc[open] .dash-chev { transform:rotate(180deg); }
-  .dash-acc > .chart-card { background:none; border:none; box-shadow:none; margin:0; padding:4px 14px 14px; }
+  .dash-acc-ic { color:var(--mps-accent); flex-shrink:0; display:flex; filter:drop-shadow(0 0 6px rgba(var(--mps-accent-rgb),0.5)); }
+  .dash-acc > summary .chart-title { margin-bottom:0; flex:1; font-family:'Oswald',system-ui,sans-serif; font-weight:600; font-style:normal; font-size:22px; line-height:1; letter-spacing:1.5px; text-transform:uppercase; color:var(--text); }
+  .dash-acc .dash-chev { color:var(--text-dim); transition:transform .18s ease; flex-shrink:0; }
+  .dash-acc[open] .dash-chev { transform:rotate(90deg); }
+  .dash-acc > .chart-card { background:none; border:none; box-shadow:none; margin:0; padding:14px 14px 16px; }
 </style>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
 <style>html.mps-embedded a[href="/hub.html"],html.mps-embedded #mps-hub-nav,html.mps-embedded #hub-nav,html.mps-embedded .nav-title,html.mps-embedded .brand-block,html.mps-embedded .mps-header{display:none!important}html.mps-embedded *:has(> .mps-logo-rsp){display:none!important}html.mps-embedded body{padding-top:0!important}</style>
@@ -3796,12 +3797,13 @@ function _renderDashboard() {
 function applyDashAccordions(){
   try {
     var cont=document.getElementById('dashboard-container'); if(!cont) return;
-    var chev='<svg class="dash-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    var chev='<svg class="dash-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>';
     cont.querySelectorAll('.chart-card').forEach(function(card,i){
       if(card.closest('details.dash-acc')) return;
       var titleEl=card.querySelector('.chart-title');
       var det=document.createElement('details'); det.className='dash-acc'; if(i===0) det.open=true;
       var sum=document.createElement('summary');
+      sum.insertAdjacentHTML('beforeend', '<span class="dash-acc-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"></polyline><polyline points="16 7 21 7 21 12"></polyline></svg></span>');
       if(titleEl){ sum.appendChild(titleEl); }
       else { var t=document.createElement('div'); t.className='chart-title'; t.textContent='Section'; sum.appendChild(t); }
       sum.insertAdjacentHTML('beforeend', chev);
