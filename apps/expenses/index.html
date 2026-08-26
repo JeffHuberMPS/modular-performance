@@ -1390,7 +1390,20 @@ async function syncFromSheet(){
       const idx={date:headers.findIndex(h=>h.includes('date')),item:headers.findIndex(h=>h.includes('item')),merchant:headers.findIndex(h=>h.includes('merchant')),amount:headers.findIndex(h=>h.includes('amount')),category:headers.findIndex(h=>h.includes('category')),source:headers.findIndex(h=>h.includes('source')),uniqueId:headers.findIndex(h=>h.includes('unique')||h.includes('id'))};
       const entries=[];
       for(let i=1;i<data.log.length;i++){const r=data.log[i];if(!r||r.length===0)continue;const date=parseSheetDate(r[idx.date]);const merchant=String(r[idx.merchant]||'').trim();const amount=parseSheetAmount(r[idx.amount]);if(!date||!merchant)continue;entries.push({id:String(r[idx.uniqueId]||`sync_${i}_${date}`),date,item:String(r[idx.item]||'Purchase').trim(),merchant,amount,category:String(r[idx.category]||'Other').trim(),source:String(r[idx.source]||'').trim()});}
-      const _manual=state.entries.filter(e=>e.manual);if(!entries.length){syncLog('No valid rows parsed — keeping your existing entries',true);}else{state.entries=entries.concat(_manual);save(STORE.entries,state.entries);logCount=entries.length;syncLog(`Log: ${logCount} entries`+(_manual.length?` (+${_manual.length} manual kept)`:''));}
+      // ACCUMULATE, don't replace. The sheet's Log exposes only ONE month at a time (the Dashboard
+      // dropdown), so overwriting on every sync is exactly what lost the history. Merge each fetched
+      // month into the stored set (dedup by date|merchant|amount) and never drop existing entries —
+      // cycling the sheet's month then builds up all 12 months. Manual entries stay put (already in state).
+      if(!entries.length){syncLog('No valid rows parsed — keeping your existing entries',true);}
+      else{
+        const _key=e=>`${e.date}|${String(e.merchant||'').toLowerCase()}|${Math.abs(Number(e.amount))||0}`;
+        const _seen=new Set(state.entries.map(_key));
+        let _added=0;
+        entries.forEach(e=>{ const k=_key(e); if(_seen.has(k)) return; _seen.add(k); state.entries.push(e); _added++; });
+        save(STORE.entries,state.entries);
+        logCount=_added;
+        syncLog(`Log: +${_added} new · ${state.entries.length} total across all months`);
+      }
     }else{syncLog('No log data in response',true);}
     if(data.rules&&Array.isArray(data.rules)&&data.rules.length>=2){
       const headers=data.rules[0].map(h=>String(h).trim().toLowerCase());const pairs=[];
