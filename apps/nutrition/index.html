@@ -1060,6 +1060,9 @@ function toggleFav(id){
 
 function openServing(foodId){
   var f=foodById(foodId);
+  // Parse the base serving into a number + unit ("2 large" -> 2,"large") so the user types the actual
+  // COUNT of the item (4 = 4 eggs), never "servings of X". Weight bases ("100 g") work too (type grams).
+  var _sm=String(f.serv||'1').match(/^\s*([\d.]+)\s*(.*)$/); var _baseN=_sm?(parseFloat(_sm[1])||1):1; var _unit=_sm?_sm[2].trim():String(f.serv||'');
   // meal dropdown: default to the meal you came from if it's one you track, else your first meal
   var defMeal = (S.meals.indexOf(searchMeal)>=0) ? searchMeal : (S.meals[0]||'Breakfast');
   var mealOpts = S.meals.map(function(m){ return '<option value="'+esc(m)+'"'+(m===defMeal?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
@@ -1069,7 +1072,7 @@ function openServing(foodId){
     +'<div class="serv-food"><span class="se">'+catIcon(f.cat)+'</span><div style="flex:1;min-width:0"><div class="sn">'+f.n+'</div><div class="sc">Base serving: '+f.serv+'</div></div>'
       +'<span class="res-fav '+(isFav?'star-on':'star-off')+'" id="servFav" title="Favorite" style="font-size:24px;cursor:pointer;flex-shrink:0" onclick="toggleFavServing(\''+foodId+'\')">'+(isFav?'★':'☆')+'</span></div>'
     +'<label>Add to which meal?</label><select id="servMeal">'+mealOpts+'</select>'
-    +'<div class="serv-row" style="margin-top:4px"><div style="flex:1"><label>Quantity (servings of '+esc(f.serv)+')</label><input type="number" id="servQty" value="1" min="0.25" step="0.25" inputmode="decimal" oninput="updMacro(\''+foodId+'\')"></div></div>'
+    +'<div class="serv-row" style="margin-top:4px"><div style="flex:1"><label>How many?'+(_unit?' ('+esc(_unit)+')':'')+'</label><input type="number" id="servQty" value="'+_baseN+'" data-base="'+_baseN+'" min="0.25" step="0.25" inputmode="decimal" oninput="updMacro(\''+foodId+'\')"></div></div>'
     +'<div class="macro-preview" id="macroPrev"></div>'
     +'<div class="modal-actions"><button class="save" onclick="logFood(\''+foodId+'\')">Log Food</button>'
     +'<button class="cancel" onclick="closeModal()">Back</button></div>';
@@ -1084,11 +1087,12 @@ function toggleFavServing(id){
   toast(on?'Added to favorites':'Removed from favorites');
 }
 function curMult(){
-  // Serving is now a single typed number (no vague Half/Double serving dropdown) — the quantity IS the
-  // multiplier of the food's base serving. Works for countable foods (eggs, bread slices) and divisible ones.
-  var q=parseFloat(document.getElementById('servQty').value);
-  if(!(q>0)) q=1;
-  return q;
+  // Quantity is the actual COUNT of the item (4 = 4 eggs / 4 slices / 4 tbsp). Macros are stored per base
+  // serving ("2 large"), so multiplier = count / baseN, with baseN read off the input's data-base.
+  var el=document.getElementById('servQty'); if(!el) return 1;
+  var q=parseFloat(el.value), base=parseFloat(el.getAttribute('data-base'))||1;
+  if(!(q>0)) q=base;
+  return q/base;
 }
 function scaledMacros(f, mult){
   var o={};
