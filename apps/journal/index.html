@@ -667,6 +667,7 @@ function WriteView({
         armSilence();
       };
       recog.onresult = e => {
+        if (recRef.current && recRef.current !== recog) return;  // only the active recognizer may type (kills overlap-duplication)
         gVoice.energy = 1; // make the bars jump when it actually hears you
         // Rebuild finals from the WHOLE results list each event (never += — that re-added the same
         // final repeatedly, the "the the the" stutter). committed = finals from earlier restarted
