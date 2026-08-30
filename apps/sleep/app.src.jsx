@@ -960,14 +960,14 @@ function SleepTracker() {
                   <div role="button" tabIndex={0}
                     onClick={() => setClosedMonths(p => ({ ...p, [month]: !p[month] }))}
                     onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setClosedMonths(p => ({ ...p, [month]: !p[month] })); } }}
-                    style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px",
+                    style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "16px 14px 20px",
                              borderBottom: closedMonths[month] ? "none" : "1px solid rgba(150,150,150,0.08)",
                              cursor: "pointer", userSelect: "none", minHeight: 44 }}>
                     {/* Month is CENTERED across the header via a 3-column grid (spacer | month | count),
                         so it no longer hugs the left corner. Bumped to 40px: it is the top of the
                         hierarchy and should clearly out-size the 25px date in the cards below. */}
                     <span />
-                    <div style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5", letterSpacing: "-0.01em", textAlign: "center", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 25, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f5f5f5", letterSpacing: "-0.01em", textAlign: "center", whiteSpace: "nowrap" }}>
                       {fmtMonth(month + "-01")}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, fontSize: 10, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: LBL }}>
@@ -1962,10 +1962,10 @@ const LogCard = ({ e, onEdit, onDelete }) => (
       <LogBlock label="Wake Time"      value={_fmt12(e.wakeTime)} />
       <LogBlock label="Bed Time"       value={_fmt12(e.sleepTime)} />
       <LogBlock label="Sleep Duration" value={e.hours != null && e.hours > 0 ? _fmtDur(e.hours) : "—"} accent={PURPLE} />
+      <LogBlock label="Sleep Quality"  value={e.sleepQuality != null ? `${e.sleepQuality}/10` : "—"} accent={PURPLE} />
     </LogGroup>
 
     <LogGroup title="How You Felt">
-      <LogBlock label="Sleep Quality"     value={e.sleepQuality != null ? `${e.sleepQuality}/10` : "—"} accent={PURPLE} />
       <LogBlock label="Energy"            value={e.energy  != null ? `${e.energy}/10`  : "—"} />
       <LogBlock label="Clarity"           value={e.clarity != null ? `${e.clarity}/10` : "—"} accent={PURPLE} />
       <LogBlock label="Physical Recovery" value={e.soreness != null ? `${e.physicalRecovery}/10` : "—"} />

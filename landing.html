@@ -1207,7 +1207,7 @@
   <nav class="landing-nav">
     <a href="/" class="nav-logo">M<span>P</span>S</a>
     <div style="display:flex;gap:10px;align-items:center;">
-      <a href="/hub.html" class="nav-cta" id="nav-open-app" style="display:none;background:transparent;border:1px solid rgba(212,175,55,0.5);color:var(--gold);">Open App</a>
+      <a href="/hub.html" target="_top" onclick="try{(window.top||window).location.href='/hub.html'+(location.search||'');}catch(e){location.href='/hub.html';}return false;" class="nav-cta" id="nav-open-app" style="display:none;background:transparent;border:1px solid rgba(212,175,55,0.5);color:var(--gold);">Open App</a>
       <a href="#pricing" class="nav-cta" id="nav-trial-btn">Start Free Trial</a>
     </div>
   </nav>
