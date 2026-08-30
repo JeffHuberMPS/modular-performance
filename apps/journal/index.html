@@ -1377,9 +1377,13 @@ function WriteView({
     onClick: handleSave,
     disabled: !hasContent || saving,
     style: {
+      position: 'sticky',
+      bottom: 12,
+      zIndex: 30,
       width: '100%',
       padding: '14px',
       marginTop: 8,
+      boxShadow: '0 6px 20px rgba(0,0,0,0.55)',
       background: saved ? 'rgba(150,150,150,0.12)' : hasContent && !saving ? `linear-gradient(135deg,${__GRAY ? '#6b5618' : '#7a5d22'},${NAVY})` : C1,
       border: saved ? `1px solid ${NAVY}` : 'none',
       borderRadius: 10,
