@@ -903,7 +903,8 @@ function commitTemplate(meal){
   var name=(document.getElementById('tplName').value||'').trim(); if(!name){ toast('Enter a name'); return; }
   var todays=(S.log[curDate]||[]).filter(e=>e.meal===meal);
   S.mealTemplates.push({ id:'t'+Date.now(), name:name, items: todays.map(e=>({foodId:e.foodId, name:e.name, emoji:e.emoji, qty:e.qty, m:Object.assign({},e.m)})), createdAt:curDate });
-  save(); toast('Template saved: '+name); openTemplates(meal);
+  save(); try{ renderLibrary(); }catch(e){}   // refresh the Library "Recipes & Meals" count immediately
+  toast('Template saved: '+name); openTemplates(meal);
 }
 function logTemplate(id, meal){
   var t=S.mealTemplates.find(x=>x.id===id); if(!t) return;
