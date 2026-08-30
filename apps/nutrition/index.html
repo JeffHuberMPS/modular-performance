@@ -318,7 +318,16 @@
         var b=(baseStr==null||baseStr==='')?undefined:JSON.parse(baseStr);
         var o=(overlayStr==null||overlayStr==='')?undefined:JSON.parse(overlayStr);
         if(b===undefined) return overlayStr; if(o===undefined) return baseStr;
-        return JSON.stringify(_deepUnion(b,o));
+        var merged=_deepUnion(b,o);
+        // TOMBSTONE PASS: honor deletions. merged._del = {logEntryId: ts}. Strip any log entry whose id
+        // was tombstoned so a deleted food cannot resurrect through the union. Prune tombstones after 90 days.
+        try{
+          var del=merged._del||{}, now=Date.now(), TTL=90*864e5;
+          for(var _id in del){ if(now-del[_id]>TTL) delete del[_id]; }
+          if(merged.log){ for(var _d in merged.log){ if(Array.isArray(merged.log[_d])) merged.log[_d]=merged.log[_d].filter(function(e){ return !(e&&e.id&&del[e.id]); }); } }
+          merged._del=del;
+        }catch(_e){}
+        return JSON.stringify(merged);
       }catch(e){ var bl=(baseStr||'').length, ol=(overlayStr||'').length; return ol>=bl?(overlayStr||baseStr):(baseStr||overlayStr); }
     }
 
@@ -791,6 +800,8 @@ function renderMeals(){
 
 function delEntry(eid){
   if(!confirm('Remove this food from your log?')) return;
+  S._del = S._del || {};
+  S._del[eid] = Date.now();   // tombstone so the additive-union sync can't resurrect this food
   S.log[curDate]=(S.log[curDate]||[]).filter(e=>e.id!==eid);
   save(); renderToday();
 }
