@@ -786,7 +786,7 @@ function renderMeals(){
     if(items.length){
       items.forEach(it=>{
         html+='<div class="food-line"><span class="food-emoji">'+catIcon(foodCat(it.name))+'</span>'
-          +'<div class="food-info"><div class="fn">'+it.name+' <span style="color:#5f6a76">×'+it.qty+'</span></div>'
+          +'<div class="food-info" onclick="editEntry(\''+it.id+'\')" style="cursor:pointer" title="Tap to edit quantity"><div class="fn">'+it.name+' <span style="color:#5f6a76">×'+it.qty+'</span></div>'
           +'<div class="fm">P'+Math.round(it.m.protein)+' C'+Math.round(it.m.carbs)+' F'+Math.round(it.m.fats)+' · '+Math.round(it.m.calories)+'cal</div></div>'
           +'<span class="food-del" onclick="delEntry(\''+it.id+'\')">×</span></div>';
       });
@@ -803,6 +803,21 @@ function delEntry(eid){
   S._del = S._del || {};
   S._del[eid] = Date.now();   // tombstone so the additive-union sync can't resurrect this food
   S.log[curDate]=(S.log[curDate]||[]).filter(e=>e.id!==eid);
+  save(); renderToday();
+}
+function editEntry(eid){
+  var day=S.log[curDate]||[]; var it=day.find(function(x){return x.id===eid;}); if(!it) return;
+  var f=foodById(it.foodId);
+  var baseN=1, unit='';
+  if(f){ var sm=String(f.serv||'1').match(/^\s*([\d.]+)\s*(.*)$/); baseN=sm?(parseFloat(sm[1])||1):1; unit=sm?sm[2].trim():''; }
+  var curCount=+(((it.qty||1)*baseN)).toFixed(2);
+  var ans=prompt('How many'+(unit?' ('+unit+')':'')+' of '+it.name+'?', curCount);
+  if(ans==null) return;
+  var q=parseFloat(ans); if(!(q>0)) return;
+  var mult=q/baseN;
+  if(f){ it.m=scaledMacros(f,mult); }
+  else { var ratio=(it.qty>0?mult/it.qty:mult); var nm={}; for(var k in it.m){ nm[k]=(typeof it.m[k]==='number')?+(it.m[k]*ratio).toFixed(2):it.m[k]; } it.m=nm; }
+  it.qty=mult;
   save(); renderToday();
 }
 
