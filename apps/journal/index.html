@@ -638,6 +638,7 @@ function WriteView({
 
     const base = getBase() || ''; // existing text preserved; dictation appends
     let finalText = '';
+    let committed = '';   // finals locked in from prior auto-restarted recognition sessions
     const compose = interim => {
       const dictated = (finalText + interim).replace(/\s+/g, ' ').trim();
       if (!dictated) return base;
@@ -667,11 +668,15 @@ function WriteView({
       };
       recog.onresult = e => {
         gVoice.energy = 1; // make the bars jump when it actually hears you
-        let interim = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
+        // Rebuild finals from the WHOLE results list each event (never += — that re-added the same
+        // final repeatedly, the "the the the" stutter). committed = finals from earlier restarted
+        // sessions, so nothing is lost across the auto-restart.
+        let finals = '', interim = '';
+        for (let i = 0; i < e.results.length; i++) {
           const tr = e.results[i][0].transcript;
-          if (e.results[i].isFinal) finalText += tr + ' ';else interim += tr;
+          if (e.results[i].isFinal) finals += tr + ' '; else interim += tr;
         }
+        finalText = committed + finals;
         setText(compose(interim));
         armSilence();
       };
@@ -689,6 +694,7 @@ function WriteView({
       recog.onend = () => {
         if (recRef.current !== recog) return;
         recRef.current = null;
+        committed = finalText;   // lock this session's finals in before the auto-restart
         // Continuous mode ends itself on pauses; while the user is still listening, restart so
         // dictation keeps flowing. The silence timer is what actually ends the session.
         if (listenRef.current) setTimeout(() => {
