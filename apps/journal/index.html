@@ -695,12 +695,10 @@ function WriteView({
       recog.onend = () => {
         if (recRef.current !== recog) return;
         recRef.current = null;
-        committed = finalText;   // lock this session's finals in before the auto-restart
-        // Continuous mode ends itself on pauses; while the user is still listening, restart so
-        // dictation keeps flowing. The silence timer is what actually ends the session.
-        if (listenRef.current) setTimeout(() => {
-          if (listenRef.current) startSR();
-        }, 120);
+        committed = finalText;
+        // NO auto-restart. On mobile, restarting re-transcribes the tail of the audio and duplicated
+        // every word ("the coffee the coffee the coffee"). End cleanly instead — tap the mic to add more.
+        if (listenRef.current) endSession();
       };
       recRef.current = recog;
       try {
