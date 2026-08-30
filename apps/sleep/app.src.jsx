@@ -1861,13 +1861,13 @@ const LogBlock = ({ label, value, accent }) => (
     background: "rgba(255,255,255,0.045)",
     border: `1px solid rgba(${BRDR},0.22)`,
     borderLeft: `3px solid ${accent || PURPLE}`,
-    borderRadius: 9, padding: "11px 12px",
+    borderRadius: 8, padding: "8px 9px",
     boxShadow: "0 1px 2px rgba(0,0,0,0.45)",
   }}>
-    <div style={{ fontSize: 9, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.12em", color: LBL, textTransform: "uppercase", marginBottom: 6, opacity: 0.85 }}>
+    <div style={{ fontSize: 8.5, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", letterSpacing: "0.1em", color: LBL, textTransform: "uppercase", marginBottom: 3, opacity: 0.85 }}>
       {label}
     </div>
-    <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: accent || "#f5f5f5", lineHeight: 1, letterSpacing: "-0.01em" }}>
+    <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: accent || "#f5f5f5", lineHeight: 1, letterSpacing: "-0.01em" }}>
       {value}
     </div>
   </div>
@@ -1897,7 +1897,7 @@ const LogGroup = ({ title, children, last }) => (
       </span>
       <span style={{ flex: 1, height: 1, background: `rgba(${BRDR},0.22)` }} />
     </div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(165px, 1fr))", gap: 11 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))", gap: 7 }}>
       {children}
     </div>
   </div>
