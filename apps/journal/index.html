@@ -55,6 +55,12 @@
       animation:mpsMicPulse 1.3s ease-in-out infinite; }
     @keyframes mpsMicPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(230,201,140,0.5);} 50%{ box-shadow:0 0 0 6px rgba(230,201,140,0);} }
     @keyframes mpsToastIn { from{ opacity:0; transform:translate(-50%,10px);} to{ opacity:1; transform:translate(-50%,0);} }
+    /* Voice mic hidden on MOBILE only (kept on desktop): mobile speech-to-text was unreliable — use the
+       phone keyboard's mic or Wispr Flow instead. Also pull the field text back to the left edge. */
+    @media (max-width: 768px) {
+      button.mps-mic { display: none !important; }
+      input.jf, textarea.jf, .jf input, .jf textarea, .jnl-in, input.jnl-in, textarea.jnl-in { padding-left: 14px !important; }
+    }
   </style>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('mps-embedded');}catch(e){document.documentElement.classList.add('mps-embedded');}</script>
 <style>html.mps-embedded a[href="/hub.html"],html.mps-embedded #mps-hub-nav,html.mps-embedded #hub-nav,html.mps-embedded .nav-title,html.mps-embedded .brand-block,html.mps-embedded .mps-header{display:none!important}html.mps-embedded *:has(> .mps-logo-rsp){display:none!important}html.mps-embedded nav:first-of-type{display:none!important}html.mps-embedded body{padding-top:0!important}</style>
