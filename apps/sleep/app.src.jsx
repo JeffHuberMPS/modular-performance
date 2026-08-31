@@ -695,7 +695,18 @@ function SleepTracker() {
           </div>
           {/* Log-entry action */}
           <div style={{ marginTop: 14 }}>
-            <button className="btn-primary" style={styles.btnPrimary} onClick={() => setShowForm(!showForm)}>
+            <button className="btn-primary" style={styles.btnPrimary} onClick={() => {
+              if (!showForm) {
+                // Opening for a NEW entry: reset to a fresh blank form dated to your most recent day that
+                // isn't logged yet, so each new entry is its own day and never overrides an existing one.
+                const logged = new Set(entries.map(e => e.date));
+                const d = new Date();
+                for (let i = 0; i < 400 && logged.has(dateToStr(d)); i++) d.setDate(d.getDate() - 1);
+                setForm({ date: dateToStr(d), sleepTime: "", wakeTime: "04:00", energy: 7, sleepQuality: 7, soreness: 3, clarity: 7, restlessness: 3, restingHR: "", hrv: "", weight: "", tags: {} });
+                setSaveError(null);
+              }
+              setShowForm(!showForm);
+            }}>
               <Plus size={16} /> {showForm ? "CLOSE" : "LOG ENTRY"}
             </button>
           </div>
