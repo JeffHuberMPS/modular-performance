@@ -1390,19 +1390,30 @@ async function syncFromSheet(){
       const idx={date:headers.findIndex(h=>h.includes('date')),item:headers.findIndex(h=>h.includes('item')),merchant:headers.findIndex(h=>h.includes('merchant')),amount:headers.findIndex(h=>h.includes('amount')),category:headers.findIndex(h=>h.includes('category')),source:headers.findIndex(h=>h.includes('source')),uniqueId:headers.findIndex(h=>h.includes('unique')||h.includes('id'))};
       const entries=[];
       for(let i=1;i<data.log.length;i++){const r=data.log[i];if(!r||r.length===0)continue;const date=parseSheetDate(r[idx.date]);const merchant=String(r[idx.merchant]||'').trim();const amount=parseSheetAmount(r[idx.amount]);if(!date||!merchant)continue;entries.push({id:String(r[idx.uniqueId]||`sync_${i}_${date}`),date,item:String(r[idx.item]||'Purchase').trim(),merchant,amount,category:String(r[idx.category]||'Other').trim(),source:String(r[idx.source]||'').trim()});}
-      // ACCUMULATE, don't replace. The sheet's Log exposes only ONE month at a time (the Dashboard
-      // dropdown), so overwriting on every sync is exactly what lost the history. Merge each fetched
-      // month into the stored set (dedup by date|merchant|amount) and never drop existing entries —
-      // cycling the sheet's month then builds up all 12 months. Manual entries stay put (already in state).
+      // MIRROR the sheet. The Log tab is a COMPLETE append-only ledger of EVERY transaction across all
+      // months (not one month at a time — that old assumption is what created the mess), so the app must
+      // reflect it EXACTLY: rows the sheet no longer has (old demo/fake entries, anything deleted in the
+      // sheet) disappear, and every real row (rent, groceries, etc.) is present. We keep only expenses the
+      // user added by hand INSIDE the app (flagged manual:true) so those are never lost.
       if(!entries.length){syncLog('No valid rows parsed — keeping your existing entries',true);}
-      else{
+      else if(entries.length<30){
+        // Thin/partial pull (a single-month view, or a blocked/failed export). NEVER wipe history on a
+        // thin fetch — fall back to additive merge so one bad pull can't erase months of real data.
         const _key=e=>`${e.date}|${String(e.merchant||'').toLowerCase()}|${Math.abs(Number(e.amount))||0}`;
         const _seen=new Set(state.entries.map(_key));
         let _added=0;
         entries.forEach(e=>{ const k=_key(e); if(_seen.has(k)) return; _seen.add(k); state.entries.push(e); _added++; });
         save(STORE.entries,state.entries);
         logCount=_added;
-        syncLog(`Log: +${_added} new · ${state.entries.length} total across all months`);
+        syncLog(`Partial pull — merged +${_added}, kept existing (${state.entries.length} total)`);
+      }else{
+        // Full ledger: mirror it exactly. This is what removes fake/stale entries and guarantees the app
+        // shows the same transactions as the sheet, every sync.
+        const manual=state.entries.filter(e=>e&&e.manual===true);
+        state.entries=entries.concat(manual);
+        save(STORE.entries,state.entries);
+        logCount=entries.length;
+        syncLog(`Mirrored ${entries.length} rows from the sheet${manual.length?` + ${manual.length} manual`:''}`);
       }
     }else{syncLog('No log data in response',true);}
     if(data.rules&&Array.isArray(data.rules)&&data.rules.length>=2){
