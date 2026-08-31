@@ -210,7 +210,12 @@
       var changed=false; for(var mk in merged){ if(merged[mk]!==mine[mk]) changed=true; }
       if(!changed) return;                    // already the union — no reload needed
       Object.keys(merged).forEach(function(k){ try{ localStorage.setItem(k,merged[k]); }catch(e){} });
-      location.reload();
+      // NEVER reload the page while the user is looking at it — a reload mid-tap throws them back to the
+      // dashboard and feels like the app fighting them. The merged data is already saved to localStorage,
+      // so we only need a reload to repaint another device's change. Defer that until the tab is hidden
+      // (or backgrounded): when they come back it's already fresh, and their own toggling is never disrupted.
+      if(document.visibilityState==='hidden'){ location.reload(); return; }
+      document.addEventListener('visibilitychange', function _rl(){ if(document.visibilityState==='hidden'){ document.removeEventListener('visibilitychange', _rl); location.reload(); } });
     }); }catch(e){} }
 
     // Restore first (download on fresh device), then show app; seed cloud on open.

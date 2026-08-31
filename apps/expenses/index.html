@@ -1527,6 +1527,9 @@ async function autoSyncOnLoad(){if(state.sync.webhook){_lastAutoSync=Date.now();
 function _maybeResync(){ if(!state.sync.webhook) return; var now=Date.now(); if(now-_lastAutoSync<20000) return; _lastAutoSync=now; syncFromSheet(); }
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') _maybeResync(); });
 window.addEventListener('focus', _maybeResync);
+// Keep it live while open: poll the sheet every 2 min, but only while the tab is actually visible
+// (a hidden/backgrounded PWA doesn't waste battery or network; it catches up via _maybeResync on return).
+setInterval(function(){ if(document.visibilityState==='visible') _maybeResync(); }, 120000);
 renderMonthSelect(); renderDashboard();                                                                                // paint the visible Dashboard tab immediately
 requestAnimationFrame(function(){ renderLog(); renderBudget(); renderRules(); renderInsights(); loadSyncSettings(); }); // defer the heavy hidden tabs off the first paint
 setTimeout(autoSyncOnLoad, 900);                                                                                        // let the UI paint before any network sheet-sync + re-render
