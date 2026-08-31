@@ -587,6 +587,23 @@ let S = {
 let curDate = todayISO();
 
 function todayISO(){ var t=new Date(); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
+// Day navigation on the Today view: move curDate so past days can be edited (add/delete a missed meal).
+function goDay(delta){
+  if(delta===0){ curDate=todayISO(); renderToday(); return; }
+  var b=new Date(curDate+'T00:00:00'); b.setDate(b.getDate()+delta);
+  var iso=b.getFullYear()+'-'+String(b.getMonth()+1).padStart(2,'0')+'-'+String(b.getDate()).padStart(2,'0');
+  if(iso>todayISO()) return;   // never go into the future
+  curDate=iso; renderToday();
+  try{ var s=document.scrollingElement||document.documentElement; if(s)s.scrollTop=0; }catch(e){}
+}
+function dayLabel(iso){
+  var t=todayISO(); if(iso===t) return 'Today';
+  var y=new Date(t+'T00:00:00'); y.setDate(y.getDate()-1);
+  var yiso=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  if(iso===yiso) return 'Yesterday';
+  var p=iso.split('-'); var d=new Date(p[0],p[1]-1,p[2]);
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+(+p[2]);
+}
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function load(){ try{ var d=JSON.parse(localStorage.getItem('mps_nutrition')); if(d) S=Object.assign(S,d); }catch(e){}
   // V2 migration: customMeals -> customRecipes (zero data loss)
@@ -691,6 +708,7 @@ function buildTabs(){
   });
 }
 function go(id){
+  if(id!=='today') curDate=todayISO();   // other tabs always anchor to the real today
   curTab=id; buildTabs();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -740,8 +758,18 @@ function renderToday(){
       +'<span class="legend-val" style="color:'+colorForText(pct)+'">'+tot+'/'+tgt+m.unit+' · '+pct+'%</span></div>';
   }).join('');
 
+  var isToday = curDate===todayISO();
+  var dnav='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;background:#15181c;border:1px solid #23272e;border-radius:14px;padding:8px 10px;">'
+   +'<button onclick="goDay(-1)" aria-label="Previous day" style="background:#1f242b;border:none;border-radius:10px;width:40px;height:40px;color:#dfe4ea;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
+   +'<div onclick="goDay(0)" style="flex:1;text-align:center;cursor:pointer;line-height:1.15;">'
+     +'<div style="font-weight:700;font-size:16px;color:#fff;">'+dayLabel(curDate)+'</div>'
+     +(isToday?'':'<div style="font-size:11px;color:#2dd4bf;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">tap to return to today</div>')
+   +'</div>'
+   +'<button onclick="goDay(1)" aria-label="Next day"'+(isToday?' disabled':'')+' style="background:#1f242b;border:none;border-radius:10px;width:40px;height:40px;color:'+(isToday?'#3a4048':'#dfe4ea')+';display:flex;align-items:center;justify-content:center;cursor:'+(isToday?'default':'pointer')+';"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
+   +'</div>';
   top.innerHTML=
-    '<div class="donut-card glass">'
+    dnav
+    +'<div class="donut-card glass">'
     +'<div class="donut-wrap" onclick="toggleBreakdown()">'+svg
       +'<div class="donut-center"><b style="color:'+ovCol+'">'+overall+'%</b><span>Daily Score</span><div class="hint">tap for breakdown</div></div>'
     +'</div>'
