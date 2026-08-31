@@ -160,9 +160,13 @@
       // A device with no entries just skips; a device that HAS data keeps the cloud whole.
       if(!Object.keys(_data).length) return;
       _bBusy=true; var _ts=Date.now();
+      // Stamp our synced marker to THIS write's ts UP FRONT so the live watcher recognises our OWN write
+      // (cloudTs<=localTs) and does NOT reload — that reload was bouncing the user back to the dashboard
+      // every time they toggled a habit. A genuinely newer write from another device still has a higher
+      // ts and is applied normally.
+      try{ localStorage.setItem(_TS_KEY, String(_ts)); }catch(e){}
       // ADDITIVE UNION: merge cloud+local per blob (local wins on conflicts) so a backup NEVER drops a
-      // completion/day/habit another device added. We do NOT advance synced_ts on the merge path — the
-      // watcher then pulls the union back so every device converges to the same full state.
+      // completion/day/habit another device added.
       try{ _bDoc.get().then(function(s){
         var cloud=(s.exists&&s.data()&&s.data().data)?s.data().data:null;
         var merged=(cloud && Object.keys(cloud).length)? _mergeHabitsData(cloud, _data) : _data;   // local overlays cloud
