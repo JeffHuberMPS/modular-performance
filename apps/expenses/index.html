@@ -856,7 +856,7 @@ let state = {
   budget: load(STORE.budget, DEFAULT_BUDGET),
   cap: load(STORE.cap, 5000),        // generic sample cap for new customers (editable)
   paycheck: load(STORE.paycheck, 5000),  // generic sample income for new customers (editable)
-  selectedMonth: load(STORE.selectedMonth, new Date().getMonth()),
+  selectedMonth: new Date().getMonth(),   // always open on the CURRENT month so the newest transactions show first (month switching still works in-session)
   selectedYear: new Date().getFullYear(),
   sync: load(STORE.sync, { webhook: '' }),
   syncMeta: load(STORE.syncMeta, { lastSync: null, status: 'never' })
@@ -1519,7 +1519,14 @@ document.getElementById('btn-clear-expenses')?.addEventListener('click',clearAll
 // INIT
 // =================================================================
 function renderAll(){renderMonthSelect();renderDashboard();renderLog();renderBudget();renderRules();renderInsights();loadSyncSettings();}
-async function autoSyncOnLoad(){if(state.sync.webhook)await syncFromSheet();}
+let _lastAutoSync=0;
+async function autoSyncOnLoad(){if(state.sync.webhook){_lastAutoSync=Date.now();await syncFromSheet();}}
+// Real-time refresh: re-pull the sheet whenever the app is reopened or refocused (throttled to once per
+// 20s, and the __expSyncing guard blocks overlap), so yesterday's transactions appear without a manual
+// refresh. This is the "update in real time" behaviour — a backgrounded PWA now catches up on return.
+function _maybeResync(){ if(!state.sync.webhook) return; var now=Date.now(); if(now-_lastAutoSync<20000) return; _lastAutoSync=now; syncFromSheet(); }
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') _maybeResync(); });
+window.addEventListener('focus', _maybeResync);
 renderMonthSelect(); renderDashboard();                                                                                // paint the visible Dashboard tab immediately
 requestAnimationFrame(function(){ renderLog(); renderBudget(); renderRules(); renderInsights(); loadSyncSettings(); }); // defer the heavy hidden tabs off the first paint
 setTimeout(autoSyncOnLoad, 900);                                                                                        // let the UI paint before any network sheet-sync + re-render
