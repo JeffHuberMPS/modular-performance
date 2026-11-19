@@ -1,0 +1,273 @@
+<title>MPS Client System Reel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap">
+<style>
+/* Layout: a 540x960 vertical stage (9:16) scaled to fit; controls sit outside it so a screen recording is clean.
+   Look is a deliberate single dark treatment: navy ground, coral accent, seven color-coded zones. */
+:root {
+  color-scheme: dark;
+  --page: #05060c;
+  --page-fg: #e8eaf2;
+  --page-mute: #8a90a6;
+  --stage: #0b0e1a;
+  --ink: #ffffff;
+  --coral: #ff5a4d;
+  --mute: #8b91a5;
+  --bubble: #ffffff;
+  --bubble-ink: #0b0e1a;
+  --bubble-dim: #8b91a5;
+  --line: rgba(255,255,255,.18);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--page-fg); font-family: var(--font);
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+#fit { position: relative; flex: none; }
+#stage {
+  position: absolute; left: 0; top: 0; width: 540px; height: 960px; transform-origin: 0 0;
+  background: var(--stage); overflow: hidden; border-radius: 22px; font-family: var(--font);
+}
+.hook {
+  position: absolute; left: 0; right: 0; top: 54px; text-align: center; color: var(--ink);
+  font-weight: 800; font-size: 49px; line-height: 1.1; letter-spacing: -.02em; text-wrap: balance;
+}
+.hook em { font-style: normal; color: var(--coral); }
+.pill {
+  position: absolute; left: 50%; top: 214px; transform: translateX(-50%); white-space: nowrap;
+  display: flex; align-items: center; gap: 12px; padding: 9px 20px 9px 9px; border-radius: 999px;
+  background: #11142a; border: 1.5px solid rgba(255,255,255,.22);
+}
+.pill .badge { background: var(--coral); color: #fff; font-weight: 800; font-size: 19px; padding: 6px 14px; border-radius: 999px; letter-spacing: .01em; }
+.pill .name { color: #fff; font-weight: 800; font-size: 26px; letter-spacing: -.01em; }
+.pill .when { color: var(--mute); font-weight: 700; font-size: 18px; }
+
+#view {
+  position: absolute; left: 0; top: 290px; width: 540px; height: 510px; overflow: hidden;
+  background-image: radial-gradient(rgba(255,255,255,.10) 1px, transparent 1.2px); background-size: 18px 18px;
+}
+#map { position: absolute; left: 0; top: 0; width: 1200px; height: 1130px; transform-origin: 0 0;
+  transition: transform 1.1s cubic-bezier(.65,0,.25,1); }
+.zone {
+  position: absolute; width: 560px; height: 250px; border-radius: 18px; padding: 16px 22px;
+  background: rgba(var(--zc), .12); border: 1.5px solid rgba(var(--zc), .45); transition: opacity .6s;
+}
+.zone.dim { opacity: .28; }
+.zt { font-size: 21px; font-weight: 800; color: rgb(var(--zc)); letter-spacing: -.01em; display: flex; gap: 10px; align-items: baseline; }
+.zt small { font-size: 14px; font-weight: 700; color: var(--mute); }
+.row { position: absolute; left: 22px; right: 22px; top: 92px; display: flex; justify-content: space-between; }
+.row::before { content: ""; position: absolute; left: 40px; right: 40px; top: 30px; height: 2px; background: rgba(var(--zc), .5); }
+.n { position: relative; width: 112px; text-align: center; }
+.ic {
+  position: relative; width: 60px; height: 60px; margin: 0 auto 10px; border-radius: 16px; display: grid; place-items: center;
+  background: #12162b; border: 1.5px solid rgba(var(--zc), .7); color: #fff; font-weight: 800; font-size: 20px;
+}
+.n.ag .ic { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(255,90,77,.16); background: #1a1424; color: var(--coral); }
+.n b { display: block; font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
+.n i { display: block; font-style: normal; font-size: 12.5px; font-weight: 700; color: var(--mute); margin-top: 3px; line-height: 1.2; }
+.loop { position: absolute; left: 24px; top: 1000px; font-size: 22px; font-weight: 800; color: var(--mute); opacity: .9; }
+#loopline { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+.bubble {
+  position: absolute; left: 28px; right: 28px; top: 822px; min-height: 92px; padding: 16px 20px; border-radius: 16px;
+  background: var(--bubble); color: var(--bubble-ink); box-shadow: 0 6px 24px rgba(0,0,0,.35);
+  font-weight: 800; font-size: 33px; line-height: 1.15; letter-spacing: -.015em; text-align: center; text-wrap: balance;
+}
+.w { color: var(--bubble-dim); transition: color .12s; }
+.w.on { color: var(--bubble-ink); }
+.w.hl.on { color: var(--coral); }
+.brand { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; color: #5a6078; font-size: 12px; font-weight: 700; letter-spacing: .16em; }
+
+.end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 18px; padding: 40px;
+  background: rgba(11,14,26,.94); opacity: 0; pointer-events: none; transition: opacity .5s; }
+.end.show { opacity: 1; }
+.end h2 { margin: 0; color: #fff; font-size: 44px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; text-wrap: balance; }
+.end h2 em { font-style: normal; color: var(--coral); }
+.end p { margin: 0; color: var(--mute); font-size: 20px; font-weight: 700; }
+
+.ctl { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; max-width: 540px; }
+.ctl button, .ctl input {
+  font: 700 14px var(--font); color: var(--page-fg); background: #151929; border: 1px solid #2a3050; border-radius: 10px; padding: 9px 14px;
+}
+.ctl button { cursor: pointer; }
+.ctl button:hover { border-color: var(--coral); }
+.ctl :focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+.ctl label { font-size: 13px; color: var(--page-mute); font-weight: 700; display: flex; gap: 8px; align-items: center; }
+.ctl input { width: 120px; text-transform: uppercase; }
+.note { font-size: 12.5px; color: var(--page-mute); text-align: center; max-width: 520px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { #map { transition: none; } .zone, .w, .end { transition: none; } }
+</style>
+
+<div id="fit">
+  <div id="stage">
+    <div class="hook">HOW MY <em>AI SYSTEM</em><br>BOOKS CLIENTS</div>
+    <div class="pill" id="pill"><span class="badge" id="pBadge">STEP 1</span><span class="name" id="pName">Auto booking</span><span class="when" id="pWhen">Day 1 · 9:04 PM</span></div>
+    <div id="view"><div id="map"></div></div>
+    <div class="bubble" id="bubble"></div>
+    <div class="brand">MODULAR PERFORMANCE SYSTEMS</div>
+    <div class="end" id="end">
+      <h2>Comment <em>"<span id="kw1">TRAIN</span>"</em> and I'll send you the system</h2>
+      <p>Back to step 1</p>
+    </div>
+  </div>
+</div>
+
+<div class="ctl">
+  <button id="bPlay" type="button">Pause</button>
+  <button id="bRestart" type="button">Restart</button>
+  <label for="kw">Comment word <input id="kw" type="text" value="TRAIN" maxlength="14"></label>
+</div>
+<div class="note">Zoom-through of a 7-step client system. Screen-record the stage at full screen to post it. Step wording and the comment word are placeholders to edit before you post.</div>
+
+<script>
+(function () {
+  // ---- content: 7 zones, each with a row of 4 nodes. ag = AI agent node ----
+  var ZONES = [
+    { id: 1, x: 0,   y: 0,   rgb: "59,108,255",  t: "Auto booking", sub: "Step 1", nodes: [
+      { ic: "▶", b: "Reel comment", i: "Lead says the word" },
+      { ic: "AI", b: "Booking agent", i: "DMs back in seconds", ag: 1 },
+      { ic: "✓", b: "Call booked", i: "Lands on my calendar" },
+      { ic: "◷", b: "Invite sent", i: "Text + email" } ] },
+    { id: 2, x: 640, y: 0,   rgb: "139,92,246",  t: "Warm-up", sub: "Step 2", nodes: [
+      { ic: "AI", b: "Nurture agent", i: "Sends proof", ag: 1 },
+      { ic: "★", b: "Results reel", i: "Client wins" },
+      { ic: "◷", b: "Reminder text", i: "Day of the call" },
+      { ic: "✦", b: "Shows up warm", i: "Ready to talk" } ] },
+    { id: 3, x: 0,   y: 290, rgb: "34,197,94",   t: "Close", sub: "Step 3", nodes: [
+      { ic: "●", b: "Discovery call", i: "Goal + timeline" },
+      { ic: "AI", b: "Scheduling agent", i: "Locks the start", ag: 1 },
+      { ic: "✓", b: "Says yes", i: "Picks a plan" },
+      { ic: "$", b: "Signed + paid", i: "Link sent" } ] },
+    { id: 4, x: 640, y: 290, rgb: "214,64,112",  t: "Prep the program", sub: "Step 4", nodes: [
+      { ic: "AI", b: "Intake agent", i: "Collects the details", ag: 1 },
+      { ic: "+", b: "Goals + injuries", i: "Form answered" },
+      { ic: "◷", b: "Schedule + gear", i: "Days, space, tools" },
+      { ic: "▶", b: "Program built", i: "Day 1 ready" } ] },
+    { id: 5, x: 0,   y: 580, rgb: "217,138,48",  t: "Review", sub: "Step 5", nodes: [
+      { ic: "AI", b: "Check-in agent", i: "Week 1 circle back", ag: 1 },
+      { ic: "✓", b: "Win logged", i: "Weight, rounds, reps" },
+      { ic: "?", b: "Happy?", i: "Yes / needs a fix" },
+      { ic: "★", b: "Review asked", i: "Google + Instagram" } ] },
+    { id: 6, x: 640, y: 580, rgb: "20,184,166",  t: "Content", sub: "Step 6", nodes: [
+      { ic: "AI", b: "Content agent", i: "Finds the win", ag: 1 },
+      { ic: "▶", b: "Win becomes a reel", i: "Hook + captions" },
+      { ic: "↗", b: "Instagram", i: "Posted" },
+      { ic: "↗", b: "YouTube Shorts", i: "Posted" } ] },
+    { id: 7, x: 320, y: 870, rgb: "224,165,38",  t: "Get found", sub: "Step 7", nodes: [
+      { ic: "AI", b: "Strategy agent", i: "Reads what hit", ag: 1 },
+      { ic: "↗", b: "Best reels", i: "Do more of it" },
+      { ic: "AI", b: "SEO agent", i: "Search + posts", ag: 1 },
+      { ic: "●", b: "Next lead", i: "Finds the page" } ] }
+  ];
+  var STEPS = [
+    { name: "Auto booking",      when: "Day 1 · 9:04 PM",   cap: "At *9pm,* a lead comments on my reel" },
+    { name: "Warm-up",           when: "Day 1 · 9:05 PM",   cap: "Before I wake up, they're *warm*" },
+    { name: "Close",             when: "Day 2 · 6:00 PM",   cap: "They show up ready to *buy*" },
+    { name: "Prep the program",  when: "Day 2 · 7:15 PM",   cap: "Intake is done before *day one*" },
+    { name: "Review",            when: "Day 9 · 8:00 AM",   cap: "Week one, they leave a *review*" },
+    { name: "Content",           when: "Day 14 · 3:00 PM",  cap: "Their win becomes my next *reel*" },
+    { name: "Get found",         when: "Ongoing · 24/7",    cap: "That reel finds the next *lead*" }
+  ];
+  var STEP_MS = 4400, OVERVIEW_MS = 1500, END_MS = 3600, WORD_WINDOW = 2600;
+  var TOTAL = STEPS.length * STEP_MS + END_MS;
+
+  // ---- build the map ----
+  var map = document.getElementById("map");
+  ZONES.forEach(function (z) {
+    var d = document.createElement("div");
+    d.className = "zone"; d.id = "z" + z.id;
+    d.style.left = z.x + "px"; d.style.top = z.y + "px"; d.style.setProperty("--zc", z.rgb);
+    var h = '<div class="zt">' + z.t + '<small>' + z.sub + '</small></div><div class="row">';
+    z.nodes.forEach(function (n) {
+      h += '<div class="n' + (n.ag ? ' ag' : '') + '"><div class="ic">' + n.ic + '</div><b>' + n.b + '</b><i>' + n.i + '</i></div>';
+    });
+    d.innerHTML = h + "</div>";
+    map.appendChild(d);
+  });
+  var loop = document.createElement("div");
+  loop.className = "loop"; loop.textContent = "↺ Back to step 1";
+  map.appendChild(loop);
+
+  // ---- caption words ----
+  var bubble = document.getElementById("bubble");
+  var capIdx = -1, wordEls = [];
+  function setCaption(i) {
+    capIdx = i; bubble.textContent = ""; wordEls = [];
+    STEPS[i].cap.split(" ").forEach(function (w, k, arr) {
+      var s = document.createElement("span");
+      var hl = w.charAt(0) === "*";
+      s.className = "w" + (hl ? " hl" : "");
+      s.textContent = w.replace(/\*/g, "");
+      bubble.appendChild(s);
+      if (k < arr.length - 1) bubble.appendChild(document.createTextNode(" "));
+      wordEls.push(s);
+    });
+  }
+
+  // ---- camera ----
+  var VIEW_W = 540, VIEW_H = 510;
+  function camera(zone) {
+    var s, tx, ty;
+    if (!zone) { s = VIEW_W / 1200; tx = 0; ty = (VIEW_H - 1130 * s) / 2 + 6; }
+    else { s = 0.9; tx = (VIEW_W - 560 * s) / 2 - zone.x * s; ty = (VIEW_H - 250 * s) / 2 - zone.y * s; }
+    map.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + s + ")";
+  }
+
+  // ---- timeline ----
+  var t = 1900, playing = true, last = null, curStep = -2, camState = "";
+  var pBadge = document.getElementById("pBadge"), pName = document.getElementById("pName"), pWhen = document.getElementById("pWhen");
+  var endEl = document.getElementById("end");
+
+  function render() {
+    var inEnd = t >= STEPS.length * STEP_MS;
+    var idx = inEnd ? STEPS.length - 1 : Math.floor(t / STEP_MS);
+    var local = t - idx * STEP_MS;
+    endEl.classList.toggle("show", inEnd);
+    if (idx !== curStep) {
+      curStep = idx; camState = "";
+      pBadge.textContent = "STEP " + (idx + 1); pName.textContent = STEPS[idx].name; pWhen.textContent = STEPS[idx].when;
+      setCaption(idx);
+      ZONES.forEach(function (z, k) { document.getElementById("z" + z.id).classList.toggle("dim", k !== idx); });
+    }
+    var overview = inEnd || (idx === 0 && local < OVERVIEW_MS);
+    var want = overview ? "all" : "zone" + idx;
+    if (want !== camState) {
+      camState = want;
+      camera(overview ? null : ZONES[idx]);
+      ZONES.forEach(function (z, k) { document.getElementById("z" + z.id).classList.toggle("dim", !overview && k !== idx); });
+    }
+    var shown = Math.floor(Math.max(0, local - (idx === 0 ? 300 : 500)) / (WORD_WINDOW / wordEls.length)) + 1;
+    if (inEnd) shown = wordEls.length;
+    wordEls.forEach(function (el, k) { el.classList.toggle("on", k < shown && local > 200); });
+  }
+  function frame(now) {
+    if (last === null) last = now;
+    var dt = Math.min(now - last, 100); last = now;
+    if (playing) { t += dt; if (t >= TOTAL) t = 0; render(); }
+    requestAnimationFrame(frame);
+  }
+
+  // ---- controls ----
+  var bPlay = document.getElementById("bPlay");
+  bPlay.addEventListener("click", function () { playing = !playing; bPlay.textContent = playing ? "Pause" : "Play"; });
+  document.getElementById("bRestart").addEventListener("click", function () { t = 0; curStep = -2; render(); });
+  var kw = document.getElementById("kw"), kw1 = document.getElementById("kw1");
+  kw.addEventListener("input", function () { kw1.textContent = (kw.value.trim() || "TRAIN").toUpperCase(); });
+
+  // ---- fit stage to the screen ----
+  var fit = document.getElementById("fit"), stage = document.getElementById("stage");
+  function resize() {
+    var avail = Math.min(window.innerHeight - 130, 960), w = document.body.clientWidth - 32;
+    var s = Math.max(0.3, Math.min(avail / 960, w / 540, 1.4));
+    fit.style.width = 540 * s + "px"; fit.style.height = 960 * s + "px";
+    stage.style.transform = "scale(" + s + ")";
+  }
+  window.addEventListener("resize", resize);
+  resize(); render();
+  requestAnimationFrame(frame);
+})();
+</script>
